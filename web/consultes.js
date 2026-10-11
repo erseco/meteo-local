@@ -392,6 +392,14 @@ function pintaConsulta() {
   const avis = { llum: () => T('Per rebre els talls de llum al moment, '),
     avui: () => T('Per rebre la previsió cada dia, '), dema: () => T('Per rebre la previsió cada dia, ') }[triada];
   if (text && avis) caixa.append(enllacAvisos(avis()));
+  // «Al barri»: el mapa dels límits, a «Com funciona» (ADR 0072).
+  if (text && triada === 'llum') {
+    const p = element('p', 'enllac-avisos');
+    const a = element('a', null, T('mapa dels límits'));
+    a.href = 'com-funciona.html#barri';
+    p.append(T('Què compta com a barri: el '), a, '.');
+    caixa.append(p);
+  }
 }
 
 function pinta(dades) {

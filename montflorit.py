@@ -234,6 +234,8 @@ CANVIS_ES_PRIVACITAT = [
 CANVIS_ES_COM_FUNCIONA = [
     (f'data-dades="{DADES}"', f'data-dades="{DADES}" data-arrel="../"'),
     ('<script src="comu.js"></script>', '<script src="../es.js"></script>\n  <script src="../comu.js"></script>'),
+    ('href="img/montflorit-limits.svg"', 'href="../img/montflorit-limits.svg"'),
+    ('src="img/montflorit-limits.svg"', 'src="../img/montflorit-limits.svg"'),
 ]
 CANVIS_ES_NAV = [(">El temps</a>", ">El tiempo</a>"), (">Si surts</a>", ">Si sales</a>"),
                  (">Perill</a>", ">Peligro</a>"), (">Consultes</a>", ">Consultas</a>")]

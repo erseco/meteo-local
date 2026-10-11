@@ -167,6 +167,33 @@ enlace a «Avisos». «Llum» (talls de llum), «Avui» y «Demà» de «Consult
 previsió de cada dia) i la targeta d'ara d'«El temps» (la pluja 15 minuts
 abans), en letra pequeña bajo el contenido.
 
+### Mapa de los límites en la web (3.63.0)
+
+Juanjo: «me gustaría ponerlo en la página para que se vean los límites … además
+habría que poner las fuentes».
+
+- **En «Com funciona»**, sección «El barri» (`#barri`), tras «Què ofereix»:
+  qué es el barrio para la web, que no hay límites oficiales y para qué
+  sirven (los cortes de luz, dentro o a menos de 150 m). «Llum» enlaza a ella
+  («Què compta com a barri: el mapa dels límits»). No va en «Llum» mismo: es
+  una consulta que se mira deprisa.
+- **Un dibujo propio en SVG** (`web/img/montflorit-limits.svg`, 55 KB), hecho
+  con `eines/mapa_barri.py` a partir del contorno y de las calles, la riera y
+  el verde de OpenStreetMap, con los nombres de los barrios vecinos, escala,
+  norte y «© OpenStreetMap». Se amplía con el visor de imágenes. Se descartó
+  un mapa interactivo con teselas de OpenStreetMap: la web pediría datos a
+  servidores de fuera cada vez que alguien la abre, y hoy no pide ninguno
+  (página «Privacitat»). El mapa es claro también con el tema oscuro, como un
+  plano impreso.
+- **Las fuentes, en «Fonts i crèdits»**, con enlace a cada una: la moción del
+  Pleno, el PLACC en la dirección estable de cerdanyola.cat (la de
+  Participa311 caduca), la página de patrimonio del Ayuntamiento y la ficha
+  del Parc Natural de Collserola en catalán.
+- Validado: pruebas, `probar-web` (Chromium, Firefox y WebKit; escritorio,
+  móvil y tableta; claro y oscuro) sin errores propios ni desbordamiento,
+  axe-core sin incidencias en «Com funciona» (ca y es), «Fonts» y «Llum», y el
+  visor abre el mapa en Chromium y Firefox.
+
 ## Alternativas descartadas
 
 - **Leer el buscador de Endesa con un navegador sin pantalla en el NAS**:

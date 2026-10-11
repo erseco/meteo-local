@@ -154,9 +154,10 @@ Umbrales y lugares, en `config.py`. El porqué, en los ADR.
 | `desplegament.py` | Pone al día la copia del repositorio (NAS, reserva y bot) hasta el último commit con las pruebas de GitHub en verde; si GitHub no responde o las pruebas llevan más de 20 minutos sin acabar, despliega igualmente y lo apunta (ADR 0038) |
 | `avis_privat.py` | Avisos de mantenimiento a Juanjo por Telegram con cola de reintento si Telegram no los acepta (ADR 0038) |
 | `llum.py` | Cortes de luz de e-distribución dentro de los límites del barrio, para «Llum» y `/llum`, y su prueba diaria (ADR 0072) |
-| `montflorit-limits.geojson` | Los límites de Montflorit, a los dos lados de la riera, de OpenStreetMap (ODbL) retocados a mano; para cualquier uso que necesite saber si algo es del barrio (ADR 0072) |
+| `montflorit-limits.geojson` | Los límites de Montflorit, calcados del mapa de barrios del Ayuntamiento (PLACC 2023) y con el poblado de Ca n'Oliver; para cualquier uso que necesite saber si algo es del barrio (ADR 0072) |
 | `montflorit-carrers.geojson` | Las calles con nombre del barrio y alrededores, de OpenStreetMap (ODbL), para estimar la calle probable de un corte de luz (ADR 0072) |
 | `eines/limits.py` | Editor de esos límites en un mapa: guarda en un borrador y `aplica` lo pasa a la web (ADR 0072) |
+| `eines/mapa_barri.py` | Dibuja el mapa de esos límites que sale en «Com funciona» (`web/img/montflorit-limits.svg`); se rehace al cambiarlos (ADR 0072) |
 | `avisos_bot.py` | Decide los avisos públicos para el bot y el canal y los deja en `avisos.json`, con el historial de un año de la página «Perill» (ADR 0034 y 0071) |
 | `bot/` | Lo que vive en IONOS para repartir avisos: el bot de Telegram, `bot.py` (menú, suscripciones, reparto y resumen, ADR 0034); los avisos en el navegador, `push.py` (envío) y `subscripcio.php` (altas y bajas, ADR 0048); e `instalar.sh` |
 | `reserva/` | Servidor de reserva en IONOS: `reserva.py` (vigila, calcula y avisa si el NAS no publica), `avisar-juanjo`, `rep-dades.sh` (recibe los datos que sube el NAS: la orden fija de su clave, ADR 0038) e `instalar.sh` (ADR 0032) |
