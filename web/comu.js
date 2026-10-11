@@ -194,7 +194,7 @@ function pintaHorari(dades, fonts = FONTS_TEMPS) {
   const ara = new Date();
   const generat = new Date(dades.generat);
   const hores = horesActualitzacio(dades.horari);
-  const propera = hores.find((t) => t > ara);
+  const propera = properaPendent(dades, ara);
   const darreraPrevista = hores.filter((t) => t <= ara).pop();
   // L'hora d'actualització, destacada, al capdamunt de la pàgina (Juanjo, 09-10-2026:
   // «visible nada más abrir»).
@@ -245,6 +245,22 @@ function pintaHorari(dades, fonts = FONTS_TEMPS) {
 // dades encara no són noves, cada minut fins a REINTENTS vegades.
 const ESPERA_PUBLICACIO_MIN = 2;
 const REINTENTS = 10;
+
+// La propera actualització que han de portar les dades: la primera de
+// l'horari després de la seva hora, encara que ja hagi passat i s'estigui
+// publicant. Comptada des del rellotge, a les 13:31 amb dades de les 13:15
+// deia «propera: 13:45» i se saltava la de les 13:30 (Juanjo, 11-10-2026:
+// «por qué pone esto si se tiene que actualizar cada 15min?»), i la pàgina
+// no la tornava a llegir fins a les 13:47. Si fa més de MARGE_RETARD_MIN
+// que havia d'arribar, ja no s'espera: mana el rellotge. Null si avui no
+// en queda cap.
+function properaPendent(dades, ara = new Date()) {
+  const hores = horesActualitzacio(dades.horari);
+  const generat = new Date(dades.generat);
+  const pendent = hores.find((t) => t > generat);
+  if (pendent && ara - pendent <= MARGE_RETARD_MIN * 60000) return pendent;
+  return hores.find((t) => t > ara) || null;
+}
 
 // Propera actualització segons l'horari: avui o, si ja no n'hi ha cap, la
 // primera de demà.
@@ -298,8 +314,12 @@ function carrega(url, pinta, error) {
 
   function programa() {
     clearTimeout(temporitzador);
+    // Primer, la que han de portar les dades encara que ja hagi passat (com a
+    // molt d'aquí a un minut); acabats els reintents, la de l'horari.
+    const pendent = !reintents && properaPendent(dades);
     previst = reintents && reintents <= REINTENTS ? Date.now() + 60000
-      : properaActualitzacio(dades.horari).getTime() + ESPERA_PUBLICACIO_MIN * 60000;
+      : pendent ? Math.max(pendent.getTime() + ESPERA_PUBLICACIO_MIN * 60000, Date.now() + 60000)
+        : properaActualitzacio(dades.horari).getTime() + ESPERA_PUBLICACIO_MIN * 60000;
     temporitzador = setTimeout(llegeix, previst - Date.now());
   }
 

@@ -582,6 +582,24 @@ class Web(unittest.TestCase):
         expr = f"properaActualitzacio({json.dumps(trajecte)}).toISOString()"
         self.assertEqual(self.avalua("2026-10-05T09:00:00+02:00", expr), "2026-10-05T11:00:00.000Z")
 
+    def test_propera_des_de_les_dades(self):
+        # 11-10-2026: a les 13:31, amb dades de les 13:15, deia «propera: 13:45»
+        # i la pàgina no tornava a llegir fins a les 13:47.
+        dades = {"generat": "2026-10-11T13:15+02:00", "horari": {"trams": [["00:00", "23:45"]], "cada_min": 15}}
+        expr = f"properaPendent({json.dumps(dades)}).toISOString()"
+        self.assertEqual(self.avalua("2026-10-11T13:31:00+02:00", expr), "2026-10-11T11:30:00.000Z")
+        # Abans de l'hora, la mateixa.
+        self.assertEqual(self.avalua("2026-10-11T13:20:00+02:00", expr), "2026-10-11T11:30:00.000Z")
+        # Si fa més de MARGE_RETARD_MIN que no arriba, la de l'horari.
+        self.assertEqual(self.avalua("2026-10-11T13:55:00+02:00", expr), "2026-10-11T12:00:00.000Z")
+        # Amb les dades noves, la següent.
+        noves = {**dades, "generat": "2026-10-11T13:30+02:00"}
+        expr = f"properaPendent({json.dumps(noves)}).toISOString()"
+        self.assertEqual(self.avalua("2026-10-11T13:31:00+02:00", expr), "2026-10-11T11:45:00.000Z")
+        # Després de la darrera del dia, cap.
+        tard = {**dades, "generat": "2026-10-11T23:45+02:00"}
+        self.assertIsNone(self.avalua("2026-10-11T23:50:00+02:00", f"properaPendent({json.dumps(tard)})"))
+
     def test_dades_velles(self):
         # Amb més de 2 hores, la previsió ja no es mostra (ADR 0031).
         expr = ("[dadesVelles({generat: '2026-10-07T06:50:00+02:00'}), "

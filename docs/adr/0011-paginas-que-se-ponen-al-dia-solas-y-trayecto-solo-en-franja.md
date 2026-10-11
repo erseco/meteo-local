@@ -20,6 +20,13 @@ actualizarse y enlace al tiempo en casa.
   (`ESPERA_PUBLICACIO_MIN`). Si aún no ha llegado, lo intenta cada minuto
   hasta diez veces. Fuera del horario no lee nada. Al volver a una pestaña
   oculta (el móvil para los temporizadores), lee si ya tocaba.
+- **La próxima se cuenta desde la hora de los datos, no desde el reloj**
+  (`properaPendent`, 11-10-2026): es la primera del horario tras `generat`,
+  aunque ya haya pasado y se esté publicando, mientras no lleve más de
+  `MARGE_RETARD_MIN` de retraso. Contada desde el reloj, una página abierta a
+  las 13:31 con datos de las 13:15 decía «propera: 13:45» y no leía la de las
+  13:30 hasta las 13:47. La misma hora sale en «Actualitzat a les… ·
+  propera…».
 - **Trayecto solo en franja** (`franjaActiva` en `web/app.js`): de 5:00 a
   7:30 y de 13:00 a 15:30, más el desfase y la espera de publicación. Fuera de
   ellas, o con datos anteriores al inicio de la franja, la página dice
@@ -51,5 +58,6 @@ trayecto no lo enseña; lo enseña la de casa, a un clic.
 
 ## Validación
 
-`tests/test_web.py` (próxima lectura, también tras la última del día) y
+`tests/test_web.py` (próxima lectura, también tras la última del día y con
+datos de una actualización que aún no ha llegado) y
 `probar-web` en Chromium, Firefox y WebKit, dentro y fuera de franja.
