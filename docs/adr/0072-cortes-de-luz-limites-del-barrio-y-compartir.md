@@ -114,6 +114,13 @@ a otros».
   guarda en un borrador (`eines/limits-esborrany.geojson`) que la web no usa y,
   con `aplica`, lo pasa a `montflorit-limits.geojson`. Cambiar los límites no
   cambia la versión: son datos.
+- **Mapa de referencia superpuesto** (`--fons IMATGE S,O,N,E`; Juanjo:
+  «hazlo editable … solo el azul actual y el del pdf para superponer»): una
+  imagen ya reproyectada a esos límites, con una casilla para mostrarla u
+  ocultarla. La imagen no se guarda en el repositorio, que es público: el mapa
+  del PLACC es del Ayuntamiento. Para el PLACC se situó ajustando su contorno
+  municipal al de OpenStreetMap (relación 346442), con unos 8 m por píxel; la
+  riera de los dos mapas coincide.
 - Se guarda en el repositorio como GeoJSON, con la fuente y la licencia ODbL de
   OpenStreetMap, para otros usos (Juanjo: «guarda estos datos, podremos
   usarlos más adelante para otras cosas»).

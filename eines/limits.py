@@ -11,6 +11,12 @@ a montflorit-limits.geojson, el que usan «Llum» y lo que venga (Juanjo,
 
     python3 eines/limits.py            abre el editor (http://127.0.0.1:8766/)
     python3 eines/limits.py aplica     el borrador pasa a ser el límite de la web
+    python3 eines/limits.py --fons IMATGE SUD,OEST,NORD,EST
+                                       abre el editor con IMATGE superpuesta
+                                       (un mapa de referencia ya reproyectado a
+                                       esos límites en grados), que se muestra u
+                                       oculta con una casilla. La imagen no se
+                                       copia al repositorio: puede ser ajena.
 
 El mapa de fondo es de OpenStreetMap y el editor usa Leaflet y Leaflet-Geoman
 desde unpkg.com: hace falta conexión.
@@ -26,6 +32,7 @@ ARREL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PUBLICAT = os.path.join(ARREL, "montflorit-limits.geojson")
 ESBORRANY = os.path.join(ARREL, "eines", "limits-esborrany.geojson")
 PORT = 8766
+FONS = None  # (ruta de la imatge, [[sud, oest], [nord, est]])
 
 PAGINA = """<!doctype html><html lang="ca"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Límits de Montflorit</title>
@@ -38,6 +45,7 @@ max-width:360px;box-shadow:0 1px 6px #0004;border-radius:6px}.l button{font:inhe
 margin-top:6px;border:0;border-radius:999px;background:#1d4ed8;color:#fff;cursor:pointer}#e{color:#15803d;font-weight:600}</style>
 </head><body><div id="m"></div><script>
 const DADES = __DADES__;
+const FONS = __FONS__;
 const COLORS = ['#c00', '#7c3aed', '#0a7d2c', '#b45309'];
 const m = L.map('m').setView([41.4815, 2.1330], 16);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '© OpenStreetMap', maxZoom: 19}).addTo(m);
@@ -48,15 +56,22 @@ const capes = DADES.features.map((f, i) => {
   c.pm.enable({allowSelfIntersection: false});
   return c;
 });
+let fons = null;
+if (FONS) {
+  m.createPane('fons').style.zIndex = 350;
+  fons = L.imageOverlay('/fons.png', FONS, {opacity: .75, pane: 'fons'}).addTo(m);
+}
 const lg = L.control({position: 'topright'});
 lg.onAdd = () => {
   const d = L.DomUtil.create('div', 'l');
   L.DomEvent.disableClickPropagation(d);
   d.innerHTML = '<b>Límits de Montflorit</b> (' + __QUIN__ + ')<br>Arrossega els punts per moure el contorn; els petits '
-    + 'del mig afegeixen un punt; clic dret damunt d\\'un punt per treure\\'l.<br><button id="d">Desa</button> <span id="e"></span>';
+    + 'del mig afegeixen un punt; clic dret damunt d\\'un punt per treure\\'l.<br><button id="d">Desa</button> <span id="e"></span>'
+    + (FONS ? '<br><label><input type="checkbox" id="f" checked> Mapa de referència</label>' : '');
   return d;
 };
 lg.addTo(m);
+if (fons) document.getElementById('f').onchange = (e) => e.target.checked ? fons.addTo(m) : fons.remove();
 document.getElementById('d').onclick = () => {
   const fc = {type: 'FeatureCollection', features: capes.map((c, i) => ({...c.toGeoJSON(), properties: DADES.features[i].properties}))};
   fetch('/desa', {method: 'POST', body: JSON.stringify(fc)}).then((r) => {
@@ -83,13 +98,22 @@ def desa_esborrany(fc):
 
 class Editor(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
+        if self.path == "/fons.png" and FONS:
+            with open(FONS[0], "rb") as f:
+                cos = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", "image/png")
+            self.end_headers()
+            self.wfile.write(cos)
+            return
         if self.path not in ("/", "/index.html"):
             self.send_error(404)
             return
         esborrany = os.path.exists(ESBORRANY)
         dades = llegeix(ESBORRANY if esborrany else PUBLICAT)
         cos = (PAGINA.replace("__DADES__", json.dumps(dades, ensure_ascii=False))
-               .replace("__QUIN__", json.dumps("esborrany" if esborrany else "el publicat"))).encode()
+               .replace("__QUIN__", json.dumps("esborrany" if esborrany else "el publicat"))
+               .replace("__FONS__", json.dumps(FONS[1] if FONS else None))).encode()
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
@@ -121,7 +145,10 @@ def aplica():
 if __name__ == "__main__":
     if sys.argv[1:] == ["aplica"]:
         aplica()
-    elif not sys.argv[1:]:
+    elif not sys.argv[1:] or (sys.argv[1] == "--fons" and len(sys.argv) == 4):
+        if sys.argv[1:]:
+            sud, oest, nord, est = (float(x) for x in sys.argv[3].split(","))
+            FONS = (os.path.abspath(sys.argv[2]), [[sud, oest], [nord, est]])
         with socket.socket() as s:
             if s.connect_ex(("127.0.0.1", PORT)) == 0:
                 sys.exit(f"El port {PORT} ja és ocupat.")
