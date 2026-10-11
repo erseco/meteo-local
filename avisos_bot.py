@@ -235,15 +235,19 @@ def hhmm(iso):
 
 
 def lloc_incendi(i, idioma):
-    """Dónde es, para quien no conoce la web (ADR 0066 y 0071): en
-    Collserola, en Cerdanyola o cerca de Montflorit."""
+    """Dónde es, para quien no conoce la web (ADR 0066 y 0071): dentro del
+    parque de Collserola o el municipio, y siempre a qué distancia de
+    Montflorit (Juanjo, 11-10-2026: «tiene que poner la distancia a
+    Montflorit, siempre»)."""
     m = i.get("municipi") or "?"
+    ca = idioma == "ca"
     if i.get("collserola"):
-        return (f"dins del Parc de Collserola ({m})" if idioma == "ca"
-                else f"dentro del Parque de Collserola ({m})")
-    if m == C.MUNICIPI:
-        return f"a {m}" if idioma == "ca" else f"en {m}"
-    return f"a prop de Montflorit: {m}" if idioma == "ca" else f"cerca de Montflorit: {m}"
+        on = f"dins del Parc de Collserola ({m})" if ca else f"dentro del Parque de Collserola ({m})"
+    else:
+        on = f"a {m}" if ca else f"en {m}"
+    if i.get("km") is not None:
+        on += f", a {coma(i['km'])} km de Montflorit"
+    return on
 
 
 def enllac_bombers(idioma):
@@ -252,24 +256,25 @@ def enllac_bombers(idioma):
 
 
 def text_incendi(i, acabat=False):
+    """La distancia va en el título, que es lo que se ve en la notificación y
+    en la ficha plegada de «Perill»; el texto ya no la repite."""
     lloc = i.get("municipi") or "?"
-    dist = f", a uns {coma(i['km'])} km de Montflorit" if i.get("km") is not None else ""
-    dist_es = f", a unos {coma(i['km'])} km de Montflorit" if i.get("km") is not None else ""
     parc_ca = ", dins del Parc Natural de Collserola" if i.get("collserola") else ""
     parc_es = ", dentro del Parque Natural de Collserola" if i.get("collserola") else ""
     if acabat:
-        on_ca = f"al Parc de Collserola ({lloc})" if i.get("collserola") else f"a {lloc}"
-        on_es = f"en el Parque de Collserola ({lloc})" if i.get("collserola") else f"en {lloc}"
+        dist = f", a {coma(i['km'])} km de Montflorit" if i.get("km") is not None else ""
+        on_ca = (f"al Parc de Collserola ({lloc})" if i.get("collserola") else f"a {lloc}") + dist
+        on_es = (f"en el Parque de Collserola ({lloc})" if i.get("collserola") else f"en {lloc}") + dist
         return {"ca": negreta(f"Incendi {on_ca}: ja no consta com a actiu", "fi")
                       + "\nBombers de la Generalitat ja no el tenen entre les actuacions en curs.",
                 "es": negreta(f"Incendio {on_es}: ya no consta como activo", "fi")
                       + "\nBombers de la Generalitat ya no lo tienen entre las actuaciones en curso."}
     return {"ca": negreta(f"Incendi forestal {lloc_incendi(i, 'ca')}", "incendi")
-                  + f"\nBombers de la Generalitat treballen en un incendi de vegetació forestal a {lloc}{parc_ca}{dist}, "
+                  + f"\nBombers de la Generalitat treballen en un incendi de vegetació forestal a {lloc}{parc_ca}, "
                   f"des de les {hhmm(i.get('inici'))}. Segueix les indicacions de Bombers i de Protecció Civil."
                   + "\n" + enllac_bombers("ca"),
             "es": negreta(f"Incendio forestal {lloc_incendi(i, 'es')}", "incendi")
-                  + f"\nBombers de la Generalitat trabajan en un incendio de vegetación forestal en {lloc}{parc_es}{dist_es}, "
+                  + f"\nBombers de la Generalitat trabajan en un incendio de vegetación forestal en {lloc}{parc_es}, "
                   f"desde las {hhmm(i.get('inici'))}. Sigue las indicaciones de Bombers y de Protección Civil."
                   + "\n" + enllac_bombers("es")}
 

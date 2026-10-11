@@ -55,6 +55,11 @@ actius» («hazlo así»).
   del Vallès»; en los demás, «a prop de Montflorit: Montcada i Reixac».
   Igual en `/avisos_actius` del bot y en «Avisos actius» de la web.
 - El mensaje del incendio enlaza el mapa de actuaciones de Bombers.
+- Desde la 3.58.1, la distancia a Montflorit va siempre en el título, al
+  empezar y al acabar, porque es lo que se ve en la notificación y en la ficha
+  plegada de «Perill» (Juanjo: «tiene que poner la distancia a Montflorit,
+  siempre»): «Incendi forestal a Montcada i Reixac, a 5,0 km de Montflorit».
+  El texto ya no la repite.
 
 ### Página «Perill» (`web/perill.html`, `web/perill.js`)
 

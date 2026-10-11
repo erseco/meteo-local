@@ -93,8 +93,8 @@ class Avisos(unittest.TestCase):
         foc = [{"id": "x", "municipi": "Sant Cugat del Vallès", "km": 3.2, "inici": ARA.isoformat(), "vehicles": 4}]
         nous = self.passada(estat, foc, 6)
         self.assertEqual(len(nous), 1)
-        self.assertTrue(nous[0]["ca"].startswith("🔥 <b>Incendi forestal a prop de Montflorit: Sant Cugat del Vallès</b>"))
-        self.assertIn("a unos 3,2 km de Montflorit", nous[0]["es"])
+        self.assertTrue(nous[0]["ca"].startswith("🔥 <b>Incendi forestal a Sant Cugat del Vallès, a 3,2 km de Montflorit</b>"))
+        self.assertIn("Incendio forestal en Sant Cugat del Vallès, a 3,2 km de Montflorit", nous[0]["es"])
         self.assertIn('<a href="https://interior.gencat.cat/es/arees_dactuacio/bombers/', nous[0]["es"])
         self.assertEqual(nous[0]["episodi"], "incendi:x")
         self.assertEqual(self.passada(estat, foc, 12), [])          # una sola vegada
@@ -105,10 +105,10 @@ class Avisos(unittest.TestCase):
     def test_a_collserola_es_diu_on_es(self):
         foc = {"id": "y", "municipi": "Molins de Rei", "km": 13.4, "collserola": True, "inici": ARA.isoformat()}
         t = AB.text_incendi(foc)
-        self.assertTrue(t["ca"].startswith("🔥 <b>Incendi forestal dins del Parc de Collserola (Molins de Rei)</b>"))
-        self.assertIn("dins del Parc Natural de Collserola, a uns 13 km de Montflorit", t["ca"])
+        self.assertTrue(t["ca"].startswith("🔥 <b>Incendi forestal dins del Parc de Collserola (Molins de Rei), a 13 km de Montflorit</b>"))
+        self.assertIn("a Molins de Rei, dins del Parc Natural de Collserola, des de", t["ca"])
         self.assertTrue(AB.text_incendi(foc, acabat=True)["es"].startswith(
-            "🟢 <b>Incendio en el Parque de Collserola (Molins de Rei): ya no consta como activo</b>"))
+            "🟢 <b>Incendio en el Parque de Collserola (Molins de Rei), a 13 km de Montflorit: ya no consta como activo</b>"))
 
     def test_si_una_font_falla_no_es_toca_l_estat(self):
         estat = {}
