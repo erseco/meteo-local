@@ -65,7 +65,10 @@ def notificacio(text, url="./", etiqueta=None, expira=None, dia=None):
     el enlace a la web, que ya abre la notificación."""
     linies = text.strip().split("\n")
     titol = re.sub(r"<[^>]+>", "", linies[0])
-    cos = "\n".join(l for l in linies[1:] if l.strip() != B.WEB.rstrip("/") and l.strip() != B.WEB)
+    # Sense l'enllaç a la web ni el de «Més informació» (avisos_bot.amb_enllac):
+    # en tocar la notificació ja s'obre la pàgina.
+    cos = "\n".join(l for l in linies[1:] if l.strip() not in (B.WEB.rstrip("/"), B.WEB)
+                    and not l.strip().endswith("Temps a Montflorit</a>"))
     cos = re.sub(r"<[^>]+>", "", cos)
     cos = re.sub(r"\n{3,}", "\n\n", cos).strip()
     if len(cos) > COS_MAX:
@@ -202,7 +205,8 @@ def reparteix(estat, moment, envia=envia_push):
             # El text propi de la notificació, si en porta, i on porta en tocar-la
             # (el de pluja, al radar en directe; avisos_bot.py).
             text = (a.get("push") or a)[idioma]
-            dades = notificacio(text, a.get("url") or url(URL.get(a["tipus"], "./"), idioma), clau,
+            # La pàgina de l'avís (la fitxa de «Perill», «Llum»…), si en porta (ADR 0072).
+            dades = notificacio(text, a.get("url") or url(a.get("pagina") or URL.get(a["tipus"], "./"), idioma), clau,
                                 expira.isoformat(timespec="seconds"))
             r = prova(e, lambda: envia(sub, dades, ttl, a["tipus"] in ("riera", "perill", "pluja")))
             if r is not True:

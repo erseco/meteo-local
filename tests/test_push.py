@@ -75,6 +75,17 @@ class Push(unittest.TestCase):
         P.reparteix(estat, ARA + dt.timedelta(minutes=1), envia)
         self.assertEqual(len(envia.enviats), 2)
 
+    def test_l_avis_obre_la_seva_fitxa_sense_l_enllac_al_text(self):
+        # ADR 0072: la pàgina de l'avís (amb l'idioma) i, al cos, sense «Més informació».
+        a = {**self.avis("riera"), "pagina": "perill.html#a-riera-x",
+             "ca": "<b>Avís de riera</b>\nCompte.\n<a href=\"https://x/perill.html#a-riera-x\">Més informació a Temps a Montflorit</a>",
+             "es": "<b>Aviso de riera</b>\nCuidado.\n<a href=\"https://x/es/perill.html#a-riera-x\">Más información en Temps a Montflorit</a>"}
+        self.avisos([a])
+        envia, estat = Envia(), {"resums": {CA: ARA.date().isoformat()}}
+        P.reparteix(estat, ARA, envia)
+        d = next(d for e, d, _, _ in envia.enviats if e == CA)
+        self.assertEqual((d["url"], d["body"]), ("perill.html#a-riera-x", "Compte."))
+
     def test_pluja_obre_el_radar(self):
         radar = "https://www.rainviewer.com/map.html?loc=41.482,2.135,9&layer=radar"
         self.avisos([{**self.avis("pluja"), "url": radar,

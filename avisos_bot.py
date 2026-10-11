@@ -43,7 +43,9 @@ import datetime as dt
 import html
 import json
 import os
+import re
 import sys
+import unicodedata
 import urllib.request
 
 import config as C
@@ -680,6 +682,43 @@ def anterior_publicat(font):
         return []
 
 
+# --- Enlace a la web (ADR 0072) -----------------------------------------------------
+# Todo aviso que se puede elegir lleva un enlace a su información en la web
+# (Juanjo, 11-10-2026: «todos los avisos que tengan una alerta configurable …
+# deben tener un enlace, como ya has hecho con la pestaña peligros»): peligro y
+# riera, a su ficha de «Perill»; los cortes de luz, a «Llum»; la lluvia, a «El
+# temps». La misma página abre la notificación del navegador (bot/push.py).
+
+def id_fitxa(clau, inici):
+    """El id de la ficha en «Perill», el mismo que idFitxa de web/perill.js."""
+    t = unicodedata.normalize("NFD", f"{clau}-{inici}")
+    t = "".join(c for c in t if not "\u0300" <= c <= "\u036f")
+    return "a-" + re.sub(r"-+", "-", re.sub(r"[^A-Za-z0-9-]+", "-", t)).lower()
+
+
+PAGINA = {"pluja": "./", "llum": "consultes.html#llum"}
+MES_INFO = {"ca": "Més informació a Temps a Montflorit", "es": "Más información en Temps a Montflorit"}
+
+
+def pagina(a, hist):
+    """La página del aviso, relativa a la web (perill.html#a-…, consultes.html#llum…)."""
+    ep = a.get("episodi")
+    if ep:
+        e = next((e for e in reversed(hist) if e["clau"] == ep), None)
+        return f"perill.html#{id_fitxa(ep, e['inici'])}" if e else "perill.html"
+    return PAGINA.get(a["tipus"], "./")
+
+
+def amb_enllac(a, hist):
+    """Pone a cada aviso nuevo su página y, al final del texto, el enlace."""
+    a["pagina"] = pagina(a, hist)
+    for idioma in ("ca", "es"):
+        base = WEB if idioma == "ca" else WEB + "es/"
+        url = base + ("" if a["pagina"] == "./" else a["pagina"])
+        a[idioma] += f'\n<a href="{html.escape(url)}">{MES_INFO[idioma]}</a>'
+    return a
+
+
 def actualitza(casa_json, sortida, ahora=None, anterior=None):
     ahora = ahora or dt.datetime.now().astimezone()
     with open(casa_json, encoding="utf-8") as f:
@@ -696,6 +735,9 @@ def actualitza(casa_json, sortida, ahora=None, anterior=None):
     llista = [a for a in estat.get("llista", []) if dt.datetime.fromisoformat(a["hora"]) > limit] + nous
     estat["llista"] = llista
     hist = historial(estat, nous, ahora, anterior_publicat(anterior))
+    # El enlace va en el aviso, no en el historial: la ficha ya está en la web.
+    for a in nous:
+        amb_enllac(a, hist)
     with open(ESTAT + ".tmp", "w", encoding="utf-8") as f:
         json.dump(estat, f, ensure_ascii=False)
     os.replace(ESTAT + ".tmp", ESTAT)

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """El historial de avisos de peligro para la página «Perill» (avisos_bot.py, ADR 0071)."""
 import datetime as dt
+import json
 import os
 import sys
 import unittest
@@ -79,6 +80,42 @@ class Historial(unittest.TestCase):
         self.assertEqual(len(h), 1)
         h = AB.historial({"historial": h}, [avis(60, "incendi:x", "fi")], ARA)
         self.assertTrue(all(e.get("fi") for e in h))
+
+    def test_cada_avis_porta_l_enllac_a_la_seva_pagina(self):
+        # ADR 0072: perill i riera, a la seva fitxa de «Perill»; llum, a «Llum»; pluja, a «El temps».
+        estat = {}
+        foc = avis(0, "incendi:x", "incendi", "🔥 foc")
+        hist = AB.historial(estat, [foc], ARA)
+        AB.amb_enllac(foc, hist)
+        self.assertEqual(foc["pagina"], "perill.html#" + AB.id_fitxa("incendi:x", hist[0]["inici"]))
+        self.assertTrue(foc["ca"].endswith('perill.html#a-incendi-x-2026-10-11t12-00-02-00">'
+                                           'Més informació a Temps a Montflorit</a>'))
+        self.assertIn('https://meteo-montflorit.github.io/es/perill.html#a-incendi-x-', foc["es"])
+        self.assertEqual(hist[0]["ca"], "🔥 foc")                 # l'historial, sense l'enllaç
+        # El final va a la mateixa fitxa.
+        fi = avis(30, "incendi:x", "fi", "🟢 acabat")
+        AB.amb_enllac(fi, AB.historial(estat, [fi], ARA))
+        self.assertEqual(fi["pagina"], foc["pagina"])
+        llum = {"tipus": "llum", "ca": "t", "es": "t"}
+        self.assertEqual(AB.amb_enllac(llum, [])["pagina"], "consultes.html#llum")
+        pluja = {"tipus": "pluja", "ca": "t", "es": "t"}
+        self.assertIn('href="https://meteo-montflorit.github.io/es/"', AB.amb_enllac(pluja, [])["es"])
+
+    def test_el_mateix_id_que_la_pagina(self):
+        import shutil
+        import subprocess
+        if not shutil.which("node"):
+            self.skipTest("cal Node")
+        casos = [("meteocat:Intensitat de pluja:2026-10-11", "2026-10-11T09:00+02:00"),
+                 ("riera:2026-10-11T08:00", "2026-10-11T08:15+02:00"), ("pla:INUNCAT", "2026-10-11T09:00+02:00")]
+        with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web", "perill.js"),
+                  encoding="utf-8") as f:
+            js = f.read()
+        funcio = "function idFitxa" + js.split("function idFitxa", 1)[1].split("\n}\n", 1)[0] + "\n}\n"
+        codi = funcio + "console.log(JSON.stringify(" + json.dumps([{"clau": c, "inici": i} for c, i in casos]) \
+            + ".map(idFitxa)));"
+        r = json.loads(subprocess.run(["node", "-e", codi], capture_output=True, text=True, check=True).stdout)
+        self.assertEqual(r, [AB.id_fitxa(c, i) for c, i in casos])
 
 
 if __name__ == "__main__":

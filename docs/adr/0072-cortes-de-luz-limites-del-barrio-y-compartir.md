@@ -109,6 +109,18 @@ a otros».
 - En el móvil se abre el menú de compartir del sistema (`navigator.share`);
   donde no lo hay, se copia el enlace y se dice «Enllaç copiat».
 
+### Cada aviso, con su enlace (3.60.0)
+
+Juanjo: «todos los avisos que tengan una alerta configurable (como la luz)
+deben tener un enlace, como ya has hecho con la pestaña peligros». Cada aviso
+de peligro, riera, lluvia y cortes de luz lleva al final «Més informació a
+Temps a Montflorit», en la lengua de quien lo recibe: peligro y riera, a su
+ficha de «Perill» (el mismo id que el botón de compartir, `id_fitxa`,
+comprobado contra `web/perill.js`); los cortes, a «Llum»; la lluvia, a «El
+temps» (además del radar). La notificación del navegador abre esa misma
+página, con la ficha, y no repite el enlace en el texto. El historial de
+«Perill» guarda el aviso sin el enlace: ya se está en la web.
+
 ## Alternativas descartadas
 
 - **Leer el buscador de Endesa con un navegador sin pantalla en el NAS**:
