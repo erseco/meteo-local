@@ -1,8 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Lo que pasa alrededor de Montflorit y condiciona salir (ADR 0046):
 
-- incendios forestales en curso a menos de ENTORN_RADI_KM, de la capa pública
-  de actuaciones urgentes de Bombers de la Generalitat (ArcGIS);
+- incendios forestales en curso de la capa pública de actuaciones urgentes de
+  Bombers de la Generalitat (ArcGIS), solo los que interesan al barrio (ADR
+  0071): dentro del Parc Natural de Collserola, a cualquier distancia (el
+  límite oficial, de la capa del Consorci del parque); en Cerdanyola, en
+  cualquier punto; y en los demás municipios del parque, como Montcada, a
+  ENTORN_RADI_KM o menos. Ripollet, Sabadell o Barberà, que no tienen parque,
+  no;
 - el nivel del Pla Alfa de Cerdanyola hoy y mañana, y los cierres de espacios
   naturales que tocan Collserola, de las capas públicas de Agents Rurals
   (ArcGIS).
@@ -27,6 +32,9 @@ import config as C
 
 ARCGIS = "https://services7.arcgis.com/ZCqVt1fRXwwK6GF4/arcgis/rest/services"
 BOMBERS = ARCGIS + "/ACTUACIONS_URGENTS_online_PRO_AMB_FASE_VIEW/FeatureServer/0"
+# El límite del Parc Natural de la Serra de Collserola, del Consorci del parque.
+COLLSEROLA = ("https://services7.arcgis.com/z50OW9s1n52Z8H2C/arcgis/rest/services/"
+              "L%C3%ADmit_Parc_de_Collserola/FeatureServer/0")
 ALFA_MUNICIPAL = {"avui": ARCGIS + "/Pla_Alfa_Municipal_Avui_FL_2_view/FeatureServer/0",
                   "dema": ARCGIS + "/pla_alfa_municipal_dema_FL_VW/FeatureServer/5"}
 ALFA_TANCAMENTS = {"avui": ARCGIS + "/tancaments_pla_alfa_avui_VW/FeatureServer/2",
@@ -49,27 +57,58 @@ def hora_iso(ms):
     return dt.datetime.fromtimestamp(ms / 1000).astimezone().isoformat(timespec="minutes") if ms else None
 
 
-def incendis(dades=None):
-    """Incendios de vegetación forestal en curso a menos de ENTORN_RADI_KM de casa."""
+def dins_collserola(y, x):
+    """Si el punto cae dentro del parque, con COLLSEROLA_MARGE_KM de margen:
+    la posición de una actuación es aproximada."""
+    d = get(COLLSEROLA + "/query", {
+        "geometry": f"{x},{y}", "geometryType": "esriGeometryPoint", "inSR": 4326,
+        "spatialRel": "esriSpatialRelIntersects", "distance": C.COLLSEROLA_MARGE_KM,
+        "units": "esriSRUnit_Kilometer", "returnCountOnly": "true", "f": "json"})
+    if "error" in d:
+        raise RuntimeError(d["error"].get("message"))
+    return d.get("count", 0) > 0
+
+
+def interessa(municipi, dist, collserola):
+    """Si un incendio interesa al barrio (Juanjo, 11-10-2026): en Collserola,
+    a cualquier distancia; en Cerdanyola, siempre; en los otros municipios del
+    parque, solo cerca. Los demás, no, por cerca que estén."""
+    nom = (municipi or "").strip().lower()
+    if collserola or nom == C.MUNICIPI.lower():
+        return True
+    return nom in {m.lower() for m in C.MUNICIPIS_COLLSEROLA} and dist is not None and dist <= C.ENTORN_RADI_KM
+
+
+def incendis(dades=None, collserola=None):
+    """Incendios de vegetación forestal en curso que interesan al barrio
+    (interessa), del más cercano al más lejano."""
+    xmin, ymin, xmax, ymax = C.INCENDIS_CAIXA
     d = dades or get(BOMBERS + "/query", {
-        "where": "TAL_COD_ALARMA1='IV'", "geometry": f"{C.CASA[1]},{C.CASA[0]}",
-        "geometryType": "esriGeometryPoint", "inSR": 4326, "spatialRel": "esriSpatialRelIntersects",
-        "distance": C.ENTORN_RADI_KM, "units": "esriSRUnit_Kilometer", "outSR": 4326,
+        "where": "TAL_COD_ALARMA1='IV'", "geometry": f"{xmin},{ymin},{xmax},{ymax}",
+        "geometryType": "esriGeometryEnvelope", "inSR": 4326, "spatialRel": "esriSpatialRelIntersects",
+        "outSR": 4326,
         "outFields": "GlobalID,TAL_DESC_ALARMA2,MUNICIPI_SIG,ACT_DAT_INICI,ACT_DAT_FI,ACT_NUM_VEH,COM_FASE",
         "returnGeometry": "true", "f": "json"})
     if "error" in d:
         raise RuntimeError(d["error"].get("message"))
+    collserola = collserola or dins_collserola
     res = []
     for f in d.get("features", []):
         a, g = f["attributes"], f.get("geometry") or {}
         # Solo los forestales: los de solares urbanos son muchos y no limitan salir.
         if "forestal" not in (a.get("TAL_DESC_ALARMA2") or "").lower() or a.get("ACT_DAT_FI"):
             continue
-        dist = km(C.CASA, (g["y"], g["x"])) if "x" in g else None
-        res.append({"id": a["GlobalID"], "municipi": a.get("MUNICIPI_SIG"), "km": round(dist, 1) if dist else None,
-                    "inici": hora_iso(a.get("ACT_DAT_INICI")), "vehicles": a.get("ACT_NUM_VEH"),
-                    "fase": a.get("COM_FASE")})
-    return sorted(res, key=lambda i: i["km"] if i["km"] is not None else 99)
+        if "x" not in g:
+            continue
+        dist = km(C.CASA, (g["y"], g["x"]))
+        municipi = a.get("MUNICIPI_SIG")
+        al_parc = collserola(g["y"], g["x"])
+        if not interessa(municipi, dist, al_parc):
+            continue
+        res.append({"id": a["GlobalID"], "municipi": municipi, "km": round(dist, 1),
+                    "collserola": al_parc, "inici": hora_iso(a.get("ACT_DAT_INICI")),
+                    "vehicles": a.get("ACT_NUM_VEH"), "fase": a.get("COM_FASE")})
+    return sorted(res, key=lambda i: i["km"])
 
 
 def actualitzada(url, ara, hores):

@@ -24,11 +24,13 @@
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <!-- Icones de Lucide (ISC) -->
     <symbol id="i-bell-ring" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0M22 8c0-2.3-.8-4.3-2-6"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326M4 2C2.8 3.7 2 5.7 2 8"/></symbol>
+    <symbol id="i-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></symbol>
     <symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.07-17.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
     <symbol id="i-cloud-sun" viewBox="0 0 24 24"><path d="M12 2v2m-7.07.93 1.41 1.41M20 12h2m-2.93-7.07-1.41 1.41M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></symbol>
     <symbol id="i-door-open" viewBox="0 0 24 24"><path d="M10 21H2M10 3H7a2 2 0 0 0-2 2v16M14 12h.01M22 21h-3"/><path d="M19 21V5a2 2 0 0 0-1.675-1.974l-6.163-1.013A1 1 0 0 0 10 3v18a1 1 0 0 0 1.124.992z"/></symbol>
+    <symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3M12 9v4M12 17h.01"/></symbol>
     <symbol id="i-message-square-text" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM13 8H7M17 12H7"/></symbol>
   </svg>
 
@@ -38,6 +40,7 @@
       <p class="ruta">Montflorit, Cerdanyola del Vallès</p>
     </div>
     <div class="cap-botons">
+      <button type="button" class="boto-icona boto-compartir" title="Comparteix aquesta pàgina" aria-label="Comparteix aquesta pàgina"><svg aria-hidden="true"><use href="#i-share-2"></use></svg></button>
       <a class="boto-icona" href="com-funciona.html" title="Com funciona" aria-label="Com funciona"><svg aria-hidden="true"><use href="#i-circle-help"></use></svg></a>
       <a class="boto-icona boto-avisos" href="avisos.html" title="Avisos al mòbil" aria-label="Avisos al mòbil"><svg aria-hidden="true"><use href="#i-bell-ring"></use></svg></a>
       <button type="button" id="btn-fosc" class="boto-icona" title="Canvia entre tema clar i fosc" aria-label="Canvia entre tema clar i fosc">
@@ -47,6 +50,7 @@
   </header>
   <nav class="pagines" aria-label="Pàgines">
     <a href="casa.html"><svg aria-hidden="true"><use href="#i-cloud-sun"></use></svg>Temps a casa</a>
+    <a href="perill.html"><svg aria-hidden="true"><use href="#i-triangle-alert"></use></svg>Perill</a>
     <a href="sortir.html"><svg aria-hidden="true"><use href="#i-door-open"></use></svg>Si surts</a>
     <a href="consultes.html"><svg aria-hidden="true"><use href="#i-message-square-text"></use></svg>Consultes</a>
   </nav>
@@ -60,12 +64,14 @@
       <li><strong>Estacions de Meteocat:</strong> Sabadell (Parc Agrari) i Sant Cugat (CAR), de la <a href="https://www.meteo.cat/observacions/xema" target="_blank" rel="noopener">Xarxa d'Estacions Meteorològiques Automàtiques de Meteocat</a>, a la seva web o, si falla, al <a href="https://analisi.transparenciacatalunya.cat/d/nzvn-apee" target="_blank" rel="noopener">portal de dades obertes de la Generalitat</a>. El vent d'ara és el de Sant Cugat, per mitges hores: l'anemòmetre de l'estació del barri no funciona bé.</li>
       <li><strong>Estacions veïnes:</strong> tres estacions particulars del barri publicades a la xarxa d'estacions personals de <a href="https://www.wunderground.com/wundermap?lat=41.48&amp;lon=2.13&amp;zoom=14" target="_blank" rel="noopener">Weather Underground</a> (The Weather Company), llegides cada cinc minuts amb l'API que la xarxa dona a qui hi aporta una estació; l'estació del barri també s'hi publica. Si alguna de les tres marca pluja, plou; la més fiable confirma també les hores seques per aprendre. Dades de Weather Underground, per a ús personal i no comercial.</li>
       <li><strong>Trens:</strong> avisos i posició dels trens en temps real de <a href="https://data.renfe.com/" target="_blank" rel="noopener">Renfe</a> i de les <a href="https://dadesobertes.fgc.cat/" target="_blank" rel="noopener">dades obertes d'FGC</a>, totes dues amb llicència CC BY 4.0.</li>
+      <li><strong>Talls de llum:</strong> les avaries i els treballs programats en curs que publica <a href="https://www.edistribucion.com/ca/averias.html" target="_blank" rel="noopener">e-distribució</a> (Endesa) al seu mapa, consultats automàticament; la zona és aproximada, perquè no en publica els carrers.</li>
+      <li><strong>Límits del barri:</strong> fets a partir de la zona residencial d'<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (© col·laboradors d'OpenStreetMap, llicència ODbL), retocats a mà; serveixen per triar els talls de llum de Montflorit.</li>
       <li><strong>Trànsit:</strong> incidències en temps real del <a href="https://transit.gencat.cat/ca/informacio-viaria/estat-transit/" target="_blank" rel="noopener">Servei Català de Trànsit</a> (Generalitat de Catalunya, Departament d'Interior i Seguretat Pública), de les <a href="https://analisi.transparenciacatalunya.cat/d/uyam-bs37" target="_blank" rel="noopener">dades obertes de la Generalitat</a>, amb la <a href="https://web.gencat.cat/ca/generalitat/dades-indicadors/dades-obertes/llicencies" target="_blank" rel="noopener">llicència oberta d'ús d'informació de Catalunya</a>; l'hora de cada consulta surt al costat de les incidències.</li>
       <li><strong>Pol·len:</strong> els nivells de la setmana a Bellaterra del <a href="https://aerobiologia.cat/pia/ca/forecast/bellaterra" target="_blank" rel="noopener">Punt d'Informació Aerobiològica de la UAB</a> (Xarxa Aerobiològica de Catalunya), amb la llicència <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ca" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>, que també tenen aquí: no es poden fer servir amb finalitats comercials.</li>
       <li><strong>Qualitat de l'aire:</strong> l'índex europeu de qualitat de l'aire del model europeu del <a href="https://atmosphere.copernicus.eu/" target="_blank" rel="noopener">Copernicus Atmosphere Monitoring Service (CAMS)</a>, a través d'<a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">Open-Meteo</a>: és una previsió, no una mesura. Les mesures de les estacions són al web <a href="https://mediambient.gencat.cat/ca/05_ambits_dactuacio/atmosfera/qualitat_de_laire/vols-saber-que-respires/" target="_blank" rel="noopener">«Vols saber què respires?»</a> de la Generalitat.</li>
       <li><strong>Plans de Protecció Civil:</strong> <a href="https://analisi.transparenciacatalunya.cat/d/wj9c-j6vf" target="_blank" rel="noopener">dades obertes de la Generalitat</a>, en temps real.</li>
       <li><strong>Avisos de perill de Meteocat:</strong> mentre hi ha un pla de Protecció Civil a la vista, si el <a href="https://www.meteo.cat/" target="_blank" rel="noopener">Servei Meteorològic de Catalunya (Meteocat)</a> té un avís de situació meteorològica de perill per al Vallès Occidental, llegit de la seva web, amb el meteor i el llindar tal com els publica i l'hora de l'emissió.</li>
-      <li><strong>Incendis i Pla Alfa:</strong> actuacions en curs de <a href="https://interior.gencat.cat/ca/arees_dactuacio/bombers/actuacions-de-bombers/" target="_blank" rel="noopener">Bombers de la Generalitat</a>, nivell del <a href="https://interior.gencat.cat/ca/arees_dactuacio/agents-rurals/pla-alfa/" target="_blank" rel="noopener">Pla Alfa dels Agents Rurals</a>, consultats automàticament.</li>
+      <li><strong>Incendis i Pla Alfa:</strong> actuacions en curs de <a href="https://interior.gencat.cat/ca/arees_dactuacio/bombers/actuacions-de-bombers/" target="_blank" rel="noopener">Bombers de la Generalitat</a>, nivell del <a href="https://interior.gencat.cat/ca/arees_dactuacio/agents-rurals/pla-alfa/" target="_blank" rel="noopener">Pla Alfa dels Agents Rurals</a> i el límit del <a href="https://parcnaturalcollserola.cat/" target="_blank" rel="noopener">Parc Natural de la Serra de Collserola</a>, del Consorci del parc, consultats automàticament.</li>
       <li><strong>Models i simulacions:</strong> <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (dades CC BY 4.0), amb models de Météo-France (AROME i ARPEGE) i del servei meteorològic alemany (ICON-EU i les seves 40 variants).</li>
     </ul>
 

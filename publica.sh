@@ -20,7 +20,9 @@
 # código, si hace GH_CADA_MIN minutos de la última vez o si IONOS falla:
 # GitHub Pages admite unas 10 publicaciones por hora (ADR 0020). La copia de
 # los datos en el repositorio de la web pública es la reserva si IONOS no
-# responde. Fuera del NAS, sin la clave de IONOS, todo va a GitHub.
+# responde; desde la 3.58.0 también la de avisos.json, que lleva el historial
+# de la página «Perill» (ADR 0071). Fuera del NAS, sin la clave de IONOS, todo
+# va a GitHub.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -45,7 +47,7 @@ python3 montflorit.py dades "$dades/casa.json" "$publica/montflorit.json"
 # Los avisos para el bot y el canal de Telegram, que los reparte desde IONOS
 # (ADR 0034). Llevan estado: solo en el NAS.
 if [ -n "$ESTAT_DIR" ]; then
-  python3 avisos_bot.py "$dades/casa.json" "$dades/avisos.json" >/dev/null \
+  python3 avisos_bot.py "$dades/casa.json" "$dades/avisos.json" https://bilateria.org/app/meteo-local/avisos.json >/dev/null \
     || echo "$(date '+%F %T')  han fallat els avisos del bot" >&2
 fi
 
@@ -97,6 +99,7 @@ else
   # que están las piezas esenciales.
   if (
     python3 montflorit.py web "$publica" \
+    && { [ ! -f "$dades/avisos.json" ] || cp "$dades/avisos.json" "$publica/avisos.json"; } \
     && [ -f "$publica/index.html" ] && [ -f "$publica/montflorit.json" ] \
     && { [ ! -f "$CLAU_MONTFLORIT" ] || export GIT_SSH_COMMAND="ssh -i $CLAU_MONTFLORIT -o IdentitiesOnly=yes"; } \
     && git -C "$publica" init -q -b gh-pages \

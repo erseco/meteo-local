@@ -43,7 +43,9 @@ TTL_RESUM_S = 3 * 3600
 TTL_PROVA_S = 15 * 60
 PROVA_MIN = 10          # una prueba pedida hace más de esto ya no se manda
 COS_MAX = 1500          # el cuerpo de la notificación, en caracteres
-URL = {"pluja": "./", "riera": "./", "perill": "./"}
+# Tocar un aviso de peligro o de la riera abre «Perill», con el detalle y el
+# enlace para saber más (ADR 0071); el de lluvia, la página del tiempo.
+URL = {"pluja": "./", "riera": "perill.html", "perill": "perill.html"}
 
 
 def url(pagina, idioma):

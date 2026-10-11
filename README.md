@@ -15,14 +15,22 @@ y en [castellano](https://meteo-montflorit.github.io/es/). Tiene dos páginas:
   fenómenos destacables; ADR 0041), con los avisos de AEMET y los planes de
   Protección Civil (ADR 0007 y 0024), y junto a cada plan si Meteocat tiene
   aviso de peligro para el Vallès Occidental (ADR 0067).
+- **Perill**: las situaciones de peligro en Montflorit, con el texto de los
+  avisos tal como llegaron y un enlace para saber más: avisos oficiales de AEMET, de Meteocat y de Protección Civil, incendios
+  forestales de Collserola y de Cerdanyola, la riera de Sant Cugat y el tiempo
+  excepcional que calcula la web; la pestaña lleva un punto rojo si hay uno
+  nuevo sin ver (ADR 0071).
 - **Si surts**: para quien sale a una hora y vuelve a otra, cómo irá cada
   medio (a pie, bici o patinete, moto, coche y transporte público), qué ropa
   ponerse, consejos (lluvia, sol, noche, calor), si circulan los trenes que
   paran en Cerdanyola (ADR 0029) y las incidencias de tráfico de cerca (ADR
   0052). Cada persona elige qué medios ve.
 - **Consultes**: lo mismo que el bot, eligiendo qué ver: hoy, mañana, el sol,
-  la calidad del aire, el polen, los trenes o el tráfico; sale solo lo elegido,
-  con los mismos textos del bot (ADR 0054).
+  la calidad del aire, el polen, los trenes, el tráfico o los cortes de luz del
+  barrio; sale solo lo elegido, con los mismos textos del bot (ADR 0054 y 0072).
+
+Cada página y cada consulta se puede compartir con un enlace directo, y cada
+aviso de «Perill», con el suyo (ADR 0072).
 
 La probabilidad de lluvia sale de una regresión logística ajustada con lo que
 llovió de verdad y comprobada con todo el archivo (ADR 0021); la temperatura se
@@ -138,14 +146,16 @@ Umbrales y lugares, en `config.py`. El porqué, en los ADR.
 | `prevision.py` | Recogida de datos que usa `casa.py`: avisos de AEMET, planes de Protección Civil, radar, lluvia y viento de las estaciones, y el modo aviso |
 | `smp.py` | Con un plan de Protección Civil a la vista, si Meteocat tiene aviso de peligro para el Vallès Occidental, leído de meteo.cat, y su prueba diaria (ADR 0067) |
 | `config.py` | Coordenadas, horario, estaciones, zonas de aviso, modelos y umbrales |
-| `web/` | Las fuentes de la web pública: `casa.html` y `casa.js` (el tiempo ahora), `sortir.html` y `sortir.js` («Si surts»), `consultes.html` y `consultes.js` («Consultes»), `avisos.html` y `avisos.js` (avisos en el navegador), `telegram.html` (ayuda de Telegram), `comu.js` (lo común), `estil.css`, `fonts.html` (fuentes y créditos), `manifest.webmanifest`, `sw.js` e `icones/` |
+| `web/` | Las fuentes de la web pública: `casa.html` y `casa.js` (el tiempo ahora), `sortir.html` y `sortir.js` («Si surts»), `perill.html` y `perill.js` («Perill»), `consultes.html` y `consultes.js` («Consultes»), `avisos.html` y `avisos.js` (avisos en el navegador), `telegram.html` (ayuda de Telegram), `comu.js` (lo común), `estil.css`, `fonts.html` (fuentes y créditos), `manifest.webmanifest`, `sw.js` e `icones/` |
 | `montflorit.py`, `montflorit/` | Genera la web pública a partir de `web/` y sus datos sin lo privado; manifiesto, iconos y README propios (ADR 0024), y `es.js`, los textos del programa en castellano (ADR 0025) |
 | `i18n/` | `es.json`, la traducción de los textos fijos, y `claus.js`, que saca del programa los textos por traducir (ADR 0025) |
 | `publica.sh` | Calcula y publica (lo usa el NAS) |
-| `entorn.py` | Incendios forestales en curso cerca (Bombers) y nivel del Pla Alfa de Cerdanyola (Agents Rurals), para la web y los avisos de peligro (ADR 0046) |
+| `entorn.py` | Incendios forestales en curso que interesan al barrio (Bombers: en Collserola, en Cerdanyola y a 5 km en los demás municipios del parque) y nivel del Pla Alfa de Cerdanyola (Agents Rurals), para la web y los avisos de peligro (ADR 0046 y 0071) |
 | `desplegament.py` | Pone al día la copia del repositorio (NAS, reserva y bot) hasta el último commit con las pruebas de GitHub en verde; si GitHub no responde o las pruebas llevan más de 20 minutos sin acabar, despliega igualmente y lo apunta (ADR 0038) |
 | `avis_privat.py` | Avisos de mantenimiento a Juanjo por Telegram con cola de reintento si Telegram no los acepta (ADR 0038) |
-| `avisos_bot.py` | Decide los avisos públicos para el bot y el canal y los deja en `avisos.json` (ADR 0034) |
+| `llum.py` | Cortes de luz de e-distribución dentro de los límites del barrio, para «Llum» y `/llum`, y su prueba diaria (ADR 0072) |
+| `montflorit-limits.geojson` | Los límites de Montflorit, a los dos lados de la riera, de OpenStreetMap (ODbL) retocados a mano; para cualquier uso que necesite saber si algo es del barrio (ADR 0072) |
+| `avisos_bot.py` | Decide los avisos públicos para el bot y el canal y los deja en `avisos.json`, con el historial de un año de la página «Perill» (ADR 0034 y 0071) |
 | `bot/` | Lo que vive en IONOS para repartir avisos: el bot de Telegram, `bot.py` (menú, suscripciones, reparto y resumen, ADR 0034); los avisos en el navegador, `push.py` (envío) y `subscripcio.php` (altas y bajas, ADR 0048); e `instalar.sh` |
 | `reserva/` | Servidor de reserva en IONOS: `reserva.py` (vigila, calcula y avisa si el NAS no publica), `avisar-juanjo`, `rep-dades.sh` (recibe los datos que sube el NAS: la orden fija de su clave, ADR 0038) e `instalar.sh` (ADR 0032) |
 | `que_toca.py` | Si toca actualizar en este minuto, según el horario publicado |

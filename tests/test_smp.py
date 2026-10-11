@@ -100,6 +100,31 @@ class Smp(unittest.TestCase):
         self.assertNotIn("Meteocat", AB.text_pla(pla)["ca"])
         self.assertNotIn("Meteocat", B.text_avisos_actius({**d, "smp": None}, "ca", AHORA))
 
+    def test_sense_pla_surt_sol_i_avisa_com_l_aemet(self):
+        # ADR 0071: sense pla, als avisos actius amb el nom de Meteocat; el
+        # «no hi ha cap avís», no.
+        s = smp.llegeix(lambda url: pagina(EPISODIS), AHORA)
+        r = B.text_avisos_actius({"generat": AHORA.isoformat(), "plans": [], "smp": s}, "ca", AHORA)
+        self.assertIn("<b>Meteocat</b>\n🟠 Meteocat: avís de perill alt", r)
+        buit = smp.llegeix(lambda url: pagina([]), AHORA)
+        self.assertNotIn("Meteocat", B.text_avisos_actius({"generat": AHORA.isoformat(), "smp": buit}, "ca", AHORA))
+        # Avisa a la segona passada (la primera només apunta), una sola vegada, i torna si puja de grau.
+        estat = {}
+        salida = {"smp": s}
+        self.assertEqual(AB.decideix(estat, salida, AHORA), [])
+        self.assertEqual(AB.decideix(estat, salida, AHORA), [])
+        estat["oficials"]["smp"] = {}
+        nous = AB.decideix(estat, salida, AHORA)
+        self.assertEqual(len(nous), 1)
+        self.assertTrue(nous[0]["ca"].startswith("🟠 <b>Avís de perill alt de Meteocat per «Intensitat de pluja»"))
+        self.assertTrue(nous[0]["episodi"].startswith("meteocat:Intensitat de pluja:"))
+        self.assertEqual(AB.decideix(estat, salida, AHORA), [])
+        pujat = {"smp": {**s, "avisos": [{**a, "perill": 5} for a in s["avisos"]]}}
+        self.assertTrue(AB.decideix(estat, pujat, AHORA)[0]["ca"].startswith("🔴"))
+        # Si Meteocat no respon, no es toca res.
+        self.assertEqual(AB.decideix(estat, {"smp": None}, AHORA), [])
+        self.assertIn("smp", estat["oficials"])
+
     def test_prova_diaria(self):
         with tempfile.TemporaryDirectory() as dir:
             marca = os.path.join(dir, "smp-falla")

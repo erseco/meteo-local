@@ -40,6 +40,7 @@ import riera as RI
 import riscos as RS
 import smp as SMP
 import vent_veines as VV
+import llum as LL
 import transit as TT
 import trens as TR
 import wunderground as WU
@@ -480,14 +481,15 @@ def recoger(anterior=None):
         salida["sortir_llindars"] = A.llindars_sortir()
     except Exception as ex:
         salida["errors"].append(f"llindars: {ex}")
-    # Con un plan a la vista, si Meteocat tiene aviso para la comarca: los
-    # planes no dicen qué zona abarcan (ADR 0067). Si falla, no se dice nada.
+    # Si Meteocat tiene aviso de peligro para la comarca: junto a los planes,
+    # que no dicen qué zona abarcan (ADR 0067), y, desde el 11-10-2026, en
+    # cada pasada, para avisar como los de AEMET (ADR 0071). Si falla, no se
+    # dice nada.
     salida["smp"] = None
-    if planes:
-        try:
-            salida["smp"] = SMP.llegeix(P.get, P.AHORA)
-        except Exception as ex:
-            salida["errors"].append(f"smp: {ex}")
+    try:
+        salida["smp"] = SMP.llegeix(P.get, P.AHORA)
+    except Exception as ex:
+        salida["errors"].append(f"smp: {ex}")
     radar = None
     try:
         radar = P.radar()
@@ -556,6 +558,12 @@ def recoger(anterior=None):
     except Exception as ex:
         salida["transit"] = None
         salida["errors"].append(f"trànsit: {ex}")
+    # Los cortes de luz de cerca, para «Consultes» y /llum (ADR 0072).
+    try:
+        salida["llum"] = LL.calcula(P.AHORA)
+    except Exception as ex:
+        salida["llum"] = None
+        salida["errors"].append(f"llum: {ex}")
     # El sol y la calidad del aire, para «Consultes», /sol y /aire (ADR 0054).
     for clau, funcio in (("sol", lambda: sol(P.AHORA)), ("aire", lambda: AI.calcula(P.AHORA))):
         try:

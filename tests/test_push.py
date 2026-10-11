@@ -70,6 +70,8 @@ class Push(unittest.TestCase):
         self.assertEqual(enviats, {(CA, "Avís de riera"), (ES, "Aviso de pluja")})
         self.assertTrue(all(u for _, _, _, u in envia.enviats))       # urgents
         self.assertEqual({d["url"] for e, d, _, _ in envia.enviats if e == ES}, {"es/"})
+        # Riera i perill obren «Perill» (ADR 0071).
+        self.assertEqual({d["url"] for e, d, _, _ in envia.enviats if e == CA}, {"perill.html"})
         P.reparteix(estat, ARA + dt.timedelta(minutes=1), envia)
         self.assertEqual(len(envia.enviats), 2)
 

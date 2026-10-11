@@ -26,6 +26,7 @@
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <!-- Icones de Lucide (ISC) -->
     <symbol id="i-bell-ring" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0M22 8c0-2.3-.8-4.3-2-6"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326M4 2C2.8 3.7 2 5.7 2 8"/></symbol>
+    <symbol id="i-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></symbol>
     <symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.07-17.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
@@ -36,6 +37,7 @@
     <symbol id="i-motorbike" viewBox="0 0 24 24"><path d="m18 14-1-3M3 9l6 2a2 2 0 0 1 2-2h2a2 2 0 0 1 1.99 1.81M8 17h3a1 1 0 0 0 1-1 6 6 0 0 1 6-6 1 1 0 0 0 1-1v-.75A5 5 0 0 0 17 5"/><circle cx="19" cy="17" r="3"/><circle cx="5" cy="17" r="3"/></symbol>
     <symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2M9 17h6"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></symbol>
     <symbol id="i-train-front" viewBox="0 0 24 24"><path d="M8 3.1V7a4 4 0 0 0 8 0V3.1M9 15l-1-1M15 15l1-1M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5ZM8 19l-2 3M16 19l2 3"/></symbol>
+    <symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3M12 9v4M12 17h.01"/></symbol>
     <symbol id="i-message-square-text" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM13 8H7M17 12H7"/></symbol>
   </svg>
 
@@ -45,6 +47,7 @@
       <p class="ruta">Montflorit, Cerdanyola del Vallès</p>
     </div>
     <div class="cap-botons">
+      <button type="button" class="boto-icona boto-compartir" title="Comparteix aquesta pàgina" aria-label="Comparteix aquesta pàgina"><svg aria-hidden="true"><use href="#i-share-2"></use></svg></button>
       <a class="boto-icona" href="com-funciona.html" title="Com funciona" aria-label="Com funciona"><svg aria-hidden="true"><use href="#i-circle-help"></use></svg></a>
       <a class="boto-icona boto-avisos" href="avisos.html" title="Avisos al mòbil" aria-label="Avisos al mòbil"><svg aria-hidden="true"><use href="#i-bell-ring"></use></svg></a>
       <button type="button" id="btn-fosc" class="boto-icona" title="Canvia entre tema clar i fosc" aria-label="Canvia entre tema clar i fosc">
@@ -54,6 +57,7 @@
   </header>
   <nav class="pagines" aria-label="Pàgines">
     <a href="casa.html"><svg aria-hidden="true"><use href="#i-cloud-sun"></use></svg>Temps a casa</a>
+    <a href="perill.html"><svg aria-hidden="true"><use href="#i-triangle-alert"></use></svg>Perill</a>
     <a href="sortir.html"><svg aria-hidden="true"><use href="#i-door-open"></use></svg>Si surts</a>
     <a href="consultes.html"><svg aria-hidden="true"><use href="#i-message-square-text"></use></svg>Consultes</a>
   </nav>
@@ -65,7 +69,7 @@
     <section class="opcio canal" aria-label="Canal Temps a Montflorit">
       <div class="info">
         <h2><img src="img/telegram/canal.webp" width="56" height="56" alt=""> Canal Temps a Montflorit</h2>
-        <p>El mateix per a tothom, com un tauler d'anuncis, en català. No cal triar res: reps els avisos de situacions de perill (temps extrem, incendis a prop i els avisos oficials nous de l'AEMET i de Protecció Civil), els de la riera i la previsió de cada matí i la de demà a les 21 h.</p>
+        <p>El mateix per a tothom, com un tauler d'anuncis, en català. No cal triar res: reps els avisos de situacions de perill (temps extrem, incendis forestals a Collserola i a Cerdanyola i els avisos oficials nous de l'AEMET, de Meteocat i de Protecció Civil), els de la riera i la previsió de cada matí i la de demà a les 21 h.</p>
         <p><a class="boto" href="https://t.me/TempsMontflorit" target="_blank" rel="noopener">Obre el canal</a></p>
         <p class="cerca">O escriu-lo al cercador de Telegram: <span class="nom">@TempsMontflorit</span></p>
       </div>

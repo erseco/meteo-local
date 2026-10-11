@@ -11,7 +11,7 @@ const path = require('path');
 
 const web = process.argv[2] || path.join(__dirname, '..', 'web');
 const claus = new Set();
-for (const fitxer of ['comu.js', 'casa.js', 'sortir.js', 'consultes.js', 'avisos.js']) {
+for (const fitxer of ['comu.js', 'casa.js', 'sortir.js', 'perill.js', 'consultes.js', 'avisos.js']) {
   // Sense comentaris de línia, que també parlen de T`…`.
   const codi = fs.readFileSync(path.join(web, fitxer), 'utf8').replace(/^\s*\/\/.*$/gm, '');
   for (const m of codi.matchAll(/\bT`((?:[^`\\]|\\.)*)`/g)) {

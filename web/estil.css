@@ -271,9 +271,12 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .barra { margin: .8rem 0 0; }
 .barra .pagines { margin: 0; }
 /* «Avisos al mòbil», la campana de la botonera; a la seva pàgina, marcada. */
-.boto-avisos { position: relative; }
+.boto-avisos, .pagines a.amb-nou { position: relative; }
+/* Situació de perill nova a la pestanya «Perill» (comu.js, ADR 0071). */
+.punt-perill { display: inline-block; width: .6rem; height: .6rem; margin-left: .35rem; border-radius: 50%;
+  background: var(--vermell); box-shadow: 0 0 0 2px var(--fons); vertical-align: middle; }
 .boto-avisos[aria-current="page"] { background: var(--enllac); color: var(--fons); border-color: var(--enllac); }
-/* «Nou!» damunt la campana, mentre la pàgina és nova (comu.js). */
+/* «Nou!» damunt la campana o la pestanya, mentre la pàgina és nova (comu.js). */
 .xip-nou { position: absolute; top: -.55rem; right: -.6rem; padding: .05rem .4rem; border-radius: 999px;
   background: var(--enllac); color: var(--fons); font-size: .7rem; font-weight: 700; line-height: 1.4;
   white-space: nowrap; pointer-events: none; }
@@ -447,6 +450,7 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
   border-radius: .6rem;
 }
 .avisos-actius .seccio { margin: 0 0 .4rem; }
+.avisos-actius .avisos-mes { margin: .6rem 0 0; font-size: .92rem; }
 .avis-item { margin: 0; padding: .15rem 0 .15rem .7rem; border-left: .3rem solid var(--nivell, var(--compte)); }
 .avis-item + .avis-item, .avis-item + .risc-previst, .risc-previst + .avis-item { margin-top: .5rem; }
 .avis-item strong { color: var(--nivell-text, inherit); }
@@ -773,3 +777,33 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .visor-tanca { position: fixed; top: 1rem; right: 1rem; width: 2.75rem; height: 2.75rem; display: grid; place-items: center;
   border: 1px solid var(--vora); border-radius: 50%; background: var(--superficie); color: var(--text); cursor: pointer; }
 .visor-tanca svg { width: 1.4rem; height: 1.4rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Pàgina «Perill» (ADR 0071): una fitxa per situació, amb la franja del seu
+   nivell; les acabades, amb el detall plegat; els mesos d'abans, plegats. */
+.perill .seccio { margin: 1.2rem 0 .5rem; }
+.perill .episodi { padding: .5rem .8rem .5rem .9rem; background: var(--superficie); border: 1px solid var(--vora);
+  border-left: .35rem solid var(--nivell, var(--compte)); border-radius: .5rem; }
+.perill .episodi + .episodi { margin-top: .6rem; }
+.perill .episodi p { margin: .25rem 0; }
+.perill .episodi-titol { margin-top: 0; }
+.perill .episodi-quan { color: var(--suau); font-size: .92rem; }
+.perill .episodi-actiu { color: var(--vermell); font-weight: 600; }
+.perill .episodi-acabat { color: var(--verd-text); }
+.perill .episodi-detall > summary, .perill .mes-perill > summary { cursor: pointer; color: var(--enllac); }
+.perill .mes-perill { margin: .5rem 0; padding: .5rem .8rem; border: 1px solid var(--vora); border-radius: .5rem; }
+.perill .mes-perill[open] > summary { margin-bottom: .6rem; }
+
+/* Compartir (comu.js, ADR 0072): l'avís breu de «Enllaç copiat», a baix. */
+.avis-breu { position: fixed; left: 50%; bottom: 1.2rem; transform: translateX(-50%); z-index: 50; margin: 0;
+  max-width: calc(100% - 2rem); padding: .55rem 1rem; border-radius: .6rem; background: var(--text); color: var(--fons);
+  box-shadow: 0 4px 16px rgb(0 0 0 / .25); overflow-wrap: anywhere; }
+/* El botó de compartir de cada fitxa de «Perill», a la dreta del títol. */
+.perill .episodi-cap { display: flex; align-items: flex-start; gap: .5rem; }
+.perill .episodi-cap .episodi-titol { flex: 1; }
+.perill .compartir-avis { flex: none; width: 2rem; height: 2rem; padding: .35rem; border: 1px solid var(--vora);
+  border-radius: 50%; background: var(--fons); color: var(--enllac); cursor: pointer; }
+.perill .compartir-avis svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; }
+.perill .compartir-avis:focus-visible { outline: 2px solid var(--enllac); outline-offset: 2px; }
+/* L'avís de l'enllaç que s'ha obert, destacat una estona. */
+.perill .episodi.assenyalat { box-shadow: 0 0 0 3px var(--enllac); transition: box-shadow .4s; }

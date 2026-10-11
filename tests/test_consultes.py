@@ -24,6 +24,15 @@ ARA = dt.datetime(2026, 10, 9, 11, 40).astimezone()
 def llegeix_js():
     with open(os.path.join(ARREL, "web", "consultes.js"), encoding="utf-8") as f:
         return f.read()
+
+
+def trossos_js():
+    """El lector de l'HTML de Telegram, a comu.js des de la 3.58.0 (també el fa servir «Perill»)."""
+    with open(os.path.join(ARREL, "web", "comu.js"), encoding="utf-8") as f:
+        comu = f.read()
+    return "const ENTITATS" + comu.split("const ENTITATS", 1)[1].split("// Els trossos d'una línia", 1)[0]
+
+
 DADES = os.path.join(ARREL, "tests", "dades")
 
 
@@ -128,9 +137,7 @@ class DadesDeLaWeb(unittest.TestCase):
 class Pagina(unittest.TestCase):
     def trossos(self, text):
         codi = ("const T = (x) => x; const $ = () => null; const element = () => ({});"
-                + llegeix_js().split("// Paràgrafs")[0]
-                .split("let triada = triadaInicial();")[1]
-                + f"console.log(JSON.stringify(trossos({json.dumps(text)})));")
+                + trossos_js() + f"console.log(JSON.stringify(trossos({json.dumps(text)})));")
         r = subprocess.run(["node", "-e", codi], capture_output=True, text=True, check=True)
         return json.loads(r.stdout)
 
@@ -150,7 +157,7 @@ class Pagina(unittest.TestCase):
         marques = ("const MARCA" + js.split("const MARCA", 1)[1].split("const NOM_CEL", 1)[0]
                    + "function ambMarques" + js.split("function ambMarques", 1)[1].split("function nodesAmbMarques", 1)[0])
         codi = ("const T = (x) => x; const $ = () => null; const element = () => ({});"
-                + llegeix_js().split("// Paràgrafs")[0].split("let triada = triadaInicial();")[1] + marques
+                + trossos_js() + marques
                 + "console.log(JSON.stringify(trossos(" + json.dumps("<b>Títol</b>\n⟦i-sun⟧ Ara mateix: 22 °C.\n"
                                                                    "Trens: ⟦alt⟧ R4 amb incidències, ⟦baix⟧ S2.")
                 + ").map(ambMarques)));")

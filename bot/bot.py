@@ -84,7 +84,7 @@ T = {
         "baixa": "Fet: s'han esborrat les teves dades i ja no rebràs res. Amb /start pots tornar-hi.",
         "ajuda": ("/avisos tria què reps · /resum la previsió d'avui · /dema la de demà · /ara el temps ara · "
                   "/radar el radar ara · /sol el sol · /aire la qualitat de l'aire · /pollen el pol·len · /trens els trens · "
-                  "/transit el trànsit · /avisos_actius els avisos oficials · "
+                  "/transit el trànsit · /llum els talls de llum · /avisos_actius els avisos oficials · "
                   "/baixa deixa de rebre'n i esborra les teves dades"),
         "velles": "Les dades de Temps a Montflorit no s'actualitzen des de les {}: ara no puc donar la previsió.",
         "velles_ara": "Les dades de Temps a Montflorit no s'actualitzen des de les {}: ara no puc dir el temps que fa.",
@@ -110,7 +110,7 @@ T = {
         "baixa": "Hecho: se han borrado tus datos y ya no recibirás nada. Con /start puedes volver.",
         "ajuda": ("/avisos elige qué recibes · /resum la previsión de hoy · /dema la de mañana · /ara el tiempo ahora · "
                   "/radar el radar ahora · /sol el sol · /aire la calidad del aire · /pollen el polen · /trens los trenes · "
-                  "/transit el tráfico · /avisos_actius los avisos oficiales · "
+                  "/transit el tráfico · /llum los cortes de luz · /avisos_actius los avisos oficiales · "
                   "/baixa deja de recibir y borra tus datos"),
         "velles": "Los datos de Temps a Montflorit no se actualizan desde las {}: ahora no puedo dar la previsión.",
         "velles_ara": "Los datos de Temps a Montflorit no se actualizan desde las {}: ahora no puedo decir el tiempo que hace.",
@@ -782,6 +782,78 @@ def text_transit_bot(dades, idioma, moment):
             + enllac(TRANSIT.format("es" if es else "ca"), f"Servei Català de Trànsit, {h}"))
 
 
+# --- Llum (ADR 0072) ---------------------------------------------------------------
+
+# El mapa de talls d'e-distribució (l'aplicació d'ArcGIS que hi ha dins la seva
+# pàgina d'avaries), centrat a Montflorit i en l'idioma de qui el mira (Juanjo,
+# 11-10-2026: «si es posible centrado en montflorit»).
+MAPA_LLUM = ("https://dpa-portalgis.enel.com/portal/apps/instant/basic/index.html"
+             "?appid=21f5d825ceeb48dba6ef6ee97f840168&center=2.133,41.481&level=15&locale={}")
+CERCADOR_TALLS = "https://wtp-pro.endesa.com/#/wtp"
+# La nota d'e-distribució que no diu res, fora (Juanjo: «informacion vacía»).
+NOTA_BUIDA = ("no hay información adicional",)
+
+
+def quan_llum(iso, idioma, moment, des_de=False):
+    """«les 23:12», o «el 10/10 a les 23:12» si no és avui; amb des_de, «des de
+    les 23:12» o «des del 10/10 a les 23:12»."""
+    t = dt.datetime.fromisoformat(iso).astimezone(ZONA)
+    h = t.strftime("%H:%M")
+    es = idioma == "es"
+    if t.date() == moment.astimezone(ZONA).date():
+        res = f"las {h}" if es else f"les {h}"
+        return (("desde " if es else "des de ") + res) if des_de else res
+    d = t.strftime("%d/%m")
+    if des_de:
+        return f"desde el {d} a las {h}" if es else f"des del {d} a les {h}"
+    return f"el {d} a las {h}" if es else f"el {d} a les {h}"
+
+
+def text_llum_bot(dades, idioma, moment):
+    """Els talls de llum del barri (llum.py, ADR 0072): dins dels límits de
+    Montflorit o tocant-hi, sense el carrer, que e-distribució no publica; els
+    programats, carrer per carrer, al cercador d'Endesa, enllaçat. La nota, com
+    la publica e-distribució."""
+    vell = dades_velles(dades, idioma, moment)
+    if vell:
+        return vell
+    es = idioma == "es"
+    llum = dades.get("llum")
+    if not llum:
+        return "Ahora no hay datos de los cortes de luz." if es else "Ara no hi ha dades dels talls de llum."
+    cap = "Cortes de luz en Montflorit" if es else "Talls de llum a Montflorit"
+    files = []
+    for t in llum.get("talls") or []:
+        que = (("Trabajos programados" if es else "Treballs programats") if t.get("programat")
+               else ("Avería" if es else "Avaria"))
+        lloc = (("en el barrio" if es else "al barri") if t.get("on") != "vora"
+                else ("en el límite del barrio" if es else "al límit del barri"))
+        n = t.get("clients")
+        qui = ((f"{n} clientes" if n != 1 else "1 cliente") if es else (f"{n} clients" if n != 1 else "1 client")) \
+            if n is not None else ("Clientes" if es else "Clients")
+        frase = f"{qui} sin luz" if es else f"{qui} sense llum"
+        if t.get("inici"):
+            frase += " " + quan_llum(t["inici"], idioma, moment, des_de=True)
+        if t.get("fins"):
+            frase += (f"; previsto hasta {quan_llum(t['fins'], idioma, moment)}" if es
+                      else f"; previst fins a {quan_llum(t['fins'], idioma, moment)}")
+        fila = f"<b>{html.escape(que)}</b> ({html.escape(lloc)}): {html.escape(frase, quote=False)}."
+        nota = " ".join((t.get("nota") or "").split())
+        if nota and not any(b in nota.lower() for b in NOTA_BUIDA):
+            fila += f" «{html.escape(nota, quote=False)}»"
+        files.append(fila)
+    if files:
+        files.append("<i>La zona es aproximada: e-distribución no publica las calles de las averías.</i>" if es else
+                     "<i>La zona és aproximada: e-distribució no publica els carrers de les avaries.</i>")
+    else:
+        files = ["Ningún corte de luz en Montflorit." if es else "Cap tall de llum a Montflorit."]
+    h = dt.datetime.fromisoformat(llum["hora"]).strftime("%H:%M") if llum.get("hora") else "?"
+    return (f"<b>{cap}</b>\n" + "\n".join(files) + "\n"
+            + enllac(MAPA_LLUM.format("es" if es else "ca"), ("Mapa de e-distribución" if es else "Mapa d'e-distribució") + f", {h}")
+            + "\n" + enllac(CERCADOR_TALLS, "Cortes programados por calle (Endesa)" if es
+                            else "Talls programats per carrer (Endesa)"))
+
+
 # --- Sol, aire i pol·len (ADR 0054) -------------------------------------------------
 
 def hm(iso):
@@ -1033,6 +1105,11 @@ def text_avisos_actius(dades, idioma, moment):
     # Si Meteocat té avís per a la comarca: el pla no diu quina zona abasta (ADR 0067).
     if blocs and dades.get("smp"):
         blocs[-1][1].extend(linies_smp(dades["smp"], idioma))
+    # Sense pla, els avisos de Meteocat que hi hagi, sols (ADR 0071).
+    elif dades.get("smp"):
+        smp = {"linies": [l for l in dades["smp"].get("linies") or [] if l.get("nivell") != "nul"]}
+        if smp["linies"]:
+            blocs.append(("Meteocat", linies_smp(smp, idioma)))
     avui, dema = moment.date(), (moment + dt.timedelta(days=1)).date()
     aemet = text_avisos_aemet(dades, idioma, avui, moment)
     aemet += [x for x in text_avisos_aemet(dades, idioma, dema, moment) if x not in aemet]
@@ -1079,8 +1156,12 @@ def blocs_entorn(entorn, idioma):
     for i in entorn.get("incendis") or []:
         h = dt.datetime.fromisoformat(i["inici"]).strftime("%H:%M") if i.get("inici") else "?"
         dist = f", a {str(i['km']).replace('.', ',')} km de Montflorit" if i.get("km") is not None else ""
-        focs.append(html.escape(f"Incendio forestal en {i['municipi']}{dist}, desde las {h}." if es
-                                else f"Incendi forestal a {i['municipi']}{dist}, des de les {h}.", quote=False))
+        # Dins del parc, dit clarament (Juanjo, 11-10-2026; ADR 0071).
+        lloc = ((f"dentro del Parque de Collserola ({i['municipi']})" if es else
+                 f"dins del Parc de Collserola ({i['municipi']})") if i.get("collserola") else
+                (f"en {i['municipi']}" if es else f"a {i['municipi']}"))
+        focs.append(amb_icona("🔥", html.escape(f"Incendio forestal {lloc}{dist}, desde las {h}." if es
+                                                else f"Incendi forestal {lloc}{dist}, des de les {h}.", quote=False)))
     if focs:
         blocs.append(("Bombers", focs + [enllac(BOMBERS, "Mapa")]))
     alfa = entorn.get("pla_alfa") or {}
@@ -1120,7 +1201,7 @@ def linies_riscos(riscos, idioma, moment):
 
 COMPTADOR = os.path.join(BASE, "comptador.json")
 ORDRES = ("/start", "/avisos", "/menu", "/resum", "/dema", "/ara", "/radar", "/sol", "/aire", "/pollen", "/trens",
-          "/transit", "/avisos_actius", "/baixa")
+          "/transit", "/llum", "/avisos_actius", "/baixa")
 COMPTADOR_DIES = 400
 
 
@@ -1243,7 +1324,7 @@ def canvi_canal(api, cm):
     avisa_juanjo(f"Temps a Montflorit: {que}, {nom}.{total}")
 
 
-CONSULTES = ("/dema", "/trens", "/transit", "/radar", "/sol", "/aire", "/pollen", "/avisos_actius")
+CONSULTES = ("/dema", "/trens", "/transit", "/llum", "/radar", "/sol", "/aire", "/pollen", "/avisos_actius")
 
 
 def atén(api, subs, update, estat=None):
@@ -1300,7 +1381,8 @@ def atén(api, subs, update, estat=None):
         envia(api, chat, resum(llegeix(os.path.join(DADES, "montflorit.json"), {}), sub["idioma"], ara(), dema=True), html=True)
     elif ordre in CONSULTES:
         dades = llegeix(os.path.join(DADES, "montflorit.json"), {})
-        funcio = {"/trens": text_trens_bot, "/transit": text_transit_bot, "/radar": text_radar_bot,
+        funcio = {"/trens": text_trens_bot, "/transit": text_transit_bot, "/llum": text_llum_bot,
+                  "/radar": text_radar_bot,
                   "/sol": text_sol_bot, "/aire": text_aire_bot, "/pollen": text_pollen_bot,
                   "/avisos_actius": text_avisos_actius}[ordre]
         envia(api, chat, funcio(dades, sub["idioma"], ara()) + "\n" + WEB, html=True)

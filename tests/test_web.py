@@ -516,21 +516,38 @@ class Web(unittest.TestCase):
         # En cotxe també decideix la probabilitat (ADR 0069): un sol model amb 1,7 mm, no.
         self.assertEqual(avalua("cotxe", viatge(0.25, 1.7, []))["nivell"], "be")
 
-    def test_nou_al_costat_dels_avisos(self):
-        # «Nou!» fins que s'entra a la pàgina «Avisos» i, per a tothom, fins al
-        # 15-10-2026 (ADR 0048).
-        def nou(ara, vist=None, pagina="/"):
-            expr = ("posats = []; enllac = { append: (e) => posats.push(e.textContent) };"
-                    "document.querySelectorAll = (s) => s === '.boto-avisos' ? [enllac] : [];"
+    def test_nou_al_costat_dels_avisos_i_de_perill(self):
+        # «Nou!» fins que s'entra a la pàgina i, per a tothom, una setmana
+        # després de publicar-la: «Avisos» (ADR 0048) i «Perill» (ADR 0071).
+        def nou(ara, vistos=(), pagina="/"):
+            expr = ("posats = []; boto = (nom) => ({ classList: { add: () => {} },"
+                    " append: (e) => posats.push(nom + ':' + e.textContent) });"
+                    "document.querySelectorAll = (s) => s === '.boto-avisos' ? [boto('avisos')]"
+                    " : s.includes('perill.html') ? [boto('perill')] : [];"
                     f"location.pathname = {json.dumps(pagina)};"
-                    f"desat = {json.dumps(vist)}; localStorage.getItem = () => desat;"
-                    "localStorage.setItem = (k, v) => { desat = v; };"
-                    "element = (e, c, t) => ({ textContent: t }); marcaNouAvisos(new Date()); posats")
+                    f"desats = Object.fromEntries({json.dumps(list(vistos))}.map((k) => [k, '1']));"
+                    "localStorage.getItem = (k) => desats[k] || null;"
+                    "localStorage.setItem = (k, v) => { desats[k] = v; };"
+                    "element = (e, c, t) => ({ textContent: t }); marcaNovetats(new Date()); posats")
             return self.avalua(ara, expr)
-        self.assertEqual(nou("2026-10-09T10:00:00+02:00"), ["Nou!"])
-        self.assertEqual(nou("2026-10-09T10:00:00+02:00", "1"), [])
-        self.assertEqual(nou("2026-10-09T10:00:00+02:00", pagina="/es/avisos.html"), [])
-        self.assertEqual(nou("2026-10-16T00:00:00+02:00"), [])
+        self.assertEqual(nou("2026-10-12T10:00:00+02:00"), ["avisos:Nou!", "perill:Nou!"])
+        self.assertEqual(nou("2026-10-12T10:00:00+02:00", ["meteo.avisos-vist"]), ["perill:Nou!"])
+        self.assertEqual(nou("2026-10-12T10:00:00+02:00", pagina="/es/perill.html"), ["avisos:Nou!"])
+        self.assertEqual(nou("2026-10-16T00:00:00+02:00"), ["perill:Nou!"])
+        self.assertEqual(nou("2026-10-19T00:00:00+02:00"), [])
+
+    def test_compartir(self):
+        # ADR 0072: amb el menú del sistema, l'adreça i el títol; sense, es copia i es diu.
+        expr = ("dit = []; avisBreu = (t) => dit.push(t); compartit = null;"
+                "navigator.share = (d) => { compartit = d; return Promise.resolve(); };"
+                "comparteix('https://m.test/perill.html#a-x', 'Foc');"
+                "delete navigator.share; copiat = null;"
+                "navigator.clipboard = { writeText: (u) => { copiat = u; return Promise.resolve(); } };"
+                "comparteix('https://m.test/consultes.html#llum');"
+                "new Promise((r) => setTimeout(r, 10)).then(() => [compartit, copiat, dit])")
+        r = self.avalua("2026-10-11T10:00:00+02:00", expr, arnes=ARNES_ASYNC)
+        self.assertEqual(r[0], {"title": "Foc", "url": "https://m.test/perill.html#a-x"})
+        self.assertEqual(r[1:], ["https://m.test/consultes.html#llum", ["Enllaç copiat"]])
 
     def test_final_de_la_pluja_en_entrenament(self):
         # «Pluja a sobre» amb l'hora en què pararia, marcat «en entrenament» (ADR 0049).

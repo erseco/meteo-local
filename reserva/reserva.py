@@ -229,7 +229,9 @@ def vigila():
     apunta("publicat")
     # Els avisos per al bot i el canal (ADR 0034), al costat de les dades.
     nou = DADES.replace("montflorit.json", "avisos.json.reserva")
-    if subprocess.run([PYTHON, "avisos_bot.py", os.path.join(ESTAT, "casa.json"), nou], cwd=REPO, env=ENTORN,
+    # El historial de «Perill» se une con el publicado, el del NAS (ADR 0071).
+    publicat = DADES.replace("montflorit.json", "avisos.json")
+    if subprocess.run([PYTHON, "avisos_bot.py", os.path.join(ESTAT, "casa.json"), nou, publicat], cwd=REPO, env=ENTORN,
                       check=False, timeout=120, stdout=subprocess.DEVNULL).returncode == 0:
         os.chmod(nou, 0o604)
         os.replace(nou, DADES.replace("montflorit.json", "avisos.json"))

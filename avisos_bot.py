@@ -14,8 +14,9 @@ Tipos:
   de pluja_arriba.py, ADR 0022), un aviso por episodio de lluvia.
 - perill: lo medido o previsto llega a los umbrales de aviso de AEMET (la de
   riscos.py, ADR 0018), al aparecer o subir de nivel; y, desde el 08-10-2026,
-  un incendio forestal en curso a menos de 5 km (Bombers) al empezar y al
-  dejar de constar (entorn.py, ADR 0046).
+  un incendio forestal en curso que interesa al barrio (Bombers; desde el
+  11-10-2026, en Collserola, en Cerdanyola o a 5 km en otro municipio del
+  parque) al empezar y al dejar de constar (entorn.py, ADR 0046 y 0071).
 - riera: riesgo de desbordamiento de la riera de Sant Cugat (la de riera.py,
   ADR 0027), atención y peligro, siempre con el aviso de que es orientativo.
 - perill, también, desde el 09-10-2026: los avisos oficiales nuevos (ADR 0055).
@@ -23,24 +24,44 @@ Tipos:
   nivel, y un plan de Protección Civil al pasar a alerta o a emergencia y
   cuando sale de ellas. La prealerta no avisa (ADR 0051).
 
+Cada aviso de peligro y de la riera es parte de un episodio (episodi): el
+historial de los últimos HISTORIAL_DIES días, con su comienzo y su final, va
+en avisos.json para la página «Perill» de la web (ADR 0071).
+
 Los trenes y el tráfico no avisan desde el 09-10-2026: se consultan en «Si
 surts» y con /trens y /transit del bot (ADR 0053).
 
-Uso: python3 avisos_bot.py CASA.json AVISOS.json
+Uso: python3 avisos_bot.py CASA.json AVISOS.json [ANTERIOR]
+     ANTERIOR: el avisos.json publicado (ruta o https), para unir su historial.
 """
 import datetime as dt
 import html
 import json
 import os
 import sys
+import urllib.request
 
 import config as C
 import pluja_arriba as PA
+import smp as SMP
 import riera as RI
 import riscos as RS
 
 ESTAT = os.path.join(os.path.dirname(os.environ.get("REGISTRE_DIR", "/estat/registre")), "bot-avisos.json")
 CONSERVA_H = 24          # avisos que se guardan en avisos.json
+HISTORIAL_DIES = 366     # episodios de peligro de la página «Perill»: un año (ADR 0071)
+# Más información de cada tipo de aviso, si su texto no lleva ya un enlace
+# (ADR 0071). La metodología solo está en castellano: va en las dos lenguas.
+BOMBERS = {"ca": "https://interior.gencat.cat/ca/arees_dactuacio/bombers/actuacions-de-bombers/",
+           "es": "https://interior.gencat.cat/es/arees_dactuacio/bombers/actuacions-de-bombers/"}
+PROTECCIO_CIVIL = {"ca": "https://interior.gencat.cat/ca/arees_dactuacio/proteccio_civil/",
+                   "es": "https://interior.gencat.cat/es/arees_dactuacio/proteccio_civil/"}
+AEMET = {"ca": "https://www.aemet.es/ca/eltiempo/prediccion/avisos?w=hoy&k=cat",
+         "es": "https://www.aemet.es/es/eltiempo/prediccion/avisos?w=hoy&k=cat"}
+METEOCAT = {"ca": "https://www.meteo.cat/prediccio/general", "es": "https://www.meteo.cat/prediccio/general"}
+METODE = "https://github.com/meteo-montflorit/meteo-local/blob/main/docs/estadistica.md"
+ENLLAC_RIERA = {"ca": METODE + "#12-la-riera-de-sant-cugat", "es": METODE + "#12-la-riera-de-sant-cugat"}
+ENLLAC_PROPI = {"ca": METODE + "#11-situaciones-de-peligro", "es": METODE + "#11-situaciones-de-peligro"}
 WEB = "https://meteo-montflorit.github.io/"
 ORIENTATIU = {
     "ca": "Avís en proves, orientatiu i no oficial: segueix les indicacions de Protecció Civil i de l'Ajuntament.",
@@ -70,7 +91,9 @@ def coma(x):
 # Delante, el nivel con un círculo de color, la misma escala que el bot
 # (bot/bot.py, CERCLE): se ve la gravedad antes de leer, también en la
 # notificación del móvil (Juanjo, 10-10-2026; ADR 0065). El final, en verde.
-CERCLE = {"groc": "🟡", "taronja": "🟠", "vermell": "🔴", "atencio": "🟠", "perill": "🔴",
+# Lo que no tiene nivel lleva su propio símbolo, no un círculo: el incendio,
+# 🔥 (Juanjo, 11-10-2026: «dejar los círculos para este tipo de niveles»; ADR 0071).
+CERCLE = {"groc": "🟡", "taronja": "🟠", "vermell": "🔴", "atencio": "🟠", "perill": "🔴", "incendi": "🔥",
           "alerta": "🟠", "emergència": "🔴", "fi": "🟢", "nul": "⚪", "mig": "🟡", "alt": "🟠", "maxim": "🔴"}
 
 
@@ -211,21 +234,44 @@ def hhmm(iso):
     return dt.datetime.fromisoformat(iso).strftime("%H:%M") if iso else "?"
 
 
+def lloc_incendi(i, idioma):
+    """Dónde es, para quien no conoce la web (ADR 0066 y 0071): en
+    Collserola, en Cerdanyola o cerca de Montflorit."""
+    m = i.get("municipi") or "?"
+    if i.get("collserola"):
+        return (f"dins del Parc de Collserola ({m})" if idioma == "ca"
+                else f"dentro del Parque de Collserola ({m})")
+    if m == C.MUNICIPI:
+        return f"a {m}" if idioma == "ca" else f"en {m}"
+    return f"a prop de Montflorit: {m}" if idioma == "ca" else f"cerca de Montflorit: {m}"
+
+
+def enllac_bombers(idioma):
+    text = "Mapa d'actuacions de Bombers" if idioma == "ca" else "Mapa de actuaciones de Bombers"
+    return f'<a href="{BOMBERS[idioma]}">{text}</a>'
+
+
 def text_incendi(i, acabat=False):
     lloc = i.get("municipi") or "?"
-    dist = f", a uns {coma(i['km'])} km" if i.get("km") is not None else ""
-    dist_es = f", a unos {coma(i['km'])} km" if i.get("km") is not None else ""
+    dist = f", a uns {coma(i['km'])} km de Montflorit" if i.get("km") is not None else ""
+    dist_es = f", a unos {coma(i['km'])} km de Montflorit" if i.get("km") is not None else ""
+    parc_ca = ", dins del Parc Natural de Collserola" if i.get("collserola") else ""
+    parc_es = ", dentro del Parque Natural de Collserola" if i.get("collserola") else ""
     if acabat:
-        return {"ca": negreta(f"Incendi a {lloc}: ja no consta com a actiu", "fi")
+        on_ca = f"al Parc de Collserola ({lloc})" if i.get("collserola") else f"a {lloc}"
+        on_es = f"en el Parque de Collserola ({lloc})" if i.get("collserola") else f"en {lloc}"
+        return {"ca": negreta(f"Incendi {on_ca}: ja no consta com a actiu", "fi")
                       + "\nBombers de la Generalitat ja no el tenen entre les actuacions en curs.",
-                "es": negreta(f"Incendio en {lloc}: ya no consta como activo", "fi")
+                "es": negreta(f"Incendio {on_es}: ya no consta como activo", "fi")
                       + "\nBombers de la Generalitat ya no lo tienen entre las actuaciones en curso."}
-    return {"ca": negreta(f"Incendi forestal a prop de Montflorit: {lloc}")
-                  + f"\nBombers de la Generalitat treballen en un incendi de vegetació forestal a {lloc}{dist}, "
-                  f"des de les {hhmm(i.get('inici'))}. Segueix les indicacions de Bombers i de Protecció Civil.",
-            "es": negreta(f"Incendio forestal cerca de Montflorit: {lloc}")
-                  + f"\nBombers de la Generalitat trabajan en un incendio de vegetación forestal en {lloc}{dist_es}, "
-                  f"desde las {hhmm(i.get('inici'))}. Sigue las indicaciones de Bombers y de Protección Civil."}
+    return {"ca": negreta(f"Incendi forestal {lloc_incendi(i, 'ca')}", "incendi")
+                  + f"\nBombers de la Generalitat treballen en un incendi de vegetació forestal a {lloc}{parc_ca}{dist}, "
+                  f"des de les {hhmm(i.get('inici'))}. Segueix les indicacions de Bombers i de Protecció Civil."
+                  + "\n" + enllac_bombers("ca"),
+            "es": negreta(f"Incendio forestal {lloc_incendi(i, 'es')}", "incendi")
+                  + f"\nBombers de la Generalitat trabajan en un incendio de vegetación forestal en {lloc}{parc_es}{dist_es}, "
+                  f"desde las {hhmm(i.get('inici'))}. Sigue las indicaciones de Bombers y de Protección Civil."
+                  + "\n" + enllac_bombers("es")}
 
 
 # --- Avisos oficiales nuevos (ADR 0055) -------------------------------------------
@@ -296,6 +342,35 @@ def text_aemet(a, ahora):
     return {"ca": ca, "es": es}
 
 
+def clau_smp(a):
+    """Un aviso de Meteocat: el meteoro y su primer día (cada nueva emisión
+    del mismo aviso no es un aviso nuevo)."""
+    return f"{a['meteor']}:{min(a['dies'])}"
+
+
+def fins_smp(a):
+    """Hasta cuándo vale: el final de su última franja, en hora local."""
+    dia = max(a["dies"])
+    fi = a["dies"][dia][-1][1]
+    t = dt.datetime.fromisoformat(dia) + dt.timedelta(hours=fi)
+    return t.astimezone().isoformat(timespec="minutes")
+
+
+def text_meteocat(a):
+    """Un aviso de peligro de Meteocat para la comarca, sin plan de Protecció
+    Civil (ADR 0071). El meteoro y el umbral, como los publica Meteocat (ADR 0067)."""
+    n = SMP.nivell(a["perill"])
+    nom = C.SMP_COMARCA_NOM
+    llindar_ca = f" ({a['llindar']})" if a.get("llindar") else ""
+    ca = (negreta(f"Avís de perill {SMP.GRAU['ca'][n]} de Meteocat per «{a['meteor']}» al {nom}", n)
+          + f"\n{SMP.quan(a['dies'], 'ca').capitalize()}{llindar_ca}."
+          + "\nÉs un avís oficial: segueix les indicacions de Protecció Civil.")
+    es = (negreta(f"Aviso de peligro {SMP.GRAU['es'][n]} de Meteocat por «{a['meteor']}» en el {nom}", n)
+          + f"\n{SMP.quan(a['dies'], 'es').capitalize()}{llindar_ca}."
+          + "\nEs un aviso oficial: sigue las indicaciones de Protección Civil.")
+    return {"ca": ca, "es": es}
+
+
 def text_smp(smp, idioma):
     """Si Meteocat té avís de perill per a la comarca (smp.py, ADR 0067)."""
     return "".join(f"\n{CERCLE.get(l.get('nivell'), '')} {html.escape(l[idioma], quote=False)}".replace("\n ", "\n")
@@ -327,8 +402,12 @@ def decideix(estat, salida, ahora):
     nous = []
     hora = ahora.isoformat(timespec="minutes")
 
-    def afegeix(tipus, clau, text, nivell=None):
-        nous.append({"id": f"{tipus}:{clau}", "tipus": tipus, "nivell": nivell, "hora": hora, **text})
+    def afegeix(tipus, clau, text, nivell=None, episodi=None, enllac=None, fins=None):
+        # episodi: de qué suceso es parte, para el historial (ADR 0071); enllac,
+        # más información si el texto no la enlaza; fins, cuándo acaba un
+        # aviso que no tiene mensaje de final (los de AEMET).
+        extra = {k: v for k, v in (("episodi", episodi), ("enllac", enllac), ("fins", fins)) if v}
+        nous.append({"id": f"{tipus}:{clau}", "tipus": tipus, "nivell": nivell, "hora": hora, **text, **extra})
 
     # Lluvia en unos minutos: la lógica del aviso de Juanjo, con estado propio.
     try:
@@ -356,10 +435,11 @@ def decideix(estat, salida, ahora):
             del actius[clau]
     if nous_perill:
         text, pitjor = text_perill(nous_perill, ahora)
-        afegeix("perill", hora + ":" + ",".join(r["clau"] for r in nous_perill), text, pitjor)
+        afegeix("perill", hora + ":" + ",".join(r["clau"] for r in nous_perill), text, pitjor,
+                episodi="propi", enllac=ENLLAC_PROPI)
     elif acabats and not actius:
         # Quan ja no en queda cap, es diu (abans, només a Juanjo).
-        afegeix("perill", hora + ":fi", text_perill_fi(), "fi")
+        afegeix("perill", hora + ":fi", text_perill_fi(), "fi", episodi="propi")
     # Incendios forestales cerca (ADR 0046). La primera vez solo se apunta lo
     # que hay: lo que ya estaba no es una novedad.
     entorn = salida.get("entorn") or {}
@@ -369,15 +449,17 @@ def decideix(estat, salida, ahora):
         if e is not None:
             for i in entorn["incendis"]:
                 if i["id"] not in e["incendis"]:
-                    afegeix("perill", f"incendi:{i['id']}", text_incendi(i), "incendi")
+                    afegeix("perill", f"incendi:{i['id']}", text_incendi(i), "incendi", episodi=f"incendi:{i['id']}")
             for iid, i in e["incendis"].items():
                 if iid not in ara_ids:
-                    afegeix("perill", f"incendi:{iid}:fi", text_incendi(i, acabat=True), "fi")
+                    afegeix("perill", f"incendi:{iid}:fi", text_incendi(i, acabat=True), "fi", episodi=f"incendi:{iid}")
         estat.setdefault("entorn", {"incendis": {}})["incendis"] = ara_ids
     # Avisos oficiales nuevos (ADR 0055). La primera vez solo se apunta lo que
     # hay; si una fuente ha fallado (None), no se toca: no es que se acabe.
     of = estat.get("oficials")
     nou_of = {"aemet": dict((of or {}).get("aemet") or {}), "plans": dict((of or {}).get("plans") or {})}
+    if of is not None and "smp" in of:
+        nou_of["smp"] = dict(of["smp"])
     if salida.get("avisos") is not None:
         aemet = {f"{a['tipo']}:{a['inicio']}": a for a in salida["avisos"]
                  if a.get("zona", C.ZONA_AVISOS) == C.ZONA_AVISOS and a["nivel"] in RS.NIVELLS}
@@ -385,8 +467,22 @@ def decideix(estat, salida, ahora):
             for k, a in aemet.items():
                 abans = of["aemet"].get(k)
                 if abans is None or RS.NIVELLS.index(a["nivel"]) > RS.NIVELLS.index(abans):
-                    afegeix("perill", f"aemet:{k}:{a['nivel']}", text_aemet(a, ahora), a["nivel"])
+                    afegeix("perill", f"aemet:{k}:{a['nivel']}", text_aemet(a, ahora), a["nivel"],
+                            episodi=f"aemet:{k}", enllac=AEMET, fins=a.get("fin"))
         nou_of["aemet"] = {k: a["nivel"] for k, a in aemet.items()}
+    # Los avisos de peligro de Meteocat para la comarca, como los de AEMET: al
+    # aparecer o subir de grado (ADR 0071). La primera vez, solo se apuntan.
+    if salida.get("smp") is not None:
+        smp = {clau_smp(a): a for a in salida["smp"].get("avisos") or []}
+        if of is not None and "smp" in of:
+            for k, a in smp.items():
+                abans = of["smp"].get(k)
+                if abans is None or a["perill"] > abans:
+                    afegeix("perill", f"meteocat:{k}:{a['perill']}", text_meteocat(a), SMP.nivell(a["perill"]),
+                            episodi=f"meteocat:{k}", enllac=METEOCAT, fins=fins_smp(a))
+        nou_of["smp"] = {k: a["perill"] for k, a in smp.items()}
+    elif of is not None and "smp" in of:
+        nou_of["smp"] = of["smp"]
     if salida.get("plans") is not None:
         actius = ("alerta", "emergència")
         plans = {p["pla"]: p for p in salida["plans"] if p.get("fase") in actius}
@@ -399,10 +495,12 @@ def decideix(estat, salida, ahora):
             for k, p in plans.items():
                 abans = (of["plans"].get(k) or {}).get("fase")
                 if abans is None or FASES_PLA.index(p["fase"]) > FASES_PLA.index(abans):
-                    afegeix("perill", f"pla:{k}:{p['fase']}:{hora}", text_pla(p, smp=salida.get("smp")), "pc")
+                    afegeix("perill", f"pla:{k}:{p['fase']}:{hora}", text_pla(p, smp=salida.get("smp")), "pc",
+                            episodi=f"pla:{k}", enllac=None if p.get("comunicat") else PROTECCIO_CIVIL)
             for k, p in of["plans"].items():
                 if k not in plans and k not in ocults and not p.get("ocult"):
-                    afegeix("perill", f"pla:{k}:fi:{hora}", text_pla({**p, "pla": k}, acabat=True), "fi")
+                    afegeix("perill", f"pla:{k}:fi:{hora}", text_pla({**p, "pla": k}, acabat=True), "fi",
+                            episodi=f"pla:{k}")
         nou_of["plans"] = {k: {"fase": p["fase"], "nom": p["nom"], **({"ocult": True} if k in ocults else {})}
                            for k, p in {**ocults, **plans}.items()}
     estat["oficials"] = nou_of
@@ -416,18 +514,96 @@ def decideix(estat, salida, ahora):
         despres = (e.get("episodi") or {}).get("avisos", {})
         for nivell in ("perill", "atencio"):
             if nivell in despres and nivell not in abans:
-                afegeix("riera", f"{e['episodi']['inici']}:{nivell}", text_riera(riera, nivell), nivell)
+                afegeix("riera", f"{e['episodi']['inici']}:{nivell}", text_riera(riera, nivell), nivell,
+                        episodi=f"riera:{e['episodi']['inici']}", enllac=ENLLAC_RIERA)
                 break
         # L'episodi s'ha tancat (3 hores de calma) després d'un avís: es diu que ha passat.
         if episodi_abans and not e.get("episodi") and abans:
-            afegeix("riera", f"{episodi_abans['inici']}:fi", text_riera_fi(riera, episodi_abans), "fi")
+            afegeix("riera", f"{episodi_abans['inici']}:fi", text_riera_fi(riera, episodi_abans), "fi",
+                    episodi=f"riera:{episodi_abans['inici']}")
     # Los avisos de trenes y de cortes ya no existen (ADR 0053): fuera su estado.
     estat.pop("trens", None)
     estat.pop("talls", None)
     return nous
 
 
-def actualitza(casa_json, sortida, ahora=None):
+# --- Historial (ADR 0071) -----------------------------------------------------
+# Los avisos de peligro y de la riera agrupados por suceso: una entrada con
+# su comienzo y, si ya ha acabado, su final. Para la página «Perill».
+
+RANG = {"🟡": 1, "🟠": 2, "🔴": 3}
+
+
+def rang(nivell):
+    return RANG.get(CERCLE.get(nivell), 0)
+
+
+def fusiona(propi, altre):
+    """El historial propio con el último publicado (anterior): el NAS y la
+    reserva de IONOS llevan estados distintos, y el que vuelve a publicar no
+    puede borrar lo que el otro vio mientras tanto. Un suceso es el mismo si
+    coinciden clave y comienzo; si uno de los dos ya lo da por acabado, vale ese."""
+    res = [dict(e) for e in propi]
+    for e in altre or []:
+        igual = next((x for x in res if x["clau"] == e["clau"] and x["inici"] == e["inici"]), None)
+        if igual is None:
+            res.append(dict(e))
+        elif e.get("fi") and not igual.get("fi"):
+            igual.update({k: e[k] for k in ("fi", "fi_ca", "fi_es") if k in e})
+    return sorted(res, key=lambda e: e["inici"])
+
+
+def historial(estat, nous, ahora, anterior=None):
+    h = estat["historial"] = fusiona(estat.get("historial") or [], anterior)
+    for a in nous:
+        ep = a.get("episodi")
+        if not ep:
+            continue
+        obert = next((e for e in reversed(h) if e["clau"] == ep and not e.get("fi")), None)
+        if a.get("nivell") == "fi":
+            for e in h:
+                if e["clau"] == ep and not e.get("fi"):
+                    e.update(fi=a["hora"], fi_ca=a["ca"], fi_es=a["es"])
+            continue
+        if obert:
+            # Sube de nivel o cambia: se queda el texto nuevo y el peor nivel.
+            if rang(a.get("nivell")) >= rang(obert.get("nivell")):
+                obert["nivell"] = a.get("nivell")
+            obert.update(ca=a["ca"], es=a["es"], darrer=a["hora"],
+                         **{k: a[k] for k in ("enllac", "fins") if a.get(k)})
+        else:
+            h.append({"clau": ep, "tipus": a["tipus"], "inici": a["hora"], "nivell": a.get("nivell"),
+                      "ca": a["ca"], "es": a["es"], **{k: a[k] for k in ("enllac", "fins") if a.get(k)}})
+    # Un plan que ya no se muestra (desactivado sin aviso, u oculto por no
+    # tener motivo meteorológico: ADR 0062) ya no está activo en la página.
+    plans = (estat.get("oficials") or {}).get("plans")
+    if plans is not None:
+        visibles = {k for k, p in plans.items() if not p.get("ocult")}
+        for e in h:
+            if e["clau"].startswith("pla:") and not e.get("fi") and e["clau"][4:] not in visibles:
+                e["fi"] = ahora.isoformat(timespec="minutes")
+    limit = ahora - dt.timedelta(days=HISTORIAL_DIES)
+    estat["historial"] = [e for e in h if dt.datetime.fromisoformat(
+        e.get("fi") or e.get("fins") or e.get("darrer") or e["inici"]) > limit]
+    return estat["historial"]
+
+
+def anterior_publicat(font):
+    """El historial del último avisos.json publicado: una ruta (la reserva, en
+    IONOS) o una dirección (el NAS). [] si no se puede leer."""
+    if not font:
+        return []
+    try:
+        if font.startswith("https://"):
+            with urllib.request.urlopen(font, timeout=20) as r:
+                return json.load(r).get("historial") or []
+        with open(font, encoding="utf-8") as f:
+            return json.load(f).get("historial") or []
+    except (OSError, ValueError):
+        return []
+
+
+def actualitza(casa_json, sortida, ahora=None, anterior=None):
     ahora = ahora or dt.datetime.now().astimezone()
     with open(casa_json, encoding="utf-8") as f:
         salida = json.load(f)
@@ -442,17 +618,22 @@ def actualitza(casa_json, sortida, ahora=None):
     limit = ahora - dt.timedelta(hours=CONSERVA_H)
     llista = [a for a in estat.get("llista", []) if dt.datetime.fromisoformat(a["hora"]) > limit] + nous
     estat["llista"] = llista
+    hist = historial(estat, nous, ahora, anterior_publicat(anterior))
     with open(ESTAT + ".tmp", "w", encoding="utf-8") as f:
         json.dump(estat, f, ensure_ascii=False)
     os.replace(ESTAT + ".tmp", ESTAT)
     with open(sortida, "w", encoding="utf-8") as f:
-        json.dump({"generat": ahora.isoformat(timespec="minutes"), "avisos": llista}, f, ensure_ascii=False)
+        # El Pla Alfa de hoy y mañana, para «Ara» de «Perill», sin avisar ni
+        # guardar historial: cambia cada día (ADR 0046 y 0071).
+        alfa = (salida.get("entorn") or {}).get("pla_alfa")
+        json.dump({"generat": ahora.isoformat(timespec="minutes"), "versio": C.VERSION, "avisos": llista,
+                   "historial": hist, "pla_alfa": alfa}, f, ensure_ascii=False)
     return nous
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         print(__doc__)
         sys.exit(1)
-    for a in actualitza(sys.argv[1], sys.argv[2]):
+    for a in actualitza(sys.argv[1], sys.argv[2], anterior=sys.argv[3] if len(sys.argv) == 4 else None):
         print(a["id"], a["ca"].splitlines()[0])

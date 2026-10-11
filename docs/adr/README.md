@@ -72,5 +72,7 @@
 | [0068](0068-comprobacion-de-todos-los-medios-de-si-surts.md) | Comprobación diaria de todos los medios de «Si surts» | aceptado |
 | [0069](0069-umbrales-de-lluvia-aprendidos-en-si-surts.md) | Umbrales de lluvia de «Si surts» que se aprenden, según la antelación | aceptado |
 | [0070](0070-montflorit-primero-las-estaciones-vecinas-mandan.md) | Montflorit primero: las estaciones vecinas mandan sobre Sabadell y Sant Cugat | aceptado |
+| [0071](0071-pagina-perill-e-incendios-que-interesan-al-barrio.md) | Página «Perill» e incendios que interesan al barrio | aceptado |
+| [0072](0072-cortes-de-luz-limites-del-barrio-y-compartir.md) | Cortes de luz, límites del barrio y compartir | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

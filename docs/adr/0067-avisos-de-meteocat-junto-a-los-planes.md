@@ -1,6 +1,6 @@
 # 67. Avisos de peligro de Meteocat para el Vallès Occidental, junto a los planes
 
-Fecha: 2026-10-10 · Estado: aceptado
+Fecha: 2026-10-10 · Estado: aceptado (cuándo se leen, cambiado por el ADR 0071)
 
 ## Contexto
 
@@ -58,6 +58,11 @@ Lo comprobado ese día:
   página deja de traer los avisos, se le dice una vez a Juanjo por Telegram,
   y otra cuando vuelven (marca `smp-falla` en el directorio de aprendizaje).
 - «Fonts i crèdits» cita a Meteocat como fuente de estos avisos.
+
+## Cambio del 11-10-2026 (3.58.0)
+
+Se leen en cada pasada, no solo con un plan: avisan como los de AEMET, van a
+la página «Perill» y, sin plan, salen solos en «Avisos actius» (ADR 0071).
 
 ## Riesgos y limitaciones
 

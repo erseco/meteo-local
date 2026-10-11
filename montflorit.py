@@ -53,7 +53,9 @@ NAV = re.compile(r'\n( *)<nav class="pagines".*?</nav>', re.S)   # amb el sagnat
 # El menú de la web pública: el temps ara i «Si surts» (ADR 0029).
 # «El temps», sense «ara»: la pàgina també porta la previsió (Juanjo, 08-10-2026).
 # Desde el 09-10-2026, también «Consultes»: lo mismo que el bot, eligiendo qué ver (ADR 0054).
-PAGINES_PUBLIQUES = [("./", "El temps", "i-cloud-sun"), ("sortir.html", "Si surts", "i-door-open"),
+# Desde el 11-10-2026, «Perill», entre «El temps» y «Si surts»: las situaciones de peligro (ADR 0071).
+PAGINES_PUBLIQUES = [("./", "El temps", "i-cloud-sun"), ("perill.html", "Perill", "i-triangle-alert"),
+                     ("sortir.html", "Si surts", "i-door-open"),
                      ("consultes.html", "Consultes", "i-message-square-text")]
 
 
@@ -127,6 +129,11 @@ CANVIS_CONSULTES = [
      f'<html lang="ca" data-theme="light" data-dades="{DADES}" data-notes="{NOTES}">'),
     ("<title>Consultes</title>", "<title>Consultes · Temps a Montflorit</title>"),
 ]
+CANVIS_PERILL = [
+    ('<html lang="ca" data-theme="light">',
+     f'<html lang="ca" data-theme="light" data-dades="{DADES}" data-notes="{NOTES}">'),
+    ("<title>Perill</title>", "<title>Perill · Temps a Montflorit</title>"),
+]
 CANVIS_TELEGRAM = [
     ('<html lang="ca" data-theme="light">',
      f'<html lang="ca" data-theme="light" data-dades="{DADES}" data-notes="{NOTES}">'),
@@ -157,10 +164,10 @@ PROHIBIDES_README = ("casa", "trajecte")
 FORA_FONTS = [re.compile(r"\n      <li>Icones de roba i pluja de .*?</li>")]
 
 SW_PECES = re.compile(r"const PECES = \[.*?\];", re.S)
-PECES = ["./", "index.html", "sortir.html", "consultes.html", "avisos.html", "telegram.html", "fonts.html",
-         "com-funciona.html", "es/", "es/sortir.html", "es/consultes.html", "es/avisos.html", "es/telegram.html",
-         "es/fonts.html", "es/com-funciona.html", "estil.css",
-         "comu.js", "casa.js", "sortir.js", "consultes.js", "avisos.js", "es.js", "manifest.webmanifest",
+PECES = ["./", "index.html", "sortir.html", "perill.html", "consultes.html", "avisos.html", "telegram.html",
+         "fonts.html", "com-funciona.html", "es/", "es/sortir.html", "es/perill.html", "es/consultes.html",
+         "es/avisos.html", "es/telegram.html", "es/fonts.html", "es/com-funciona.html", "estil.css",
+         "comu.js", "casa.js", "sortir.js", "perill.js", "consultes.js", "avisos.js", "es.js", "manifest.webmanifest",
          "icones/icona-192.png"]
 
 # --- En castellano (ADR 0025) ---
@@ -209,12 +216,17 @@ CANVIS_ES_CONSULTES = [
     ('<script src="consultes.js"></script>', '<script src="../consultes.js"></script>'),
     (">Què vols veure</legend>", ">Qué quieres ver</legend>"),
 ]
+CANVIS_ES_PERILL = [
+    (f'data-dades="{DADES}"', f'data-dades="{DADES}" data-arrel="../"'),
+    ('<script src="comu.js"></script>', '<script src="../es.js"></script>\n  <script src="../comu.js"></script>'),
+    ('<script src="perill.js"></script>', '<script src="../perill.js"></script>'),
+]
 CANVIS_ES_COM_FUNCIONA = [
     (f'data-dades="{DADES}"', f'data-dades="{DADES}" data-arrel="../"'),
     ('<script src="comu.js"></script>', '<script src="../es.js"></script>\n  <script src="../comu.js"></script>'),
 ]
 CANVIS_ES_NAV = [(">El temps</a>", ">El tiempo</a>"), (">Si surts</a>", ">Si sales</a>"),
-                 (">Consultes</a>", ">Consultas</a>")]
+                 (">Perill</a>", ">Peligro</a>"), (">Consultes</a>", ">Consultas</a>")]
 # La traducción es automática: se dice en los créditos.
 CREDIT_TRADUCCIO = ('</a>, licencia ISC.</li>',
                     '</a>, licencia ISC.</li>\n      <li>Versión en castellano traducida con IA, sin revisión profesional.</li>')
@@ -254,6 +266,7 @@ def castella(html, nom, taula=None):
     t = canvia(tradueix(html, taula, nom), CANVIS_ES, nom)
     t = canvia(t, {"index.html": CANVIS_ES_INDEX + CANVIS_ES_NAV, "sortir.html": CANVIS_ES_SORTIR + CANVIS_ES_NAV,
                    "consultes.html": CANVIS_ES_CONSULTES + CANVIS_ES_NAV,
+                   "perill.html": CANVIS_ES_PERILL + CANVIS_ES_NAV,
                    "telegram.html": CANVIS_ES_TELEGRAM + CANVIS_ES_NAV,
                    "avisos.html": CANVIS_ES_AVISOS + CANVIS_ES_NAV,
                    "fonts.html": CANVIS_ES_FONTS + CANVIS_ES_NAV + [CREDIT_TRADUCCIO],
@@ -338,6 +351,14 @@ def consultes_html(html):
     return t
 
 
+def perill(html):
+    t = menu(canvia(html, CANVIS_PERILL, "perill.html"), "perill.html", "perill.html")
+    if INDEXABLE:
+        t = canvia(t, [(ROBOTS, "")], "perill.html")
+    comprova("perill.html", t)
+    return t
+
+
 def telegram(html):
     t = menu(canvia(html, CANVIS_TELEGRAM, "telegram.html"), "telegram.html", "telegram.html")
     if INDEXABLE:
@@ -398,6 +419,7 @@ def construeix(desti, web=None):
     os.makedirs(desti, exist_ok=True)
     escriu = lambda nom, text: escriu_fitxer(os.path.join(desti, nom), text)
     pagines = {"index.html": index(llegeix("casa.html")), "sortir.html": sortir(llegeix("sortir.html")),
+               "perill.html": perill(llegeix("perill.html")),
                "consultes.html": consultes_html(llegeix("consultes.html")),
                "avisos.html": avisos(llegeix("avisos.html")), "telegram.html": telegram(llegeix("telegram.html")),
                "fonts.html": fonts(llegeix("fonts.html")),
@@ -408,7 +430,7 @@ def construeix(desti, web=None):
         escriu(nom, html)
         escriu("es/" + nom, castella(html, nom))
     escriu("sw.js", service_worker(llegeix("sw.js")))
-    for nom in ("estil.css", "comu.js", "casa.js", "sortir.js", "consultes.js", "avisos.js"):
+    for nom in ("estil.css", "comu.js", "casa.js", "sortir.js", "perill.js", "consultes.js", "avisos.js"):
         shutil.copy(os.path.join(web, nom), desti)
     shutil.copytree(propi, desti, dirs_exist_ok=True)
     shutil.copytree(os.path.join(web, "img"), os.path.join(desti, "img"), dirs_exist_ok=True)
@@ -441,7 +463,7 @@ def dades_publiques(casa):
 # el bot»; ADR 0054). Los textos los hacen las mismas funciones
 # del bot, a la hora de los datos: así dicen siempre lo mismo. Llevan el HTML
 # de Telegram (<b>, <i> y <a>), que la página limpia antes de mostrar.
-CONSULTES = ("avui", "dema", "sol", "aire", "pollen", "trens", "transit")
+CONSULTES = ("avui", "dema", "sol", "aire", "pollen", "trens", "transit", "llum")
 
 
 def consultes(dades):
@@ -456,6 +478,7 @@ def consultes(dades):
         "pollen": lambda i: B.text_pollen_bot(dades, i, moment),
         "trens": lambda i: B.text_trens_bot(dades, i, moment),
         "transit": lambda i: B.text_transit_bot(dades, i, moment),
+        "llum": lambda i: B.text_llum_bot(dades, i, moment),
     }
     res = {}
     # Los iconos, como marcas que web/consultes.js dibuja con los de la web (ADR 0065).

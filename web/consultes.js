@@ -13,6 +13,8 @@ const OPCIONS = [
   ['avui', () => T('Avui'), 'i-calendar-check'], ['dema', () => T('Demà'), 'i-calendar-plus'],
   ['sol', () => T('Sol'), 'i-sunrise'], ['aire', () => T('Aire'), 'i-factory'], ['pollen', () => T('Pol·len'), 'i-flower'],
   ['trens', () => T('Trens'), 'i-train-front'], ['transit', () => T('Trànsit'), 'i-traffic-cone'],
+  // Els talls de llum a prop, d'e-distribució (ADR 0072).
+  ['llum', () => T('Llum'), 'i-zap-off'],
 ];
 const CLAU_TRIADA = 'meteo.consultes';
 let DADES = null;
@@ -50,64 +52,6 @@ function pintaOpcions() {
     etiqueta.append(boto, icona(icon), element('span', null, nom()));
     caixa.append(etiqueta);
   }
-}
-
-// El text del bot porta l'HTML de Telegram: <b>, <i> i <a href="…">, amb la
-// resta escapat. Es parteix en línies de trossos {t, b, i, href} i es pinta
-// amb elements, sense innerHTML: el que no sigui això surt com a text.
-const ENTITATS = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#x27;': "'", '&#39;': "'" };
-const desescapa = (t) => t.replace(/&(amp|lt|gt|quot|#x27|#39);/g, (e) => ENTITATS[e]);
-const ADRECA = /(https:\/\/[^\s<]+[^\s<.,;:)»])/;
-
-function trossos(text) {
-  const linies = [];
-  let linia = [];
-  let b = false;
-  let i = false;
-  let href = null;
-  const afegeix = (t) => {
-    const parts = t.split('\n');
-    parts.forEach((part, n) => {
-      if (n > 0) { linies.push(linia); linia = []; }
-      // Les adreces soltes (el radar en directe), també enllaçades.
-      for (const tros of desescapa(part).split(ADRECA)) {
-        if (!tros) continue;
-        const esAdreca = !href && ADRECA.test(tros) && tros.match(ADRECA)[0] === tros;
-        linia.push({ t: tros, b, i, href: esAdreca ? tros : href });
-      }
-    });
-  };
-  const etiqueta = /<(\/?)(b|i)>|<a href="([^"]*)">|<\/a>/g;
-  let pos = 0;
-  for (const m of text.matchAll(etiqueta)) {
-    afegeix(text.slice(pos, m.index));
-    pos = m.index + m[0].length;
-    if (m[2] === 'b') b = !m[1];
-    else if (m[2] === 'i') i = !m[1];
-    else if (m[3] !== undefined) href = /^https:\/\//.test(desescapa(m[3])) ? desescapa(m[3]) : null;
-    else href = null;
-  }
-  afegeix(text.slice(pos));
-  linies.push(linia);
-  return linies;
-}
-
-// Els trossos d'una línia, com a elements.
-function nodesLinia(linia) {
-  return linia.map((tros) => {
-    let node = document.createTextNode(tros.t);
-    if (tros.href) {
-      const a = element('a');
-      a.href = tros.href;
-      a.target = '_blank';
-      a.rel = 'noopener';
-      a.append(node);
-      node = a;
-    }
-    if (tros.i) { const em = element('em'); em.append(node); node = em; }
-    if (tros.b) { const st = element('strong'); st.append(node); node = st; }
-    return node;
-  });
 }
 
 // Paràgrafs separats per les línies en blanc, com al bot.

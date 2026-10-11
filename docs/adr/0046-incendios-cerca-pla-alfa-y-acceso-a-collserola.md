@@ -1,6 +1,6 @@
 # 46. Incendios cerca y Pla Alfa (y por qué no el acceso a Collserola)
 
-Fecha: 2026-10-08 · Estado: aceptado
+Fecha: 2026-10-08 · Estado: aceptado (qué incendios avisan, cambiado por el ADR 0071)
 
 ## Contexto
 
@@ -43,6 +43,15 @@ el 12-03-2026 por la peste porcina africana, sin fecha de reapertura.
   ya dice qué es (Juanjo, 08-10-2026).
 - **Sin aviso del Pla Alfa por Telegram**: es oficial, cambia a diario y en
   campaña saldría casi cada día; con el incendio cerca basta.
+
+## Cambio del 11-10-2026 (3.58.0): qué incendios avisan
+
+Ya no avisa todo incendio forestal a menos de 5 km: los de Collserola, a
+cualquier distancia; los de Cerdanyola, siempre; los de los demás municipios
+del parque, a 5 km o menos; los de Ripollet, Sabadell, Barberà o Badia, no.
+Llevan un círculo rojo al empezar, dicen claramente si son dentro del parque y
+enlazan el mapa de Bombers. Y los avisos de peligro tienen página propia,
+«Perill», con un año de historial (ADR 0071).
 
 ## Collserola, retirado el mismo día
 

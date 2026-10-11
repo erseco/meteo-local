@@ -24,11 +24,13 @@
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <!-- Icones de Lucide (ISC) -->
     <symbol id="i-bell-ring" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0M22 8c0-2.3-.8-4.3-2-6"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326M4 2C2.8 3.7 2 5.7 2 8"/></symbol>
+    <symbol id="i-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></symbol>
     <symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.07-17.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
     <symbol id="i-cloud-sun" viewBox="0 0 24 24"><path d="M12 2v2m-7.07.93 1.41 1.41M20 12h2m-2.93-7.07-1.41 1.41M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></symbol>
     <symbol id="i-door-open" viewBox="0 0 24 24"><path d="M10 21H2M10 3H7a2 2 0 0 0-2 2v16M14 12h.01M22 21h-3"/><path d="M19 21V5a2 2 0 0 0-1.675-1.974l-6.163-1.013A1 1 0 0 0 10 3v18a1 1 0 0 0 1.124.992z"/></symbol>
+    <symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3M12 9v4M12 17h.01"/></symbol>
     <symbol id="i-message-square-text" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM13 8H7M17 12H7"/></symbol>
   </svg>
 
@@ -38,6 +40,7 @@
       <p class="ruta">Montflorit, Cerdanyola del Vallès</p>
     </div>
     <div class="cap-botons">
+      <button type="button" class="boto-icona boto-compartir" title="Comparteix aquesta pàgina" aria-label="Comparteix aquesta pàgina"><svg aria-hidden="true"><use href="#i-share-2"></use></svg></button>
       <a class="boto-icona" href="com-funciona.html" aria-current="page" title="Com funciona" aria-label="Com funciona"><svg aria-hidden="true"><use href="#i-circle-help"></use></svg></a>
       <a class="boto-icona boto-avisos" href="avisos.html" title="Avisos al mòbil" aria-label="Avisos al mòbil"><svg aria-hidden="true"><use href="#i-bell-ring"></use></svg></a>
       <button type="button" id="btn-fosc" class="boto-icona" title="Canvia entre tema clar i fosc" aria-label="Canvia entre tema clar i fosc">
@@ -47,6 +50,7 @@
   </header>
   <nav class="pagines" aria-label="Pàgines">
     <a href="casa.html"><svg aria-hidden="true"><use href="#i-cloud-sun"></use></svg>Temps a casa</a>
+    <a href="perill.html"><svg aria-hidden="true"><use href="#i-triangle-alert"></use></svg>Perill</a>
     <a href="sortir.html"><svg aria-hidden="true"><use href="#i-door-open"></use></svg>Si surts</a>
     <a href="consultes.html"><svg aria-hidden="true"><use href="#i-message-square-text"></use></svg>Consultes</a>
   </nav>
@@ -60,11 +64,12 @@
     <p>Els desbordaments de la riera de Sant Cugat del <a href="https://www.cerdanyola.cat/actualitat/els-serveis-municipals-treballen-recuperar-la-normalitat-despres-de-lepisodi-de-pluges" target="_blank" rel="noopener">29 de setembre</a> i del <a href="https://www.cerdanyola.cat/node/20295" target="_blank" rel="noopener">4 d'octubre del 2026</a>, en què l'aigua va entrar a les cases de Montflorit, van fer veure que una previsió detallada del temps podia ser molt útil per a tot el barri. El 6 d'octubre, la web es va obrir a tot el veïnat, i l'endemà va incorporar un avís del risc de desbordament de la riera.</p>
 
     <h2>Què ofereix</h2>
-    <p>La web té tres pàgines i diverses maneres de rebre els avisos:</p>
+    <p>La web té quatre pàgines i diverses maneres de rebre els avisos:</p>
     <ul>
       <li><strong>El temps:</strong> el que mesuren ara les estacions del barri, el radar i la previsió hora a hora fins a les 21&nbsp;h de l'endemà, per trams de matí, tarda i nit, amb els avisos oficials.</li>
+      <li><strong>Perill:</strong> les situacions de perill a Montflorit: els avisos oficials de l'AEMET, de Meteocat i de Protecció Civil, els incendis forestals de Collserola i de Cerdanyola, el risc de desbordament de la riera i el temps extrem, amb un enllaç per saber-ne més.</li>
       <li><strong>Si surts:</strong> per a una hora de sortida i una de tornada, com anirà cada mitjà de transport, quina roba convé, l'estat dels trens que paren a Cerdanyola i les incidències de trànsit a menys de 5&nbsp;km.</li>
-      <li><strong>Consultes:</strong> la previsió d'avui i de demà, el sol i l'índex UV, la qualitat de l'aire, el pol·len de la setmana, els trens i el trànsit.</li>
+      <li><strong>Consultes:</strong> la previsió d'avui i de demà, el sol i l'índex UV, la qualitat de l'aire, el pol·len de la setmana, els trens, el trànsit i els talls de llum.</li>
       <li><strong>Avisos:</strong> al mòbil o a l'ordinador, sense instal·lar res, o per Telegram, amb un bot que respon consultes i un canal igual per a tothom. Avisen de la pluja uns 15 minuts abans que arribi, de les situacions de perill, del risc de desbordament de la riera de Sant Cugat i de la previsió del dia.</li>
     </ul>
 
@@ -87,8 +92,8 @@
       <li><strong>Estacions:</strong> una estació particular del mateix barri, al minut, tres estacions veïnes de la xarxa de Weather Underground, cada cinc minuts, i les de Meteocat a Sabadell i Sant Cugat, que també donen el vent.</li>
       <li><strong>Radar:</strong> el del Servei Meteorològic de Catalunya, amb la seva predicció del moviment de la pluja, i el de RainViewer.</li>
       <li><strong>Models:</strong> AROME de Météo-France, a 1,5 i 2,5&nbsp;km, i ARPEGE, del mateix servei. També ICON-EU, del servei meteorològic alemany, a 7&nbsp;km, i les seves 40 variants, que diuen com de segura és la previsió. Arriben a través d'Open-Meteo.</li>
-      <li><strong>Avisos i emergències:</strong> l'AEMET, els plans de Protecció Civil de la Generalitat, els incendis en curs de Bombers i el Pla Alfa dels Agents Rurals.</li>
-      <li><strong>Trens, trànsit, aire i pol·len:</strong> Renfe i FGC, amb els trens en temps real, i el Servei Català de Trànsit. La qualitat de l'aire surt del servei Copernicus de la Unió Europea, el pol·len, del Punt d'Informació Aerobiològica de la UAB, i el sol i l'índex UV, d'Open-Meteo.</li>
+      <li><strong>Avisos i emergències:</strong> l'AEMET, els avisos de perill de Meteocat, els plans de Protecció Civil de la Generalitat, els incendis en curs de Bombers i el Pla Alfa dels Agents Rurals.</li>
+      <li><strong>Trens, trànsit, llum, aire i pol·len:</strong> Renfe i FGC, amb els trens en temps real, el Servei Català de Trànsit i, per als talls de llum, e-distribució. La qualitat de l'aire surt del servei Copernicus de la Unió Europea, el pol·len, del Punt d'Informació Aerobiològica de la UAB, i el sol i l'índex UV, d'Open-Meteo.</li>
     </ul>
     <p>Totes les fonts, amb els enllaços i les llicències, són a <a href="fonts.html">Fonts i crèdits</a>.</p>
 

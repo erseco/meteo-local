@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.57.0"
+VERSION = "3.58.0"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -245,15 +245,34 @@ TRENS = [
     ("S2", "fgc", "Bellaterra i Universitat Autònoma"),
 ]
 # Lo que pasa alrededor (entorn.py, ADR 0046): incendios forestales en curso
-# de Bombers a menos de ENTORN_RADI_KM; el Pla Alfa del municipio
+# de Bombers (cuáles, abajo); el Pla Alfa del municipio
 # (ALFA_MUNICIPI, código de Agents Rurals), solo si la capa se ha editado en
 # las últimas ALFA_ACTUAL_H horas (fuera de campaña se queda con el último
 # valor); se muestra desde el nivel ALFA_NIVELL_MOSTRAR, el que restringe el
 # acceso a los espacios forestales.
 ENTORN_RADI_KM = 5
+# Desde el 11-10-2026 (ADR 0071), no todo incendio a 5 km: los de Collserola a
+# cualquier distancia, los de Cerdanyola siempre y, de los demás municipios
+# del parque (los nueve del Consorci), solo los de ENTORN_RADI_KM o menos.
+# Ripollet, Sabadell, Barberà o Badia no tienen parque: no avisan. Se piden a
+# Bombers los de la caja INCENDIS_CAIXA (lon. mín., lat. mín., lon. máx., lat.
+# máx.), que abarca el parque y 6 km alrededor de casa; la posición de cada
+# actuación es aproximada: cuenta como parque hasta COLLSEROLA_MARGE_KM fuera.
+MUNICIPI = "Cerdanyola del Vallès"
+MUNICIPIS_COLLSEROLA = ("Barcelona", "Cerdanyola del Vallès", "Esplugues de Llobregat", "Molins de Rei",
+                        "Montcada i Reixac", "el Papiol", "Sant Cugat del Vallès", "Sant Feliu de Llobregat",
+                        "Sant Just Desvern")
+INCENDIS_CAIXA = (1.99, 41.375, 2.21, 41.54)
+COLLSEROLA_MARGE_KM = 0.2
 ALFA_MUNICIPI = "082665"            # Cerdanyola del Vallès
 ALFA_ACTUAL_H = 36
 ALFA_NIVELL_MOSTRAR = 3
+
+# Cortes de luz del barrio (llum.py, ADR 0072): las averías y los trabajos
+# programados en curso de e-distribución dentro de los límites de Montflorit
+# (montflorit-limits.geojson) o a LLUM_MARGE_KM o menos de ellos: el punto que
+# da es aproximado. No se dice la calle.
+LLUM_MARGE_KM = 0.15
 
 # Tráfico de cerca (transit.py, ADR 0052): las incidencias del Servei Català de
 # Trànsit que empiezan a TRANSIT_RADI_KM o menos de casa, en línea recta (AP-7,

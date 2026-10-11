@@ -542,7 +542,7 @@ function blocPlans(plans, smp) {
 // el risc calculat (si n'hi ha) i l'AEMET, cadascun amb la franja del seu
 // nivell. Sense cap, res (proposta del 08-10-2026: amb dos avisos, al mòbil
 // la temperatura quedava fora de la pantalla).
-// Incendis forestals en curs a prop (Bombers) i el Pla Alfa de Cerdanyola des
+// Incendis forestals en curs que interessen al barri (Bombers, ADR 0071) i el Pla Alfa de Cerdanyola des
 // del nivell 3, amb els tancaments que toquen Collserola (Agents Rurals, ADR 0046).
 const ALFA_NIVELL_MOSTRAR = 3;
 
@@ -562,7 +562,9 @@ function blocEntorn(entorn) {
   };
   for (const i of (entorn && entorn.incendis) || []) {
     const km = i.km != null ? T`, a ${coma(i.km)}\u00a0km de Montflorit` : '';
-    items.push(nouItem('vermell', T`Bombers: incendi forestal a ${i.municipi}`,
+    // Dins del parc, dit clarament (Juanjo, 11-10-2026; ADR 0071).
+    items.push(nouItem('vermell', i.collserola ? T`Bombers: incendi forestal dins del Parc de Collserola (${i.municipi})`
+      : T`Bombers: incendi forestal a ${i.municipi}`,
       T`${km}, des de les ${horaCurta(i.inici)}.`,
       'https://interior.gencat.cat/ca/arees_dactuacio/bombers/actuacions-de-bombers/'));
   }
@@ -581,13 +583,34 @@ function blocEntorn(entorn) {
   return items;
 }
 
+// Els avisos de Meteocat sense cap pla a la vista, un per línia, del color
+// del seu grau (ADR 0071); amb pla, ja surten al costat del pla (ADR 0067).
+const COLOR_SMP = { mig: 'groc', alt: 'taronja', maxim: 'vermell' };
+
+function blocSmp(smp, plans) {
+  if ((plans || []).length || !smp) return [];
+  const es = IDIOMA.codi.startsWith('es');
+  return (smp.linies || []).filter((l) => COLOR_SMP[l.nivell]).map((l) => {
+    const item = element('p', `avis-item ${COLOR_SMP[l.nivell]}`);
+    item.append(es ? l.es : l.ca);
+    return item;
+  });
+}
+
 function blocAvisos(dades, extres = [], ara = new Date()) {
-  const items = [...blocPlans(dades.plans, dades.smp), ...blocEntorn(dades.entorn), ...extres.filter(Boolean),
+  const items = [...blocPlans(dades.plans, dades.smp), ...blocSmp(dades.smp, dades.plans),
+    ...blocEntorn(dades.entorn), ...extres.filter(Boolean),
     ...(dades.avisos && dades.avisos.length ? blocAvisosAemet(dades.avisos, ara) : [])];
   if (!items.length) return null;
   const sec = element('section', 'avisos-actius');
   sec.setAttribute('aria-label', T('Avisos actius'));
   sec.append(element('h2', 'seccio', T('Avisos actius')), ...items);
+  // L'historial i el detall, a «Perill» (ADR 0071).
+  const mes = element('p', 'avisos-mes');
+  const a = element('a', null, T('Historial i detall a «Perill»'));
+  a.href = 'perill.html';
+  mes.append(a);
+  sec.append(mes);
   return sec;
 }
 
@@ -766,29 +789,171 @@ document.addEventListener('click', (e) => {
   obreVisor(enllac);
 });
 
-// «Nou!» damunt la campana d'«Avisos al mòbil» (ADR 0048): fins que s'entra a la
-// pàgina «Avisos» (ho recorda el navegador) i, per a tothom, fins al 15-10-2026,
-// una setmana després de publicar-la. El «Nou:» de la pàgina, igual
-// (Juanjo, 08-10-2026).
-const NOU_AVISOS_FINS = new Date('2026-10-16T00:00:00+02:00');
+// Els missatges del bot (a «Consultes» i a «Perill») porten l'HTML de Telegram: <b>, <i> i <a href="…">, amb la
+// resta escapat. Es parteix en línies de trossos {t, b, i, href} i es pinta
+// amb elements, sense innerHTML: el que no sigui això surt com a text.
+const ENTITATS = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#x27;': "'", '&#39;': "'" };
+const desescapa = (t) => t.replace(/&(amp|lt|gt|quot|#x27|#39);/g, (e) => ENTITATS[e]);
+const ADRECA = /(https:\/\/[^\s<]+[^\s<.,;:)»])/;
 
-function marcaNouAvisos(ara = new Date()) {
-  let vist = false;
-  try {
-    if (/(^|\/)avisos\.html$/.test(location.pathname)) localStorage.setItem('meteo.avisos-vist', '1');
-    vist = localStorage.getItem('meteo.avisos-vist') === '1';
-  } catch (_) {}
-  if (ara >= NOU_AVISOS_FINS) {
-    document.querySelectorAll('.novetat').forEach((p) => {
-      p.classList.remove('novetat');
-      p.querySelector('.nou')?.remove();
+function trossos(text) {
+  const linies = [];
+  let linia = [];
+  let b = false;
+  let i = false;
+  let href = null;
+  const afegeix = (t) => {
+    const parts = t.split('\n');
+    parts.forEach((part, n) => {
+      if (n > 0) { linies.push(linia); linia = []; }
+      // Les adreces soltes (el radar en directe), també enllaçades.
+      for (const tros of desescapa(part).split(ADRECA)) {
+        if (!tros) continue;
+        const esAdreca = !href && ADRECA.test(tros) && tros.match(ADRECA)[0] === tros;
+        linia.push({ t: tros, b, i, href: esAdreca ? tros : href });
+      }
     });
+  };
+  const etiqueta = /<(\/?)(b|i)>|<a href="([^"]*)">|<\/a>/g;
+  let pos = 0;
+  for (const m of text.matchAll(etiqueta)) {
+    afegeix(text.slice(pos, m.index));
+    pos = m.index + m[0].length;
+    if (m[2] === 'b') b = !m[1];
+    else if (m[2] === 'i') i = !m[1];
+    else if (m[3] !== undefined) href = /^https:\/\//.test(desescapa(m[3])) ? desescapa(m[3]) : null;
+    else href = null;
   }
-  if (vist || ara >= NOU_AVISOS_FINS) return;
-  for (const a of document.querySelectorAll('.boto-avisos')) a.append(element('span', 'xip-nou', T('Nou!')));
+  afegeix(text.slice(pos));
+  linies.push(linia);
+  return linies;
 }
 
-marcaNouAvisos();
+// Els trossos d'una línia, com a elements.
+function nodesLinia(linia) {
+  return linia.map((tros) => {
+    let node = document.createTextNode(tros.t);
+    if (tros.href) {
+      const a = element('a');
+      a.href = tros.href;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.append(node);
+      node = a;
+    }
+    if (tros.i) { const em = element('em'); em.append(node); node = em; }
+    if (tros.b) { const st = element('strong'); st.append(node); node = st; }
+    return node;
+  });
+}
+
+// «Nou!» damunt d'una pàgina nova: fins que s'hi entra (ho recorda el
+// navegador) i, per a tothom, una setmana després de publicar-la. El «Nou:»
+// del començament de la pàgina, igual (Juanjo, 08-10-2026). La campana
+// d'«Avisos al mòbil» (ADR 0048) i la pestanya «Perill» (ADR 0071; Juanjo,
+// 11-10-2026: «con las mismas reglas»).
+const NOVETATS = [
+  { pagina: 'avisos.html', boto: '.boto-avisos', clau: 'meteo.avisos-vist', fins: new Date('2026-10-16T00:00:00+02:00') },
+  { pagina: 'perill.html', boto: '.pagines a[href$="perill.html"]', clau: 'meteo.perill-vist',
+    fins: new Date('2026-10-19T00:00:00+02:00') },
+];
+
+function marcaNovetats(ara = new Date()) {
+  for (const n of NOVETATS) {
+    const aqui = new RegExp(`(^|/)${n.pagina.replace('.', '\\.')}$`).test(location.pathname);
+    let vist = false;
+    try {
+      if (aqui) localStorage.setItem(n.clau, '1');
+      vist = localStorage.getItem(n.clau) === '1';
+    } catch (_) {}
+    if (aqui && ara >= n.fins) {
+      document.querySelectorAll('.novetat').forEach((p) => {
+        p.classList.remove('novetat');
+        p.querySelector('.nou')?.remove();
+      });
+    }
+    if (vist || ara >= n.fins) continue;
+    for (const a of document.querySelectorAll(n.boto)) {
+      a.classList.add('amb-nou');
+      a.append(element('span', 'xip-nou', T('Nou!')));
+    }
+  }
+}
+
+marcaNovetats();
+
+// Un punt vermell a la pestanya «Perill» quan hi ha una situació de perill
+// nova que no s'ha vist, tant si s'han activat els avisos com si no (Juanjo,
+// 11-10-2026; ADR 0071): mentre és activa o fins a PERILL_NOU_H hores després
+// que comenci, i fins que s'obre «Perill», que apunta fins a quan s'ha vist.
+const PERILL_NOU_H = 24;
+const CLAU_PERILL_VIST = 'meteo.perill-vist-fins';
+
+function perillsNous(historial, vist, ara = new Date()) {
+  const limit = ara.getTime() - PERILL_NOU_H * 3600000;
+  return (historial || []).filter((e) => {
+    const inici = new Date(e.inici).getTime();
+    const actiu = !e.fi && !(e.fins && new Date(e.fins) <= ara);
+    return (actiu || inici >= limit) && (!vist || inici > new Date(vist).getTime());
+  });
+}
+
+function senyalaPerill(historial, ara = new Date()) {
+  let vist = null;
+  try { vist = localStorage.getItem(CLAU_PERILL_VIST); } catch (_) {}
+  const nous = perillsNous(historial, vist, ara).length > 0;
+  for (const a of document.querySelectorAll('.pagines a[href$="perill.html"]')) {
+    let punt = a.querySelector('.punt-perill');
+    if (nous && !punt) {
+      punt = element('span', 'punt-perill');
+      punt.setAttribute('role', 'img');
+      punt.setAttribute('aria-label', T('Hi ha una situació de perill nova'));
+      punt.title = T('Hi ha una situació de perill nova');
+      a.append(punt);
+    } else if (!nous && punt) punt.remove();
+  }
+}
+
+// A «Perill» mateix no cal: s'hi és. A les altres, es mira en carregar i cada
+// cinc minuts.
+if (!/(^|\/)perill\.html$/.test(location.pathname) && document.querySelectorAll('.pagines a[href$="perill.html"]').length) {
+  const miraPerill = () => llegeixDades('avisos.json').then((d) => senyalaPerill(d.historial), () => {});
+  miraPerill();
+  setInterval(miraPerill, 5 * 60000);
+}
+
+// Compartir (Juanjo, 11-10-2026: «cualquier pagina o consulta … quiero que se
+// pueda compartir»; ADR 0072): l'adreça del que es mira, amb l'opció triada
+// (consultes.html#llum) o l'avís (perill.html#…). Al mòbil, el menú de
+// compartir del sistema; si el navegador no en té, es copia l'enllaç i es diu.
+function avisBreu(text) {
+  document.querySelector('.avis-breu')?.remove();
+  const p = element('p', 'avis-breu', text);
+  p.setAttribute('role', 'status');
+  document.body.append(p);
+  setTimeout(() => p.remove(), 4000);
+}
+
+function comparteix(url = location.href, titol = document.title) {
+  if (navigator.share) {
+    navigator.share({ title: titol, url }).catch((e) => {
+      if (e.name !== 'AbortError') copiaEnllac(url);
+    });
+    return;
+  }
+  copiaEnllac(url);
+}
+
+function copiaEnllac(url) {
+  const fet = () => avisBreu(T('Enllaç copiat'));
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(fet, () => avisBreu(T`Copia aquest enllaç: ${url}`));
+  } else {
+    avisBreu(T`Copia aquest enllaç: ${url}`);
+  }
+}
+
+for (const b of document.querySelectorAll('.boto-compartir')) b.addEventListener('click', () => comparteix());
 
 // Per poder instal·lar la web com a aplicació (sw.js).
 if ('serviceWorker' in navigator) navigator.serviceWorker.register(ARREL + 'sw.js').catch(() => {});

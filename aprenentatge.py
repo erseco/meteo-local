@@ -547,6 +547,12 @@ def diari(avui=None, avisa=True):
         smp.comprova(P.get, os.path.join(DIR, "smp-falla"), avisa)
     except Exception as ex:
         print("No he pogut comprovar els avisos de Meteocat:", ex)
+    # El mapa de talls de llum d'e-distribució, que no és una API documentada (ADR 0072).
+    try:
+        import llum
+        llum.comprova(os.path.join(DIR, "llum-falla"), avisa)
+    except Exception as ex:
+        print("No he pogut comprovar el mapa de talls de llum:", ex)
     # Qué dijo «Si surts» de cada medio y qué pasó (ADR 0047 y 0068).
     try:
         print("Si surts: hores noves verificades:", verifica_sortir())

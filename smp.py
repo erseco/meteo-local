@@ -11,8 +11,9 @@ La API de Meteocat prohíbe difundir sus datos a terceros; las páginas
 públicas de meteo.cat llevan los mismos avisos dentro, en la llamada
 «Meteocat.avisosSMP({… avisos: [...] …})», y su aviso legal permite
 reutilizar lo que publica en abierto sin alterarlo, citando la fuente y la
-fecha (Llei 37/2007, la misma base que el radar, ADR 0019). Se lee solo
-mientras se muestra un plan.
+fecha (Llei 37/2007, la misma base que el radar, ADR 0019). Desde el
+11-10-2026 se lee en cada pasada: sus avisos avisan como los de AEMET y van a
+la página «Perill», también sin plan (ADR 0071).
 
 Los avisos son episodios con la estructura de /smp/episodis-oberts de la API:
 cada episodio, un meteoro; cada aviso, sus evoluciones por día, con las
@@ -145,7 +146,8 @@ def llegeix(get, ahora):
 def comprova(get, marca, avisa=True):
     """La prueba diaria (aprenentatge.diari): como la página no es una API, si
     deja de traer los avisos se le dice una vez a Juanjo, y otra cuando vuelve.
-    Mientras falla, junto a los planes no sale nada (casa.py)."""
+    Mientras falla, no se avisa de los de Meteocat ni salen junto a los planes
+    ni en «Perill» (casa.py, ADR 0071)."""
     import os
     import subprocess
     try:
@@ -157,7 +159,7 @@ def comprova(get, marca, avisa=True):
     if error and not os.path.exists(marca):
         open(marca, "w").close()
         text = (f"Temps a Montflorit: la pàgina de Meteocat ja no porta els avisos de perill ({error}). "
-                "Al costat dels plans de Protecció Civil no se'n diu res fins que es torni a llegir: mira smp.py.")
+                "No se n'avisa ni surten al costat dels plans ni a «Perill» fins que es torni a llegir: mira smp.py.")
     elif not error and os.path.exists(marca):
         os.remove(marca)
         text = "Temps a Montflorit: els avisos de perill de Meteocat es tornen a llegir."
