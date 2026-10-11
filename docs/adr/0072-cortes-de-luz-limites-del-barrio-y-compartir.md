@@ -97,23 +97,31 @@ a otros».
   - Las secciones censales 10 y 11 («aprox. Montflorit - Can Cerdà», flaixos
     electorales del Ayuntamiento); la 011 acaba en la riera e incluye el
     bosque. No sirven.
-- **La parte de Collserola**: la zona residencial de OpenStreetMap (way
-  346465228), con el museo y el poblado de Ca n'Oliver, que la Viquipèdia
-  sitúa «a la part de muntanya del barri».
-- **La parte del otro lado de la riera** (Juanjo: «montflorit se extiende
-  también hacia cerdanyola unas calles más allá de la riera»): de la Avinguda
-  de la Flor de Maig y el carrer de l'Escala al de Josep Llimona, hasta el
-  carrer de Santa Rosa. Lo confirman la Festa Major de Montflorit 2022 (actos
-  en el «Carrer Àngel Guimerà (Chopos)» y en el Col·legi Turó de Guiera,
-  revista del Ayuntamiento) y la Viquipèdia («finques de pisos baixos a la
-  zona del Passeig dels Pollancres»).
-- **Juanjo lo retocó a mano** en un mapa editable y lo guardó: es el que vale.
-  Lo volvió a retocar después de publicar la 3.58.0 (el borde junto al carrer
-  de la Riera y, al norte, justo por debajo del carrer de Santa Rosa) y pidió
-  guardar el editor para seguir afinándolo: `eines/limits.py` abre el mapa,
-  guarda en un borrador (`eines/limits-esborrany.geojson`) que la web no usa y,
-  con `aplica`, lo pasa a `montflorit-limits.geojson`. Cambiar los límites no
-  cambia la versión: son datos.
+- **El contorno vigente (11-10-2026, tarde): el del mapa de barrios del
+  PLACC**, el único dibujo municipal, calcado sobre él y retocado por Juanjo en
+  el editor con ese mapa superpuesto. Es un solo polígono: la parte urbana de
+  Collserola y, al otro lado de la riera, hasta el carrer de Santa Rosa, entre
+  Parc Tecnològic y Guiera.
+- **Más el recinto del poblado ibérico de Ca n'Oliver**, con 8 m de margen
+  (contorno de OpenStreetMap). El mapa del PLACC lo dibuja (la mancha oscura
+  junto al barrio) pero la línea del barrio pasa por fuera, porque sigue la
+  parte construida, como el Pla Local d'Habitatge del que sale. Las fuentes lo
+  sitúan en Montflorit: la página de patrimonio del Ayuntamiento («situat en un
+  turó de la serra de Collserola, al barri de Montflorit»), el folleto del
+  museo («Carrer de València, 19 (Montflorit)») y la ficha del Parc Natural de
+  Collserola («in the Montflorit neighbourhood»). Estar dentro del parque no lo
+  excluye del barrio. Solo el recinto: el resto del turó se queda fuera, como
+  en el mapa (Juanjo: «has incluido más de lo que se ve»).
+- **Antes (mañana del 11-10-2026)**: la zona residencial de OpenStreetMap (way
+  346465228) más la parte del otro lado de la riera, que confirmaban la Festa
+  Major de Montflorit 2022 (actos en el «Carrer Àngel Guimerà (Chopos)» y en el
+  Col·legi Turó de Guiera) y la Viquipèdia («finques de pisos baixos a la zona
+  del Passeig dels Pollancres»), retocada a mano por Juanjo. Se sustituyó al
+  encontrarse el mapa del PLACC.
+- **El editor** (`eines/limits.py`) abre el mapa, guarda en un borrador
+  (`eines/limits-esborrany.geojson`) que la web no usa y, con `aplica`, lo
+  pasa a `montflorit-limits.geojson`. Cambiar los límites no cambia la
+  versión: son datos.
 - **Mapa de referencia superpuesto** (`--fons IMATGE S,O,N,E`; Juanjo:
   «hazlo editable … solo el azul actual y el del pdf para superponer»): una
   imagen ya reproyectada a esos límites, con una casilla para mostrarla u
