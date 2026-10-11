@@ -275,6 +275,8 @@ function blocAra(casa, radarDades, vent, veines, hores) {
   sec.append(llista);
   const radar = blocRadar(radarDades, plou, hores);
   if (radar) sec.append(radar);
+  // L'avís de pluja és configurable: l'enllaç per activar-lo (ADR 0072).
+  sec.append(enllacAvisos(T('Per saber quan plourà uns 15 minuts abans, ')));
   return sec;
 }
 

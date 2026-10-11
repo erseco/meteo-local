@@ -121,6 +121,17 @@ temps» (además del radar). La notificación del navegador abre esa misma
 página, con la ficha, y no repite el enlace en el texto. El historial de
 «Perill» guarda el aviso sin el enlace: ya se está en la web.
 
+### Enlace para activar los avisos (3.61.0)
+
+Lo que Juanjo pedía con «todos los avisos que tengan una alerta configurable
+(como la luz) deben tener un enlace, como ya has hecho con la pestaña
+peligros» era esto (la 3.60.0 lo entendió como el enlace dentro de cada
+mensaje, que se queda): cada apartado con un aviso configurable dice cómo
+activarlo, como «Perill» («Per rebre'ls al moment, activa els avisos»), con el
+enlace a «Avisos». «Llum» (talls de llum), «Avui» y «Demà» de «Consultes» (la
+previsió de cada dia) i la targeta d'ara d'«El temps» (la pluja 15 minuts
+abans), en letra pequeña bajo el contenido.
+
 ## Alternativas descartadas
 
 - **Leer el buscador de Endesa con un navegador sin pantalla en el NAS**:

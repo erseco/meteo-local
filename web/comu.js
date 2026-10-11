@@ -597,6 +597,18 @@ function blocSmp(smp, plans) {
   });
 }
 
+// L'enllaç per activar els avisos, a cada apartat que en té un de configurable
+// (Juanjo, 11-10-2026: «todos los avisos que tengan una alerta configurable
+// (como la luz) deben tener un enlace, como ya has hecho con la pestaña
+// peligros»; ADR 0072). Com a «Perill»: «…, activa els avisos.»
+function enllacAvisos(davant) {
+  const p = element('p', 'enllac-avisos');
+  const a = element('a', null, T('activa els avisos'));
+  a.href = 'avisos.html';
+  p.append(davant, a, '.');
+  return p;
+}
+
 function blocAvisos(dades, extres = [], ara = new Date()) {
   const items = [...blocPlans(dades.plans, dades.smp), ...blocSmp(dades.smp, dades.plans),
     ...blocEntorn(dades.entorn), ...extres.filter(Boolean),

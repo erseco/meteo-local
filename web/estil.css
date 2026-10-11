@@ -807,3 +807,6 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .perill .compartir-avis:focus-visible { outline: 2px solid var(--enllac); outline-offset: 2px; }
 /* L'avís de l'enllaç que s'ha obert, destacat una estona. */
 .perill .episodi.assenyalat { box-shadow: 0 0 0 3px var(--enllac); transition: box-shadow .4s; }
+
+/* L'enllaç per activar els avisos, sota els apartats que en tenen (ADR 0072). */
+.enllac-avisos { margin: .6rem 0 0; font-size: .92rem; color: var(--suau); }

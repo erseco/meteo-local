@@ -20,6 +20,10 @@ var IDIOMA = {
     'Tanca': 'Cerrar',
     "Nou!": "¡Nuevo!",
     // «Perill» (ADR 0071).
+    "activa els avisos": "activa los avisos",
+    "Per rebre els talls de llum al moment, ": "Para recibir los cortes de luz al momento, ",
+    "Per rebre la previsió cada dia, ": "Para recibir la previsión cada día, ",
+    "Per saber quan plourà uns 15 minuts abans, ": "Para saber cuándo lloverá unos 15 minutos antes, ",
     "Talls de llum al barri": "Cortes de luz en el barrio",
     "Enllaç copiat": "Enlace copiado",
     "Copia aquest enllaç: {0}": "Copia este enlace: {0}",
