@@ -14,7 +14,7 @@
 date_default_timezone_set('Europe/Madrid');
 const ORIGENS = ['https://meteo-montflorit.github.io'];
 // Els trens i el trànsit no són avisos: es consulten (ADR 0053).
-const TIPUS = ['riera', 'perill', 'pluja'];
+const TIPUS = ['riera', 'perill', 'pluja', 'llum'];
 // La del matí, una hora o cap; la de demà a les 21 h, a part (ADR 0055).
 const HORES = ['', '6', '7', '8'];
 const IDIOMES = ['ca', 'es'];

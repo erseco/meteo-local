@@ -48,6 +48,25 @@ a otros».
   los campos que se usan; si no, se le dice una vez a Juanjo por Telegram, y
   otra cuando vuelve (marca `llum-falla`).
 
+### Calle probable y avisos (3.59.0)
+
+- **Calle probable** (Juanjo: «da una calle probable o un par, determina cómo,
+  basado en las coordenadas, avisando que el servicio no ofrece este dato y es
+  una estimación»): la calle con nombre más cercana al punto del corte, de
+  `montflorit-carrers.geojson` (las vías con nombre de OpenStreetMap que tocan
+  el barrio o están a 300 m, sin caminos ni escaleras, pero con el carrer de la
+  Riera, que está marcado como pista), y una segunda si está a 40 m más o menos
+  de la primera; ninguna si la más cercana está a más de 150 m. Cada texto dice
+  que es una estimación y que e-distribución no da este dato.
+- **Avisos** (Juanjo: «añade esto a las alertas de telegram y de la app»):
+  categoría nueva «Talls de llum al barri» en el bot y en los avisos del
+  navegador, que cada uno activa si quiere, y en el canal. Al aparecer un corte
+  y al dejar de constar, con 🔌 (no tiene nivel) y el mapa centrado; tocar la
+  notificación abre «Llum». Un corte de menos de 3 clientes no se anuncia (es
+  una o dos casas): se ve en «Llum». No va a «Perill»: no es peligro. Un corte
+  se reconoce entre pasadas por su código y su hora de inicio, porque el
+  identificador interno de la capa cambia cuando Enel la rehace.
+
 ### Límites de Montflorit (`montflorit-limits.geojson`)
 
 - No hay un límite oficial publicado: en OpenStreetMap, Wikidata y la

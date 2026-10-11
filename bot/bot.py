@@ -50,9 +50,11 @@ WEB = "https://meteo-montflorit.github.io/"
 DURADA_S = 50
 # Els trens i el trànsit no són avisos: es consulten amb /trens i /transit
 # (Juanjo, 09-10-2026: «el que le interese lo mira en el menú»; ADR 0053).
-TIPUS = ("riera", "perill", "pluja")
+# Els talls de llum del barri, des de l'11-10-2026 (ADR 0072): al bot i a la
+# web, si es trien, i al canal.
+TIPUS = ("riera", "perill", "pluja", "llum")
 PER_DEFECTE = ["riera", "perill"]
-CANAL_TIPUS = ("riera", "perill")
+CANAL_TIPUS = ("riera", "perill", "llum")
 # Al matí se'n tria una hora; la de la nit, la de demà, es pot afegir a part
 # (Juanjo, 09-10-2026: «elegir 1h por la mañana y la de la noche si se
 # quiere»). A les 21 h i no a les 20 h: a les 21 ja hi ha entrat sempre la
@@ -62,7 +64,7 @@ HORA_NIT = "21"
 # El canal, la del matí a les 7 i la de demà a les 21 (ADR 0055).
 CANAL_RESUMS = ("7", "21")
 # Un aviso que llega tarde ya no sirve: lluvia en 15 minutos, como mucho 20.
-VIGENCIA_MIN = {"pluja": 20, "perill": 180, "riera": 180}
+VIGENCIA_MIN = {"pluja": 20, "perill": 180, "riera": 180, "llum": 180}
 DADES_VELLES_H = 2
 
 T = {
@@ -75,10 +77,11 @@ T = {
         "menu": ("Toca el que vulguis rebre. ✓ vol dir que sí; si el tornes a tocar, es treu.\n"
                  "La previsió del dia arriba al matí, a l'hora que triïs, i, si vols, la de demà a les 21 h.\n\n"
                  "Si també ets al canal (@TempsMontflorit), no et repetiré el que ja t'arriba per allà: els avisos "
-                 "de la riera i de perill i la previsió de les 7 h i de les 21 h.\n\n"
+                 "de la riera, de perill i de talls de llum i la previsió de les 7 h i de les 21 h.\n\n"
                  "Només es desa el teu identificador de Telegram i el que triïs aquí. Amb /baixa s'esborra tot."),
         "riera": "Desbordament de la riera de Sant Cugat (en proves)", "perill": "Situacions de perill",
         "pluja": "Pluja a punt de començar (15 min abans)",
+        "llum": "Talls de llum al barri",
         "resum": "Previsió del dia, al matí, a les:", "no": "Cap", "h": "{} h",
         "nit": "A les 21 h, la previsió de demà",
         "baixa": "Fet: s'han esborrat les teves dades i ja no rebràs res. Amb /start pots tornar-hi.",
@@ -101,10 +104,11 @@ T = {
         "menu": ("Toca lo que quieras recibir. ✓ quiere decir que sí; si lo vuelves a tocar, se quita.\n"
                  "La previsión del día llega por la mañana, a la hora que elijas, y, si quieres, la de mañana a las 21 h.\n\n"
                  "Si también estás en el canal (@TempsMontflorit), no te repetiré lo que ya te llega por allí, en "
-                 "catalán: los avisos de la riera y de peligro y la previsión de las 7 h y de las 21 h.\n\n"
+                 "catalán: los avisos de la riera, de peligro y de cortes de luz y la previsión de las 7 h y de las 21 h.\n\n"
                  "Solo se guarda tu identificador de Telegram y lo que elijas aquí. Con /baixa se borra todo."),
         "riera": "Desbordamiento de la riera de Sant Cugat (en pruebas)", "perill": "Situaciones de peligro",
         "pluja": "Lluvia a punto de empezar (15 min antes)",
+        "llum": "Cortes de luz en el barrio",
         "resum": "Previsión del día, por la mañana, a las:", "no": "Ninguna", "h": "{} h",
         "nit": "A las 21 h, la previsión de mañana",
         "baixa": "Hecho: se han borrado tus datos y ya no recibirás nada. Con /start puedes volver.",
@@ -794,6 +798,25 @@ CERCADOR_TALLS = "https://wtp-pro.endesa.com/#/wtp"
 NOTA_BUIDA = ("no hay información adicional",)
 
 
+# Els carrers no els dona e-distribució: s'estimen amb el punt aproximat
+# (llum.carrers_probables) i es diu (Juanjo, 11-10-2026: «avisando que el
+# servicio no ofrece este dato y es una estimación»).
+NOTA_CARRERS = {
+    "ca": "<i>Els carrers són una estimació a partir del punt aproximat del mapa: e-distribució no diu quins carrers queden sense llum.</i>",
+    "es": "<i>Las calles son una estimación a partir del punto aproximado del mapa: e-distribución no dice qué calles se quedan sin luz.</i>",
+}
+
+
+def carrers_llum(carrers, idioma):
+    """«; carrer probable: Carrer de Sant Jeroni» o «; carrers probables: … o …»."""
+    if not carrers:
+        return ""
+    es = idioma == "es"
+    cap = (("calle probable" if es else "carrer probable") if len(carrers) == 1
+           else ("calles probables" if es else "carrers probables"))
+    return f"; {cap}: " + " o ".join(carrers)
+
+
 def quan_llum(iso, idioma, moment, des_de=False):
     """«les 23:12», o «el 10/10 a les 23:12» si no és avui; amb des_de, «des de
     les 23:12» o «des del 10/10 a les 23:12»."""
@@ -828,6 +851,7 @@ def text_llum_bot(dades, idioma, moment):
                else ("Avería" if es else "Avaria"))
         lloc = (("en el barrio" if es else "al barri") if t.get("on") != "vora"
                 else ("en el límite del barrio" if es else "al límit del barri"))
+        lloc += carrers_llum(t.get("carrers"), idioma)
         n = t.get("clients")
         qui = ((f"{n} clientes" if n != 1 else "1 cliente") if es else (f"{n} clients" if n != 1 else "1 client")) \
             if n is not None else ("Clientes" if es else "Clients")
@@ -843,8 +867,7 @@ def text_llum_bot(dades, idioma, moment):
             fila += f" «{html.escape(nota, quote=False)}»"
         files.append(fila)
     if files:
-        files.append("<i>La zona es aproximada: e-distribución no publica las calles de las averías.</i>" if es else
-                     "<i>La zona és aproximada: e-distribució no publica els carrers de les avaries.</i>")
+        files.append(NOTA_CARRERS["es" if es else "ca"])
     else:
         files = ["Ningún corte de luz en Montflorit." if es else "Cap tall de llum a Montflorit."]
     h = dt.datetime.fromisoformat(llum["hora"]).strftime("%H:%M") if llum.get("hora") else "?"

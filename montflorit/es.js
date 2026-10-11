@@ -20,6 +20,7 @@ var IDIOMA = {
     'Tanca': 'Cerrar',
     "Nou!": "¡Nuevo!",
     // «Perill» (ADR 0071).
+    "Talls de llum al barri": "Cortes de luz en el barrio",
     "Enllaç copiat": "Enlace copiado",
     "Copia aquest enllaç: {0}": "Copia este enlace: {0}",
     "Comparteix aquest avís": "Comparte este aviso",

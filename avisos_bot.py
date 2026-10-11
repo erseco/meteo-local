@@ -24,6 +24,11 @@ Tipos:
   nivel, y un plan de Protección Civil al pasar a alerta o a emergencia y
   cuando sale de ellas. La prealerta no avisa (ADR 0051).
 
+- llum, desde el 11-10-2026: un corte de luz de e-distribución en el barrio
+  (llum.py, ADR 0072), al aparecer y al dejar de constar, con la calle
+  probable, que es una estimación. Sin nivel: 🔌. No es peligro: no va a
+  «Perill».
+
 Cada aviso de peligro y de la riera es parte de un episodio (episodi): el
 historial de los últimos HISTORIAL_DIES días, con su comienzo y su final, va
 en avisos.json para la página «Perill» de la web (ADR 0071).
@@ -60,6 +65,11 @@ AEMET = {"ca": "https://www.aemet.es/ca/eltiempo/prediccion/avisos?w=hoy&k=cat",
          "es": "https://www.aemet.es/es/eltiempo/prediccion/avisos?w=hoy&k=cat"}
 METEOCAT = {"ca": "https://www.meteo.cat/prediccio/general", "es": "https://www.meteo.cat/prediccio/general"}
 METODE = "https://github.com/meteo-montflorit/meteo-local/blob/main/docs/estadistica.md"
+# El mapa de talls d'e-distribució centrat al barri (el mateix que /llum).
+MAPA_LLUM = ("https://dpa-portalgis.enel.com/portal/apps/instant/basic/index.html"
+             "?appid=21f5d825ceeb48dba6ef6ee97f840168&center=2.133,41.481&level=15&locale={}")
+# Un tall d'una o dues cases no s'anuncia a tothom: es veu a «Llum» (ADR 0072).
+LLUM_AVIS_CLIENTS_MIN = 3
 ENLLAC_RIERA = {"ca": METODE + "#12-la-riera-de-sant-cugat", "es": METODE + "#12-la-riera-de-sant-cugat"}
 ENLLAC_PROPI = {"ca": METODE + "#11-situaciones-de-peligro", "es": METODE + "#11-situaciones-de-peligro"}
 WEB = "https://meteo-montflorit.github.io/"
@@ -94,7 +104,7 @@ def coma(x):
 # Lo que no tiene nivel lleva su propio símbolo, no un círculo: el incendio,
 # 🔥 (Juanjo, 11-10-2026: «dejar los círculos para este tipo de niveles»; ADR 0071).
 CERCLE = {"groc": "🟡", "taronja": "🟠", "vermell": "🔴", "atencio": "🟠", "perill": "🔴", "incendi": "🔥",
-          "alerta": "🟠", "emergència": "🔴", "fi": "🟢", "nul": "⚪", "mig": "🟡", "alt": "🟠", "maxim": "🔴"}
+          "alerta": "🟠", "emergència": "🔴", "fi": "🟢", "llum": "🔌", "nul": "⚪", "mig": "🟡", "alt": "🟠", "maxim": "🔴"}
 
 
 def negreta(text, nivell=None):
@@ -279,6 +289,52 @@ def text_incendi(i, acabat=False):
                   + "\n" + enllac_bombers("es")}
 
 
+# --- Cortes de luz (ADR 0072) ----------------------------------------------------
+
+def on_llum(t, idioma):
+    """«Carrer de Sant Jeroni o Carrer de Casanovas (carrers probables)», o
+    «al barri» si no hay calle cerca."""
+    es = idioma == "es"
+    c = t.get("carrers") or []
+    if not c:
+        return "en el barrio" if es else "al barri"
+    cap = (("calle probable" if es else "carrer probable") if len(c) == 1
+           else ("calles probables" if es else "carrers probables"))
+    return f"{' o '.join(c)} ({cap})"
+
+
+def text_llum(t, ahora, acabat=False):
+    nota = {"ca": "Els carrers són una estimació a partir del punt aproximat del mapa: e-distribució no diu quins "
+                  "carrers queden sense llum.",
+            "es": "Las calles son una estimación a partir del punto aproximado del mapa: e-distribución no dice qué "
+                  "calles se quedan sin luz."}
+    if acabat:
+        return {"ca": negreta(f"Tall de llum a Montflorit, {on_llum(t, 'ca')}: ja no consta", "fi")
+                      + "\ne-distribució ja no el té entre els talls en curs.",
+                "es": negreta(f"Corte de luz en Montflorit, {on_llum(t, 'es')}: ya no consta", "fi")
+                      + "\ne-distribución ya no lo tiene entre los cortes en curso."}
+    n = t.get("clients")
+    res = {}
+    for idioma in ("ca", "es"):
+        es = idioma == "es"
+        que = (("Trabajos programados" if es else "Treballs programats") if t.get("programat")
+               else ("Avería" if es else "Avaria"))
+        qui = "" if n is None else (f": {n} clientes sin luz" if es else f": {n} clients sense llum") if n != 1 \
+            else (": 1 cliente sin luz" if es else ": 1 client sense llum")
+        quan = ""
+        if t.get("fins"):
+            h = dt.datetime.fromisoformat(t["fins"]).astimezone(ahora.tzinfo).strftime("%H:%M")
+            quan = f"; previsto hasta las {h}" if es else f"; previst fins a les {h}"
+        mapa = ("Mapa de e-distribución" if es else "Mapa d'e-distribució")
+        res[idioma] = (negreta(f"{'Corte de luz en Montflorit' if es else 'Tall de llum a Montflorit'}: "
+                               f"{on_llum(t, idioma)}", "llum")
+                       + f"\n{que} de e-distribución{qui}{quan}." if es else
+                       negreta(f"Tall de llum a Montflorit: {on_llum(t, idioma)}", "llum")
+                       + f"\n{que} d'e-distribució{qui}{quan}.")
+        res[idioma] += f"\n<i>{nota[idioma]}</i>\n" + f'<a href="{html.escape(MAPA_LLUM.format(idioma))}">{mapa}</a>'
+    return res
+
+
 # --- Avisos oficiales nuevos (ADR 0055) -------------------------------------------
 # Van con los de peligro: llegan al canal y a quien tiene «Situacions de perill».
 
@@ -459,6 +515,22 @@ def decideix(estat, salida, ahora):
                 if iid not in ara_ids:
                     afegeix("perill", f"incendi:{iid}:fi", text_incendi(i, acabat=True), "fi", episodi=f"incendi:{iid}")
         estat.setdefault("entorn", {"incendis": {}})["incendis"] = ara_ids
+    # Cortes de luz del barrio (ADR 0072): al aparecer y al dejar de constar. La
+    # primera vez solo se apunta lo que hay; si e-distribución no responde
+    # (None), no se toca el estado.
+    llum = salida.get("llum")
+    if llum is not None:
+        ara_talls = {t["id"]: t for t in llum.get("talls") or []
+                     if (t.get("clients") or 0) >= LLUM_AVIS_CLIENTS_MIN}
+        abans = estat.get("llum")
+        if abans is not None:
+            for k, t in ara_talls.items():
+                if k not in abans:
+                    afegeix("llum", k, text_llum(t, ahora), "llum")
+            for k, t in abans.items():
+                if k not in ara_talls:
+                    afegeix("llum", f"{k}:fi", text_llum(t, ahora, acabat=True), "fi")
+        estat["llum"] = ara_talls
     # Avisos oficiales nuevos (ADR 0055). La primera vez solo se apunta lo que
     # hay; si una fuente ha fallado (None), no se toca: no es que se acabe.
     of = estat.get("oficials")

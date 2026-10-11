@@ -12,6 +12,13 @@ otra. Solo cuentan los del barrio: dentro de los límites de Montflorit
 (montflorit-limits.geojson, retocados por Juanjo el 11-10-2026) o a
 LLUM_MARGE_KM o menos de ellos, por lo aproximado del punto.
 
+Como e-distribución no da la calle, se estima (Juanjo, 11-10-2026: «da una
+calle probable o un par … avisando que el servicio no ofrece este dato y es
+una estimación»): la calle con nombre más cercana al punto, de las de
+montflorit-carrers.geojson (OpenStreetMap), y una segunda si está casi igual
+de cerca (CARRER_SEGON_M de diferencia como mucho); ninguna si la más cercana
+está a más de CARRER_MAX_M.
+
 Las calles y los portales de los trabajos programados sí están en el
 buscador de Endesa (wtp-pro.endesa.com), pero está protegido contra la
 lectura automática: no se lee, se enlaza (Juanjo, 11-10-2026).
@@ -33,7 +40,7 @@ import config as C
 CAPA = ("https://dpa-portalgis.enel.com/server/rest/services/Hosted/"
         "ESP_Prod_power_cut_View/FeatureServer/0")
 UA = {"User-Agent": "Temps a Montflorit (https://meteo-montflorit.github.io/)"}
-CAMPS = ("service_type,service_des_ca,service_des_es,des_cause_ca,des_cause_es,affected_client,"
+CAMPS = ("cd_code,service_type,service_des_ca,service_des_es,des_cause_ca,des_cause_es,affected_client,"
          "interruption_date,reposition_date,note,update_time,municipality")
 
 
@@ -58,6 +65,9 @@ def hora(text):
 
 
 LIMITS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "montflorit-limits.geojson")
+CARRERS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "montflorit-carrers.geojson")
+CARRER_MAX_M = 150
+CARRER_SEGON_M = 40
 
 
 def limits():
@@ -85,6 +95,28 @@ def km_segment(p, a, b):
     return math.hypot(px - ax - t * dx, py - ay - t * dy) * math.pi / 180 * 6371
 
 
+def carrers():
+    """{nom: [tram, …]}, cada tram como [(lat, lon), …]."""
+    with open(CARRERS, encoding="utf-8") as f:
+        return {c["properties"]["nom"]: [[(y, x) for x, y in tram] for tram in c["geometry"]["coordinates"]]
+                for c in json.load(f)["features"]}
+
+
+def carrers_probables(p, vies=None):
+    """La calle más cercana al punto y, si hay otra casi igual de cerca, esa
+    también; [] si no hay ninguna a CARRER_MAX_M o menos. Es una estimación:
+    el punto de e-distribución es aproximado."""
+    vies = vies if vies is not None else carrers()
+    dist = sorted((min(km_segment(p, a, b) for tram in trams for a, b in zip(tram, tram[1:])) * 1000, nom)
+                  for nom, trams in vies.items())
+    if not dist or dist[0][0] > CARRER_MAX_M:
+        return []
+    res = [dist[0][1]]
+    if len(dist) > 1 and dist[1][0] <= min(CARRER_MAX_M, dist[0][0] + CARRER_SEGON_M):
+        res.append(dist[1][1])
+    return res
+
+
 def al_barri(p, anells):
     """«dins», «vora» (a LLUM_MARGE_KM o menos del límite) o None."""
     if any(dins(p, a) for a in anells):
@@ -99,6 +131,7 @@ def calcula(ara=None, dades=None):
     al más lejano, y la hora de la consulta."""
     ara = ara or dt.datetime.now().astimezone()
     anells = limits()
+    vies = carrers()
     marge = C.LLUM_MARGE_KM / 100            # en grados, de sobra
     lats = [y for a in anells for y, _ in a]
     lons = [x for a in anells for _, x in a]
@@ -117,7 +150,9 @@ def calcula(ara=None, dades=None):
         if not on:
             continue
         talls.append({
+            "id": f"{a.get('cd_code') or '?'}:{a.get('interruption_date') or '?'}",
             "on": on,
+            "carrers": carrers_probables((g["y"], g["x"]), vies),
             "programat": a.get("service_type") == "LV",
             "tipus": {"ca": a.get("service_des_ca") or a.get("service_des_es"), "es": a.get("service_des_es")},
             "causa": {"ca": a.get("des_cause_ca") or a.get("des_cause_es"), "es": a.get("des_cause_es")},

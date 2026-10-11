@@ -45,7 +45,7 @@ PROVA_MIN = 10          # una prueba pedida hace más de esto ya no se manda
 COS_MAX = 1500          # el cuerpo de la notificación, en caracteres
 # Tocar un aviso de peligro o de la riera abre «Perill», con el detalle y el
 # enlace para saber más (ADR 0071); el de lluvia, la página del tiempo.
-URL = {"pluja": "./", "riera": "perill.html", "perill": "perill.html"}
+URL = {"pluja": "./", "riera": "perill.html", "perill": "perill.html", "llum": "consultes.html#llum"}
 
 
 def url(pagina, idioma):

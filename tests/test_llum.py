@@ -46,19 +46,50 @@ class Llum(unittest.TestCase):
         dades = {"generat": ARA.isoformat(), "llum": LL.calcula(ARA, d)}
         ca = B.text_llum_bot(dades, "ca", ARA)
         self.assertIn("<b>Talls de llum a Montflorit</b>", ca)
-        self.assertIn("<b>Avaria</b> (al barri): 45 clients sense llum des del 10/10 a les 23:12; previst fins a "
+        self.assertIn("<b>Avaria</b> (al barri; carrers probables: Carrer de Catalunya o Carrer de Montflorit): "
+                      "45 clients sense llum des del 10/10 a les 23:12; previst fins a "
                       "les 08:15. «Su suministro está afectado por una incidencia, un equipo revisa la zona.»", ca)
         # La nota que no diu res, fora; un sol client, en singular.
-        self.assertIn("<b>Treballs programats</b> (al límit del barri): 1 client sense llum des de les 07:00; "
-                      "previst fins a les 12:00.\n", ca)
-        self.assertIn("La zona és aproximada", ca)
+        self.assertIn("<b>Treballs programats</b> (al límit del barri; carrers probables: Carrer de Sant Isidre o "
+                      "Carrer de Sant Cugat): 1 client sense llum des de les 07:00; previst fins a les 12:00.\n", ca)
+        self.assertIn("Els carrers són una estimació", ca)
         self.assertIn("center=2.133,41.481&amp;level=15&amp;locale=ca", ca)
         self.assertIn('<a href="https://wtp-pro.endesa.com/#/wtp">Talls programats per carrer (Endesa)</a>', ca)
         es = B.text_llum_bot({"generat": ARA.isoformat(), "llum": {"hora": ARA.isoformat(), "talls": []}}, "es", ARA)
         self.assertIn("Ningún corte de luz en Montflorit.", es)
-        self.assertNotIn("aproximada", es)
+        self.assertNotIn("estimación", es)
         self.assertIn("locale=es", es)
         self.assertIn("Ara no hi ha dades", B.text_llum_bot({"generat": ARA.isoformat(), "llum": None}, "ca", ARA))
+
+    def test_carrer_probable(self):
+        # ADR 0072: el més proper i, si n'hi ha un altre a 40 m més o menys, també; cap si és lluny.
+        vies = {"A": [[(41.0, 2.0), (41.0, 2.01)]], "B": [[(41.0003, 2.0), (41.0003, 2.01)]],
+                "C": [[(41.003, 2.0), (41.003, 2.01)]]}
+        self.assertEqual(LL.carrers_probables((41.0001, 2.005), vies), ["A", "B"])   # 11 i 22 m
+        self.assertEqual(LL.carrers_probables((41.0029, 2.005), vies), ["C"])        # 11 m; B a 289 m
+        self.assertEqual(LL.carrers_probables((41.02, 2.005), vies), [])
+        # Amb els carrers de veritat: Sant Jeroni i Santa Margarida, a l'altre costat de la riera.
+        self.assertEqual(set(LL.carrers_probables((41.4843, 2.1335))), {"Carrer de Santa Margarida", "Carrer de Sant Jeroni"})
+
+    def test_avis_quan_apareix_i_quan_s_acaba(self):
+        import avisos_bot as AB
+        tall = {"id": "D1:11/10/2026 07:00", "on": "dins", "carrers": ["Carrer de Sant Jeroni"], "programat": False,
+                "clients": 45, "fins": "2026-10-11T09:00+02:00"}
+        petit = {**tall, "id": "D2:x", "clients": 1}
+        estat = {}
+        passa = lambda talls, m=0: [a for a in AB.decideix(estat, {"llum": {"talls": talls}}, ARA + dt.timedelta(minutes=m))
+                                    if a["tipus"] == "llum"]
+        self.assertEqual(passa([]), [])                       # la primera vegada, només s'apunta
+        nous = passa([tall, petit], 6)
+        self.assertEqual(len(nous), 1)                        # el d'un client no s'anuncia
+        self.assertTrue(nous[0]["ca"].startswith("🔌 <b>Tall de llum a Montflorit: Carrer de Sant Jeroni (carrer probable)</b>"))
+        self.assertIn("Els carrers són una estimació", nous[0]["ca"])
+        self.assertIn("&amp;level=15", nous[0]["ca"])
+        self.assertNotIn("episodi", nous[0])                  # no va a «Perill»
+        self.assertEqual(passa([tall], 12), [])
+        self.assertEqual(AB.decideix(estat, {"llum": None}, ARA), [])   # e-distribució no respon: res
+        fi = passa([], 18)
+        self.assertTrue(fi[0]["ca"].startswith("🟢 <b>Tall de llum a Montflorit, Carrer de Sant Jeroni (carrer probable): ja no consta</b>"))
 
     def test_prova_diaria(self):
         bona = lambda url, p: ({"fields": [{"name": n} for n in LL.CAMPS_NECESSARIS]} if p == {"f": "json"}

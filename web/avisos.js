@@ -9,6 +9,8 @@ const TIPUS_PUSH = [
   ['perill', T('Situacions de perill'), 'i-triangle-alert'],
   ['riera', T('Desbordament de la riera de Sant Cugat (en proves)'), 'i-waves'],
   ['pluja', T('Pluja a punt de començar (15 min abans)'), 'i-cloud-rain'],
+  // Els talls de llum del barri (ADR 0072).
+  ['llum', T('Talls de llum al barri'), 'i-zap-off'],
 ];
 // Per començar, com al bot: la riera i el perill.
 const PER_DEFECTE_PUSH = ['riera', 'perill'];
