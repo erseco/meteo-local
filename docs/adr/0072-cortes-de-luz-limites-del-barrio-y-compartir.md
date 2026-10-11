@@ -65,6 +65,12 @@ a otros».
   revista del Ayuntamiento) y la Viquipèdia («finques de pisos baixos a la
   zona del Passeig dels Pollancres»).
 - **Juanjo lo retocó a mano** en un mapa editable y lo guardó: es el que vale.
+  Lo volvió a retocar después de publicar la 3.58.0 (el borde junto al carrer
+  de la Riera y, al norte, justo por debajo del carrer de Santa Rosa) y pidió
+  guardar el editor para seguir afinándolo: `eines/limits.py` abre el mapa,
+  guarda en un borrador (`eines/limits-esborrany.geojson`) que la web no usa y,
+  con `aplica`, lo pasa a `montflorit-limits.geojson`. Cambiar los límites no
+  cambia la versión: son datos.
 - Se guarda en el repositorio como GeoJSON, con la fuente y la licencia ODbL de
   OpenStreetMap, para otros usos (Juanjo: «guarda estos datos, podremos
   usarlos más adelante para otras cosas»).

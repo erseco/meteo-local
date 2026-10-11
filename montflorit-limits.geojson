@@ -1,7 +1,7 @@
 {
  "type": "FeatureCollection",
  "nom": "Límits de Montflorit (Cerdanyola del Vallès)",
- "font": "La part de Collserola, de la zona residencial d'OpenStreetMap (way 346465228), © col·laboradors d'OpenStreetMap, llicència ODbL (https://www.openstreetmap.org/copyright); retocada i ampliada a l'altre costat de la riera per Juanjo, l'11-10-2026 (ADR 0072).",
+ "font": "La part de Collserola, de la zona residencial d'OpenStreetMap (way 346465228), © col·laboradors d'OpenStreetMap, llicència ODbL (https://www.openstreetmap.org/copyright); retocada i ampliada a l'altre costat de la riera per Juanjo l'11-10-2026, amb l'editor eines/limits.py (ADR 0072).",
  "features": [
   {
    "type": "Feature",
@@ -33,12 +33,12 @@
        41.48288
       ],
       [
-       2.13364,
-       41.48235
+       2.13348,
+       41.48271
       ],
       [
-       2.13334,
-       41.48247
+       2.1332,
+       41.48269
       ],
       [
        2.13257,
@@ -222,16 +222,20 @@
        41.48532
       ],
       [
-       2.1326,
-       41.4858
+       2.13241,
+       41.48548
       ],
       [
-       2.1343,
-       41.48595
+       2.13251,
+       41.48525
       ],
       [
-       2.1355,
-       41.4861
+       2.1344,
+       41.48572
+      ],
+      [
+       2.1352,
+       41.4859
       ],
       [
        2.1361,
