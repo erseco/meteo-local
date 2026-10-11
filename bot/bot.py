@@ -1328,26 +1328,22 @@ def migra(api, subs, estat):
 
 
 def canvi_canal(api, cm):
-    """Juanjo quiere saber quién entra y quién sale del canal (08-10-2026).
-    Telegram lo cuenta al bot porque es administrador del canal. El nombre va
-    solo en el aviso a Juanjo, que lo ve igualmente en la lista del canal: no
-    se guarda."""
+    """Juanjo quiere saber cuándo entra y sale alguien del canal (08-10-2026).
+    Telegram lo cuenta al bot porque es administrador del canal. Desde el
+    11-10-2026, sin el nombre: solo el total (Juanjo: «quita el nombre»; la
+    página «Privacitat» dice que la web solo cuenta el total, ADR 0073)."""
     if cm.get("chat", {}).get("username", "").lower() != CANAL.lstrip("@").lower():
         return
     dins = lambda m: m.get("status") in DINS_CANAL or bool(m.get("status") == "restricted" and m.get("is_member"))
     abans, despres = cm.get("old_chat_member") or {}, cm.get("new_chat_member") or {}
     if dins(abans) == dins(despres):
         return
-    u = despres.get("user") or abans.get("user") or {}
-    nom = " ".join(x for x in (u.get("first_name"), u.get("last_name")) if x) or "?"
-    if u.get("username"):
-        nom += f" (@{u['username']})"
     try:
         total = f" Ja en són {api('getChatMemberCount', chat_id=CANAL)}."
     except Exception:
         total = ""
     que = "alta nova al canal" if dins(despres) else "baixa del canal"
-    avisa_juanjo(f"Temps a Montflorit: {que}, {nom}.{total}")
+    avisa_juanjo(f"Temps a Montflorit: {que}.{total}")
 
 
 CONSULTES = ("/dema", "/trens", "/transit", "/llum", "/radar", "/sol", "/aire", "/pollen", "/avisos_actius")

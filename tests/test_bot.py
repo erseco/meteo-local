@@ -130,9 +130,10 @@ class Menu(unittest.TestCase):
             B.atén(Api(), {}, canvi({"id": -200, "type": "channel", "username": "Altre"}, "left", "member"))
         finally:
             B.avisa_juanjo = original
-        self.assertEqual(avisos, ["Temps a Montflorit: alta nova al canal, Quela (@Glamurosa). Ja en són 10.",
-                                  "Temps a Montflorit: baixa del canal, Quela (@Glamurosa). Ja en són 10.",
-                                  "Temps a Montflorit: baixa del canal, Quela (@Glamurosa). Ja en són 10."])
+        # Sense el nom (ADR 0073).
+        self.assertEqual(avisos, ["Temps a Montflorit: alta nova al canal. Ja en són 10.",
+                                  "Temps a Montflorit: baixa del canal. Ja en són 10.",
+                                  "Temps a Montflorit: baixa del canal. Ja en són 10."])
 
     def test_grups_no(self):
         api, subs = Api(), {}

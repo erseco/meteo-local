@@ -134,6 +134,12 @@ CANVIS_PERILL = [
      f'<html lang="ca" data-theme="light" data-dades="{DADES}" data-notes="{NOTES}">'),
     ("<title>Perill</title>", "<title>Perill · Temps a Montflorit</title>"),
 ]
+# «Privacitat» (ADR 0073): què es desa i què no, en una pàgina pròpia.
+CANVIS_PRIVACITAT = [
+    ('<html lang="ca" data-theme="light">',
+     f'<html lang="ca" data-theme="light" data-dades="{DADES}" data-notes="{NOTES}">'),
+    ("<title>Privacitat · Temps a casa</title>", "<title>Privacitat · Temps a Montflorit</title>"),
+]
 CANVIS_TELEGRAM = [
     ('<html lang="ca" data-theme="light">',
      f'<html lang="ca" data-theme="light" data-dades="{DADES}" data-notes="{NOTES}">'),
@@ -165,8 +171,8 @@ FORA_FONTS = [re.compile(r"\n      <li>Icones de roba i pluja de .*?</li>")]
 
 SW_PECES = re.compile(r"const PECES = \[.*?\];", re.S)
 PECES = ["./", "index.html", "sortir.html", "perill.html", "consultes.html", "avisos.html", "telegram.html",
-         "fonts.html", "com-funciona.html", "es/", "es/sortir.html", "es/perill.html", "es/consultes.html",
-         "es/avisos.html", "es/telegram.html", "es/fonts.html", "es/com-funciona.html", "estil.css",
+         "fonts.html", "com-funciona.html", "privacitat.html", "es/", "es/sortir.html", "es/perill.html", "es/consultes.html",
+         "es/avisos.html", "es/telegram.html", "es/fonts.html", "es/com-funciona.html", "es/privacitat.html", "estil.css",
          "comu.js", "casa.js", "sortir.js", "perill.js", "consultes.js", "avisos.js", "es.js", "manifest.webmanifest",
          "icones/icona-192.png"]
 
@@ -221,6 +227,10 @@ CANVIS_ES_PERILL = [
     ('<script src="comu.js"></script>', '<script src="../es.js"></script>\n  <script src="../comu.js"></script>'),
     ('<script src="perill.js"></script>', '<script src="../perill.js"></script>'),
 ]
+CANVIS_ES_PRIVACITAT = [
+    (f'data-dades="{DADES}"', f'data-dades="{DADES}" data-arrel="../"'),
+    ('<script src="comu.js"></script>', '<script src="../es.js"></script>\n  <script src="../comu.js"></script>'),
+]
 CANVIS_ES_COM_FUNCIONA = [
     (f'data-dades="{DADES}"', f'data-dades="{DADES}" data-arrel="../"'),
     ('<script src="comu.js"></script>', '<script src="../es.js"></script>\n  <script src="../comu.js"></script>'),
@@ -270,7 +280,8 @@ def castella(html, nom, taula=None):
                    "telegram.html": CANVIS_ES_TELEGRAM + CANVIS_ES_NAV,
                    "avisos.html": CANVIS_ES_AVISOS + CANVIS_ES_NAV,
                    "fonts.html": CANVIS_ES_FONTS + CANVIS_ES_NAV + [CREDIT_TRADUCCIO],
-                   "com-funciona.html": CANVIS_ES_COM_FUNCIONA + CANVIS_ES_NAV}[nom], nom)
+                   "com-funciona.html": CANVIS_ES_COM_FUNCIONA + CANVIS_ES_NAV,
+                   "privacitat.html": CANVIS_ES_PRIVACITAT + CANVIS_ES_NAV}[nom], nom)
     if nom == "telegram.html":     # les captures, les de Telegram en castellà
         t = t.replace('img/telegram/ca/', 'img/telegram/es/').replace('="img/', '="../img/')
     comprova("es/" + nom, t, PROHIBIDES_SORTIR if nom in ("sortir.html", "telegram.html", "consultes.html") else
@@ -385,6 +396,14 @@ def fonts(fonts_html):
     return t
 
 
+def privacitat(html):
+    t = menu(canvia(html, CANVIS_PRIVACITAT, "privacitat.html"), "privacitat.html", "privacitat.html")
+    if INDEXABLE:
+        t = canvia(t, [(ROBOTS, "")], "privacitat.html")
+    comprova("privacitat.html", t)
+    return t
+
+
 def com_funciona(html):
     t = menu(canvia(html, CANVIS_COM_FUNCIONA, "com-funciona.html"), "com-funciona.html", "com-funciona.html")
     if INDEXABLE:
@@ -423,7 +442,8 @@ def construeix(desti, web=None):
                "consultes.html": consultes_html(llegeix("consultes.html")),
                "avisos.html": avisos(llegeix("avisos.html")), "telegram.html": telegram(llegeix("telegram.html")),
                "fonts.html": fonts(llegeix("fonts.html")),
-               "com-funciona.html": com_funciona(llegeix("com-funciona.html"))}
+               "com-funciona.html": com_funciona(llegeix("com-funciona.html")),
+               "privacitat.html": privacitat(llegeix("privacitat.html"))}
     pagines = {nom: alternes(idioma(html, nom), nom) for nom, html in pagines.items()}
     os.makedirs(os.path.join(desti, "es"), exist_ok=True)
     for nom, html in pagines.items():

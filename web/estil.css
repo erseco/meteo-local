@@ -810,3 +810,6 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 
 /* L'enllaç per activar els avisos, sota els apartats que en tenen (ADR 0072). */
 .enllac-avisos { margin: .6rem 0 0; font-size: .92rem; color: var(--suau); }
+
+/* «Privacitat» (ADR 0073): la idea principal, amb una franja de color, no en negreta. */
+.contingut .entrada.destacada { font-size: 1.1rem; border-left: 5px solid var(--enllac); padding: .2rem 0 .2rem .8rem; }
