@@ -47,3 +47,17 @@ pidió que la recomendación lleve un dibujo visible del vehículo.
 
 `probar-web` en los tres navegadores y axe-core en las dos páginas; pruebas
 automáticas sin cambios (el entorno de prueba simula `navigator`).
+
+## Cambio del 11-10-2026 (3.59.1): siempre la versión publicada
+
+El service worker pedía los archivos con la caché normal del navegador, y
+GitHub Pages deja guardar cada archivo 10 minutos: justo después de publicar,
+el navegador seguía sirviendo el programa anterior. Juanjo no veía en «Avisos»
+la casilla nueva de los cortes de luz. Ahora pide cada archivo con
+`cache: 'no-cache'`: siempre pregunta al servidor si hay versión nueva y, si
+no ha cambiado, el servidor responde «sin cambios» sin volver a enviarlo. Sin
+conexión sigue sirviendo la copia guardada. Probado en Chromium y Firefox con
+un servidor que manda la misma caché que GitHub Pages: un cambio se ve en la
+recarga siguiente. En el WebKit de Playwright para Linux la recarga con
+service worker se cuelga igual con el service worker anterior: es del entorno
+de pruebas; Safari real no se ha podido probar.

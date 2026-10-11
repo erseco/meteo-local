@@ -18,8 +18,13 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.endsWith('.json')) return;
+  // Sempre es pregunta al servidor si hi ha versió nova (no-cache: si no ha
+  // canviat, respon «sense canvis» i no es torna a baixar). Sense això, la
+  // memòria del navegador (GitHub Pages hi deixa 10 minuts) servia el
+  // programa d'abans just després de publicar: el 11-10-2026, la casella
+  // nova dels talls de llum no sortia a «Avisos» (ADR 0015).
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: 'no-cache' })
       .then((resposta) => {
         if (resposta.ok) {
           const copia = resposta.clone();
