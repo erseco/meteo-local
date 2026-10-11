@@ -873,8 +873,11 @@ def text_llum_bot(dades, idioma, moment):
     h = dt.datetime.fromisoformat(llum["hora"]).strftime("%H:%M") if llum.get("hora") else "?"
     return (f"<b>{cap}</b>\n" + "\n".join(files) + "\n"
             + enllac(MAPA_LLUM.format("es" if es else "ca"), ("Mapa de e-distribución" if es else "Mapa d'e-distribució") + f", {h}")
-            + "\n" + enllac(CERCADOR_TALLS, "Cortes programados por calle (Endesa)" if es
-                            else "Talls programats per carrer (Endesa)"))
+            # El cercador només llista els municipis amb talls programats els 7 dies
+            # següents: sense cap, Cerdanyola no hi surt (comprovat l'11-10-2026).
+            + "\n" + ("Cortes programados por calle: " if es else "Talls programats per carrer: ")
+            + enllac(CERCADOR_TALLS, "buscador de Endesa" if es else "cercador d'Endesa")
+            + (" (Cerdanyola solo aparece cuando tiene alguno)" if es else " (Cerdanyola només hi surt quan en té)"))
 
 
 # --- Sol, aire i pol·len (ADR 0054) -------------------------------------------------

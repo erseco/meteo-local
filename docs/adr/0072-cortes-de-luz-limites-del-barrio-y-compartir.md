@@ -28,7 +28,11 @@ a otros».
   recibe un error y solo responde a un navegador real. **No se lee**: sería
   saltarse una protección puesta a propósito, y puede bloquear el NAS o dejar
   de funcionar. Se enlaza («Talls programats per carrer (Endesa)») y queda
-  pendiente pedir permiso a e-distribución (Juanjo: «hazlo como dices»). Su
+  pendiente pedir permiso a e-distribución (Juanjo: «hazlo como dices»). El
+  buscador solo lista los municipios con cortes programados en los 7 días
+  siguientes (comprobado el 11-10-2026: sus 56 municipios de la provincia de
+  Barcelona son los de sus datos); sin ninguno, Cerdanyola no sale, y el enlace
+  lo dice («Cerdanyola només hi surt quan en té», 3.59.2). Su
   API oficial de averías es solo para comercializadoras y por CUPS.
 - **Solo los del barrio**: dentro de los límites de Montflorit o a
   `LLUM_MARGE_KM` (150 m) o menos de ellos, por lo aproximado del punto

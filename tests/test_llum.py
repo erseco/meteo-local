@@ -54,7 +54,8 @@ class Llum(unittest.TestCase):
                       "Carrer de Sant Cugat): 1 client sense llum des de les 07:00; previst fins a les 12:00.\n", ca)
         self.assertIn("Els carrers són una estimació", ca)
         self.assertIn("center=2.133,41.481&amp;level=15&amp;locale=ca", ca)
-        self.assertIn('<a href="https://wtp-pro.endesa.com/#/wtp">Talls programats per carrer (Endesa)</a>', ca)
+        self.assertIn('Talls programats per carrer: <a href="https://wtp-pro.endesa.com/#/wtp">cercador d\'Endesa</a> '
+                      '(Cerdanyola només hi surt quan en té)', ca)
         es = B.text_llum_bot({"generat": ARA.isoformat(), "llum": {"hora": ARA.isoformat(), "talls": []}}, "es", ARA)
         self.assertIn("Ningún corte de luz en Montflorit.", es)
         self.assertNotIn("estimación", es)
