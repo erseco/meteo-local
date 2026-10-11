@@ -32,8 +32,10 @@ actius» («hazlo así»).
   los otros filtros; el límite no se copia en el repositorio.
 - **En Cerdanyola, siempre**.
 - **En los demás municipios del parque (`MUNICIPIS_COLLSEROLA`, los nueve del
-  Consorci), solo a `ENTORN_RADI_KM` (5 km) o menos**: «incluye las
+  Consorci), solo a `ENTORN_RADI_KM` (3 km) o menos**: «incluye las
   poblaciones dentro de collserola como montcada, pero solo si son cercanas».
+  Empezó en 5 km; el mismo 11-10-2026, tras recibir un incendio de Montcada
+  a 4,8 km, Juanjo lo bajó: «5km es demasiado, ponlo a 3km» (3.63.1).
 - Los demás, no, por cerca que estén. A Bombers se le piden los incendios de
   vegetación de la caja `INCENDIS_CAIXA`, que abarca el parque y 6 km
   alrededor de casa; siguen fuera los de vegetación urbana y los acabados.
@@ -58,7 +60,7 @@ actius» («hazlo así»).
 - Desde la 3.58.1, la distancia a Montflorit va siempre en el título, al
   empezar y al acabar, porque es lo que se ve en la notificación y en la ficha
   plegada de «Perill» (Juanjo: «tiene que poner la distancia a Montflorit,
-  siempre»): «Incendi forestal a Montcada i Reixac, a 5,0 km de Montflorit».
+  siempre»): «Incendi forestal a Montcada i Reixac, a 2,5 km de Montflorit».
   El texto ya no la repite.
 
 ### Página «Perill» (`web/perill.html`, `web/perill.js`)
@@ -160,7 +162,7 @@ propusieron dos y aprobó los dos («de acuerdo, hazlo así»):
 ## Validación
 
 - `tests/test_entorn.py`: qué incendios interesan (Ripollet y Badia no;
-  Montcada a 3,8 km sí y a 5,4 km no; Molins de Rei dentro del parque sí;
+  Montcada a 2,5 km sí y a 3,8 km no; Molins de Rei dentro del parque sí;
   Cerdanyola sí), el 🔥, el enlace a Bombers y el texto del parque.
 - `tests/test_historial.py`: comienzo y final en una entrada, subida de nivel,
   episodio nuevo tras uno acabado, plan oculto que se cierra, un año, y la

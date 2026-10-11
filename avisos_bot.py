@@ -15,7 +15,7 @@ Tipos:
 - perill: lo medido o previsto llega a los umbrales de aviso de AEMET (la de
   riscos.py, ADR 0018), al aparecer o subir de nivel; y, desde el 08-10-2026,
   un incendio forestal en curso que interesa al barrio (Bombers; desde el
-  11-10-2026, en Collserola, en Cerdanyola o a 5 km en otro municipio del
+  11-10-2026, en Collserola, en Cerdanyola o a 3 km en otro municipio del
   parque) al empezar y al dejar de constar (entorn.py, ADR 0046 y 0071).
 - riera: riesgo de desbordamiento de la riera de Sant Cugat (la de riera.py,
   ADR 0027), atención y peligro, siempre con el aviso de que es orientativo.
