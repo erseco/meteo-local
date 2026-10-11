@@ -274,9 +274,10 @@ function properaActualitzacio(horari, ara = new Date()) {
 
 // Les dades les puja el NAS a IONOS a cada actualització; la còpia de GitHub
 // (al costat de la pàgina) es renova cada mitja hora com a molt i és la
-// reserva si IONOS no respon (ADR 0020) o si el que serveix és vell: quan la
-// pujada a IONOS falla, publica.sh publica a GitHub, i IONOS es queda amb les
-// dades d'abans (auditoria del 07-10-2026, ADR 0038).
+// reserva si IONOS no respon (ADR 0020) o si el que serveix va per darrere
+// (dadesEndarrerides): quan la pujada a IONOS falla, publica.sh publica a
+// GitHub, i IONOS es queda amb les dades d'abans (auditoria del 07-10-2026,
+// ADR 0038).
 const DADES_URL = 'https://bilateria.org/app/meteo-local/';
 const ESPERA_DADES_MS = 6000;
 const DADES_RESERVA_MIN = 45;
@@ -296,9 +297,23 @@ function baixa(url) {
     .finally(() => clearTimeout(temps));
 }
 
+// Si les dades d'IONOS van per darrere: tenen més de DADES_RESERVA_MIN o, si
+// porten l'horari, n'hi falta una actualització que ja s'hauria d'haver
+// publicat. Cada matí, de 06:01 a 06:15, IONOS tanca l'SSH, la pujada falla i
+// el NAS publica a GitHub; amb només els 45 minuts, la pàgina es quedava amb
+// les dades de les 06:00 fins a les 06:15 (11-10-2026).
+function dadesEndarrerides(dades, ara = new Date()) {
+  const generat = new Date(dades.generat);
+  if (ara - generat > DADES_RESERVA_MIN * 60000) return true;
+  if (!dades.horari) return false;
+  const limit = ara - ESPERA_PUBLICACIO_MIN * 60000;
+  const darrera = horesActualitzacio(dades.horari).filter((t) => t <= limit).pop();
+  return Boolean(darrera) && generat < darrera;
+}
+
 function llegeixDades(nom) {
   return baixa(DADES_URL + nom).then((dades) => {
-    if (Date.now() - new Date(dades.generat) <= DADES_RESERVA_MIN * 60000) return dades;
+    if (!dadesEndarrerides(dades)) return dades;
     // IONOS respon, però amb dades velles: es mira la còpia de GitHub i es
     // fa servir la més nova de les dues.
     return baixa(ARREL + nom)

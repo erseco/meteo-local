@@ -627,6 +627,21 @@ class Web(unittest.TestCase):
         expr = self.fetch_fals([None, noves]) + "llegeixDades('casa.json').then((d) => d.generat)"
         self.assertEqual(self.avalua(ara, expr, arnes=ARNES_ASYNC), noves["generat"])
 
+    def test_copia_de_github_si_a_ionos_li_falta_una_actualitzacio(self):
+        # 11-10-2026: cada matí IONOS tanca l'SSH de 06:01 a 06:15; el NAS
+        # publica les de les 06:03 a GitHub i IONOS es queda amb les de les 06:00.
+        horari = {"trams": [["00:00", "23:54"]], "cada_min": 6, "desfase_min": 3}
+        ionos = {"generat": "2026-10-11T06:00+02:00", "horari": horari}
+        github = {"generat": "2026-10-11T06:03+02:00", "horari": horari}
+        expr = self.fetch_fals([ionos, github]) + "llegeixDades('casa.json').then((d) => [d.generat, peticions.length])"
+        self.assertEqual(self.avalua("2026-10-11T06:05:00+02:00", expr, arnes=ARNES_ASYNC), [github["generat"], 2])
+        # Abans que la de les 06:03 s'hagi pogut publicar, només IONOS.
+        self.assertEqual(self.avalua("2026-10-11T06:04:30+02:00", expr, arnes=ARNES_ASYNC), [ionos["generat"], 1])
+        # Al dia amb l'horari: una sola petició.
+        al_dia = {**ionos, "generat": "2026-10-11T06:03+02:00"}
+        expr = self.fetch_fals([al_dia, github]) + "llegeixDades('casa.json').then((d) => [d.generat, peticions.length])"
+        self.assertEqual(self.avalua("2026-10-11T06:07:00+02:00", expr, arnes=ARNES_ASYNC), [al_dia["generat"], 1])
+
     def test_la_descarrega_es_talla_tambe_a_mig_cos(self):
         # Auditoria del 09-10-2026: «fetch» es resol amb les capçaleres i el
         # temporitzador s'aturava abans de llegir el cos: un cos que no acabava
@@ -645,7 +660,8 @@ class Web(unittest.TestCase):
         # torna a pintar el que hi ha (i dadesVelles decideix).
         # Lectura bona (dades recents: una sola petició), dues lectures fallides
         # (IONOS i la còpia) i la següent que no contesta: dues pintades.
-        dades = {"generat": "2026-10-08T08:40+02:00", "horari": {"trams": [["00:00", "23:50"]], "cada_min": 15}}
+        # Les de les 08:45: a les 09:00 encara no toca la de les 09:00, i van al dia.
+        dades = {"generat": "2026-10-08T08:45+02:00", "horari": {"trams": [["00:00", "23:50"]], "cada_min": 15}}
         expr = (self.fetch_fals([dades, None, None, 'penja']) + "pintats = 0;"
                 "carrega('casa.json', () => { pintats += 1; }, () => {});"
                 "new Promise((r) => setTimeout(() => r([pintats, peticions.length]), 50))")

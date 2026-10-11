@@ -33,7 +33,17 @@ código con la referencia «auditoría del 07-10-2026».
    lo que sirve IONOS tiene más de 45 minutos (`DADES_RESERVA_MIN`), se pide
    también la copia de GitHub y se usa la más nueva de las dos. Antes solo se
    consultaba si IONOS daba error, y `publica.sh` publica en GitHub justo
-   cuando falla la subida a IONOS.
+   cuando falla la subida a IONOS. Desde la 3.62.2 (11-10-2026) también se
+   pide si a los datos de IONOS les falta una actualización del horario que
+   ya debería estar publicada (`dadesEndarrerides`: la última hora prevista,
+   con los dos minutos de espera, es posterior a `generat`). Motivo: cada
+   mañana IONOS cierra el SSH entre las 06:01 y las 06:15 («Connection
+   closed by … port 22», registro del NAS del 09 al 11-10-2026); las subidas
+   de las 06:03 y las 06:09 fallan y van a GitHub, y con solo los 45 minutos
+   la página seguía con los datos de las 06:00 hasta las 06:15. Prueba:
+   `test_copia_de_github_si_a_ionos_li_falta_una_actualitzacio`. El corte de
+   IONOS se mide con una sonda del 12-10-2026 (`estat/sonda-ionos.log` en el
+   NAS).
 4. **Avisos privados con reintento** (`avis_privat.py`): `riscos.py`,
    `pluja_arriba.py` y `riera.py` apuntan el episodio como avisado antes de
    enviarlo, y un fallo de Telegram o de red perdía el aviso. Ahora el envío
