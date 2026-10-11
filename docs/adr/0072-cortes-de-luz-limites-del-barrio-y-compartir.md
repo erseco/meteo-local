@@ -73,10 +73,30 @@ a otros».
 
 ### Límites de Montflorit (`montflorit-limits.geojson`)
 
-- No hay un límite oficial publicado: en OpenStreetMap, Wikidata y la
-  Enciclopèdia Catalana Montflorit es un punto; la sección censal 011 acaba en
-  la riera e incluye el bosque; el mapa de barrios del Ayuntamiento estaba en
-  un diagnóstico cuyo enlace ha caducado.
+- **No hay un límite oficial**: lo dice el Ayuntamiento. La moción que el
+  Pleno aprobó el 26-03-2026 (exp. 177/2026/0022) empieza por «La delimitació
+  dels barris de Cerdanyola del Vallès ha tingut històricament una manca de
+  planificació i delimitació oficial» e insta a crear una comisión que la
+  redacte; el último reparto, informal, fue el del AMB en 2016 (22 barrios).
+  En OpenStreetMap, Wikidata y la Enciclopèdia Catalana Montflorit es un
+  punto.
+- **Lo que hay publicado** (revisado el 11-10-2026), de más a menos útil:
+  - El «Mapa de barris» (figura 11) del diagnóstico del Pla Local d'Adaptació
+    al Canvi Climàtic (2023, en Participa311, proceso «paesc»), tomado del Pla
+    Local d'Habitatge de 2021, con la nota «No existeix una delimitació
+    aprovada de barris». Dibuja Montflorit como el contorno de este ADR: la
+    parte urbana de Collserola y, al otro lado de la riera, hasta el límite con
+    Sant Ramon, entre Parc Tecnològic y Guiera. Diferencia posible, sin
+    confirmar por la resolución de la imagen (979 px): deja fuera un entrante
+    al este, junto a la riera, con un rótulo de tres líneas que podría ser el
+    poblado de Ca n'Oliver. La memoria del Pla Local d'Habitatge (seu-e.cat)
+    no trae ese mapa: trabaja por cuatro zonas grandes.
+  - El «àmbit estadístic» 0826601 Montflorit del AMB (2020, propuesta de
+    ámbitos estadísticos metropolitanos, p. 58): suma de secciones censales,
+    acaba en la riera e incluye todo Collserola del término. No sirve.
+  - Las secciones censales 10 y 11 («aprox. Montflorit - Can Cerdà», flaixos
+    electorales del Ayuntamiento); la 011 acaba en la riera e incluye el
+    bosque. No sirven.
 - **La parte de Collserola**: la zona residencial de OpenStreetMap (way
   346465228), con el museo y el poblado de Ca n'Oliver, que la Viquipèdia
   sitúa «a la part de muntanya del barri».
