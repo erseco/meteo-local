@@ -83,14 +83,3 @@ Versión 3.65.0.
 - `probar-web` (tres navegadores, móvil, tableta y escritorio, claro y
   oscuro) en «El temps», «Si surts», «Consultes», «Perill» y la portada en
   castellano, sin errores ni desbordamiento; axe-core sin incidencias.
-
-## Ampliación del 12-10-2026 (3.65.1): compartir el Pla Alfa
-
-La ficha del Pla Alfa de «Perill» era la única sin botón de compartir, porque
-no está en el historial. Ahora lo lleva (Juanjo: «si, hazlo»), con una
-dirección fija, `perill.html#pla-alfa`, que abre el Pla Alfa del día en que se
-abre y señala la ficha. `botoCompartir` recibe el identificador de la ficha.
-Probado en Chromium y Firefox: comparte `perill.html#pla-alfa` con el título
-«Pla Alfa de Cerdanyola: nivell 3 avui», y la dirección abre la ficha
-señalada; axe-core, sin incidencias.
-
