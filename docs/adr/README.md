@@ -76,5 +76,6 @@
 | [0072](0072-cortes-de-luz-limites-del-barrio-y-compartir.md) | Cortes de luz, límites del barrio y compartir | aceptado |
 | [0073](0073-pagina-de-privacidad.md) | Página de privacidad | aceptado |
 | [0074](0074-portada-que-responde-al-abrir.md) | Portada que responde al abrir | aceptado |
+| [0075](0075-cada-aviso-lleva-a-su-detalle.md) | Cada aviso lleva a su detalle | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

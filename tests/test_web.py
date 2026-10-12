@@ -744,6 +744,16 @@ class Web(unittest.TestCase):
         self.assertEqual(com("es/", "es/consultes.html", False), "apunta")
         self.assertEqual(com("casa.html", "perill.html", False), "apunta")      # la pàgina de casa
 
+    def test_linies_del_resum_amb_detall(self):
+        # ADR 0075: els trens, a «Consultes › Trens»; els avisos de l'AEMET, a «Perill»; la resta, sense.
+        d = lambda t: self.avalua("2026-10-12T10:00:00+02:00", f"detallLinia({json.dumps(t)})")
+        self.assertEqual(d("Trens de Cerdanyola:  R4 amb incidències."), "consultes.html#trens")
+        self.assertEqual(d(" Trenes de Cerdanyola sin incidencias."), "consultes.html#trens")
+        self.assertEqual(d(" Avís groc de l'AEMET per pluja al Vallès fins a les 20:00."), "perill.html")
+        self.assertEqual(d("Aviso amarillo de la AEMET por lluvia en el Vallès hasta las 20:00."), "perill.html")
+        self.assertIsNone(d("Sense pluja prevista."))
+        self.assertIsNone(d("Temperatura d'aquí a mitjanit: entre 13 °C i 23 °C."))
+
     def test_la_franja_del_radar_nomes_si_diu_alguna_cosa(self):
         # «No s'acosta pluja» només surt si la previsió en dona en les dues
         # hores que venen (Juanjo, 10-10-2026; ADR 0019).

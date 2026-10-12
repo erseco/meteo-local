@@ -533,13 +533,7 @@ function blocPlans(plans, smp) {
     if (p.fase === 'emergència') {
       item.append(T(' Evita els desplaçaments que no siguin necessaris.'));
     }
-    if (p.comunicat) {
-      const a = element('a', null, T('Comunicat (PDF)'));
-      a.href = p.comunicat;
-      a.target = '_blank';
-      a.rel = 'noopener';
-      item.append(' ', a);
-    }
+    // El comunicat en PDF, a la fitxa de «Perill», on porta la línia (ADR 0075).
     item.append(...liniesSmp(smp));
     return item;
   });
@@ -555,16 +549,10 @@ const ALFA_NIVELL_MOSTRAR = 3;
 
 function blocEntorn(entorn) {
   const items = [];
-  const nouItem = (nivell, titol, resta, href) => {
+  // Els mapes de Bombers i dels Agents Rurals, a «Perill» (ADR 0075).
+  const nouItem = (nivell, titol, resta) => {
     const item = element('p', `avis-item ${nivell}`);
     item.append(element('strong', null, titol), resta);
-    if (href) {
-      const a = element('a', null, T('Mapa'));
-      a.href = href;
-      a.target = '_blank';
-      a.rel = 'noopener';
-      item.append(' ', a);
-    }
     return item;
   };
   for (const i of (entorn && entorn.incendis) || []) {
@@ -572,20 +560,18 @@ function blocEntorn(entorn) {
     // Dins del parc, dit clarament (Juanjo, 11-10-2026; ADR 0071).
     items.push(nouItem('vermell', i.collserola ? T`Bombers: incendi forestal dins del Parc de Collserola (${i.municipi})`
       : T`Bombers: incendi forestal a ${i.municipi}`,
-      T`${km}, des de les ${horaCurta(i.inici)}.`,
-      'https://interior.gencat.cat/ca/arees_dactuacio/bombers/actuacions-de-bombers/'));
+      T`${km}, des de les ${horaCurta(i.inici)}.`));
   }
   const alfa = (entorn && entorn.pla_alfa) || {};
   for (const [dia, nom] of [['avui', () => T('avui')], ['dema', () => T('demà')]]) {
     const n = alfa[dia];
     if (n != null && n >= ALFA_NIVELL_MOSTRAR) {
       items.push(nouItem(n >= 4 ? 'vermell' : 'taronja', T`Pla Alfa de Cerdanyola: nivell ${n} ${nom()}`,
-        T(': accés restringit als espais forestals.'),
-        'https://interior.gencat.cat/ca/arees_dactuacio/agents-rurals/pla-alfa/'));
+        T(': accés restringit als espais forestals.')));
     }
   }
   for (const t of alfa.tancaments || []) {
-    items.push(nouItem('vermell', T`Agents Rurals: tancat ${t.espai}`, '.', null));
+    items.push(nouItem('vermell', T`Agents Rurals: tancat ${t.espai}`, '.'));
   }
   return items;
 }
@@ -633,9 +619,7 @@ function blocLlum(llum, ara = new Date()) {
   return ((llum && llum.talls) || []).map((t) => {
     const [titol, frase] = textTall(t, ara);
     const item = element('p', 'avis-item compte');
-    const a = element('a', null, T('Detall'));
-    a.href = 'consultes.html#llum';
-    item.append(element('strong', null, titol), `: ${frase} `, a);
+    item.append(element('strong', null, titol), `: ${frase}`);
     return item;
   });
 }
@@ -660,16 +644,41 @@ function blocAvisos(dades, extres = [], ara = new Date()) {
   if (!perills.length && !talls.length) return null;
   const sec = element('section', 'avisos-actius');
   sec.setAttribute('aria-label', T('Avisos actius'));
-  sec.append(element('h2', 'seccio', T('Avisos actius')), ...perills, ...talls);
-  // L'historial i el detall, a «Perill» (ADR 0071); els talls de llum no hi
-  // són: el seu detall, a «Llum».
-  if (!perills.length) return sec;
-  const mes = element('p', 'avisos-mes');
-  const a = element('a', null, T('Historial i detall a «Perill»'));
-  a.href = 'perill.html';
-  mes.append(a);
-  sec.append(mes);
+  sec.append(element('h2', 'seccio', T('Avisos actius')),
+    ...perills.map((i) => ambDetall(i, 'perill.html')), ...talls.map((i) => ambDetall(i, 'consultes.html#llum')));
   return sec;
+}
+
+// Les línies del resum del dia (a «El temps» i a «Consultes») amb un detall
+// al darrere (ADR 0075): els trens, a «Consultes › Trens»; els avisos de
+// l'AEMET, a «Perill».
+const DETALL_LINIA = [[/^(Trens|Trenes) /, 'consultes.html#trens'], [/^(Avís|Aviso) .*AEMET/, 'perill.html']];
+
+function detallLinia(text) {
+  return (DETALL_LINIA.find(([re]) => re.test(text.trim())) || [])[1] || null;
+}
+
+function ambDetalls(files) {
+  return files.map((f) => {
+    const href = detallLinia(f.textContent || '');
+    return href ? ambDetall(f, href) : f;
+  });
+}
+
+// Cada línia amb un detall al darrere porta «›» a la dreta i es pot tocar
+// sencera (Juanjo, 12-10-2026: «que hay que hacer si alguien quiere saber
+// cuales son? se aplica lo mismo para cualquier alerta»; ADR 0075). Sempre a
+// una pàgina d'aquesta web: els perills, a «Perill»; els talls i els trens, a
+// «Consultes». L'enllaç cobreix tota la línia, per sota del text; la «›» la
+// dibuixa l'estil, i el «?» dels plans queda per sobre.
+function ambDetall(item, href) {
+  item.classList.add('amb-detall');
+  const a = element('a', 'detall');
+  a.href = href;
+  const nom = ((item.querySelector && item.querySelector('strong')) || item).textContent || '';
+  a.setAttribute('aria-label', T`Detall: ${nom.trim().replace(/[.:]$/, '').slice(0, 90)}`);
+  item.append(a);
+  return item;
 }
 
 function posaVersio(versio) {
@@ -1123,7 +1132,14 @@ document.addEventListener('click', (e) => {
   const desti = new URL(a.href, location.href);
   // Només les pàgines d'aquesta web, i no els salts dins de la mateixa pàgina.
   if (desti.origin !== location.origin || !/\/([a-z-]+\.html)?$/.test(desti.pathname)) return;
-  if (desti.pathname === location.pathname && desti.search === location.search) return;
+  // Dins de la mateixa pàgina (la «›» dels trens a «Consultes»), sense apuntar-ho.
+  if (desti.pathname === location.pathname && desti.search === location.search) {
+    if (desti.hash !== location.hash) {
+      e.preventDefault();
+      location.replace(desti.href);
+    }
+    return;
+  }
   const desDePortada = Boolean(history.state && history.state.desDePortada);
   const com = comNavega(location.href, desti.href, desDePortada);
   if (com === 'apunta') {

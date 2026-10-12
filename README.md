@@ -15,7 +15,8 @@ y en [castellano](https://meteo-montflorit.github.io/es/). Tiene cuatro páginas
   con el resumen de cada una (probabilidad de lluvia, temperaturas y
   fenómenos destacables; ADR 0041), con los avisos de AEMET y los planes de
   Protección Civil (ADR 0007 y 0024), y junto a cada plan si Meteocat tiene
-  aviso de peligro para el Vallès Occidental (ADR 0067).
+  aviso de peligro para el Vallès Occidental (ADR 0067). Cada aviso y la
+  línea de los trenes llevan «›» a su detalle dentro de la web (ADR 0075).
 - **Perill**: las situaciones de peligro en Montflorit, con el texto de los
   avisos tal como llegaron y un enlace para saber más: avisos oficiales de AEMET, de Meteocat y de Protección Civil, incendios
   forestales de Collserola y de Cerdanyola, la riera de Sant Cugat y el tiempo

@@ -828,6 +828,8 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
    (Juanjo, 12-10-2026; ADR 0074). */
 @media (max-width: 40rem) {
   body { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
+  /* Que un enllaç a un punt de la pàgina (un avís de «Perill») no el deixi sota la barra. */
+  html { scroll-padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
   .cap .ruta { display: none; }
   .barra { margin: 0; }
   .pagines, .barra .pagines {
@@ -860,3 +862,14 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .plec-triats { margin: .6rem 0 0; }
 .plec-triats > summary { cursor: pointer; color: var(--enllac); }
 .plec-triats .triats { margin-top: .5rem; }
+
+/* Cada línia amb un detall al darrere (ADR 0075): es toca sencera i porta «›»
+   a la dreta. L'enllaç, buit i amb el seu nom per a qui no hi veu, cobreix la
+   línia; el «?» dels plans i els enllaços del text queden per sobre. */
+.amb-detall { position: relative; padding-right: 1.9rem !important; }
+.amb-detall > .detall { position: absolute; inset: 0; z-index: 0; border-radius: .3rem; }
+.amb-detall > .detall:focus-visible { outline: 3px solid var(--enllac); outline-offset: 2px; }
+.amb-detall::after { content: "›"; position: absolute; right: .35rem; top: 50%; transform: translateY(-50%);
+  font-size: 1.7rem; line-height: 1; color: var(--suau); pointer-events: none; }
+.amb-detall:hover::after { color: var(--enllac); }
+.amb-detall .ajuda-fase, .amb-detall a:not(.detall), .amb-detall .sentit-fase { position: relative; z-index: 1; }

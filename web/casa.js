@@ -300,7 +300,7 @@ function textosResum(dades) {
 function blocsResum(dades) {
   const blocs = textosResum(dades).map((text) => {
     const sec = element('section', 'targeta resum-dia');
-    sec.append(...pintaResum(text));
+    sec.append(...ambDetalls(pintaResum(text)));
     return sec;
   });
   // Els dos avisos configurables d'aquí, la previsió de cada dia i la pluja

@@ -306,7 +306,7 @@ function pintaConsulta() {
   const textos = (DADES.consultes || {})[IDIOMA.codi === 'es' ? 'es' : 'ca'] || {};
   const text = textos[triada];
   if (!text) caixa.replaceChildren(element('p', 'nota', T('Ara aquesta consulta no està disponible.')));
-  else caixa.replaceChildren(...((triada === 'avui' || triada === 'dema') ? pintaResum(text) : pintaText(text)));
+  else caixa.replaceChildren(...((triada === 'avui' || triada === 'dema') ? ambDetalls(pintaResum(text)) : pintaText(text)));
   // Les fitxes que tenen un avís configurable, amb l'enllaç per activar-lo (ADR 0072).
   const avis = { llum: () => T('Per rebre els talls de llum al moment, '),
     avui: () => T('Per rebre la previsió cada dia, '), dema: () => T('Per rebre la previsió cada dia, ') }[triada];

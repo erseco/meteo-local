@@ -73,7 +73,8 @@ Versión 3.64.0.
 - **Cortes de luz del barrio en «Avisos actius»**, en «El temps» y «Si
   surts»: dentro o en el límite del barrio, con clientes, horas y calles
   estimadas (dicho así), y «Detall» a «Consultes › Llum». No llevan el
-  enlace al historial de «Perill», que no los guarda.
+  enlace al historial de «Perill», que no los guarda. **Desde el ADR 0075**,
+  cada aviso lleva «›» a su detalle, sin «Detall» ni enlace general.
 - **Los tramos de la previsión, plegados de entrada**, salvo los que tienen
   aviso o fenómeno: el resumen del día ya dice lo que viene, y así se ven
   juntos mañana, tarde y noche. Corrige el ADR 0041, que abría el primero.
