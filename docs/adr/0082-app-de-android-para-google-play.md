@@ -93,5 +93,8 @@ Versión 3.73.0 de la web; la app empieza en la 1.0.0.
   `platforms;android-36`, y un enlace `~/Android/Sdk/bin` a
   `cmdline-tools/latest/bin`, porque Bubblewrap busca ahí `sdkmanager`.
   Configuración de Bubblewrap: `~/.bubblewrap/config.json`.
-- Pendiente: instalar el APK en el móvil de Juanjo y comprobar que se abre sin
-  barra de dirección y que llegan los avisos; después, la subida a Play.
+- En el móvil de Juanjo (12-10-2026), con el APK servido en la red de casa:
+  Play Protect lo bloquea porque no conoce al desarrollador («Más detalles» →
+  «Instalar de todos modos»); instalada, «parece que todo va bien».
+- Pendiente: la subida a Play. Instalada desde Play, la app va firmada con la
+  clave de Google: su huella tiene que estar también en `assetlinks.json`.
