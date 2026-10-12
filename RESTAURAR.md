@@ -1,7 +1,7 @@
 # Volver a montar meteo-local en otro NAS u otro hosting
 
-Lo que hace falta si se pierde el NAS (primera parte) o IONOS (segunda
-parte). Las claves de los dos, cifradas, y el registro del NAS están en el
+Lo que hace falta si se pierde el NAS (primera parte), IONOS (segunda
+parte) o la clave de la app de Android (tercera). Las claves, cifradas, y el registro del NAS están en el
 repositorio privado `meteo-montflorit/meteo-local-registre` (ADR 0044 y
 0045).
 
@@ -149,3 +149,21 @@ Sin ellos, `bot/instalar.sh` crea claves nuevas y cada uno tiene que volver a
 tocar «Activa els avisos» en la página «Avisos»: las suscripciones antiguas
 iban atadas a la clave perdida y la página, al no encontrarlas en el
 servidor, las da por desactivadas.
+
+# Parte 3. La app de Android
+
+Si se pierde el portátil (ADR 0082): la clave de subida está en
+`claus/claus-android.tar.gz.gpg` del repositorio privado, con la misma
+contraseña.
+
+```sh
+mkdir -p ~/.config/meteo-montflorit && cd ~/.config/meteo-montflorit
+gpg -d claus-android.tar.gz.gpg | tar xzf -    # deja android/upload.jks y android/clau.env
+```
+
+Para compilar: JDK 17 con compilador, el SDK de Android en `~/Android/Sdk`,
+Bubblewrap (`npm i -g @bubblewrap/cli`) y `android/construeix.sh`; los
+detalles, en la validación del ADR 0082. Si se pierde la clave de subida, se
+crea otra y se pide a Google que la cambie desde Play Console (la que firma lo
+que se instala la guarda Google); después, la huella nueva va a
+`montflorit/.well-known/assetlinks.json`.
