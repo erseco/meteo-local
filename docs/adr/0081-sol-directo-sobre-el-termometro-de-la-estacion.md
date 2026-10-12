@@ -74,6 +74,14 @@ Versión 3.72.0. `sol_estacio.py`:
   vecinas.
 - Mejor aún sería que el sol no llegara al termómetro (una sombra o un
   protector de radiación): la corrección es una red de seguridad.
+- Sin 24 horas comparables o sin dos vecinas leídas en la última media hora,
+  no se corrige; la reserva de IONOS tampoco corrige (no tiene el registro de
+  la estación ni el de las vecinas).
+- La diferencia habitual es una para todo el día, pero cambia con la hora: del
+  9 al 12-10-2026, de −0,5 a −0,9 °C de 8 a 10 h y hasta −2,7 °C por la tarde
+  (mediana −1,2 °C). A primera hora la temperatura esperada puede quedar unos
+  0,5 °C baja. Hipótesis pendiente: con un mes de datos (desde el
+  09-11-2026), decidir si se calcula por franjas horarias.
 
 ## Validación
 
