@@ -399,11 +399,11 @@ function pintaTriats() {
   posaResumTriats();
 }
 
-// Els mitjans, plegats sota «Mitjans: 5 de 5»: es trien un cop i es recorden,
+// Els mitjans, plegats sota «Tria els mitjans (5 de 5)»: es trien un cop i es recorden,
 // i la resposta queda a dalt (Juanjo, 12-10-2026; ADR 0074).
 function posaResumTriats() {
   const vistos = MITJANS.length - MITJANS.filter(([c]) => amagats().has(c)).length;
-  $('triats-resum').textContent = T`Mitjans: ${vistos} de ${MITJANS.length}`;
+  $('triats-resum').textContent = T`Tria els mitjans (${vistos} de ${MITJANS.length})`;
 }
 const TEXT_NIVELL = { be: 'Bé', compte: 'Compte', no: 'Millor no' };
 
@@ -466,7 +466,7 @@ function pintaSortida() {
     llista.append(li);
   }
   const parts = llista.children.length ? [llista]
-    : [element('p', 'nota', T('Tria a dalt, a «Mitjans», els que vols veure.'))];
+    : [element('p', 'nota', T('Tria a dalt els mitjans que vols veure.'))];
   const pla = avisPlaSortida(dades.plans);
   if (pla) parts.unshift(element('p', 'avis avis-pc', pla));
   const cs = consells(tram, ara);

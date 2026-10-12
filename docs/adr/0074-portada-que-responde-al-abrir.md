@@ -71,7 +71,7 @@ Versión 3.64.0.
   medios que van bien («Bé: a peu, bici o patinet, moto i cotxe.» o «Bé en
   tots els mitjans.») y una por cada uno de los demás, con su motivo. Cada
   medio conserva su veredicto. Los botones para elegir medios, que se
-  recuerdan, quedan plegados en «Mitjans: 5 de 5».
+  recuerdan, quedan plegados en «Mitjans: 5 de 5», desde la 3.72.2 «Tria els mitjans (5 de 5)»: con el rótulo anterior, Juanjo, con medios quitados, creyó que ya no se podían marcar.
 - **Cortes de luz del barrio en «Avisos actius»**, en «El temps» y «Si
   surts»: dentro o en el límite del barrio, con clientes, horas y calles
   estimadas (dicho así), y «Detall» a «Consultes › Llum». No llevan el
