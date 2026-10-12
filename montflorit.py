@@ -67,28 +67,25 @@ def nav_publica(actual, sagnat="  "):
 ROBOTS = '  <meta name="robots" content="noindex">\n'
 DESCRIPCIO = "La predicció del temps del barri, alertes i què cal saber si surts, a Cerdanyola del Vallès."
 
-# Les llengües, amb la seva icona a la botonera de la capçalera i no al text
-# de sota el títol (Juanjo, 09-10-2026). Icona «languages» de Lucide (ISC).
-SIMBOL_IDIOMA = ('<symbol id="i-languages" viewBox="0 0 24 24"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1'
-                 'm14 20-5-10-5 10M14 18h6"/></symbol>')
+# Les llengües, a la botonera de la capçalera i no al text de sota el títol
+# (Juanjo, 09-10-2026), sense la icona: «CA ES», amb la triada marcada, ja
+# s'entén sol (Juanjo, 12-10-2026; ADR 0074).
 
 
 def selector_idioma(actual, pagina):
-    """Les dues llengües, amb la triada marcada com la pestanya activa del menú:
-    la icona sola no deia en quina s'és (Juanjo, 09-10-2026)."""
+    """Les dues llengües, amb la triada marcada com la pestanya activa del menú
+    (Juanjo, 09-10-2026)."""
     peces = []
     for llengua, codi, nom, href in (("ca", "CA", "Català", "../" + pagina), ("es", "ES", "Castellano", "es/" + pagina)):
         if llengua == actual:
             peces.append(f'<span lang="{llengua}" aria-current="page" title="{nom}" aria-label="{nom}">{codi}</span>')
         else:
             peces.append(f'<a href="{href}" lang="{llengua}" hreflang="{llengua}" title="{nom}" aria-label="{nom}">{codi}</a>')
-    return ('<nav class="idiomes" aria-label="Idioma"><svg aria-hidden="true"><use href="#i-languages"></use></svg>'
-            + "".join(peces) + "</nav>")
+    return '<nav class="idiomes" aria-label="Idioma">' + "".join(peces) + "</nav>"
 
 
 def idioma(html, nom):
     """El selector de l'idioma, el primer de la botonera de la capçalera."""
-    html = canvia(html, [('\n    <symbol id="i-moon"', f'\n    {SIMBOL_IDIOMA}\n    <symbol id="i-moon"')], nom)
     pagina = "" if nom == "index.html" else nom
     return canvia(html, [('<div class="cap-botons">\n', f'<div class="cap-botons">\n      {selector_idioma("ca", pagina)}\n')], nom)
 

@@ -131,7 +131,7 @@ class Web(unittest.TestCase):
         # L'idioma, al costat del botó del tema: la llengua triada marcada i l'altra, a la mateixa pàgina.
         self.assertIn(M.selector_idioma("ca", "fonts.html"), fonts)
         self.assertIn(M.selector_idioma("es", "fonts.html"), self.llegeix("es/fonts.html"))
-        self.assertIn('id="i-languages"', fonts)
+        self.assertNotIn('i-languages', fonts)        # sense la icona (ADR 0074)
         self.assertIn('<a href="es/fonts.html" lang="es" hreflang="es"', fonts)
         self.assertIn('<span lang="ca" aria-current="page"', fonts)
         self.assertIn('<a href="../fonts.html" lang="ca" hreflang="ca"', self.llegeix("es/fonts.html"))

@@ -153,3 +153,13 @@ Versión 3.64.0.
   en claro y oscuro, en móvil y escritorio.
 - Juanjo lo probó en su móvil con un servidor local, con datos reales y con
   datos de prueba (un incendio activo y un corte de luz inventados).
+
+## Ampliación del 12-10-2026 (3.70.1): el selector de idioma, sin icono
+
+Juanjo preguntó si hacía falta el símbolo de idioma delante de «CA ES». No:
+el selector, con la lengua elegida resaltada, se entiende solo, y el icono
+ocupaba unos 30 px en la botonera del móvil. Fuera el icono (`montflorit.py`,
+`selector_idioma`), y el selector, un poco separado de los botones de acción
+(`margin-right`). El grupo sigue llamándose «Idioma» para los lectores de
+pantalla.
+
