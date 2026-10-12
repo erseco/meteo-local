@@ -239,9 +239,8 @@ class Castella(unittest.TestCase):
         self.assertEqual(js("TD('al nord-est')"), "el nordeste")
         # Juanjo, 12-10-2026 (ADR 0074): sin «Modo normal» ni «Modo vigilancia»; el «?»
         # de la línea de actualización explica cada cuánto se actualiza.
-        explicacio = ("La página se actualiza cada 15 minutos, y cada 6, justo después de cada imagen nueva del "
-                      "radar de Meteocat, cuando hay un aviso de AEMET, un plan de Protección Civil en alerta o "
-                      "emergencia, lluvia en Montflorit o lluvia en el radar a menos de 15 km.")
+        explicacio = ("La página se actualiza cada 15 minutos, y cada 6 cuando hay un aviso de AEMET, un plan de "
+                      "Protección Civil en alerta o emergencia, lluvia en Montflorit o lluvia en el radar a menos de 15 km.")
         self.assertEqual(js("textActualitzacio({trams: [['00:00', '23:45']], cada_min: 6, mode_avis: ['pluja al radar'], normal_min: 15, avis_min: 6, radar_km: 15})"), explicacio)
         self.assertEqual(js("textActualitzacio({trams: [['00:00', '23:45']], cada_min: 15, mode_avis: []})"), explicacio)
         self.assertEqual(js("textActualitzacio({trams: [['05:00', '07:30'], ['13:00', '15:30']], cada_min: 15, mode_avis: []})"),

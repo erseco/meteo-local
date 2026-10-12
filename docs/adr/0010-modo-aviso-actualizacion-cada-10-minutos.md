@@ -135,3 +135,6 @@ El ADR 0074 quita de la web «Mode normal» y «Mode vigilància»: con «pluja 
 radar» al lado de «No plou» y «Serè», quien no conocía la página no sabía qué
 se vigilaba. Queda «Actualitzat a les … · propera: …», y un «?» que explica
 cada cuánto se actualiza y por qué. El modo aviso sigue igual en el servidor.
+Desde la 3.68.2, el «?» ya no dice «just després de cada imatge nova del radar
+de Meteocat» (Juanjo: «esto sobra»): solo cada cuánto se actualiza y cuándo.
+
