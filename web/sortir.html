@@ -72,9 +72,13 @@
       <label>Surto <select id="surto"></select></label>
       <label>Torno <select id="torno"></select></label>
     </form>
-    <fieldset id="triats" class="triats">
-      <legend class="visualment-amagat">Mitjans que vols veure</legend>
-    </fieldset>
+    <div id="resum-sortida" aria-live="polite"></div>
+    <details id="plec-triats" class="plec-triats">
+      <summary id="triats-resum">Mitjans</summary>
+      <fieldset id="triats" class="triats">
+        <legend class="visualment-amagat">Mitjans que vols veure</legend>
+      </fieldset>
+    </details>
     <div id="sortida">
       <p class="carregant">Carregant la previsió…</p>
     </div>

@@ -25,7 +25,7 @@ class FakeDate extends RealDate {
 const el = () => ({ setAttribute() {}, addEventListener() {}, append() {}, after() {}, replaceChildren() {},
   querySelector: () => ({ setAttribute() {} }), dataset: {}, style: { setProperty() {} } });
 const ctx = vm.createContext({
-  Date: FakeDate, Math, JSON, Number, Object, Set, console,
+  Date: FakeDate, Math, JSON, Number, Object, Set, URL, console,
   document: { querySelectorAll: () => [], getElementById: el, createElement: el, createElementNS: el, addEventListener() {},
     documentElement: { dataset: {} } },
   matchMedia: () => ({ matches: false, addEventListener() {} }), addEventListener() {}, AbortController,
@@ -226,11 +226,12 @@ class Web(unittest.TestCase):
         self.assertEqual(self.avalua("2026-10-08T22:30:00+02:00", f"resumTrams({json.dumps(hores)}, new Date())", "casa.js", ARNES)[0]["hores"], "fins a les 7 h")
 
     def test_trams_oberts_de_sortida(self):
-        # Juanjo, 09-10-2026: «no debería ser persistente?»: el primer tram i els de perill; amb «Desplega-ho tot» desat, tots.
+        # Juanjo, 09-10-2026: «no debería ser persistente?»: els de perill; amb «Desplega-ho tot» desat, tots.
+        # Des de l'ADR 0074, el primer ja no: el resum del dia ja diu el que ve.
         trams = [{"clau": "a", "avis": False, "fenomens": []}, {"clau": "b", "avis": True, "fenomens": []},
                  {"clau": "c", "avis": False, "fenomens": [["calor", "i"]]}, {"clau": "d", "avis": False, "fenomens": []}]
-        expr = f"{json.dumps(trams)}.map((t, i) => obertDeSortida(t, i))"
-        self.assertEqual(self.avalua("2026-10-09T18:00:00+02:00", expr), [True, True, True, False])
+        expr = f"{json.dumps(trams)}.map((t) => obertDeSortida(t))"
+        self.assertEqual(self.avalua("2026-10-09T18:00:00+02:00", expr), [False, True, True, False])
         self.assertEqual(self.avalua("2026-10-09T18:00:00+02:00", "localStorage.getItem = () => '1'; " + expr), [True] * 4)
         # El que s'ha obert o tancat a mà mana mentre la pàgina és oberta.
         self.assertEqual(self.avalua("2026-10-09T18:00:00+02:00", "obertsAMa.set('a', false); obertsAMa.set('d', true); " + expr),
@@ -683,6 +684,65 @@ class Web(unittest.TestCase):
         plans[0]["fase"] = "prealerta"
         self.assertIsNone(self.avalua(ara, f"avisPlaSortida({json.dumps(plans)})", "sortir.js"))
         self.assertIsNone(self.avalua(ara, "avisPlaSortida(undefined)", "sortir.js"))
+
+    def test_punt_de_perill_nomes_amb_un_perill_actiu(self):
+        # ADR 0074: el punt vermell, només mentre la situació és activa i no s'ha vist;
+        # abans durava 24 hores i sortia amb «Ara no hi ha cap situació de perill».
+        ara = "2026-10-12T05:30:00+02:00"
+        historial = [{"inici": "2026-10-11T19:30+02:00", "fi": "2026-10-11T19:36+02:00"},
+                     {"inici": "2026-10-12T05:00+02:00"},
+                     {"inici": "2026-10-12T04:00+02:00", "fins": "2026-10-12T05:00+02:00"}]
+        nous = lambda vist: self.avalua(ara, f"perillsNous({json.dumps(historial)}, {json.dumps(vist)}).map((e) => e.inici)")
+        self.assertEqual(nous(None), ["2026-10-12T05:00+02:00"])
+        self.assertEqual(nous("2026-10-12T05:10:00+02:00"), [])
+        self.assertEqual(self.avalua(ara, "perillsNous([{inici: '2026-10-11T19:30+02:00', fi: '2026-10-11T19:36+02:00'}], null)"), [])
+
+    def test_resum_del_dia_a_la_portada(self):
+        # ADR 0074: el text de «Consultes › Avui», sense «Ara mateix» ni la roba; des de les 18 h, també demà.
+        avui = ("<b>El temps avui</b>\n⟦i-sun⟧ Ara mateix: 13 °C, no plou.\nSense pluja prevista.\n\n"
+                "Roba per anar a peu: a les 7 h (13 °C), jaqueta.")
+        dades = lambda h: json.dumps({"generat": f"2026-10-12T{h}:00+02:00", "consultes": {"ca": {"avui": avui, "dema": "<b>Demà</b>"}}})
+        self.assertEqual(self.avalua("2026-10-12T10:00:00+02:00", f"textosResum({dades('10:00')})"),
+                         ["<b>El temps avui</b>\nSense pluja prevista.\n"])
+        self.assertEqual(len(self.avalua("2026-10-12T18:10:00+02:00", f"textosResum({dades('18:00')})")), 2)
+        self.assertEqual(self.avalua("2026-10-12T10:00:00+02:00", "textosResum({generat: '2026-10-12T10:00:00+02:00'})"), [])
+
+    def test_talls_de_llum_als_avisos_actius(self):
+        # ADR 0074: els talls del barri també a «Avisos actius», amb els carrers estimats.
+        tall = {"programat": False, "on": "dins", "clients": 143, "inici": "2026-10-12T04:52+02:00",
+                "fins": "2026-10-12T07:52+02:00", "carrers": ["Carrer A", "Carrer B"]}
+        self.assertEqual(self.avalua("2026-10-12T05:30:00+02:00", f"textTall({json.dumps(tall)})"),
+                         ["Tall de llum al barri", "avaria. 143 clients sense llum des de les 04:52; previst fins a les 07:52. "
+                          "Carrers probables (estimació): Carrer A o Carrer B."])
+        tall = {"programat": True, "on": "vora", "clients": 1, "inici": "2026-10-11T09:00+02:00"}
+        self.assertEqual(self.avalua("2026-10-12T05:30:00+02:00", f"textTall({json.dumps(tall)})"),
+                         ["Tall de llum al límit del barri", "treballs programats. 1 client sense llum des del 11/10 a les 09:00."])
+
+    def test_resum_de_si_surts(self):
+        # ADR 0074: una línia pels mitjans que van bé i una per cada un dels altres, amb el motiu.
+        be = {"nivell": "be", "motius": ["Sense pluja ni vent fort."]}
+        public = {"nivell": "compte", "etiqueta": "Amb incidències", "motius": ["Trens: R4 amb incidències."]}
+        v = [["A peu", be], ["Moto", be], ["Transport públic", public]]
+        self.assertEqual(self.avalua("2026-10-12T05:30:00+02:00", f"liniesResum({json.dumps(v)})", "sortir.js"),
+                         [["be", "Bé:", " a peu i moto."],
+                          ["compte", "Transport públic: amb incidències.", " Trens: R4 amb incidències."]])
+        tots = [[n, be] for n in ["A peu", "Bici o patinet", "Moto", "Cotxe", "Transport públic"]]
+        self.assertEqual(self.avalua("2026-10-12T05:30:00+02:00", f"liniesResum({json.dumps(tots)})", "sortir.js"),
+                         [["be", "Bé en tots els mitjans.", ""]])
+
+    def test_enrere_porta_a_la_portada_i_despres_fora(self):
+        # ADR 0074: de la portada a una altra pàgina s'apunta; entre les altres se substitueix;
+        # tornar a la portada és fer enrere si s'hi venia; el canvi d'idioma no s'apunta.
+        w = "https://meteo-montflorit.github.io/"
+        com = lambda a, b, ve: self.avalua("2026-10-12T10:00:00+02:00", f"comNavega({json.dumps(w + a)}, {json.dumps(w + b)}, {json.dumps(ve)})")
+        self.assertEqual(com("", "perill.html", False), "apunta")
+        self.assertEqual(com("perill.html", "sortir.html", True), "substitueix")
+        self.assertEqual(com("sortir.html", "", True), "enrere")
+        self.assertEqual(com("perill.html", "./", False), "substitueix")        # hi ha entrat per un enllaç
+        self.assertEqual(com("", "es/", False), "substitueix")                  # l'idioma
+        self.assertEqual(com("es/perill.html", "perill.html", True), "substitueix")
+        self.assertEqual(com("es/", "es/consultes.html", False), "apunta")
+        self.assertEqual(com("casa.html", "perill.html", False), "apunta")      # la pàgina de casa
 
     def test_la_franja_del_radar_nomes_si_diu_alguna_cosa(self):
         # «No s'acosta pluja» només surt si la previsió en dona en les dues

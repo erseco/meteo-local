@@ -165,7 +165,9 @@ mensaje, que se queda): cada apartado con un aviso configurable dice cómo
 activarlo, como «Perill» («Per rebre'ls al moment, activa els avisos»), con el
 enlace a «Avisos». «Llum» (talls de llum), «Avui» y «Demà» de «Consultes» (la
 previsió de cada dia) i la targeta d'ara d'«El temps» (la pluja 15 minuts
-abans), en letra pequeña bajo el contenido.
+abans), en letra pequeña bajo el contenido. Desde el ADR 0074, en «El temps»
+las dos (la previsión de cada día y la lluvia) van en una sola línea, bajo el
+resumen del día.
 
 ### Mapa de los límites en la web (3.63.0)
 

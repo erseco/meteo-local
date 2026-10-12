@@ -74,7 +74,9 @@ function fitxa(e, ara) {
   const [primera, ...resta] = trossos(text);
   const cercle = [...((primera[0] || {}).t || '')][0];
   const fi = finalDe(e, ara);
-  const art = element('article', `avis-item episodi ${CLASSE_CERCLE[cercle] || 'compte'}`);
+  // Les acabades, en gris: el color del nivell, només per al que passa ara
+  // (Juanjo, 12-10-2026; ADR 0074).
+  const art = element('article', `avis-item episodi ${CLASSE_CERCLE[cercle] || 'compte'}${fi ? ' acabat' : ''}`);
   art.id = idFitxa(e);
   const titol = element('p', 'episodi-titol');
   titol.append(...nodesLinia(primera));

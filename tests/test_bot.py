@@ -187,6 +187,8 @@ class Resum(unittest.TestCase):
         self.assertEqual(B.text_comparacio(-1, "es", "ahir"), ", parecida a la de ayer")
         self.assertEqual(B.text_comparacio(None, "ca", "ahir"), "")
         self.assertEqual(B.text_temperatura(avui, "ca", "Temperatura", 3), "Temperatura: entre 20 °C i 23 °C, 3 graus més que ahir.")
+        # Si la mínima i la màxima coincideixen, una xifra (ADR 0074: sortia «entre 16 °C i 16 °C»).
+        self.assertEqual(B.text_temperatura([fila(11, 5, 16.2), fila(11, 6, 15.8)], "es", "Temperatura"), "Temperatura: 16 °C.")
         # La nit compara la mínima; si falta una hora del dia abans, no es diu res.
         self.assertEqual(B.compara_temp(d, avui, nit=True), 1)
         self.assertIsNone(B.compara_temp({"temperatura_mesurada": {"2026-10-09T14:00": 19.0}, "hores": avui}, avui))

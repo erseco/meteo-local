@@ -518,6 +518,9 @@ def text_temperatura(tram, idioma, quan, comparacio=None, respecte="ahir"):
     i = " y " if idioma == "es" else " i "
     if not temps:
         return None
+    # Si la mínima i la màxima coincideixen, una xifra: «16 °C», no «entre 16 °C i 16 °C» (ADR 0074).
+    if graus(min(temps)) == graus(max(temps)):
+        return f"{quan}: {graus(min(temps))}{text_comparacio(comparacio, idioma, respecte)}."
     return f"{quan}: entre {graus(min(temps))}{i}{graus(max(temps))}{text_comparacio(comparacio, idioma, respecte)}."
 
 

@@ -128,3 +128,10 @@ vigilancia dice qué pasa (hay algo cerca y la página lo mira más a menudo).
   motivo y el «?» siguen al lado, en texto normal. Contraste del nombre sobre
   su fondo: 6,4:1 y 4,7:1 en claro (el verde de la etiqueta, `--verd-text`,
   es más oscuro que `--verd`, que daba 4,5 justos), 8,8:1 y 9,1:1 en oscuro.
+
+## Cambio del 12-10-2026: el modo deja de mostrarse con nombre
+
+El ADR 0074 quita de la web «Mode normal» y «Mode vigilància»: con «pluja al
+radar» al lado de «No plou» y «Serè», quien no conocía la página no sabía qué
+se vigilaba. Queda «Actualitzat a les … · propera: …», y un «?» que explica
+cada cuánto se actualiza y por qué. El modo aviso sigue igual en el servidor.

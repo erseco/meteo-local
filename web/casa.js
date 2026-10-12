@@ -263,21 +263,50 @@ function blocAra(casa, radarDades, vent, veines, hores) {
     : plouVeines ? dada('i-umbrella', T('Plou en una estació veïna'))
       : dada('i-umbrella-off', T('No plou')));
   llista.append(dada('i-cloud-rain', T`${coma(casa.pluja_avui || 0)} mm avui`));
-  llista.append(dada('i-droplets', T`Humitat ${coma(casa.humitat, 0)} %`));
-  if (casa.pressio != null) llista.append(dada('i-gauge', textPressio(casa)));
-  // El vent, de l'estació de Meteocat més propera, per mitges hores (ADR 0037).
+  // El vent, de l'estació de Meteocat més propera, per mitges hores (ADR
+  // 0037): l'estació i l'hora, a «D'on surt» (ADR 0074). Si ve de les veïnes
+  // (ADR 0064), que «D'on surt» encara no diu, es diu aquí.
   if (vent && vent.mitja != null) {
     const ratxa = vent.ratxa != null ? T` (ratxes de ${coma(vent.ratxa, 0)})` : '';
-    // Si ve de les estacions veïnes (ADR 0064), es diu així, no amb el nom d'una estació.
-    const lloc = vent.font === 'veines' ? T('estacions veïnes') : vent.estacio;
-    llista.append(dada('i-wind', T`Vent ${coma(vent.mitja, 0)} km/h${ratxa}, ${lloc} ${horaCurta(vent.fins)}`));
+    const veines = vent.font === 'veines' ? T(', estacions veïnes') : '';
+    llista.append(dada('i-wind', T`Vent ${coma(vent.mitja, 0)} km/h${ratxa}` + veines));
   }
   sec.append(llista);
+  // La humitat i la pressió, que es miren menys, juntes en una línia petita
+  // (Juanjo, 12-10-2026; ADR 0074).
+  const menys = [T`Humitat ${coma(casa.humitat, 0)} %`];
+  if (casa.pressio != null) menys.push(textPressio(casa));
+  sec.append(element('p', 'ara-menys', menys.join(' · ')));
   const radar = blocRadar(radarDades, plou, hores);
   if (radar) sec.append(radar);
-  // L'avís de pluja és configurable: l'enllaç per activar-lo (ADR 0072).
-  sec.append(enllacAvisos(T('Per saber quan plourà uns 15 minuts abans, ')));
   return sec;
+}
+
+// El resum del dia, el mateix de «Consultes › Avui», a sota d'«Ara»: el que es
+// vol saber en obrir la pàgina, sense desplegar res (Juanjo, 12-10-2026; ADR
+// 0074). Des de HORA_DEMA, també el de demà, com el bot. Sense la línia «Ara
+// mateix», que ja és la targeta de sobre, ni la de la roba, que és cosa de
+// «Si surts» (Juanjo, 12-10-2026: «lo de la ropa en pantalla principal, no es
+// un poco frivolo?»).
+const HORA_DEMA = 18;   // la de bot.HORA_DEMA
+const LINIA_FORA = /^(⟦[a-z-]+⟧ ?)?(Ara mateix|Ahora mismo|Roba |Ropa )/;
+
+function textosResum(dades) {
+  const textos = (dades.consultes || {})[IDIOMA.codi === 'es' ? 'es' : 'ca'] || {};
+  const claus = new Date(dades.generat).getHours() >= HORA_DEMA ? ['avui', 'dema'] : ['avui'];
+  return claus.filter((c) => textos[c]).map((c) => textos[c].split('\n').filter((l) => !LINIA_FORA.test(l)).join('\n'));
+}
+
+function blocsResum(dades) {
+  const blocs = textosResum(dades).map((text) => {
+    const sec = element('section', 'targeta resum-dia');
+    sec.append(...pintaResum(text));
+    return sec;
+  });
+  // Els dos avisos configurables d'aquí, la previsió de cada dia i la pluja
+  // 15 minuts abans, en una sola línia (ADR 0072 i 0074).
+  if (blocs.length) blocs.at(-1).append(enllacAvisos(T('Per rebre la previsió cada dia i saber quan plourà uns 15 minuts abans, ')));
+  return blocs;
 }
 
 // La pluja del radar portada endavant (ADR 0019): quan arribaria a casa i,
@@ -435,8 +464,10 @@ addEventListener('resize', ajustaFranges);
 // Quins trams surten oberts (Juanjo, 09-10-2026: «no debería ser
 // persistente?»). Els trams canvien de nom al llarg del dia, així que no es
 // recorda cadascun sinó com ho vol veure cadascú: amb «Desplega-ho tot», tots
-// oberts, desat en aquest dispositiu; si no, el primer i els que tenen un avís
-// o un fenomen, perquè el perill no quedi plegat. El que s'obre o es tanca a
+// oberts, desat en aquest dispositiu; si no, els que tenen un avís o un
+// fenomen, perquè el perill no quedi plegat. El primer ja no: el resum del dia
+// ja diu el que ve, i els trams es veuen junts (Juanjo, 12-10-2026; ADR
+// 0074). El que s'obre o es tanca a
 // mà es manté mentre la pàgina és oberta, encara que es torni a pintar amb
 // dades noves, però no es desa.
 const CLAU_TOT_OBERT = 'meteo.previsio-tot-obert';
@@ -444,9 +475,9 @@ function totObert() {
   try { return localStorage.getItem(CLAU_TOT_OBERT) === '1'; } catch (_) { return false; }
 }
 const obertsAMa = new Map();
-function obertDeSortida(t, i) {
+function obertDeSortida(t) {
   if (obertsAMa.has(t.clau)) return obertsAMa.get(t.clau);
-  return totObert() || i === 0 || t.avis || t.fenomens.length > 0;
+  return totObert() || t.avis || t.fenomens.length > 0;
 }
 
 // Una taula per tram, amb les mateixes columnes.
@@ -539,7 +570,7 @@ function taula(hores, aprenentatge, mesurada) {
   });
   cap.append(element('h2', 'perque', T('Previsió')), boto);
   sec.append(cap);
-  trams.forEach((t, i) => sec.append(taulaTram(t, obertDeSortida(t, i))));
+  trams.forEach((t) => sec.append(taulaTram(t, obertDeSortida(t))));
   // Les notes, plegades: només les que diuen alguna cosa de les hores d'ara.
   const visibles = trams.flatMap((t) => t.files);
   const notes = element('details', 'com notes-taula');
@@ -626,7 +657,12 @@ function pinta(dades) {
     const m = dades.models;
     avisos.append(element('p', 'avis', T`Avui els models no veuen aquesta pluja: en les darreres ${m.hores} hores han caigut ${coma(m.mesurada_mm)}\u00a0mm a Montflorit i en preveien ${coma(m.prevista_mm)}. Les primeres hores de la taula parteixen del que mesura l\u2019estació; per a la resta, fes més cas dels avisos.`));
   }
-  if (dades.ara_casa) cont.append(blocAra(dades.ara_casa, dades.radar, dades.vent, dades.veines, dades.hores));
+  const ara = dades.ara_casa && blocAra(dades.ara_casa, dades.radar, dades.vent, dades.veines, dades.hores);
+  if (ara) cont.append(ara);
+  const resum = blocsResum(dades);
+  cont.append(...resum);
+  // Sense resum (casa.json no en porta), l'enllaç de la pluja, a «Ara» (ADR 0072).
+  if (ara && !resum.length) ara.append(enllacAvisos(T('Per saber quan plourà uns 15 minuts abans, ')));
   const previsio = dades.hores && taula(dades.hores, dades.aprenentatge, dades.temperatura_mesurada);
   if (previsio) {
     cont.append(previsio);

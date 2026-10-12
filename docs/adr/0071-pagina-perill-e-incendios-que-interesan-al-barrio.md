@@ -77,6 +77,8 @@ actius» («hazlo así»).
   que no se ha visto, se tengan activados los avisos o no (Juanjo: «permanecerá
   un tiempo razonable … decide tú»): mientras está activa o hasta 24 horas
   después de empezar (`PERILL_NOU_H`), y hasta que se abre «Perill».
+  **Corregido por el ADR 0074**: solo mientras está activa; lo acabado, en
+  gris en «Perill».
 - Contenido: lo que está activo ahora; las situaciones acabadas de los
   últimos 30 días; los meses anteriores, plegados, uno por mes, hasta un año
   (Juanjo: «historial mensual … luego se agrupan en acordeones los meses

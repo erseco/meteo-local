@@ -389,12 +389,21 @@ function pintaTriats() {
         try { localStorage.setItem(CLAU_EXPLICAT, '1'); } catch (_) {}
         explica.hidden = true;
       }
+      posaResumTriats();
       if (DADES) pintaSortida();
     });
     etiqueta.append(casella, icona(icon), element('span', null, TD(nom)));
     caixa.append(etiqueta);
   }
   caixa.after(explica);
+  posaResumTriats();
+}
+
+// Els mitjans, plegats sota «Mitjans: 5 de 5»: es trien un cop i es recorden,
+// i la resposta queda a dalt (Juanjo, 12-10-2026; ADR 0074).
+function posaResumTriats() {
+  const vistos = MITJANS.length - MITJANS.filter(([c]) => amagats().has(c)).length;
+  $('triats-resum').textContent = T`Mitjans: ${vistos} de ${MITJANS.length}`;
 }
 const TEXT_NIVELL = { be: 'Bé', compte: 'Compte', no: 'Millor no' };
 
@@ -427,9 +436,11 @@ function pintaSortida() {
   const transit = dades.transit && dades.transit.incidencies;
   const llista = element('ul', 'mitjans');
   const fora = amagats();
+  const veredictes = [];
   for (const [clau, nom, icon] of MITJANS) {
     if (fora.has(clau)) continue;
     const v = avalua(clau, tram, trens, i > 0, transit);
+    veredictes.push([nom, v]);
     const li = element('li', 'mitja ' + v.nivell);
     const cap = element('p', 'mitja-cap');
     const titol = element('span', 'mitja-nom');
@@ -455,7 +466,7 @@ function pintaSortida() {
     llista.append(li);
   }
   const parts = llista.children.length ? [llista]
-    : [element('p', 'nota', T('Tria a dalt els mitjans que vols veure.'))];
+    : [element('p', 'nota', T('Tria a dalt, a «Mitjans», els que vols veure.'))];
   const pla = avisPlaSortida(dades.plans);
   if (pla) parts.unshift(element('p', 'avis avis-pc', pla));
   const cs = consells(tram, ara);
@@ -465,6 +476,39 @@ function pintaSortida() {
     parts.push(ul);
   }
   cont.replaceChildren(...parts);
+  $('resum-sortida').replaceChildren(...[resumSortida(veredictes)].filter(Boolean));
+}
+
+// La resposta, a dalt i en poques línies (Juanjo, 12-10-2026; ADR 0074): en
+// una, els mitjans que van bé; en una per cap, els altres, amb el motiu. Cada
+// mitjà, el seu veredicte: el que va bé no comparteix línia amb el que no.
+// [nivell, en negreta, la resta] per línia.
+function liniesResum(veredictes) {
+  const minuscula = (t) => t.charAt(0).toLowerCase() + t.slice(1);
+  const linies = [];
+  const be = veredictes.filter(([, v]) => v.nivell === 'be').map(([nom]) => minuscula(TD(nom)));
+  if (be.length === MITJANS.length) linies.push(['be', T('Bé en tots els mitjans.'), '']);
+  else if (be.length) {
+    const noms = be.length > 1 ? `${be.slice(0, -1).join(', ')} ${T('i')} ${be.at(-1)}` : be[0];
+    linies.push(['be', T('Bé:'), ` ${noms}.`]);
+  }
+  for (const [nom, v] of veredictes.filter(([, x]) => x.nivell !== 'be')) {
+    const etiqueta = minuscula(TD(v.etiqueta || TEXT_NIVELL[v.nivell]));
+    linies.push([v.nivell, `${TD(nom)}: ${etiqueta}.`, v.motius.length ? ` ${v.motius.join(' ')}` : '']);
+  }
+  return linies;
+}
+
+function resumSortida(veredictes) {
+  if (!veredictes.length) return null;
+  const llista = element('ul', 'resum-sortida');
+  for (const [nivell, fort, resta] of liniesResum(veredictes)) {
+    const li = element('li', nivell);
+    li.append(element('strong', null, fort));
+    if (resta) li.append(resta);
+    llista.append(li);
+  }
+  return llista;
 }
 
 // Plec d'una fitxa. Es recorda quins estan oberts mentre no es recarrega la
@@ -503,7 +547,7 @@ function pinta(dades) {
   }
   // Dades de fa massa: només l'avís i on mirar (ADR 0031).
   const velles = dadesVelles(dades);
-  for (const id of ['hores', 'triats']) $(id).hidden = velles;
+  for (const id of ['hores', 'plec-triats', 'resum-sortida']) $(id).hidden = velles;
   const explica = document.querySelector('.explica-triats');
   if (velles) {
     if (explica) explica.hidden = true;

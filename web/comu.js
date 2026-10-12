@@ -127,29 +127,18 @@ function horesActualitzacio(horari) {
   return hores;
 }
 
-// La línia del mode, a sobre de «Actualitzat a les… · propera…»: «Mode
-// normal» o «Mode vigilància» amb el motiu entre parèntesis (el mode avís,
-// ADR 0010), i un «?» que explica els dos. Abans «Mode avís» i «Seguiment de
-// prop» (Juanjo, 10-10-2026: «no me gusta de prop, no dice nada»).
-function modeHorari(horari) {
+// Cada quan s'actualitza, en el «?» de «Actualitzat a les… · propera…». Abans,
+// a sobre, «Mode normal» o «Mode vigilància» amb el motiu (ADR 0010): amb
+// «pluja al radar» al costat de «No plou» i «Serè», qui no coneixia la pàgina
+// no sabia què es vigilava (Juanjo, 12-10-2026; ADR 0074).
+function textActualitzacio(horari) {
+  const normal = horari.normal_min || (horari.mode_avis && horari.mode_avis.length ? 15 : horari.cada_min);
+  const avis = horari.avis_min || (horari.mode_avis && horari.mode_avis.length ? horari.cada_min : 6);
   const [[inici]] = horari.trams;
   const totElDia = horari.trams.length === 1 && inici === '00:00';
-  const trams = totElDia ? [] : [horari.trams.map(([a, b]) => `${a}\u2013${b}`).join(T(' i '))];
-  const vigilancia = Boolean(horari.mode_avis && horari.mode_avis.length);
-  const motius = vigilancia ? horari.mode_avis.map((m) => TD(m).replace(/'/g, '\u2019')) : [];
-  return { vigilancia, nom: vigilancia ? T('Mode vigilància') : T('Mode normal'), detall: [...motius, ...trams].join(', ') };
-}
-
-function textHorari(horari) {
-  const { nom, detall } = modeHorari(horari);
-  return detall ? `${nom} (${detall})` : nom;
-}
-
-function textModeAvis(horari) {
-  const vigilancia = horari.mode_avis && horari.mode_avis.length;
-  const normal = horari.normal_min || (vigilancia ? 15 : horari.cada_min);
-  const avis = horari.avis_min || (vigilancia ? horari.cada_min : 6);
-  return T`Mode normal: la pàgina s’actualitza cada ${normal} minuts. Mode vigilància: s’actualitza cada ${avis} minuts, just després de cada imatge nova del radar de Meteocat. La pàgina es posa en mode vigilància quan hi ha un avís de l’AEMET, un pla de Protecció Civil en alerta o emergència, pluja a Montflorit o pluja al radar a menys de ${horari.radar_km || 15} km. Quan ja no hi ha res d’això, torna al mode normal.`;
+  const franges = horari.trams.map(([a, b]) => `${a}\u2013${b}`).join(T(' i '));
+  const trams = totElDia ? '' : T` Només s’actualitza de ${franges}.`;
+  return T`La pàgina s’actualitza cada ${normal} minuts, i cada ${avis}, just després de cada imatge nova del radar de Meteocat, quan hi ha un avís de l’AEMET, un pla de Protecció Civil en alerta o emergència, pluja a Montflorit o pluja al radar a menys de ${horari.radar_km || 15} km.` + trams;
 }
 
 // Un «?» que mostra o amaga una explicació al costat (els plans de Protecció
@@ -173,7 +162,7 @@ function botoAjuda(text, etiqueta, obert = false, enCanviar = () => {}) {
   return [boto, sentit];
 }
 let numAjuda = 0;
-// L'explicació del mode avís segueix oberta quan la línia es torna a pintar.
+// L'explicació segueix oberta quan la línia es torna a pintar.
 let ajudaModeOberta = false;
 
 // Les fonts de «El temps»: la previsió, el que es mesura i els avisos. Cada
@@ -199,32 +188,15 @@ function pintaHorari(dades, fonts = FONTS_TEMPS) {
   // L'hora d'actualització, destacada, al capdamunt de la pàgina (Juanjo, 09-10-2026:
   // «visible nada más abrir»).
   const dia = generat.toDateString() === ara.toDateString() ? '' : T` del ${generat.toLocaleDateString(IDIOMA.codi)}`;
-  // El mode i el seu «?» en una línia pròpia, igual en els dos modes perquè la
-  // pàgina no salti quan canvia; l'explicació, a sota; després, les hores.
-  // El nom, en una etiqueta del color del mode (verd el normal, ambre el de
-  // vigilància); al costat, el motiu i el «?», enganxat a l'última paraula
-  // perquè no baixi sol a una altra línia.
-  const { vigilancia, nom, detall } = modeHorari(dades.horari);
-  const [boto, sentit] = botoAjuda(textModeAvis(dades.horari), T('Què vol dir el mode?'), ajudaModeOberta,
+  // Al costat, el «?» de cada quan s'actualitza (ADR 0074), enganxat a
+  // l'última paraula perquè no baixi sol a una altra línia.
+  const [boto, sentit] = botoAjuda(textActualitzacio(dades.horari), T('Cada quan s’actualitza?'), ajudaModeOberta,
     (obert) => { ajudaModeOberta = obert; });
-  const mode = element('span', 'mode');
-  const etiqueta = element('span', `mode-nom ${vigilancia ? 'vigilancia' : 'normal'}`, nom);
-  if (detall) {
-    const text = ` (${detall})`;
-    const tall = text.lastIndexOf(' ') + 1;
-    const final = element('span', 'sense-tall', text.slice(tall));
-    final.append(boto);
-    mode.append(etiqueta, text.slice(0, tall), final);
-  } else {
-    const final = element('span', 'sense-tall');
-    final.append(etiqueta, boto);
-    mode.append(final);
-  }
   const linia = element('span', 'hores');
-  linia.append(T('Actualitzat a les '), element('strong', null, horaCurta(generat) + dia),
-    T(' · propera: '), element('strong', null, propera ? horaCurta(propera) : T`demà a les ${dades.horari.trams[0][0]}`),
-    '.');
-  $('horari').replaceChildren(mode, sentit, linia);
+  const final = element('span', 'sense-tall');
+  final.append(element('strong', null, propera ? horaCurta(propera) : T`demà a les ${dades.horari.trams[0][0]}`), '.', boto);
+  linia.append(T('Actualitzat a les '), element('strong', null, horaCurta(generat) + dia), T(' · propera: '), final);
+  $('horari').replaceChildren(linia, sentit);
   // Calculades fora de casa perquè el servidor habitual no publica (ADR 0032).
   if (dades.reserva) linia.append(' ', element('span', 'reserva', T('Dades del servidor de reserva.')));
   const avisos = [];
@@ -632,6 +604,42 @@ function blocSmp(smp, plans) {
   });
 }
 
+// Els talls de llum del barri (llum.py, ADR 0072), també a «Avisos actius»:
+// fins ara només eren a «Consultes › Llum» (Juanjo, 12-10-2026; ADR 0074). Els
+// carrers, estimats (e-distribució no els dona), i el detall, a «Llum».
+function quanLlum(iso, desDe = false, ara = new Date()) {
+  const t = new Date(iso);
+  if (t.toDateString() === ara.toDateString()) return desDe ? T`des de les ${horaCurta(t)}` : T`les ${horaCurta(t)}`;
+  const d = `${t.getDate()}/${t.getMonth() + 1}`;
+  return desDe ? T`des del ${d} a les ${horaCurta(t)}` : T`el ${d} a les ${horaCurta(t)}`;
+}
+
+function textTall(t, ara = new Date()) {
+  const titol = t.on === 'vora' ? T('Tall de llum al límit del barri') : T('Tall de llum al barri');
+  const qui = t.clients == null ? T('Clients sense llum') : t.clients === 1 ? T('1 client sense llum')
+    : T`${t.clients} clients sense llum`;
+  let frase = `${t.programat ? T('treballs programats') : T('avaria')}. ${qui}`;
+  if (t.inici) frase += ` ${quanLlum(t.inici, true, ara)}`;
+  if (t.fins) frase += T`; previst fins a ${quanLlum(t.fins, false, ara)}`;
+  frase += '.';
+  if ((t.carrers || []).length) {
+    frase += ' ' + (t.carrers.length === 1 ? T`Carrer probable (estimació): ${t.carrers[0]}.`
+      : T`Carrers probables (estimació): ${t.carrers.join(T(' o '))}.`);
+  }
+  return [titol, frase];
+}
+
+function blocLlum(llum, ara = new Date()) {
+  return ((llum && llum.talls) || []).map((t) => {
+    const [titol, frase] = textTall(t, ara);
+    const item = element('p', 'avis-item compte');
+    const a = element('a', null, T('Detall'));
+    a.href = 'consultes.html#llum';
+    item.append(element('strong', null, titol), `: ${frase} `, a);
+    return item;
+  });
+}
+
 // L'enllaç per activar els avisos, a cada apartat que en té un de configurable
 // (Juanjo, 11-10-2026: «todos los avisos que tengan una alerta configurable
 // (como la luz) deben tener un enlace, como ya has hecho con la pestaña
@@ -645,14 +653,17 @@ function enllacAvisos(davant) {
 }
 
 function blocAvisos(dades, extres = [], ara = new Date()) {
-  const items = [...blocPlans(dades.plans, dades.smp), ...blocSmp(dades.smp, dades.plans),
+  const perills = [...blocPlans(dades.plans, dades.smp), ...blocSmp(dades.smp, dades.plans),
     ...blocEntorn(dades.entorn), ...extres.filter(Boolean),
     ...(dades.avisos && dades.avisos.length ? blocAvisosAemet(dades.avisos, ara) : [])];
-  if (!items.length) return null;
+  const talls = blocLlum(dades.llum, ara);
+  if (!perills.length && !talls.length) return null;
   const sec = element('section', 'avisos-actius');
   sec.setAttribute('aria-label', T('Avisos actius'));
-  sec.append(element('h2', 'seccio', T('Avisos actius')), ...items);
-  // L'historial i el detall, a «Perill» (ADR 0071).
+  sec.append(element('h2', 'seccio', T('Avisos actius')), ...perills, ...talls);
+  // L'historial i el detall, a «Perill» (ADR 0071); els talls de llum no hi
+  // són: el seu detall, a «Llum».
+  if (!perills.length) return sec;
   const mes = element('p', 'avisos-mes');
   const a = element('a', null, T('Historial i detall a «Perill»'));
   a.href = 'perill.html';
@@ -894,6 +905,87 @@ function nodesLinia(linia) {
   });
 }
 
+// --- Avui i demà: el text del bot, a «Consultes» i a «El temps» (ADR 0074).
+// Les icones, només les que porta el text (ADR 0065): el bot hi posa emojis i, per a la web, marques («⟦i-sun⟧»,
+// «⟦alt⟧») que aquí es dibuixen amb les icones de colors de la web. La que
+// obre la línia va a la columna de les icones; les altres línies hi porten la
+// del seu tema. ---
+const MARCA = /⟦([a-z-]+)⟧ ?/;
+const NOM_CEL = () => ({
+  'i-sun': T('Serè'), 'i-moon-cel': T('Serè'), 'i-cloud-sun': T('Poc ennuvolat'), 'i-cloud-moon': T('Poc ennuvolat'),
+  'i-cloud': T('Mig ennuvolat'), 'i-cloudy': T('Molt ennuvolat'), 'i-cloud-fog': T('Boira'),
+  'i-cloud-sun-rain': T('Possible pluja'), 'i-cloud-moon-rain': T('Possible pluja'), 'i-cloud-drizzle': T('Pluja feble'),
+  'i-cloud-rain': T('Pluja'), 'i-cloud-rain-wind': T('Pluja forta'), 'i-cloud-snow': T('Neu'),
+  'i-cloud-lightning': T('Tempesta'), 'i-cloud-hail': T('Tempesta amb calamarsa'), 'i-umbrella': T('Plou ara'),
+});
+const NIVELLS_MARCA = ['nul', 'baix', 'mig', 'alt', 'maxim', 'extrem'];
+// Les línies sense marca també en porten una, perquè la columna no quedi amb
+// forats (Juanjo, 10-10-2026: «haría falta 1 icono por línea»): sense pluja,
+// el paraigua tancat, com «No plou» de la web; la resta, la del tema, en gris.
+const ICONA_LINIA = [
+  [/^(Sense pluja|Sin lluvia)/, 'i-umbrella-off'],
+  [/^Temperatura/, 'i-thermometer'],
+  [/^(Trens|Trenes)/, 'i-train-front'],
+  [/^(Roba|Ropa)/, 'i-shirt'],
+];
+
+// Una marca, com a element: el cel, amb la icona i el seu nom per a qui no la
+// veu; el nivell, un cercle del seu color (el text ja diu quin és).
+function nodeMarca(clau) {
+  if (NIVELLS_MARCA.includes(clau)) {
+    const punt = element('span', 'punt-nivell punt-' + clau);
+    punt.setAttribute('aria-hidden', 'true');
+    return punt;
+  }
+  const nom = NOM_CEL()[clau];
+  const s = element('span', 'icona-cel');
+  s.append(icona(clau));
+  if (nom) {
+    s.setAttribute('role', 'img');
+    s.setAttribute('aria-label', nom);
+    s.title = nom;
+  }
+  return s;
+}
+
+// Els trossos d'una línia amb les marques separades: [{marca}] o el tros.
+function ambMarques(linia) {
+  const res = [];
+  for (const tros of linia) {
+    tros.t.split(MARCA).forEach((part, n) => {
+      if (n % 2) res.push({ marca: part });
+      else if (part) res.push({ ...tros, t: part });
+    });
+  }
+  return res;
+}
+
+function nodesAmbMarques(trossos) {
+  const nodes = [];
+  for (const tros of trossos) nodes.push(...(tros.marca ? [nodeMarca(tros.marca)] : nodesLinia([tros])));
+  return nodes;
+}
+
+function pintaResum(text) {
+  const peces = [];
+  for (const linia of trossos(text)) {
+    if (!linia.length) continue;
+    const trs = ambMarques(linia);
+    const fila = element('p', 'resum-linia');
+    if (peces.length) {
+      const primera = trs[0] && trs[0].marca ? trs.shift() : null;
+      const pla = trs.map((t) => t.t || '').join('');
+      const tema = (ICONA_LINIA.find(([re]) => re.test(pla)) || [])[1];
+      fila.append(primera ? nodeMarca(primera.marca) : tema ? icona(tema) : element('span', 'resum-buit'));
+    }
+    const cos = element('span');
+    cos.append(...nodesAmbMarques(trs));
+    fila.append(cos);
+    peces.push(fila);
+  }
+  return peces;
+}
+
 // «Nou!» damunt d'una pàgina nova: fins que s'hi entra (ho recorda el
 // navegador) i, per a tothom, una setmana després de publicar-la. El «Nou:»
 // del començament de la pàgina, igual (Juanjo, 08-10-2026). La campana
@@ -930,18 +1022,17 @@ function marcaNovetats(ara = new Date()) {
 marcaNovetats();
 
 // Un punt vermell a la pestanya «Perill» quan hi ha una situació de perill
-// nova que no s'ha vist, tant si s'han activat els avisos com si no (Juanjo,
-// 11-10-2026; ADR 0071): mentre és activa o fins a PERILL_NOU_H hores després
-// que comenci, i fins que s'obre «Perill», que apunta fins a quan s'ha vist.
-const PERILL_NOU_H = 24;
+// activa que no s'ha vist, tant si s'han activat els avisos com si no (Juanjo,
+// 11-10-2026; ADR 0071), fins que s'obre «Perill», que apunta fins a quan
+// s'ha vist. Només mentre és activa: abans durava 24 hores, i el punt vermell
+// sortia al costat de «Ara no hi ha cap situació de perill» (Juanjo,
+// 12-10-2026; ADR 0074).
 const CLAU_PERILL_VIST = 'meteo.perill-vist-fins';
 
 function perillsNous(historial, vist, ara = new Date()) {
-  const limit = ara.getTime() - PERILL_NOU_H * 3600000;
   return (historial || []).filter((e) => {
-    const inici = new Date(e.inici).getTime();
     const actiu = !e.fi && !(e.fins && new Date(e.fins) <= ara);
-    return (actiu || inici >= limit) && (!vist || inici > new Date(vist).getTime());
+    return actiu && (!vist || new Date(e.inici).getTime() > new Date(vist).getTime());
   });
 }
 
@@ -1001,6 +1092,54 @@ function copiaEnllac(url) {
 }
 
 for (const b of document.querySelectorAll('.boto-compartir')) b.addEventListener('click', () => comparteix());
+
+// «Enrere», com en una aplicació (Juanjo, 12-10-2026: «al ir hacia atrás
+// fuese a la pagina principal y si pulso otra vez, entonces se sale de la
+// app»; ADR 0074): de la portada a una altra pàgina, el navegador ho apunta;
+// entre les altres, la nova substitueix l'anterior; i tornar a la portada és
+// fer enrere. Així, enrere porta sempre a la portada i, des d'ella, fora. El
+// canvi d’idioma tampoc s’apunta. Qui entra per un enllaç a una altra pàgina
+// (un avís compartit) surt amb enrere: no ha passat per la portada.
+const CLAU_DES_DE_PORTADA = 'meteo.des-de-portada';
+const esPortada = (url) => /\/(index\.html|casa\.html)?$/.test(new URL(url, location.href).pathname);
+
+// Què fer en anar d'«actual» a «desti»: 'apunta', 'substitueix' o 'enrere'.
+function comNavega(actual, desti, desDePortada) {
+  if (esPortada(desti)) return esPortada(actual) ? 'substitueix' : desDePortada ? 'enrere' : 'substitueix';
+  return esPortada(actual) ? 'apunta' : 'substitueix';
+}
+
+try {
+  if (sessionStorage.getItem(CLAU_DES_DE_PORTADA) && !esPortada(location.href)) {
+    history.replaceState({ ...(history.state || {}), desDePortada: true }, '');
+  }
+  sessionStorage.removeItem(CLAU_DES_DE_PORTADA);
+} catch (_) {}
+
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href]');
+  if (!a || e.defaultPrevented || a.target || a.hasAttribute('download') || e.button !== 0
+      || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+  const desti = new URL(a.href, location.href);
+  // Només les pàgines d'aquesta web, i no els salts dins de la mateixa pàgina.
+  if (desti.origin !== location.origin || !/\/([a-z-]+\.html)?$/.test(desti.pathname)) return;
+  if (desti.pathname === location.pathname && desti.search === location.search) return;
+  const desDePortada = Boolean(history.state && history.state.desDePortada);
+  const com = comNavega(location.href, desti.href, desDePortada);
+  if (com === 'apunta') {
+    try { sessionStorage.setItem(CLAU_DES_DE_PORTADA, '1'); } catch (_) {}
+    return;
+  }
+  e.preventDefault();
+  if (com === 'enrere') {
+    history.back();
+    return;
+  }
+  if (desDePortada) {
+    try { sessionStorage.setItem(CLAU_DES_DE_PORTADA, '1'); } catch (_) {}
+  }
+  location.replace(desti.href);
+});
 
 // Per poder instal·lar la web com a aplicació (sw.js).
 if ('serviceWorker' in navigator) navigator.serviceWorker.register(ARREL + 'sw.js').catch(() => {});

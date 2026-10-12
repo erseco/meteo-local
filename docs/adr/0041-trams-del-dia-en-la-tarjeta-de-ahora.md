@@ -39,6 +39,8 @@ para mañana»).
   acabando siempre con un tramo (`FI_TRAMS` y `FI_DEMA` en `casa.py`), para
   que mañana (la mañana y la tarde) salga siempre entero. «Mañana» es el día
   siguiente al del tramo en curso: de madrugada, la noche aún es de ayer.
+  **Corregido por el ADR 0074**: «mañana» es el día siguiente del calendario
+  también de madrugada; entre 24 y 45 filas.
   Son entre 24 y 38 filas: 38 a las 7 h; 33 a las 22 h, porque la noche
   dura 10 horas. Los modelos: el 09-10-2026 AROME y AROME HD llegaban a 45
   horas desde la última pasada, e ICON-EU y el ensemble más allá de lo que
@@ -58,7 +60,8 @@ para mañana»).
   surts» rotulan con el día de la semana lo que cae pasado mañana
   («dissabte 06:00») en lugar de llamarlo «demà».
 
-- **Abiertos de entrada**: el primer tramo y cualquiera con aviso de AEMET
+- **Abiertos de entrada** (el primero ya no desde el ADR 0074: lo cuenta el
+  resumen del día): el primer tramo y cualquiera con aviso de AEMET
   o con un fenómeno de los de abajo, para que lo peligroso no quede
   plegado. Al imprimir se abren todos y después vuelven como estaban.
 - **«Desplega-ho tot» / «Plega-ho tot»**, junto al título, se recuerda en el

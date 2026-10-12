@@ -49,11 +49,12 @@ HORAS = 24
 # La tabla llega como mínimo a 24 horas y hasta las 21 h de mañana, para que
 # mañana salga entero (la mañana y la tarde), y acaba siempre con un tramo del
 # día (matí 7–14, tarda 14–21, nit 21–7: web/casa.js, ADR 0041). «Mañana» es
-# el día siguiente al del tramo en curso: de madrugada, la noche aún es de
-# ayer. Entre 24 y 38 filas (a las 7 h, hasta las 21 h de mañana). AROME llega
-# a unas 40-45 horas; más allá, la lluvia es la de los otros modelos y la
-# probabilidad, la del ensemble. Los riesgos y el registro siguen con las 24
-# primeras.
+# el día siguiente del calendario, también de madrugada: antes, de 0 a 7 h,
+# era el del tramo en curso (la noche aún era de ayer) y «Demà» llegaba solo
+# a las 7 h (Juanjo, 12-10-2026; ADR 0074). Entre 24 y 45 filas (a las 0 h,
+# hasta las 21 h de mañana). AROME llega a unas 40-45 horas; más allá, la
+# lluvia es la de los otros modelos y la probabilidad, la del ensemble. Los
+# riesgos y el registro siguen con las 24 primeras.
 FI_TRAMS = (7, 14, 21)
 FI_DEMA = 21
 HORAS_PERSISTENCIA = 4      # las que tiene la tabla de calibracio.json
@@ -250,8 +251,7 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
         return h.get(f"{campo}_meteofrance_seamless", [None] * (i + 1))[i]
 
     primera = desde.replace(minute=0, second=0, microsecond=0) + dt.timedelta(hours=1)
-    dia = desde.date() - dt.timedelta(days=1 if desde.hour < FI_TRAMS[0] else 0)
-    fi_dema = (dt.datetime.combine(dia + dt.timedelta(days=1), dt.time(FI_DEMA))).strftime("%Y-%m-%dT%H:%M")
+    fi_dema = (dt.datetime.combine(desde.date() + dt.timedelta(days=1), dt.time(FI_DEMA))).strftime("%Y-%m-%dT%H:%M")
     filas = []
     for i, t in enumerate(h["time"]):
         if t < primera.strftime("%Y-%m-%dT%H:%M"):

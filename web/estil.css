@@ -206,14 +206,10 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .nota { margin: 0; color: var(--suau); font-size: .9rem; }
 .horari { margin: .2rem 0 .7rem; font-size: .9rem; color: var(--suau); }
 .horari strong { color: var(--text); }
-/* El mode en una línia pròpia, amb el «?»; les hores, a sota (ADR 0010). */
-.horari .mode, .horari .hores { display: block; }
+/* «Actualitzat a les… · propera…», amb el «?» de cada quan (ADR 0074); l'explicació, a sota. */
+.horari .hores { display: block; }
 .horari .ajuda-fase { margin-left: .4rem; }
 .horari .sense-tall { white-space: nowrap; }
-/* El nom del mode, en una etiqueta del seu color: verd el normal, ambre el de vigilància. */
-.horari .mode-nom { display: inline-block; padding: 0 .5rem; border-radius: 999px; font-weight: 600; }
-.horari .mode-nom.normal { color: var(--verd-text); background: var(--verd-fons); }
-.horari .mode-nom.vigilancia { color: var(--compte); background: var(--compte-fons); }
 .horari:empty { display: none; }
 
 .perque {
@@ -644,7 +640,7 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .resum-linia:first-child { display: block; }
 .resum-linia svg, .resum-buit { width: 1.15rem; height: 1.15rem; margin-top: .15rem; fill: none; stroke: var(--suau);
   stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.consulta .resum-linia + .resum-linia { margin-top: .45rem; }
+.consulta .resum-linia + .resum-linia, .resum-dia .resum-linia + .resum-linia { margin-top: .45rem; }
 .icona-cel { display: inline-flex; }
 /* Els nivells, un cercle amb els colors de les barres del pol·len i de l'UV. */
 .punt-nivell { display: inline-block; width: .8rem; height: .8rem; border-radius: 50%; background: var(--c);
@@ -792,6 +788,8 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .perill .episodi-quan { color: var(--suau); font-size: .92rem; }
 .perill .episodi-actiu { color: var(--vermell); font-weight: 600; }
 .perill .episodi-acabat { color: var(--verd-text); }
+/* Les acabades, sense el color del nivell (ADR 0074). */
+.perill .episodi.acabat { --nivell: var(--suau); --nivell-text: var(--text); }
 .perill .episodi-detall > summary, .perill .mes-perill > summary { cursor: pointer; color: var(--enllac); }
 .perill .mes-perill { margin: .5rem 0; padding: .5rem .8rem; border: 1px solid var(--vora); border-radius: .5rem; }
 .perill .mes-perill[open] > summary { margin-bottom: .6rem; }
@@ -816,3 +814,49 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 
 /* «Privacitat» (ADR 0073): la idea principal, amb una franja de color, no en negreta. */
 .contingut .entrada.destacada { font-size: 1.1rem; border-left: 5px solid var(--enllac); padding: .2rem 0 .2rem .8rem; }
+
+/* «El temps» (ADR 0074): la humitat i la pressió, en una línia petita sota
+   les dades d'ara; a sota, el resum del dia, el de «Consultes › Avui». */
+.ara-menys { margin: .2rem 0 0; font-size: .9rem; color: var(--suau); }
+.targeta.resum-dia { border-left: 1px solid var(--vora); margin-top: .8rem; line-height: 1.5; overflow-wrap: anywhere; }
+.resum-dia p { margin: 0; }
+.resum-dia .enllac-avisos { margin-top: .7rem; }
+.resum-dia .resum-linia:first-child { margin-bottom: .2rem; }
+
+/* Al mòbil, les pàgines en una barra fixa a baix, com a les aplicacions, i
+   sense la línia de sota el títol: dalt hi queda el que es vol veure en obrir
+   (Juanjo, 12-10-2026; ADR 0074). */
+@media (max-width: 40rem) {
+  body { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
+  .cap .ruta { display: none; }
+  .barra { margin: 0; }
+  .pagines, .barra .pagines {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; margin: 0;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: .2rem;
+    padding: .35rem .35rem calc(.35rem + env(safe-area-inset-bottom));
+    background: var(--superficie); border-top: 1px solid var(--vora); box-shadow: 0 -2px 10px rgb(0 0 0 / .08);
+  }
+  .pagines a {
+    position: relative; flex-direction: column; justify-content: center; gap: .1rem;
+    padding: .3rem .1rem; border: 0; border-radius: .6rem; background: none; line-height: 1.2; text-align: center;
+  }
+  .pagines svg { width: 1.4rem; height: 1.4rem; }
+  .pagines .punt-perill { position: absolute; top: .3rem; right: calc(50% + .6rem); margin: 0; }
+  .pagines .xip-nou { top: -.5rem; right: .2rem; }
+  .avis-breu { bottom: calc(5.2rem + env(safe-area-inset-bottom)); }
+}
+
+/* «Si surts» (ADR 0074): la resposta a dalt, una línia pels mitjans que van bé
+   i una per cada un dels altres, amb la franja del seu color; els mitjans per
+   triar, plegats. */
+.resum-sortida { list-style: none; margin: .8rem 0 0; padding: .6rem .9rem; display: grid; gap: .35rem;
+  background: var(--superficie); border: 1px solid var(--vora); border-radius: .6rem; }
+.resum-sortida li { --color: var(--verd); padding-left: .6rem; border-left: .3rem solid var(--color); }
+.resum-sortida li.compte { --color: var(--compte); }
+.resum-sortida li.no { --color: var(--vermell); }
+.resum-sortida li.neutre { --color: var(--suau); }
+.resum-sortida strong { color: var(--text); }
+#resum-sortida[hidden], .plec-triats[hidden] { display: none; }
+.plec-triats { margin: .6rem 0 0; }
+.plec-triats > summary { cursor: pointer; color: var(--enllac); }
+.plec-triats .triats { margin-top: .5rem; }

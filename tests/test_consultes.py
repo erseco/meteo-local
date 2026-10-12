@@ -153,7 +153,9 @@ class Pagina(unittest.TestCase):
 
     def test_les_marques_de_les_icones(self):
         # ADR 0065: «⟦clau⟧ » es treu del text i queda com a marca, també enmig de la línia.
-        js = llegeix_js()
+        # Les marques, a comu.js des de la 3.64.0: també les fa servir «El temps» (ADR 0074).
+        with open(os.path.join(ARREL, "web", "comu.js"), encoding="utf-8") as f:
+            js = f.read()
         marques = ("const MARCA" + js.split("const MARCA", 1)[1].split("const NOM_CEL", 1)[0]
                    + "function ambMarques" + js.split("function ambMarques", 1)[1].split("function nodesAmbMarques", 1)[0])
         codi = ("const T = (x) => x; const $ = () => null; const element = () => ({});"

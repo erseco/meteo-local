@@ -6,10 +6,11 @@ la web aprenda de sus errores en todo lo que predice (Juanjo, 10-10-2026).
 
 Calcula y publica **Temps a Montflorit** (<https://meteo-montflorit.github.io/>),
 la web del tiempo del barrio de Montflorit (Cerdanyola del Vallès), en catalán
-y en [castellano](https://meteo-montflorit.github.io/es/). Tiene dos páginas:
+y en [castellano](https://meteo-montflorit.github.io/es/). Tiene cuatro páginas:
 
 - **El temps**: lo que miden ahora una estación particular del barrio y la
-  de Montflorit y la previsión hora a hora, de 24 horas como mínimo y hasta
+  de Montflorit, el resumen del día (el de «Consultes › Avui», sin la ropa; desde las 18 h,
+  también el de mañana; ADR 0074) y la previsión hora a hora, de 24 horas como mínimo y hasta
   las 21 h de mañana, plegada por mañana, tarde y noche
   con el resumen de cada una (probabilidad de lluvia, temperaturas y
   fenómenos destacables; ADR 0041), con los avisos de AEMET y los planes de
@@ -19,12 +20,13 @@ y en [castellano](https://meteo-montflorit.github.io/es/). Tiene dos páginas:
   avisos tal como llegaron y un enlace para saber más: avisos oficiales de AEMET, de Meteocat y de Protección Civil, incendios
   forestales de Collserola y de Cerdanyola, la riera de Sant Cugat y el tiempo
   excepcional que calcula la web; la pestaña lleva un punto rojo si hay uno
-  nuevo sin ver (ADR 0071).
+  activo sin ver (ADR 0071 y 0074).
 - **Si surts**: para quien sale a una hora y vuelve a otra, cómo irá cada
   medio (a pie, bici o patinete, moto, coche y transporte público), qué ropa
   ponerse, consejos (lluvia, sol, noche, calor), si circulan los trenes que
   paran en Cerdanyola (ADR 0029) y las incidencias de tráfico de cerca (ADR
-  0052). Cada persona elige qué medios ve.
+  0052). Arriba, una línea con los medios que van bien y una por cada uno de
+  los demás (ADR 0074). Cada persona elige qué medios ve.
 - **Consultes**: lo mismo que el bot, eligiendo qué ver: hoy, mañana, el sol,
   la calidad del aire, el polen, los trenes, el tráfico o los cortes de luz del
   barrio; sale solo lo elegido, con los mismos textos del bot (ADR 0054 y 0072).
@@ -68,7 +70,7 @@ Temps a Montflorit (ADR 0030).
 ## Cómo funciona
 
 Un contenedor en el NAS de casa (`nas/`) ejecuta `publica.sh` cada cuarto de
-hora, todo el día; en modo aviso, que la página llama «Mode vigilància», con el motivo entre paréntesis (aviso de AEMET, plan de Protección Civil
+hora, todo el día; en modo aviso (aviso de AEMET, plan de Protección Civil
 activado o lluvia en las estaciones o en el radar a menos de 15 km), cada 6
 minutos, justo después de cada imagen nueva del radar de Meteocat (ADR 0010 y
 0020). El horario lo decide `que_toca.py` con el mismo dato que muestra la web.

@@ -88,8 +88,10 @@ class TemperaturaDelTram(unittest.TestCase):
                              # Al matí, demà sencer: fins a les 21 h, el màxim.
                              (dt.datetime(2026, 10, 9, 7, 3), "2026-10-10T21:00", 38),
                              (dt.datetime(2026, 10, 9, 11, 3), "2026-10-10T21:00", 34),
-                             # De matinada, la nit és d'ahir: «demà» és avui.
-                             (dt.datetime(2026, 10, 9, 0, 30), "2026-10-10T07:00", 31)):
+                             # De matinada, «demà» és el dia següent del calendari, sencer
+                             # (ADR 0074): abans arribava només a les 7 h.
+                             (dt.datetime(2026, 10, 9, 0, 30), "2026-10-10T21:00", 45),
+                             (dt.datetime(2026, 10, 9, 5, 30), "2026-10-10T21:00", 40)):
             files = casa.previsio(minut.astimezone(), h, {}, [])
             self.assertEqual((files[-1]["fins"], len(files)), (fi, n))
 
