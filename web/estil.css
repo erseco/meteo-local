@@ -812,7 +812,6 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .ara-menys { margin: .2rem 0 0; font-size: .9rem; color: var(--suau); }
 .targeta.resum-dia { border-left: 1px solid var(--vora); margin-top: .8rem; line-height: 1.5; overflow-wrap: anywhere; }
 .resum-dia p { margin: 0; }
-.resum-dia .enllac-avisos { margin-top: .7rem; }
 .resum-dia .resum-linia:first-child { margin-bottom: .2rem; }
 
 /* Al mòbil, les pàgines en una barra fixa a baix, com a les aplicacions, i
@@ -897,5 +896,6 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .oferta-avisos .boto { padding: .5rem 1rem; border: 0; border-radius: 999px; background: var(--enllac); color: var(--fons);
   font: inherit; font-weight: 600; cursor: pointer; }
 .oferta-avisos .boto.secundari { background: transparent; color: var(--enllac); border: 1px solid var(--vora); }
+.oferta-avisos a.boto { text-decoration: none; display: inline-block; }
 .oferta-avisos .boto:focus-visible { outline: 2px solid var(--enllac); outline-offset: 2px; }
 .oferta-estat:not(:empty) { margin-top: .5rem !important; font-size: .92rem; color: var(--suau); }

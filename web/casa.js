@@ -317,9 +317,9 @@ function blocsResum(dades) {
     sec.append(...ambDetalls(pintaResum(text)));
     return sec;
   });
-  // Els dos avisos configurables d'aquí, la previsió de cada dia i la pluja
-  // 15 minuts abans, en una sola línia (ADR 0072 i 0074).
-  if (blocs.length) blocs.at(-1).append(enllacAvisos(T('Per rebre la previsió cada dia i saber quan plourà uns 15 minuts abans, ')));
+  // Sense la invitació fixa a activar els avisos (Juanjo, 12-10-2026: «quita ese
+  // texto fijo de activar avisos»; ADR 0080): ja hi ha la campana i, a qui té la
+  // web instal·lada, la targeta d'oferta.
   return blocs;
 }
 
@@ -704,8 +704,6 @@ function pinta(dades) {
   if (OFERTA_AVISOS) cont.append(OFERTA_AVISOS);
   const resum = blocsResum(dades);
   cont.append(...resum);
-  // Sense resum (casa.json no en porta), l'enllaç de la pluja, a «Ara» (ADR 0072).
-  if (ara && !resum.length) ara.append(enllacAvisos(T('Per saber quan plourà uns 15 minuts abans, ')));
   const previsio = dades.hores && taula(dades.hores, dades.temperatura_mesurada, dades.riscos);
   if (previsio) {
     cont.append(previsio);
@@ -743,11 +741,15 @@ function targetaOfertaAvisos() {
   const estat = element('p', 'oferta-estat');
   estat.setAttribute('role', 'status');
   const si = element('button', 'boto', T('Activa-ho'));
+  // Qui en vol uns altres, a «Avisos», on es trien (Juanjo, 12-10-2026: «que se
+  // puede configurar en la sección avisos, con su botón»).
+  const tria = element('a', 'boto secundari', T('Tria quins'));
+  tria.href = 'avisos.html';
   const no = element('button', 'boto secundari', T('Ara no'));
   si.type = 'button';
   no.type = 'button';
   const botons = element('p', 'oferta-botons');
-  botons.append(si, no);
+  botons.append(si, tria, no);
   sec.append(element('p', 'oferta-titol', T('Avisos de perill')),
     element('p', null, T('Riera, incendis, avisos oficials i temps extrem a Montflorit, al moment.')), botons, estat);
   no.addEventListener('click', () => {

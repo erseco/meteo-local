@@ -25,8 +25,6 @@ var IDIOMA = {
     "Què compta com a barri: el ": "Qué cuenta como barrio: el ",
     "mapa dels límits": "mapa de los límites",
     "Per rebre la previsió cada dia, ": "Para recibir la previsión cada día, ",
-    "Per saber quan plourà uns 15 minuts abans, ": "Para saber cuándo lloverá unos 15 minutos antes, ",
-    "Per rebre la previsió cada dia i saber quan plourà uns 15 minuts abans, ": "Para recibir la previsión cada día y saber cuándo lloverá unos 15 minutos antes, ",
     // Els talls de llum a «Avisos actius» (ADR 0074).
     "Tall de llum al barri": "Corte de luz en el barrio", "Tall de llum al límit del barri": "Corte de luz en el límite del barrio",
     "Clients sense llum": "Clientes sin luz", "1 client sense llum": "1 cliente sin luz", "{0} clients sense llum": "{0} clientes sin luz",
@@ -41,7 +39,7 @@ var IDIOMA = {
     // L'oferta d'avisos a qui té la web instal·lada (ADR 0080).
     "Avisos de perill": "Avisos de peligro",
     "Riera, incendis, avisos oficials i temps extrem a Montflorit, al moment.": "Riera, incendios, avisos oficiales y tiempo extremo en Montflorit, al momento.",
-    "Activa-ho": "Actívalo", "Ara no": "Ahora no",
+    "Activa-ho": "Actívalo", "Tria quins": "Elige cuáles", "Ara no": "Ahora no",
     "Fet: t’arribaran els avisos de perill i de la riera. Per triar-ne més, toca la campana.": "Hecho: te llegarán los avisos de peligro y de la riera. Para elegir más, toca la campana.",
     "1 tren ha passat amb retard a la darrera mitja hora.": "1 tren ha pasado con retraso en la última media hora.",
     "{0} trens han passat amb retard a la darrera mitja hora.": "{0} trenes han pasado con retraso en la última media hora.",

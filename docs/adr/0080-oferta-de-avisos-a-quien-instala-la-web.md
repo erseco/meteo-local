@@ -77,3 +77,15 @@ La campana se llama ahora «Avisos» (el nombre de su página); la tarjeta,
 «Avisos de perill»; en «Privacitat», «Avisos al mòbil o a l'ordinador»; en
 «Perill», «…arriben al mòbil, a l'ordinador i a Telegram».
 
+## Ampliación del 12-10-2026 (3.71.2): «Tria quins» y sin la frase fija
+
+- La tarjeta lleva un tercer botón, **«Tria quins»**, a la página «Avisos»,
+  donde se eligen (Juanjo: «¿no habría que decir … que se puede configurar en
+  la sección avisos, con su botón?»). Botones: «Activa-ho», «Tria quins», «Ara
+  no».
+- **La portada ya no lleva la frase fija** «Per rebre la previsió cada dia i
+  saber quan plourà uns 15 minuts abans, activa els avisos» (Juanjo: «quita ese
+  texto fijo de activar avisos»). Corrige, solo para la portada, el ADR 0072
+  (cada apartado con aviso configurable dice cómo activarlo): ya están la
+  campana y la tarjeta. En «Perill», «Llum» y «Consultes» la frase se queda.
+
