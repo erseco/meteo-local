@@ -41,9 +41,10 @@ Versión 3.73.0 de la web; la app empieza en la 1.0.0.
   cualquier app.
 - **La web dice que la app es suya**: `montflorit/.well-known/assetlinks.json`
   lleva la huella de la clave de firma; sin él, la app enseñaría la barra de
-  dirección. `montflorit.py` lo copia con el resto de `montflorit/`. Cuando
-  Play firme la app con su propia clave («firma de apps de Play»), se añade
-  también esa huella.
+  dirección. `montflorit.py` lo copia con el resto de `montflorit/`. Lleva dos
+  huellas: la de la clave de Google («firma de apps de Play», la de lo que se
+  instala desde Play; está en Play Console, «Firma de aplicaciones») y la de
+  la clave de subida (la del APK instalado a mano).
 - **Icono de una sola tinta** (`montflorit/icones/icona-monocrom.svg` y su
   PNG de 192 px, en el manifiesto con `purpose: monochrome`): la nube con
   lluvia de Lucide en blanco sobre fondo transparente, que Android pide para
@@ -99,5 +100,7 @@ Versión 3.73.0 de la web; la app empieza en la 1.0.0.
 - En el móvil de Juanjo (12-10-2026), con el APK servido en la red de casa:
   Play Protect lo bloquea porque no conoce al desarrollador («Más detalles» →
   «Instalar de todos modos»); instalada, «parece que todo va bien».
-- Pendiente: la subida a Play. Instalada desde Play, la app va firmada con la
-  clave de Google: su huella tiene que estar también en `assetlinks.json`.
+- Play Console (12-10-2026): app creada, versión 1 (1.0.0) en la prueba
+  interna, con Juanjo como único probador; huella de la clave de Google
+  añadida a `assetlinks.json`.
+- Pendiente: la ficha, los formularios y la revisión de Google para producción.
