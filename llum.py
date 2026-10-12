@@ -162,6 +162,9 @@ def calcula(ara=None, dades=None):
             "nota": (a.get("note") or "").strip() or None,
             "municipi": a.get("municipality"),
             "km": round(km(C.CASA, (g["y"], g["x"])), 2),
+            # El punt aproximat d'e-distribució, per al mapa de «Llum» (ADR 0077),
+            # arrodonit a uns 10 m: el punt mateix ja és aproximat.
+            "lat": round(g["y"], 4), "lon": round(g["x"], 4),
             "actualitzat": hora(a.get("update_time")),
         })
     return {"hora": ara.isoformat(timespec="minutes"), "talls": sorted(talls, key=lambda t: t["km"])}

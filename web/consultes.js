@@ -313,12 +313,195 @@ function pintaConsulta() {
   if (text && avis) caixa.append(enllacAvisos(avis()));
   // «Al barri»: el mapa dels límits, a «Com funciona» (ADR 0072).
   if (text && triada === 'llum') {
+    // Cada tall amb el seu punt, al mapa (ADR 0077).
+    for (const t of (DADES.llum && DADES.llum.talls) || []) {
+      if (t.lat == null || t.lon == null) continue;
+      if (CARRERS) caixa.append(mapaTall(t, CARRERS));
+      else llegeixCarrers();
+    }
     const p = element('p', 'enllac-avisos');
     const a = element('a', null, T('mapa dels límits'));
     a.href = 'com-funciona.html#barri';
     p.append(T('Què compta com a barri: el '), a, '.');
     caixa.append(p);
   }
+}
+
+// --- El mapa de cada tall de llum (ADR 0077): un retall del mapa del barri
+// d'uns 600 × 450 m al voltant del punt aproximat d'e-distribució, amb els
+// carrers probables ressaltats i el nom, i com a molt NOMS_A_PROP noms de
+// carrers del voltant que no es trepitgin (Juanjo, 12-10-2026: «hay que evitar
+// que quede tan cargado de nombres que no se pueda visualizar bien»). El fons
+// (img/mapa-base.svg) i els carrers (img/carrers.json) els fa
+// eines/mapa_barri.py amb OpenStreetMap; aquí no es demana res a fora. ---
+let CARRERS = null;
+let llegintCarrers = false;
+const FINESTRA = [330, 250];
+const NOMS_A_PROP = 4;
+const A_PROP = 160;          // unitats del dibuix: uns 290 m
+const SEPARACIO = 60;
+const SVG = 'http://www.w3.org/2000/svg';
+
+function llegeixCarrers() {
+  if (llegintCarrers) return;
+  llegintCarrers = true;
+  fetch(ARREL + 'img/carrers.json').then((r) => r.json()).then((d) => {
+    CARRERS = d;
+    if (triada === 'llum') pintaConsulta();
+  }, () => {});
+}
+
+// «Carrer de Sant Jeroni» → «Sant Jeroni», com al mapa general.
+function nomCurt(nom) {
+  const abreujats = [['Avinguda de la ', 'Av. '], ['Avinguda del ', 'Av. '], ['Avinguda de ', 'Av. '],
+    ['Avinguda d\u2019', 'Av. '], ["Avinguda d'", 'Av. '], ['Avinguda ', 'Av. '], ['Passeig de ', 'Pg. '],
+    ['Passatge de ', 'Ptge. '], ['Carrer de la ', ''], ['Carrer de les ', ''], ["Carrer de l'", ''],
+    ['Carrer dels ', ''], ['Carrer del ', ''], ['Carrer de ', ''], ["Carrer d'", ''], ['Carrer ', '']];
+  const a = abreujats.find(([llarg]) => nom.startsWith(llarg));
+  return a ? a[1] + nom.slice(a[0].length) : nom;
+}
+
+function alDibuix(m, lon, lat) {
+  return [(lon - m.lon0) * m.kx - m.ox, m.oy - (lat - m.lat0) * m.ky];
+}
+
+// La finestra del retall, centrada al punt i sense sortir del dibuix.
+function finestra(m, x, y) {
+  const [w, h] = FINESTRA;
+  return [Math.max(0, Math.min(m.W - w, x - w / 2)), Math.max(0, Math.min(m.H - h, y - h / 2)), w, h];
+}
+
+// Els trossos de cada tram dins de la finestra (amb marge), en parells [x, y].
+function trossosDins(trams, [vx, vy, w, h], marge = 8) {
+  const res = [];
+  for (const t of trams) {
+    let tros = [];
+    for (let i = 0; i < t.length; i += 2) {
+      const p = [t[i], t[i + 1]];
+      if (p[0] >= vx + marge && p[0] <= vx + w - marge && p[1] >= vy + marge && p[1] <= vy + h - marge) tros.push(p);
+      else { if (tros.length > 1) res.push(tros); tros = []; }
+    }
+    if (tros.length > 1) res.push(tros);
+  }
+  return res;
+}
+
+const llargada = (t) => t.slice(1).reduce((s, p, i) => s + Math.hypot(p[0] - t[i][0], p[1] - t[i][1]), 0);
+const distPunt = (t, x, y) => Math.min(...t.map((p) => Math.hypot(p[0] - x, p[1] - y)));
+
+// Els trossos d'un tram prou llargs per al nom i gairebé rectes (la corda,
+// com a mínim RECTE de la llargada): en una corba tancada, el nom es
+// trencaria o quedaria del revés.
+const RECTE = 0.9;
+function trossosPerAlNom(tram, cal) {
+  const res = [];
+  for (let i = 0; i < tram.length - 1; i += 1) {
+    let l = 0;
+    for (let j = i + 1; j < tram.length; j += 1) {
+      l += Math.hypot(tram[j][0] - tram[j - 1][0], tram[j][1] - tram[j - 1][1]);
+      if (l < cal) continue;
+      const tros = tram.slice(i, j + 1);
+      const corda = Math.hypot(tros.at(-1)[0] - tros[0][0], tros.at(-1)[1] - tros[0][1]);
+      if (corda >= RECTE * l) res.push(tros);
+      break;
+    }
+  }
+  return res;
+}
+
+// El punt de la meitat del recorregut, on va el centre del nom.
+function puntMig(tros) {
+  let falta = llargada(tros) / 2;
+  for (let i = 1; i < tros.length; i += 1) {
+    const l = Math.hypot(tros[i][0] - tros[i - 1][0], tros[i][1] - tros[i - 1][1]);
+    if (l >= falta) {
+      const f = l ? falta / l : 0;
+      return [tros[i - 1][0] + (tros[i][0] - tros[i - 1][0]) * f, tros[i - 1][1] + (tros[i][1] - tros[i - 1][1]) * f];
+    }
+    falta -= l;
+  }
+  return tros.at(-1);
+}
+
+// Quins noms van al mapa: primer els carrers probables; després, els més
+// propers del voltant. Cadascun, en un tros recte on hi càpiga i que no
+// trepitgi cap altre nom; si no n'hi ha, sense nom.
+function nomsDelMapa(m, t, fin, x, y) {
+  const triats = [];
+  const centres = [];
+  const probables = t.carrers || [];
+  const candidats = Object.entries(m.carrers).map(([nom, trams]) => {
+    const dins = trossosDins(trams, fin);
+    if (!dins.length) return null;
+    return { nom, dins, dist: Math.min(...dins.map((d) => distPunt(d, x, y))), probable: probables.includes(nom) };
+  }).filter(Boolean).sort((a, b) => (b.probable - a.probable) || (a.dist - b.dist));
+  let altres = 0;
+  for (const c of candidats) {
+    if (!c.probable && (altres >= NOMS_A_PROP || c.dist > A_PROP)) continue;
+    const text = nomCurt(c.nom);
+    const mida = c.probable ? 12 : 10.5;
+    const cal = text.length * mida * 0.58 + 12;
+    const trossos = c.dins.flatMap((d) => trossosPerAlNom(d, cal)).map((tros) => {
+      const mig = puntMig(tros);
+      return { tros, mig, dist: Math.hypot(mig[0] - x, mig[1] - y) };
+    }).filter((q) => q.dist > 28 && !centres.some((p) => Math.hypot(p[0] - q.mig[0], p[1] - q.mig[1]) < SEPARACIO))
+      .sort((p, q) => p.dist - q.dist);
+    if (!trossos.length) continue;
+    centres.push(trossos[0].mig);
+    triats.push({ ...c, tram: trossos[0].tros, text, mida });
+    if (!c.probable) altres += 1;
+  }
+  return triats;
+}
+
+function nodeSvg(nom, atributs = {}) {
+  const n = document.createElementNS(SVG, nom);
+  for (const [k, v] of Object.entries(atributs)) n.setAttribute(k, v);
+  return n;
+}
+
+let numMapa = 0;
+function mapaTall(t, m) {
+  const [x, y] = alDibuix(m, t.lon, t.lat);
+  const fin = finestra(m, x, y);
+  const id = `mapa${++numMapa}`;
+  const probables = t.carrers || [];
+  const descripcio = probables.length
+    ? T`Mapa del tall de llum: punt aproximat a ${probables.map(nomCurt).join(T(' o '))}.`
+    : T('Mapa del tall de llum: punt aproximat.');
+  const svg = nodeSvg('svg', { viewBox: fin.join(' '), role: 'img', 'aria-label': descripcio, class: 'mapa-tall-svg' });
+  svg.append(nodeSvg('image', { href: ARREL + 'img/mapa-base.svg', x: 0, y: 0, width: m.W, height: m.H }));
+  // Els carrers probables, ressaltats.
+  for (const nom of probables) {
+    for (const tram of m.carrers[nom] || []) {
+      const punts = [];
+      for (let i = 0; i < tram.length; i += 2) punts.push(`${tram[i]} ${tram[i + 1]}`);
+      svg.append(nodeSvg('path', { d: `M${punts.join(' ')}`, fill: 'none', stroke: '#f59e0b', 'stroke-width': 7,
+        'stroke-opacity': '.75', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+    }
+  }
+  // El punt, aproximat: un cercle ample al voltant.
+  svg.append(nodeSvg('circle', { cx: x, cy: y, r: 22, fill: '#dc2626', 'fill-opacity': '.16', stroke: '#dc2626',
+    'stroke-opacity': '.5', 'stroke-dasharray': '4 3' }));
+  svg.append(nodeSvg('circle', { cx: x, cy: y, r: 6, fill: '#dc2626', stroke: '#fff', 'stroke-width': 2 }));
+  nomsDelMapa(m, t, fin, x, y).forEach((n, i) => {
+    const via = `${id}-via${i}`;
+    const tram = n.tram[n.tram.length - 1][0] >= n.tram[0][0] ? n.tram : [...n.tram].reverse();
+    svg.append(nodeSvg('path', { id: via, d: `M${tram.map((p) => p.join(' ')).join(' ')}`, fill: 'none' }));
+    const text = nodeSvg('text', { 'font-size': n.mida, 'font-weight': n.probable ? 700 : 600, dy: 4,
+      fill: n.probable ? '#7c2d12' : '#3d3d3d', stroke: '#fff', 'stroke-width': 3, 'paint-order': 'stroke' });
+    const cami = nodeSvg('textPath', { href: `#${via}`, startOffset: '50%', 'text-anchor': 'middle' });
+    cami.textContent = n.text;
+    text.append(cami);
+    svg.append(text);
+  });
+  const font = nodeSvg('text', { x: fin[0] + fin[2] - 5, y: fin[1] + fin[3] - 5, 'font-size': 9, 'text-anchor': 'end',
+    fill: '#555', stroke: '#f4f1ea', 'stroke-width': 3, 'paint-order': 'stroke' });
+  font.textContent = '© OpenStreetMap';
+  svg.append(font);
+  const figura = element('figure', 'mapa-tall');
+  figura.append(svg, element('figcaption', null, T('Punt aproximat del tall, segons e-distribució; els carrers ressaltats, estimats.')));
+  return figura;
 }
 
 function pinta(dades) {

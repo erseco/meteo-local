@@ -595,7 +595,7 @@ function taulaTram(t, obert) {
   return det;
 }
 
-function taula(hores, aprenentatge, mesurada, riscos) {
+function taula(hores, mesurada, riscos) {
   const ara = new Date();
   for (const f of hores) f.riscos_hora = riscosHora(f, riscos, ara);
   const trams = resumTrams(hores, ara, mesurada);
@@ -621,22 +621,23 @@ function taula(hores, aprenentatge, mesurada, riscos) {
   const visibles = trams.flatMap((t) => t.files);
   const notes = element('details', 'com notes-taula');
   notes.append(element('summary', null, T('Com es llegeix la taula')));
+  // Només què vol dir cada cosa; com es calcula, a «D'on surt» (Juanjo,
+  // 12-10-2026: «dice cosas poco útiles … solo lo que significa»; ADR 0077).
+  notes.append(element('p', 'nota', T('Prob.: la probabilitat que plogui en aquella hora. Pluja (mm): la que cauria si plou.')));
   if (visibles.some((f) => f.segons_estacio)) {
-    notes.append(element('p', 'nota', T('* Segons la pluja que mesura ara l\u2019estació i el que va passar en casos semblants a Sabadell i Sant Cugat entre el 2024 i el 2026.')));
+    notes.append(element('p', 'nota', T('* Hi compta la pluja que cau ara al barri.')));
   }
   if (visibles.some((f) => f.segons_radar)) {
-    notes.append(element('p', 'nota', T('\u2020 Segons el radar: la pluja que hi ha ara, portada endavant a la velocitat i en la direcció que porta.')));
+    notes.append(element('p', 'nota', T('\u2020 Hi compta la pluja que el radar veu acostar-se.')));
   }
   if (visibles.some((f) => avisHora(f))) {
-    notes.append(element('p', 'nota', T('La barra de color al costat de l\u2019hora marca les hores amb avís, de l\u2019AEMET o d\u2019aquesta web, del color del nivell.')));
+    notes.append(element('p', 'nota', T('La barra de color marca les hores amb avís, del color del nivell.')));
   }
   notes.append(element('p', 'nota', T('Vent en km/h: mitjana i, entre parèntesis, les ratxes.')));
   // La taula arriba fins a les 21 h de demà (ADR 0041): més enllà d'un dia, menys fina.
   if (visibles.length && new Date(visibles[visibles.length - 1].fins) - new Date() > 24 * 3600e3) {
-    notes.append(element('p', 'nota', T('Més enllà de les 24 hores la previsió és menys precisa: alguns models no hi arriben i la probabilitat apresa és la d\u2019un dia abans.')));
+    notes.append(element('p', 'nota', T('Més enllà de 24 hores, la previsió és menys segura.')));
   }
-  const apres = textAprenentatge(aprenentatge);
-  if (apres) notes.append(element('p', 'nota', apres));
   sec.append(notes);
   return sec;
 }
@@ -663,24 +664,6 @@ addEventListener('afterprint', () => {
     delete d.dataset.plegat;
   }
 });
-
-// Com s'ha après la probabilitat de pluja i, si cal, la correcció de la
-// temperatura (aprenentatge.py, ADR 0012).
-function textAprenentatge(a) {
-  if (!a || !a.pluja) return '';
-  const data = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString(IDIOMA.codi);
-  const on = LLOC;
-  const any = new Date(a.pluja.des_de).getFullYear();
-  let t = a.pluja.origen !== 'arxiu'
-    ? T`Probabilitat de pluja apresa del que ha plogut de veritat a ${on} des del ${data(a.pluja.des_de)}, quan els models deien el mateix.`
-    : T`Probabilitat de pluja apresa del que va ploure de veritat a Sabadell i Sant Cugat des del ${any}, quan els models deien el mateix.`;
-  if (a.temperatura) {
-    t += a.temperatura.origen === 'arxiu'
-      ? T` Temperatura corregida amb el que ha mesurat ${ESTACIO_PROPIA} des del ${data(a.temperatura.des_de)}.`
-      : T` Temperatura corregida amb el registre propi de ${ESTACIO_PROPIA} des del ${data(a.temperatura.des_de)}.`;
-  }
-  return t;
-}
 
 // Tots els avisos vigents en un sol bloc, a dalt; les notes, després. Es
 // torna a pintar quan arriba l'historial de «Perill», per la riera (ADR 0076).
@@ -722,7 +705,7 @@ function pinta(dades) {
   cont.append(...resum);
   // Sense resum (casa.json no en porta), l'enllaç de la pluja, a «Ara» (ADR 0072).
   if (ara && !resum.length) ara.append(enllacAvisos(T('Per saber quan plourà uns 15 minuts abans, ')));
-  const previsio = dades.hores && taula(dades.hores, dades.aprenentatge, dades.temperatura_mesurada, dades.riscos);
+  const previsio = dades.hores && taula(dades.hores, dades.temperatura_mesurada, dades.riscos);
   if (previsio) {
     cont.append(previsio);
     ajustaFranges();

@@ -168,6 +168,24 @@ class Pagina(unittest.TestCase):
         self.assertEqual(l[1][1]["t"], "Ara mateix: 22 °C.")
         self.assertEqual([x.get("marca") or x["t"] for x in l[2]], ["Trens: ", "alt", "R4 amb incidències, ", "baix", "S2."])
 
+    def test_mapa_dels_talls(self):
+        # ADR 0077: noms curts, la finestra dins del dibuix i noms que no es trepitgen.
+        import subprocess
+        js = llegeix_js()
+        m = {"W": 653, "H": 853, "lon0": 2.13, "lat0": 41.481, "kx": 46.0, "ky": 60.8, "ox": 0, "oy": 400,
+             "carrers": {"Carrer de Sant Jeroni": [[100, 100, 300, 102]], "Avinguda de Guiera": [[100, 200, 300, 202]],
+                         "Carrer de l'Escala": [[100, 104, 300, 106]]}}
+        codi = ("const T = (x) => x; const ARREL = '';" + js.split("let CARRERS = null;", 1)[1].split("function nodeSvg(", 1)[0]
+                + f"const m = {json.dumps(m)};"
+                + "console.log(JSON.stringify([nomCurt('Carrer de Sant Jeroni'), nomCurt('Avinguda de la Flor de Maig'),"
+                  " nomCurt(\"Carrer de l'Escala\"), finestra(m, 10, 840),"
+                  " nomsDelMapa(m, {carrers: ['Carrer de Sant Jeroni']}, [0, 0, 653, 853], 200, 160).map((n) => n.text)]));")
+        r = json.loads(subprocess.run(["node", "-e", codi], capture_output=True, text=True, check=True).stdout)
+        self.assertEqual(r[:3], ["Sant Jeroni", "Av. Flor de Maig", "Escala"])
+        self.assertEqual(r[3], [0, 603, 330, 250])
+        # L'Escala passa a 4 unitats de Sant Jeroni: el seu nom no hi cap sense trepitjar-lo.
+        self.assertEqual(r[4], ["Sant Jeroni", "Av. Guiera"])
+
     def test_opcions_en_l_ordre_del_bot(self):
         js = llegeix_js()
         claus = [c for c in M.CONSULTES]

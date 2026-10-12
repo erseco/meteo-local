@@ -33,6 +33,7 @@ y en [castellano](https://meteo-montflorit.github.io/es/). Tiene cuatro páginas
 - **Consultes**: lo mismo que el bot, eligiendo qué ver: hoy, mañana, el sol,
   la calidad del aire, el polen, los trenes, el tráfico o los cortes de luz del
   barrio; sale solo lo elegido, con los mismos textos del bot (ADR 0054 y 0072).
+  Cada corte de luz, con un mapa del punto y las calles probables (ADR 0077).
 
 Cada página y cada consulta se puede compartir con un enlace directo, y cada
 aviso de «Perill», con el suyo (ADR 0072).
@@ -162,7 +163,7 @@ Umbrales y lugares, en `config.py`. El porqué, en los ADR.
 | `montflorit-limits.geojson` | Los límites de Montflorit, calcados del mapa de barrios del Ayuntamiento (PLACC 2023) y con el poblado de Ca n'Oliver; para cualquier uso que necesite saber si algo es del barrio (ADR 0072) |
 | `montflorit-carrers.geojson` | Las calles con nombre del barrio y alrededores, de OpenStreetMap (ODbL), para estimar la calle probable de un corte de luz (ADR 0072) |
 | `eines/limits.py` | Editor de esos límites en un mapa: guarda en un borrador y `aplica` lo pasa a la web (ADR 0072) |
-| `eines/mapa_barri.py` | Dibuja el mapa de esos límites que sale en «Com funciona» (`web/img/montflorit-limits.svg`); se rehace al cambiarlos (ADR 0072) |
+| `eines/mapa_barri.py` | Dibuja el mapa de esos límites que sale en «Com funciona» (`web/img/montflorit-limits.svg`) y, para el mapa de cada corte de luz, el fondo (`web/img/mapa-base.svg`) y las calles (`web/img/carrers.json`); se rehace al cambiarlos (ADR 0072 y 0077) |
 | `avisos_bot.py` | Decide los avisos públicos para el bot y el canal y los deja en `avisos.json`, con el historial de un año de la página «Perill» (ADR 0034 y 0071) |
 | `bot/` | Lo que vive en IONOS para repartir avisos: el bot de Telegram, `bot.py` (menú, suscripciones, reparto y resumen, ADR 0034); los avisos en el navegador, `push.py` (envío) y `subscripcio.php` (altas y bajas, ADR 0048); e `instalar.sh` |
 | `reserva/` | Servidor de reserva en IONOS: `reserva.py` (vigila, calcula y avisa si el NAS no publica), `avisar-juanjo`, `rep-dades.sh` (recibe los datos que sube el NAS: la orden fija de su clave, ADR 0038) e `instalar.sh` (ADR 0032) |

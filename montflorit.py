@@ -472,6 +472,11 @@ def dades_publiques(casa):
     """Los datos de casa sin lo que es del trayecto, con los textos de las
     consultas del bot (consultes)."""
     publiques = {k: v for k, v in casa.items() if k not in PRIVADES}
+    # Els talls de llum porten el seu punt (ADR 0077): sense la distància a casa,
+    # que amb dos o tres punts diria on és. Només serveix per ordenar-los.
+    if isinstance(publiques.get("llum"), dict):
+        publiques["llum"] = {**publiques["llum"],
+                             "talls": [{k: v for k, v in t.items() if k != "km"} for t in publiques["llum"].get("talls") or []]}
     if publiques.get("generat"):
         try:
             publiques["consultes"] = consultes(publiques)

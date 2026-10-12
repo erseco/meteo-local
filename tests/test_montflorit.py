@@ -246,9 +246,6 @@ class Castella(unittest.TestCase):
         self.assertEqual(js("textActualitzacio({trams: [['00:00', '23:45']], cada_min: 15, mode_avis: []})"), explicacio)
         self.assertEqual(js("textActualitzacio({trams: [['05:00', '07:30'], ['13:00', '15:30']], cada_min: 15, mode_avis: []})"),
                          explicacio + " Solo se actualiza de 05:00\u201307:30 y 13:00\u201315:30.")
-        self.assertEqual(js("textAprenentatge({pluja: {origen: 'arxiu', des_de: '2024-01-01'}, temperatura: {origen: 'arxiu', des_de: '2025-10-08'}})"),
-                         "Probabilidad de lluvia aprendida de lo que llovió de verdad en Sabadell y Sant Cugat desde 2024, "
-                         "cuando los modelos decían lo mismo. Temperatura corregida con lo que ha medido la estación particular desde el 8/10/2025.")
 
     def test_riscos(self):
         ara = "2026-10-06T10:00:00+02:00"

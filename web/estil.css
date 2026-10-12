@@ -890,3 +890,9 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
   background: var(--superficie); color: var(--text); }
 .per-copiar textarea { display: block; width: 100%; margin: .5rem 0; font: inherit; color: var(--text);
   background: var(--fons); border: 1px solid var(--vora); border-radius: .4rem; }
+
+/* El mapa de cada tall de llum (ADR 0077): un retall del barri amb el punt. */
+.mapa-tall { margin: .8rem 0 0; }
+.mapa-tall-svg { display: block; width: 100%; max-width: 32rem; height: auto; border: 1px solid var(--vora);
+  border-radius: .5rem; background: #f4f1ea; }
+.mapa-tall figcaption { margin-top: .3rem; font-size: .85rem; color: var(--suau); }
