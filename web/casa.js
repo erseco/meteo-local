@@ -176,6 +176,12 @@ function textComparacio(n, esDema) {
   return n > 0 ? T`${Math.abs(n)}° més que ahir` : T`${Math.abs(n)}° menys que ahir`;
 }
 
+// El perill d'un tram: el nivell més alt de les seves hores i què és.
+function perillTram(files) {
+  const p = delNivellMesAlt(files.flatMap(elementsPerill));
+  return p && { nivell: p.nivell, noms: p.noms };
+}
+
 function resumTrams(hores, ara, mesurada) {
   const grups = [];
   for (const f of hores || []) {
@@ -213,7 +219,8 @@ function resumTrams(hores, ara, mesurada) {
       tMin: temps.length ? Math.min(...temps) : null, tMax: temps.length ? Math.max(...temps) : null,
       compara: textComparacio(comparaTemp(g.files, g.nom === 'Nit', mesurada, hores), esDema),
       fenomens,
-      avis: g.files.some((f) => (f.avisos || []).length),
+      avis: g.files.some((f) => avisHora(f)),
+      perill: perillTram(g.files),
       files: g.files,
     };
   });
@@ -236,6 +243,12 @@ function resumTram(t) {
     const [min, max] = [Math.round(t.tMin), Math.round(t.tMax)];
     const xifres = min === max ? [`${min}`] : [element('span', 'temp-min', `${min}`), '–', element('span', 'temp-max', `${max}`)];
     peca('i-thermometer', [...xifres, ' °C' + (t.compara ? ` · ${t.compara}` : '')]);
+  }
+  // El perill, primer i del color del nivell, com els avisos de dalt (ADR 0076).
+  if (t.perill) {
+    const xip = element('span', `perill-tram ${t.perill.nivell}`);
+    xip.append(icona('i-triangle-alert'), T`Avís ${TD(t.perill.nivell)}: ${t.perill.noms.join(', ')}`);
+    sum.append(xip);
   }
   if (t.plou) peca('i-umbrella', `${Math.round(t.prob * 100)} %` + (t.mm >= 1 ? T`, uns ${coma(t.mm, 0)} mm` : ''));
   for (const [text, id] of t.fenomens) peca(id, text, 'dada fenomen');
@@ -287,9 +300,10 @@ function blocAra(casa, radarDades, vent, veines, hores) {
 // 0074). Des de HORA_DEMA, també el de demà, com el bot. Sense la línia «Ara
 // mateix», que ja és la targeta de sobre, ni la de la roba, que és cosa de
 // «Si surts» (Juanjo, 12-10-2026: «lo de la ropa en pantalla principal, no es
-// un poco frivolo?»).
+// un poco frivolo?»), ni els avisos de l'AEMET, que ja surten a dalt, a
+// «Avisos actius» (ADR 0076).
 const HORA_DEMA = 18;   // la de bot.HORA_DEMA
-const LINIA_FORA = /^(⟦[a-z-]+⟧ ?)?(Ara mateix|Ahora mismo|Roba |Ropa )/;
+const LINIA_FORA = /^(⟦[a-z-]+⟧ ?)?(Ara mateix|Ahora mismo|Roba |Ropa |Avís \S+ de l'AEMET|Aviso \S+ de la AEMET)/;
 
 function textosResum(dades) {
   const textos = (dades.consultes || {})[IDIOMA.codi === 'es' ? 'es' : 'ca'] || {};
@@ -407,12 +421,40 @@ function blocRiscos(riscos) {
 // undefined si la cobreix un tram que ha començat abans, o null si no n'hi ha.
 const ORDRE_NIVELL = ['groc', 'taronja', 'vermell'];
 
+// El perill d'una hora: els avisos de l'AEMET i els que calcula aquesta web
+// (riscos.py, ADR 0018) per a aquella hora, amb el nivell més alt (Juanjo,
+// 12-10-2026: «la franja de peligro … tiene que estar destacada también …
+// pluja forta en sí no indica ningún peligro especial»; ADR 0076).
+const NOM_RISC = () => ({ pluja_1h: T('pluja molt forta'), pluja_12h: T('molta pluja'), ratxa: T('vent molt fort'),
+  calor: T('calor extrema'), fred: T('fred intens'), neu_24h: T('neu') });
+
+function riscosHora(f, riscos, ara = new Date()) {
+  const ini = new Date(f.hora);
+  const fi = new Date(f.fins);
+  return (riscos || []).filter((r) => (r.origen === 'previsio'
+    ? r.des_de && new Date(r.des_de) < fi && new Date(r.fins) > ini
+    : ini <= ara && ara < fi));
+}
+
+// Es diu el nivell més alt i només el que el dona: amb un avís groc de
+// l'AEMET per pluja i un de taronja de la web, «taronja: pluja molt forta».
+function elementsPerill(f) {
+  return [...(f.avisos || []).flatMap((a) => a.tipus.map((t) => ({ nivell: a.nivell, nom: TD(t), font: 'aemet' }))),
+    ...(f.riscos_hora || []).map((r) => ({ nivell: r.nivell, nom: NOM_RISC()[r.tipus] || r.tipus, font: 'web' }))];
+}
+
+function delNivellMesAlt(elements) {
+  if (!elements.length) return null;
+  const nivell = elements.map((a) => a.nivell).sort((a, b) => ORDRE_NIVELL.indexOf(b) - ORDRE_NIVELL.indexOf(a))[0];
+  const daquest = elements.filter((a) => a.nivell === nivell);
+  const noms = [...new Set(daquest.map((a) => a.nom))].sort();
+  const fonts = ['aemet', 'web'].filter((x) => daquest.some((a) => a.font === x)).join('');
+  return { nivell, noms, fonts };
+}
+
 function avisHora(f) {
-  const avisos = f.avisos || [];
-  if (!avisos.length) return null;
-  const nivell = avisos.map((a) => a.nivell).sort((a, b) => ORDRE_NIVELL.indexOf(b) - ORDRE_NIVELL.indexOf(a))[0];
-  const tipus = [...new Set(avisos.flatMap((a) => a.tipus))].sort();
-  return { nivell, tipus, clau: `${nivell}|${tipus.join(',')}` };
+  const p = delNivellMesAlt(elementsPerill(f));
+  return p && { ...p, clau: `${p.nivell}|${p.noms.join(',')}|${p.fonts}` };
 }
 
 function tramsAvis(hores) {
@@ -437,8 +479,10 @@ function franjaAvis(tram) {
   const td = element('td', `col-avis franja-avis ${tram.nivell}`);
   td.rowSpan = tram.hores;
   const nivell = TD(tram.nivell);
-  const tipus = tram.tipus.map((x) => TD(x)).join(T(' i '));
-  const complet = T`Avís ${nivell} de l\u2019AEMET per ${tipus}`;
+  const tipus = tram.noms.join(T(' i '));
+  const complet = tram.fonts === 'aemet' ? T`Avís ${nivell} de l\u2019AEMET per ${tipus}`
+    : tram.fonts === 'web' ? T`Avís ${nivell} d\u2019aquesta web: ${tipus}`
+      : T`Avís ${nivell} de l\u2019AEMET i d\u2019aquesta web: ${tipus}`;
   td.title = complet;
   const barra = element('span', 'barra-avis');
   barra.append(element('span', 'text-avis'));
@@ -482,7 +526,7 @@ function obertDeSortida(t) {
 
 // Una taula per tram, amb les mateixes columnes.
 function taulaTram(t, obert) {
-  const det = element('details', 'tram-hores');
+  const det = element('details', `tram-hores${t.perill ? ` amb-perill ${t.perill.nivell}` : ''}`);
   det.open = obert;
   det.dataset.clau = t.clau;
   det.append(resumTram(t));
@@ -551,8 +595,10 @@ function taulaTram(t, obert) {
   return det;
 }
 
-function taula(hores, aprenentatge, mesurada) {
-  const trams = resumTrams(hores, new Date(), mesurada);
+function taula(hores, aprenentatge, mesurada, riscos) {
+  const ara = new Date();
+  for (const f of hores) f.riscos_hora = riscosHora(f, riscos, ara);
+  const trams = resumTrams(hores, ara, mesurada);
   if (!trams.length) return null;
   const sec = element('section', 'previsio');
   const cap = element('div', 'cap-previsio');
@@ -581,8 +627,8 @@ function taula(hores, aprenentatge, mesurada) {
   if (visibles.some((f) => f.segons_radar)) {
     notes.append(element('p', 'nota', T('\u2020 Segons el radar: la pluja que hi ha ara, portada endavant a la velocitat i en la direcció que porta.')));
   }
-  if (visibles.some((f) => (f.avisos || []).length)) {
-    notes.append(element('p', 'nota', T('La barra de color al costat de l\u2019hora marca les hores amb avís de l\u2019AEMET, del color del nivell.')));
+  if (visibles.some((f) => avisHora(f))) {
+    notes.append(element('p', 'nota', T('La barra de color al costat de l\u2019hora marca les hores amb avís, de l\u2019AEMET o d\u2019aquesta web, del color del nivell.')));
   }
   notes.append(element('p', 'nota', T('Vent en km/h: mitjana i, entre parèntesis, les ratxes.')));
   // La taula arriba fins a les 21 h de demà (ADR 0041): més enllà d'un dia, menys fina.
@@ -636,22 +682,35 @@ function textAprenentatge(a) {
   return t;
 }
 
+// Tots els avisos vigents en un sol bloc, a dalt; les notes, després. Es
+// torna a pintar quan arriba l'historial de «Perill», per la riera (ADR 0076).
+let DADES_AVISOS = null;
+function pintaAvisos(dades) {
+  const avisos = $('avisos');
+  avisos.querySelector('.avisos-actius')?.remove();
+  const actius = blocAvisos(dades, [blocRiscos(dades.riscos)]);
+  if (actius) avisos.prepend(actius);
+}
+function repintaAvisos() {
+  if (DADES_AVISOS && !dadesVelles(DADES_AVISOS)) pintaAvisos(DADES_AVISOS);
+}
+
 function pinta(dades) {
   const cont = $('casa');
   cont.replaceChildren();
   // Dades de fa massa: només l'avís i on mirar (ADR 0031).
   if (dadesVelles(dades)) {
     $('avisos').replaceChildren();
+    DADES_AVISOS = dades;
     cont.append(blocDadesVelles(dades));
     pintaHorari(dades);
     posaVersio(dades.versio);
     return;
   }
-  // Tots els avisos vigents en un sol bloc, a dalt; les notes, després.
+  DADES_AVISOS = dades;
+  $('avisos').replaceChildren();
+  pintaAvisos(dades);
   const avisos = $('avisos');
-  avisos.replaceChildren();
-  const actius = blocAvisos(dades, [blocRiscos(dades.riscos)]);
-  if (actius) avisos.append(actius);
   if (dades.previsio_de) avisos.append(element('p', 'avis', textPrevisioAnterior(dades)));
   if (dades.models && dades.models.no_encerten) {
     const m = dades.models;
@@ -663,7 +722,7 @@ function pinta(dades) {
   cont.append(...resum);
   // Sense resum (casa.json no en porta), l'enllaç de la pluja, a «Ara» (ADR 0072).
   if (ara && !resum.length) ara.append(enllacAvisos(T('Per saber quan plourà uns 15 minuts abans, ')));
-  const previsio = dades.hores && taula(dades.hores, dades.aprenentatge, dades.temperatura_mesurada);
+  const previsio = dades.hores && taula(dades.hores, dades.aprenentatge, dades.temperatura_mesurada, dades.riscos);
   if (previsio) {
     cont.append(previsio);
     ajustaFranges();

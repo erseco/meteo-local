@@ -692,7 +692,7 @@ class AvisosPublics(unittest.TestCase):
         self.assertTrue(nous[0]["ca"].startswith("🟠 <b>Atenció: possible desbordament"))
         self.assertTrue(nous[1]["ca"].startswith("🟢 <b>Riera de Sant Cugat: ja no hi ha risc de desbordament</b>"))
         self.assertIn("ya no hay riesgo de desbordamiento", nous[1]["es"])
-        self.assertIn("Avís en proves", nous[1]["ca"])
+        self.assertIn("Fa 3 hores que no plou fort a Sant Cugat", nous[1]["ca"])   # curt, sense la nota (ADR 0076)
         self.assertEqual(nous[0]["tipus"], nous[1]["tipus"], "riera")
 
     def test_trens_ja_no_avisen(self):

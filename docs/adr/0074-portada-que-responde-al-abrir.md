@@ -58,6 +58,8 @@ Versión 3.64.0.
   tampoco se apunta. Quien entra por un enlace a otra página (un aviso
   compartido) sale con «atrás». `comNavega` decide; una marca en
   `sessionStorage` dice a la página nueva que se venía de la portada.
+  **Corregido por el ADR 0076**: una página de explicación abierta desde una
+  pestaña sí se apunta, para que «atrás» vuelva a ella.
 - **Punto rojo de «Perill», solo con un peligro activo** sin ver. Corrige el
   ADR 0071, que lo mantenía 24 horas desde el inicio (`PERILL_NOU_H`, que
   desaparece). Juanjo preguntó por un punto verde para los ya pasados; se

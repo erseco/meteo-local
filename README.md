@@ -21,7 +21,9 @@ y en [castellano](https://meteo-montflorit.github.io/es/). Tiene cuatro páginas
   avisos tal como llegaron y un enlace para saber más: avisos oficiales de AEMET, de Meteocat y de Protección Civil, incendios
   forestales de Collserola y de Cerdanyola, la riera de Sant Cugat y el tiempo
   excepcional que calcula la web; la pestaña lleva un punto rojo si hay uno
-  activo sin ver (ADR 0071 y 0074).
+  activo sin ver (ADR 0071 y 0074). Cada aviso se comparte entero, con el
+  menú de compartir del dispositivo, y la riera y el tiempo extremo que
+  calcula la web se explican en «Com funciona» (ADR 0076).
 - **Si surts**: para quien sale a una hora y vuelve a otra, cómo irá cada
   medio (a pie, bici o patinete, moto, coche y transporte público), qué ropa
   ponerse, consejos (lluvia, sol, noche, calor), si circulan los trenes que

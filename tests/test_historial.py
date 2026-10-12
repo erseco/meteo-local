@@ -108,7 +108,8 @@ class Historial(unittest.TestCase):
             self.skipTest("cal Node")
         casos = [("meteocat:Intensitat de pluja:2026-10-11", "2026-10-11T09:00+02:00"),
                  ("riera:2026-10-11T08:00", "2026-10-11T08:15+02:00"), ("pla:INUNCAT", "2026-10-11T09:00+02:00")]
-        with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web", "perill.js"),
+        # idFitxa, a comu.js des de la 3.66.0: la fa servir també la portada (ADR 0076).
+        with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web", "comu.js"),
                   encoding="utf-8") as f:
             js = f.read()
         funcio = "function idFitxa" + js.split("function idFitxa", 1)[1].split("\n}\n", 1)[0] + "\n}\n"

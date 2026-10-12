@@ -58,7 +58,7 @@ ESTAT = os.path.join(os.path.dirname(os.environ.get("REGISTRE_DIR", "/estat/regi
 CONSERVA_H = 24          # avisos que se guardan en avisos.json
 HISTORIAL_DIES = 366     # episodios de peligro de la página «Perill»: un año (ADR 0071)
 # Más información de cada tipo de aviso, si su texto no lleva ya un enlace
-# (ADR 0071). La metodología solo está en castellano: va en las dos lenguas.
+# (ADR 0071).
 BOMBERS = {"ca": "https://interior.gencat.cat/ca/arees_dactuacio/bombers/actuacions-de-bombers/",
            "es": "https://interior.gencat.cat/es/arees_dactuacio/bombers/actuacions-de-bombers/"}
 PROTECCIO_CIVIL = {"ca": "https://interior.gencat.cat/ca/arees_dactuacio/proteccio_civil/",
@@ -66,18 +66,25 @@ PROTECCIO_CIVIL = {"ca": "https://interior.gencat.cat/ca/arees_dactuacio/protecc
 AEMET = {"ca": "https://www.aemet.es/ca/eltiempo/prediccion/avisos?w=hoy&k=cat",
          "es": "https://www.aemet.es/es/eltiempo/prediccion/avisos?w=hoy&k=cat"}
 METEOCAT = {"ca": "https://www.meteo.cat/prediccio/general", "es": "https://www.meteo.cat/prediccio/general"}
-METODE = "https://github.com/meteo-montflorit/meteo-local/blob/main/docs/estadistica.md"
 # El mapa de talls d'e-distribució centrat al barri (el mateix que /llum).
 MAPA_LLUM = ("https://dpa-portalgis.enel.com/portal/apps/instant/basic/index.html"
              "?appid=21f5d825ceeb48dba6ef6ee97f840168&center=2.133,41.481&level=15&locale={}")
 # Un tall d'una o dues cases no s'anuncia a tothom: es veu a «Llum» (ADR 0072).
 LLUM_AVIS_CLIENTS_MIN = 3
-ENLLAC_RIERA = {"ca": METODE + "#12-la-riera-de-sant-cugat", "es": METODE + "#12-la-riera-de-sant-cugat"}
-ENLLAC_PROPI = {"ca": METODE + "#11-situaciones-de-peligro", "es": METODE + "#11-situaciones-de-peligro"}
+# Los avisos que calcula la web, a su explicación con palabras corrientes en
+# «Com funciona», en la lengua de quien lo lee; la metodología técnica se
+# enlaza desde allí (Juanjo, 12-10-2026; ADR 0076).
+ENLLAC_RIERA = {"ca": "https://meteo-montflorit.github.io/com-funciona.html#riera",
+                "es": "https://meteo-montflorit.github.io/es/com-funciona.html#riera"}
+ENLLAC_PROPI = {"ca": "https://meteo-montflorit.github.io/com-funciona.html#temps-extrem",
+                "es": "https://meteo-montflorit.github.io/es/com-funciona.html#temps-extrem"}
 WEB = "https://meteo-montflorit.github.io/"
+# Corto: se lee en plena alerta; lo demás, en la explicación de «Com funciona»
+# (Juanjo, 12-10-2026: «el texto de la alerta en sí ahora veo que es
+# demasiado, condénsalo también»; ADR 0076).
 ORIENTATIU = {
-    "ca": "Avís en proves, orientatiu i no oficial: segueix les indicacions de Protecció Civil i de l'Ajuntament.",
-    "es": "Aviso en pruebas, orientativo y no oficial: sigue las indicaciones de Protección Civil y del Ayuntamiento.",
+    "ca": "Avís en proves, orientatiu i no oficial.",
+    "es": "Aviso en pruebas, orientativo y no oficial.",
 }
 NIVELLS_ES = {"groc": "amarillo", "taronja": "naranja", "vermell": "rojo"}
 RISCOS_ES = {
@@ -176,10 +183,10 @@ def text_perill(nous, ahora):
     tipus = list(dict.fromkeys(r["tipus"] for r in nous))
     ca = [negreta(f"Avís de perill a Montflorit ({pitjor}): " + " i ".join(QUE_CA[t] for t in tipus), pitjor)]
     ca += [html.escape(r["text"], quote=False) for r in nous]
-    ca.append("Ho calcula Temps a Montflorit amb els llindars de l'AEMET: no és un avís oficial.")
+    ca.append("Calculat per aquesta web, no oficial.")
     es = [negreta(f"Aviso de peligro en Montflorit ({NIVELLS_ES[pitjor]}): " + " y ".join(QUE_ES[t] for t in tipus), pitjor)]
     es += [html.escape(linia_risc_es(r, ahora), quote=False) for r in nous]
-    es.append("Lo calcula Temps a Montflorit con los umbrales de la AEMET: no es un aviso oficial.")
+    es.append("Calculado por esta web, no oficial.")
     return {"ca": "\n".join(ca), "es": "\n".join(es)}, pitjor
 
 
@@ -188,54 +195,50 @@ def text_perill_fi():
     08-10-2026), perquè qui ha rebut l'avís sàpiga que ha passat."""
     h = C.RISC_FI_H
     ca = (negreta("Ja no hi ha cap situació de perill a Montflorit", "fi") +
-          f"\nFa {h} hores que ni el que mesuren les estacions ni la previsió arriben als llindars d'avís de "
-          "l'AEMET. Si hi tornen, hi haurà un avís nou.")
+          f"\nFa {h} hores que no se'n mesura ni se'n preveu cap. Si n'hi torna a haver, hi haurà un avís nou.")
     es = (negreta("Ya no hay ninguna situación de peligro en Montflorit", "fi") +
-          f"\nHace {h} horas que ni lo que miden las estaciones ni la previsión llegan a los umbrales de aviso de "
-          "la AEMET. Si vuelven, habrá un aviso nuevo.")
+          f"\nHace {h} horas que no se mide ni se prevé ninguna. Si vuelve a haberla, habrá un aviso nuevo.")
     return {"ca": ca, "es": es}
 
 
 def text_riera(riera, nivell):
+    """Primer què cal fer; després, la pluja de Sant Cugat i si el radar en veu
+    venir més (ADR 0076). El detall, a la fitxa i a «Com funciona»."""
     hora = dt.datetime.fromisoformat(riera["fins"]).strftime("%H:%M")
-    mm3, mm6 = coma(riera["mm_3h"]), coma(riera["mm_6h"])
+    mm3 = coma(riera["mm_3h"])
     radar = riera.get("radar_1h")
-    mes_ca = f", i el radar en preveu uns {coma(radar)} mm més des de llavors fins d'aquí a una hora" if radar and radar >= 1 else ""
-    mes_es = f", y el radar prevé unos {coma(radar)} mm más desde entonces hasta dentro de una hora" if radar and radar >= 1 else ""
+    mes_ca = " i el radar en veu venir més" if radar and radar >= 1 else ""
+    mes_es = " y el radar ve venir más" if radar and radar >= 1 else ""
     if nivell == "perill":
         ca = (negreta("Perill de desbordament de la riera de Sant Cugat a Montflorit", nivell) +
-              f"\nHa plogut molt a Sant Cugat, d'on baixa l'aigua de la riera: {mm3} mm en 3 hores i {mm6} en 6 "
-              f"(fins a les {hora}){mes_ca}. Amb aquesta pluja, la riera ja s'ha desbordat altres vegades. "
-              "No t'acostis a la riera.")
+              f"\nNo t'acostis a la riera.\n{mm3} mm en 3 hores a Sant Cugat (a les {hora}){mes_ca}: "
+              "amb aquesta pluja ja s'ha desbordat altres vegades.")
         es = (negreta("Peligro de desbordamiento de la riera de Sant Cugat en Montflorit", nivell) +
-              f"\nHa llovido mucho en Sant Cugat, de donde baja el agua de la riera: {mm3} mm en 3 horas y {mm6} "
-              f"en 6 (hasta las {hora}){mes_es}. Con esta lluvia, la riera ya se ha desbordado otras veces. "
-              "No te acerques a la riera.")
+              f"\nNo te acerques a la riera.\n{mm3} mm en 3 horas en Sant Cugat (a las {hora}){mes_es}: "
+              "con esta lluvia ya se ha desbordado otras veces.")
     else:
         ca = (negreta("Atenció: possible desbordament de la riera de Sant Cugat", nivell) +
-              f"\nPlou fort a Sant Cugat, d'on baixa l'aigua de la riera: {mm3} mm en 3 hores (fins a les {hora})"
-              f"{mes_ca}. Si continua, la riera es pot desbordar a Montflorit. No t'acostis a la riera.")
+              f"\nNo t'acostis a la riera.\n{mm3} mm en 3 hores a Sant Cugat (a les {hora}){mes_ca}: "
+              "si continua plovent fort, es pot desbordar.")
         es = (negreta("Atención: posible desbordamiento de la riera de Sant Cugat", nivell) +
-              f"\nLlueve fuerte en Sant Cugat, de donde baja el agua de la riera: {mm3} mm en 3 horas (hasta las "
-              f"{hora}){mes_es}. Si continúa, la riera se puede desbordar en Montflorit. No te acerques a la riera.")
+              f"\nNo te acerques a la riera.\n{mm3} mm en 3 horas en Sant Cugat (a las {hora}){mes_es}: "
+              "si sigue lloviendo fuerte, se puede desbordar.")
     if riera.get("incomplet"):
-        ca += " A l'estació li falten mesures: la pluja real pot ser més alta."
-        es += " A la estación le faltan medidas: la lluvia real puede ser más alta."
+        ca += " A l'estació li falten mesures: pot haver plogut més."
+        es += " A la estación le faltan medidas: puede haber llovido más."
     return {"ca": f"{ca}\n{ORIENTATIU['ca']}", "es": f"{es}\n{ORIENTATIU['es']}"}
 
 
 def text_riera_fi(riera, episodi):
     """Final d'un episodi amb avís (Juanjo, 08-10-2026): un sol missatge, i
-    només després de RIERA_FI_H hores per sota del registre."""
-    mm3, h = coma(riera["mm_3h"]), C.RIERA_FI_H
+    només després de RIERA_FI_H hores per sota del registre. Curt (ADR 0076)."""
+    h = C.RIERA_FI_H
     perill = bool(episodi["avisos"].get("perill"))
     ca = (negreta("Riera de Sant Cugat: " + ("ha passat el perill de desbordament" if perill else "ja no hi ha risc de desbordament"), "fi")
-          + f"\nA Sant Cugat fa {h} hores que no plou amb força ({mm3} mm en les últimes 3 hores) i el radar no hi veu "
-          "pluja forta. Si torna a ploure fort, tornarà l'avís.")
+          + f"\nFa {h} hores que no plou fort a Sant Cugat. Si hi torna, tornarà l'avís.")
     es = (negreta("Riera de Sant Cugat: " + ("ha pasado el peligro de desbordamiento" if perill else "ya no hay riesgo de desbordamiento"), "fi")
-          + f"\nEn Sant Cugat lleva {h} horas sin llover con fuerza ({mm3} mm en las últimas 3 horas) y el radar no ve "
-          "lluvia fuerte. Si vuelve a llover fuerte, volverá el aviso.")
-    return {"ca": f"{ca}\n{ORIENTATIU['ca']}", "es": f"{es}\n{ORIENTATIU['es']}"}
+          + f"\nLleva {h} horas sin llover fuerte en Sant Cugat. Si vuelve, volverá el aviso.")
+    return {"ca": ca, "es": es}
 
 
 # --- Incendios cerca (ADR 0046) ---------------------------------------------------

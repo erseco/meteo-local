@@ -14,6 +14,9 @@ const RELLEGEIX_MIN = 5;
 const CLASSE_CERCLE = { '🔴': 'vermell', '🟠': 'taronja', '🟡': 'groc', '🔥': 'vermell' };
 
 const idiomaText = () => (IDIOMA.codi === 'es' ? 'es' : 'ca');
+// On s'expliquen els avisos propis: la riera (tipus «riera») i el temps
+// extrem (episodi «propi»), a «Com funciona» (ADR 0076).
+const EXPLICACIONS = { riera: 'com-funciona.html#riera', propi: 'com-funciona.html#temps-extrem' };
 const locale = () => (IDIOMA.codi === 'es' ? 'es-ES' : 'ca-ES');
 
 // Quan ha acabat: el missatge de final o, en els avisos de l'AEMET, que no en
@@ -51,21 +54,24 @@ function nodesText(linies) {
   });
 }
 
-// Cada fitxa té la seva adreça (perill.html#…), per compartir-la (ADR 0072).
-function idFitxa(e) {
-  return 'a-' + `${e.clau}-${e.inici}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^A-Za-z0-9-]+/g, '-').replace(/-+/g, '-').toLowerCase();
+
+// El que es comparteix d'un avís: el missatge sencer, sense les línies que
+// només són un enllaç (ja hi va el de la fitxa) i, si ha acabat, el final
+// (ADR 0076).
+function textCompartit(linies) {
+  return linies.filter((l) => l.length && !l.every((t) => t.href || !t.t.trim()))
+    .map((l) => l.map((t) => t.t).join('').trim()).join('\n');
 }
 
-function botoCompartir(e, titol) {
+function botoCompartir(id, titol, text = '') {
   const b = element('button', 'compartir-avis');
   b.type = 'button';
   b.title = T('Comparteix aquest avís');
   b.setAttribute('aria-label', T('Comparteix aquest avís'));
   b.append(icona('i-share-2'));
   const url = new URL(location.href);
-  url.hash = idFitxa(e);
-  b.addEventListener('click', () => comparteix(url.href, titol));
+  url.hash = id;
+  b.addEventListener('click', () => comparteix(url.href, titol, text));
   return b;
 }
 
@@ -81,15 +87,28 @@ function fitxa(e, ara) {
   const titol = element('p', 'episodi-titol');
   titol.append(...nodesLinia(primera));
   const cap = element('div', 'episodi-cap');
-  cap.append(titol, botoCompartir(e, primera.map((t) => t.t).join('').trim()));
+  const textFi = fi && (e[`fi_${idiomaText()}`] || e.fi_ca);
+  const compartit = textCompartit([primera, ...resta, ...(textFi ? trossos(textFi) : [])]);
+  cap.append(titol, botoCompartir(art.id, primera.map((t) => t.t).join('').trim(), compartit));
   const estat = element('p', 'episodi-quan');
   if (fi) estat.append(element('span', 'episodi-acabat', `🟢 ${T('Acabat')}`), ' · ');
   else estat.append(element('span', 'episodi-actiu', T('Actiu ara')), ' · ');
   estat.append(quan(e, fi));
   art.append(cap, estat);
   const cos = nodesText(resta);
+  // Els avisos que calcula aquesta web (la riera i el temps extrem) no tenen
+  // cap font oficial on ampliar-los: porten a «Com funciona», on s'expliquen
+  // amb paraules corrents, no a la metodologia (Juanjo, 12-10-2026; ADR 0076).
+  const explicacio = EXPLICACIONS[e.tipus === 'riera' ? 'riera' : e.clau];
+  if (explicacio) {
+    const p = element('p');
+    const a = element('a', null, T('Què vol dir aquest avís'));
+    a.href = explicacio;
+    p.append(a);
+    cos.push(p);
+  }
   // Més informació, si el text no porta ja un enllaç (ADR 0071).
-  const enllac = e.enllac && (e.enllac[idiomaText()] || e.enllac.ca);
+  const enllac = !explicacio && e.enllac && (e.enllac[idiomaText()] || e.enllac.ca);
   if (enllac && !/<a href=/.test(text)) {
     const p = element('p');
     const a = element('a', null, T('Més informació'));
@@ -99,7 +118,6 @@ function fitxa(e, ara) {
     p.append(a);
     cos.push(p);
   }
-  const textFi = fi && (e[`fi_${idiomaText()}`] || e.fi_ca);
   if (textFi) cos.push(...nodesText(trossos(textFi)));
   if (!fi) {
     art.append(...cos);
@@ -129,13 +147,19 @@ function fitxaAlfa(alfa) {
   if (!dies.length && !tancats.length) return null;
   const maxim = Math.max(0, ...dies.map(([d]) => alfa[d]));
   const art = element('article', `avis-item episodi ${maxim >= 4 || !dies.length ? 'vermell' : 'taronja'}`);
+  // Amb el seu botó de compartir, com les altres fitxes (Juanjo, 12-10-2026;
+  // ADR 0075). Una adreça fixa: obre el Pla Alfa del dia en què s'obre.
+  art.id = 'pla-alfa';
   const titol = element('p', 'episodi-titol');
   const nivells = dies.map(([d, nom]) => T`nivell ${alfa[d]} ${nom}`).join(', ');
-  titol.append(element('strong', null, `${maxim >= 4 || !dies.length ? '🔴' : '🟠'} `
-    + (nivells ? T`Pla Alfa de Cerdanyola: ${nivells}` : T('Agents Rurals: espais naturals tancats'))));
-  art.append(titol, element('p', 'episodi-quan', T('El fixen cada dia els Agents Rurals; no arriba com a avís.')));
-  if (dies.length) art.append(element('p', null, T('Accés restringit als espais forestals.')));
-  for (const t of tancats) art.append(element('p', null, T`Tancat: ${t.espai}.`));
+  const text = nivells ? T`Pla Alfa de Cerdanyola: ${nivells}` : T('Agents Rurals: espais naturals tancats');
+  titol.append(element('strong', null, `${maxim >= 4 || !dies.length ? '🔴' : '🟠'} ${text}`));
+  const linies = [...(dies.length ? [T('Accés restringit als espais forestals.')] : []),
+    ...tancats.map((t) => T`Tancat: ${t.espai}.`)];
+  const cap = element('div', 'episodi-cap');
+  cap.append(titol, botoCompartir(art.id, text, [text, ...linies].join('\n')));
+  art.append(cap, element('p', 'episodi-quan', T('El fixen cada dia els Agents Rurals; no arriba com a avís.')));
+  for (const l of linies) art.append(element('p', null, l));
   const p = element('p');
   const a = element('a', null, T('Més informació'));
   a.href = PLA_ALFA;

@@ -615,6 +615,32 @@ function textTall(t, ara = new Date()) {
   return [titol, frase];
 }
 
+// Cada fitxa de «Perill» té la seva adreça (perill.html#…), per compartir-la
+// (ADR 0072) i per anar-hi des de la portada (ADR 0076).
+function idFitxa(e) {
+  return 'a-' + `${e.clau}-${e.inici}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9-]+/g, '-').replace(/-+/g, '-').toLowerCase();
+}
+
+// La riera de Sant Cugat activa, també a «Avisos actius» (Juanjo, 12-10-2026;
+// ADR 0076): fins ara només era a «Perill», perquè les dades públiques no en
+// porten l'estat. Surt de l'historial de «Perill» (avisos.json), que la pàgina
+// ja llegeix per al punt vermell. El títol i què cal fer; la resta, a la fitxa.
+let HISTORIAL_PERILL = null;
+const NIVELL_RIERA = { perill: 'vermell', atencio: 'taronja' };
+
+function blocRiera(historial, ara = new Date()) {
+  return (historial || []).filter((e) => e.tipus === 'riera' && !e.fi && !(e.fins && new Date(e.fins) <= ara))
+    .map((e) => {
+      const text = e[IDIOMA.codi === 'es' ? 'es' : 'ca'] || e.ca;
+      const titol = trossos(text)[0].map((t) => t.t).join('').replace(/^\S+\s/, '').trim();
+      const item = element('p', `avis-item ${NIVELL_RIERA[e.nivell] || 'vermell'}`);
+      item.append(element('strong', null, titol), '. ', T('No t’acostis a la riera.'));
+      item.dataset.detall = `perill.html#${idFitxa(e)}`;
+      return item;
+    });
+}
+
 function blocLlum(llum, ara = new Date()) {
   return ((llum && llum.talls) || []).map((t) => {
     const [titol, frase] = textTall(t, ara);
@@ -638,14 +664,15 @@ function enllacAvisos(davant) {
 
 function blocAvisos(dades, extres = [], ara = new Date()) {
   const perills = [...blocPlans(dades.plans, dades.smp), ...blocSmp(dades.smp, dades.plans),
-    ...blocEntorn(dades.entorn), ...extres.filter(Boolean),
+    ...blocRiera(HISTORIAL_PERILL, ara), ...blocEntorn(dades.entorn), ...extres.filter(Boolean),
     ...(dades.avisos && dades.avisos.length ? blocAvisosAemet(dades.avisos, ara) : [])];
   const talls = blocLlum(dades.llum, ara);
   if (!perills.length && !talls.length) return null;
   const sec = element('section', 'avisos-actius');
   sec.setAttribute('aria-label', T('Avisos actius'));
   sec.append(element('h2', 'seccio', T('Avisos actius')),
-    ...perills.map((i) => ambDetall(i, 'perill.html')), ...talls.map((i) => ambDetall(i, 'consultes.html#llum')));
+    ...perills.map((i) => ambDetall(i, (i.dataset && i.dataset.detall) || 'perill.html')),
+    ...talls.map((i) => ambDetall(i, 'consultes.html#llum')));
   return sec;
 }
 
@@ -1064,7 +1091,12 @@ function senyalaPerill(historial, ara = new Date()) {
 // A «Perill» mateix no cal: s'hi és. A les altres, es mira en carregar i cada
 // cinc minuts.
 if (!/(^|\/)perill\.html$/.test(location.pathname) && document.querySelectorAll('.pagines a[href$="perill.html"]').length) {
-  const miraPerill = () => llegeixDades('avisos.json').then((d) => senyalaPerill(d.historial), () => {});
+  // Amb l'historial, també la riera a «Avisos actius»: la pàgina el torna a pintar (repintaAvisos).
+  const miraPerill = () => llegeixDades('avisos.json').then((d) => {
+    HISTORIAL_PERILL = d.historial;
+    senyalaPerill(d.historial);
+    if (typeof repintaAvisos === 'function') repintaAvisos();
+  }, () => {});
   miraPerill();
   setInterval(miraPerill, 5 * 60000);
 }
@@ -1081,48 +1113,111 @@ function avisBreu(text) {
   setTimeout(() => p.remove(), 4000);
 }
 
-function comparteix(url = location.href, titol = document.title) {
+// Compartir obre el menú de compartir del dispositiu (Juanjo, 12-10-2026:
+// «me refiero a compartir, debe salir el menu de compartir»; ADR 0076); on no
+// n'hi ha (alguns navegadors d'ordinador), es copia sol, en el moment
+// («tienen que copiar automaticamente»). Amb un text (un avís de «Perill»), el
+// missatge sencer i l'enllaç, per enviar-lo de seguida a altres.
+function comparteix(url = location.href, titol = document.title, text = '') {
   if (navigator.share) {
-    navigator.share({ title: titol, url }).catch((e) => {
-      if (e.name !== 'AbortError') copiaEnllac(url);
+    navigator.share(text ? { title: titol, text, url } : { title: titol, url }).catch((e) => {
+      if (e.name !== 'AbortError') copiaEnllac(url, text);
     });
     return;
   }
-  copiaEnllac(url);
+  copiaEnllac(url, text);
 }
 
-function copiaEnllac(url) {
-  const fet = () => avisBreu(T('Enllaç copiat'));
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(url).then(fet, () => avisBreu(T`Copia aquest enllaç: ${url}`));
-  } else {
-    avisBreu(T`Copia aquest enllaç: ${url}`);
+// Es copia de la manera clàssica, que funciona gairebé a tot arreu, també fora
+// d'https, i dins del mateix toc; si no, amb el portapapers del navegador
+// (Juanjo, 12-10-2026: «dice que lo copie yo a mano, eso no es serio»; ADR
+// 0076). Només si tampoc no es pot, es mostra el text seleccionat.
+function copiaEnllac(url, text = '') {
+  const tot = text ? `${text}\n${url}` : url;
+  const fet = () => avisBreu(text ? T('Avís copiat, amb l’enllaç') : T('Enllaç copiat'));
+  if (copiaClassica(tot)) {
+    fet();
+    return;
   }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tot).then(fet, () => mostraPerCopiar(tot));
+  else mostraPerCopiar(tot);
+}
+
+function copiaClassica(tot) {
+  try {
+    const area = element('textarea');
+    area.value = tot;
+    area.setAttribute('readonly', '');
+    area.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+    document.body.append(area);
+    area.select();
+    area.setSelectionRange(0, tot.length);
+    const ok = document.execCommand('copy');
+    area.remove();
+    return ok;
+  } catch (_) {
+    return false;
+  }
+}
+
+// L'últim recurs: el text, ja seleccionat, en una finestra petita per copiar-lo.
+function mostraPerCopiar(tot) {
+  const visor = element('dialog', 'per-copiar');
+  const area = element('textarea');
+  area.value = tot;
+  area.readOnly = true;
+  area.rows = Math.min(8, tot.split('\n').length + 1);
+  area.setAttribute('aria-label', T('Text per copiar'));
+  const tanca = element('button', null, T('Tanca'));
+  tanca.type = 'button';
+  tanca.addEventListener('click', () => visor.close());
+  visor.addEventListener('close', () => visor.remove());
+  visor.append(element('p', null, T('Mantén premut el text i tria «Copia».')), area, tanca);
+  document.body.append(visor);
+  visor.showModal();
+  area.focus();
+  area.select();
 }
 
 for (const b of document.querySelectorAll('.boto-compartir')) b.addEventListener('click', () => comparteix());
 
 // «Enrere», com en una aplicació (Juanjo, 12-10-2026: «al ir hacia atrás
 // fuese a la pagina principal y si pulso otra vez, entonces se sale de la
-// app»; ADR 0074): de la portada a una altra pàgina, el navegador ho apunta;
-// entre les altres, la nova substitueix l'anterior; i tornar a la portada és
-// fer enrere. Així, enrere porta sempre a la portada i, des d'ella, fora. El
-// canvi d’idioma tampoc s’apunta. Qui entra per un enllaç a una altra pàgina
-// (un avís compartit) surt amb enrere: no ha passat per la portada.
-const CLAU_DES_DE_PORTADA = 'meteo.des-de-portada';
+// app»; ADR 0074 i 0076). Entre les pestanyes, la nova substitueix l'anterior;
+// de la portada a una pestanya, o d'una pestanya a una pàgina d'explicació
+// («Com funciona», «Fonts i crèdits»…), el navegador ho apunta, perquè enrere
+// torni on s'era (de «Què vol dir aquest avís», a l'avís). Tocar «El temps» és
+// tornar enrere fins a la portada. El canvi d'idioma no s'apunta. Qui entra per
+// un enllaç a una altra pàgina (un avís compartit) surt amb enrere.
+// La profunditat (quants passos apuntats hi ha des de la portada) va a
+// history.state i, d'una pàgina a la següent, per sessionStorage.
+const CLAU_PROFUNDITAT = 'meteo.profunditat';
 const esPortada = (url) => /\/(index\.html|casa\.html)?$/.test(new URL(url, location.href).pathname);
+const esPestanya = (url) => /\/(index\.html|casa\.html|perill\.html|sortir\.html|consultes\.html)?$/
+  .test(new URL(url, location.href).pathname);
 
-// Què fer en anar d'«actual» a «desti»: 'apunta', 'substitueix' o 'enrere'.
-function comNavega(actual, desti, desDePortada) {
-  if (esPortada(desti)) return esPortada(actual) ? 'substitueix' : desDePortada ? 'enrere' : 'substitueix';
-  return esPortada(actual) ? 'apunta' : 'substitueix';
+// Què fer en anar d'«actual» a «desti», amb la profunditat d'ara (0 a la
+// portada; null si no s'hi ha passat): [acció, profunditat de la pàgina nova].
+// L'acció: 'apunta', 'substitueix' o 'enrere'.
+function comNavega(actual, desti, prof) {
+  if (esPortada(desti)) return esPortada(actual) || !prof ? ['substitueix', esPortada(actual) ? 0 : null] : ['enrere', 0];
+  if (esPortada(actual)) return ['apunta', 1];
+  if (esPestanya(actual) && !esPestanya(desti)) return ['apunta', prof == null ? null : prof + 1];
+  return ['substitueix', prof];
+}
+
+function profunditat() {
+  if (esPortada(location.href)) return 0;
+  const p = history.state && history.state.profunditat;
+  return Number.isInteger(p) ? p : null;
 }
 
 try {
-  if (sessionStorage.getItem(CLAU_DES_DE_PORTADA) && !esPortada(location.href)) {
-    history.replaceState({ ...(history.state || {}), desDePortada: true }, '');
+  const portada = sessionStorage.getItem(CLAU_PROFUNDITAT);
+  if (portada !== null && !esPortada(location.href)) {
+    history.replaceState({ ...(history.state || {}), profunditat: Number(portada) }, '');
   }
-  sessionStorage.removeItem(CLAU_DES_DE_PORTADA);
+  sessionStorage.removeItem(CLAU_PROFUNDITAT);
 } catch (_) {}
 
 document.addEventListener('click', (e) => {
@@ -1130,7 +1225,7 @@ document.addEventListener('click', (e) => {
   if (!a || e.defaultPrevented || a.target || a.hasAttribute('download') || e.button !== 0
       || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
   const desti = new URL(a.href, location.href);
-  // Només les pàgines d'aquesta web, i no els salts dins de la mateixa pàgina.
+  // Només les pàgines d'aquesta web.
   if (desti.origin !== location.origin || !/\/([a-z-]+\.html)?$/.test(desti.pathname)) return;
   // Dins de la mateixa pàgina (la «›» dels trens a «Consultes»), sense apuntar-ho.
   if (desti.pathname === location.pathname && desti.search === location.search) {
@@ -1140,20 +1235,19 @@ document.addEventListener('click', (e) => {
     }
     return;
   }
-  const desDePortada = Boolean(history.state && history.state.desDePortada);
-  const com = comNavega(location.href, desti.href, desDePortada);
-  if (com === 'apunta') {
-    try { sessionStorage.setItem(CLAU_DES_DE_PORTADA, '1'); } catch (_) {}
-    return;
-  }
-  e.preventDefault();
+  const prof = profunditat();
+  const [com, nova] = comNavega(location.href, desti.href, prof);
   if (com === 'enrere') {
-    history.back();
+    e.preventDefault();
+    history.go(-prof);
     return;
   }
-  if (desDePortada) {
-    try { sessionStorage.setItem(CLAU_DES_DE_PORTADA, '1'); } catch (_) {}
-  }
+  try {
+    if (nova == null) sessionStorage.removeItem(CLAU_PROFUNDITAT);
+    else sessionStorage.setItem(CLAU_PROFUNDITAT, String(nova));
+  } catch (_) {}
+  if (com === 'apunta') return;
+  e.preventDefault();
   location.replace(desti.href);
 });
 

@@ -873,3 +873,20 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
   font-size: 1.7rem; line-height: 1; color: var(--suau); pointer-events: none; }
 .amb-detall:hover::after { color: var(--enllac); }
 .amb-detall .ajuda-fase, .amb-detall a:not(.detall), .amb-detall .sentit-fase { position: relative; z-index: 1; }
+
+/* Els trams de la previsió amb perill (ADR 0076): la franja del color del
+   nivell, com «Avisos actius», i l'etiqueta «Avís taronja: …» a la capçalera. */
+.tram-hores.amb-perill { border-left: .4rem solid var(--nivell); }
+.tram-hores.groc, .perill-tram.groc { --nivell: #eab308; }
+.tram-hores.taronja, .perill-tram.taronja { --nivell: #fb923c; }
+.tram-hores.vermell, .perill-tram.vermell { --nivell: #ef4444; }
+.tram-hores .perill-tram { display: inline-flex; align-items: center; gap: .3rem; padding: .05rem .5rem;
+  border-radius: .4rem; font-weight: 700; color: var(--text); vertical-align: middle;
+  background: color-mix(in srgb, var(--nivell) 28%, var(--superficie)); }
+.tram-hores summary .perill-tram svg { color: var(--text); }
+
+/* L'últim recurs per copiar un avís (ADR 0076): el text seleccionat. */
+.per-copiar { max-width: min(30rem, calc(100% - 2rem)); border: 1px solid var(--vora); border-radius: .6rem;
+  background: var(--superficie); color: var(--text); }
+.per-copiar textarea { display: block; width: 100%; margin: .5rem 0; font: inherit; color: var(--text);
+  background: var(--fons); border: 1px solid var(--vora); border-radius: .4rem; }

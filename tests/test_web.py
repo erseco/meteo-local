@@ -538,17 +538,25 @@ class Web(unittest.TestCase):
         self.assertEqual(nou("2026-10-19T00:00:00+02:00"), [])
 
     def test_compartir(self):
-        # ADR 0072: amb el menú del sistema, l'adreça i el títol; sense, es copia i es diu.
-        expr = ("dit = []; avisBreu = (t) => dit.push(t); compartit = null;"
-                "navigator.share = (d) => { compartit = d; return Promise.resolve(); };"
-                "comparteix('https://m.test/perill.html#a-x', 'Foc');"
-                "delete navigator.share; copiat = null;"
+        # ADR 0072 i 0076: compartir obre el menú del sistema; sense, es copia sol (primer de la manera
+        # clàssica; si no va, amb el portapapers). Un avís va sencer, amb l'enllaç.
+        base = ("dit = []; avisBreu = (t) => dit.push(t); compartit = null; copiat = null; classic = null;"
+                "document.body = { append() {} };"
+                "document.execCommand = () => { classic = 'ok'; return true; };"
+                "element = (e) => ({ value: '', style: {}, setAttribute() {}, select() {}, setSelectionRange() {}, remove() {} });")
+        expr = (base + "navigator.share = (d) => { compartit = d; return Promise.resolve(); };"
+                "comparteix('https://m.test/perill.html#a-x', 'Riera', 'Perill a la riera\\nNo t’hi acostis.');"
+                "new Promise((r) => setTimeout(r, 10)).then(() => [compartit, classic, dit])")
+        r = self.avalua("2026-10-12T10:00:00+02:00", expr, arnes=ARNES_ASYNC)
+        self.assertEqual(r[0], {"title": "Riera", "text": "Perill a la riera\nNo t’hi acostis.", "url": "https://m.test/perill.html#a-x"})
+        self.assertEqual(r[1:], [None, []])      # amb el menú, no es copia
+        # Sense còpia clàssica ni menú, el portapapers; una pàgina, només l'enllaç.
+        expr = (base + "document.execCommand = () => false;"
                 "navigator.clipboard = { writeText: (u) => { copiat = u; return Promise.resolve(); } };"
                 "comparteix('https://m.test/consultes.html#llum');"
-                "new Promise((r) => setTimeout(r, 10)).then(() => [compartit, copiat, dit])")
-        r = self.avalua("2026-10-11T10:00:00+02:00", expr, arnes=ARNES_ASYNC)
-        self.assertEqual(r[0], {"title": "Foc", "url": "https://m.test/perill.html#a-x"})
-        self.assertEqual(r[1:], ["https://m.test/consultes.html#llum", ["Enllaç copiat"]])
+                "new Promise((r) => setTimeout(r, 10)).then(() => [copiat, dit])")
+        r = self.avalua("2026-10-12T10:00:00+02:00", expr, arnes=ARNES_ASYNC)
+        self.assertEqual(r, ["https://m.test/consultes.html#llum", ["Enllaç copiat"]])
 
     def test_final_de_la_pluja_en_entrenament(self):
         # «Pluja a sobre» amb l'hora en què pararia, marcat «en entrenament» (ADR 0049).
@@ -698,8 +706,10 @@ class Web(unittest.TestCase):
         self.assertEqual(self.avalua(ara, "perillsNous([{inici: '2026-10-11T19:30+02:00', fi: '2026-10-11T19:36+02:00'}], null)"), [])
 
     def test_resum_del_dia_a_la_portada(self):
-        # ADR 0074: el text de «Consultes › Avui», sense «Ara mateix» ni la roba; des de les 18 h, també demà.
-        avui = ("<b>El temps avui</b>\n⟦i-sun⟧ Ara mateix: 13 °C, no plou.\nSense pluja prevista.\n\n"
+        # ADR 0074 i 0076: el text de «Consultes › Avui», sense «Ara mateix», la roba ni l'AEMET (ja és a dalt);
+        # des de les 18 h, també demà.
+        avui = ("<b>El temps avui</b>\n⟦i-sun⟧ Ara mateix: 13 °C, no plou.\nSense pluja prevista.\n"
+                "⟦alt⟧ Avís taronja de l'AEMET per pluja al Vallès fins a les 15:46.\n\n"
                 "Roba per anar a peu: a les 7 h (13 °C), jaqueta.")
         dades = lambda h: json.dumps({"generat": f"2026-10-12T{h}:00+02:00", "consultes": {"ca": {"avui": avui, "dema": "<b>Demà</b>"}}})
         self.assertEqual(self.avalua("2026-10-12T10:00:00+02:00", f"textosResum({dades('10:00')})"),
@@ -731,18 +741,22 @@ class Web(unittest.TestCase):
                          [["be", "Bé en tots els mitjans.", ""]])
 
     def test_enrere_porta_a_la_portada_i_despres_fora(self):
-        # ADR 0074: de la portada a una altra pàgina s'apunta; entre les altres se substitueix;
-        # tornar a la portada és fer enrere si s'hi venia; el canvi d'idioma no s'apunta.
+        # ADR 0074 i 0076: de la portada a una pestanya s'apunta; entre pestanyes se substitueix; d'una
+        # pestanya a una explicació s'apunta (enrere torna a l'avís); tornar a la portada és fer enrere
+        # tots els passos; el canvi d'idioma no s'apunta. [acció, profunditat de la pàgina nova].
         w = "https://meteo-montflorit.github.io/"
-        com = lambda a, b, ve: self.avalua("2026-10-12T10:00:00+02:00", f"comNavega({json.dumps(w + a)}, {json.dumps(w + b)}, {json.dumps(ve)})")
-        self.assertEqual(com("", "perill.html", False), "apunta")
-        self.assertEqual(com("perill.html", "sortir.html", True), "substitueix")
-        self.assertEqual(com("sortir.html", "", True), "enrere")
-        self.assertEqual(com("perill.html", "./", False), "substitueix")        # hi ha entrat per un enllaç
-        self.assertEqual(com("", "es/", False), "substitueix")                  # l'idioma
-        self.assertEqual(com("es/perill.html", "perill.html", True), "substitueix")
-        self.assertEqual(com("es/", "es/consultes.html", False), "apunta")
-        self.assertEqual(com("casa.html", "perill.html", False), "apunta")      # la pàgina de casa
+        com = lambda a, b, p: self.avalua("2026-10-12T10:00:00+02:00", f"comNavega({json.dumps(w + a)}, {json.dumps(w + b)}, {json.dumps(p)})")
+        self.assertEqual(com("", "perill.html", 0), ["apunta", 1])
+        self.assertEqual(com("perill.html", "sortir.html", 1), ["substitueix", 1])
+        self.assertEqual(com("sortir.html", "", 1), ["enrere", 0])
+        self.assertEqual(com("perill.html", "com-funciona.html", 1), ["apunta", 2])
+        self.assertEqual(com("com-funciona.html", "", 2), ["enrere", 0])
+        self.assertEqual(com("com-funciona.html", "fonts.html", 2), ["substitueix", 2])
+        self.assertEqual(com("perill.html", "./", None), ["substitueix", None])     # hi ha entrat per un enllaç
+        self.assertEqual(com("perill.html", "com-funciona.html", None), ["apunta", None])
+        self.assertEqual(com("", "es/", 0), ["substitueix", 0])                      # l'idioma
+        self.assertEqual(com("es/perill.html", "perill.html", 1), ["substitueix", 1])
+        self.assertEqual(com("casa.html", "perill.html", 0), ["apunta", 1])         # la pàgina de casa
 
     def test_linies_del_resum_amb_detall(self):
         # ADR 0075: els trens, a «Consultes › Trens»; els avisos de l'AEMET, a «Perill»; la resta, sense.
@@ -753,6 +767,22 @@ class Web(unittest.TestCase):
         self.assertEqual(d("Aviso amarillo de la AEMET por lluvia en el Vallès hasta las 20:00."), "perill.html")
         self.assertIsNone(d("Sense pluja prevista."))
         self.assertIsNone(d("Temperatura d'aquí a mitjanit: entre 13 °C i 23 °C."))
+
+    def test_perill_a_les_hores_i_als_trams(self):
+        # ADR 0076: el perill calculat per la web marca les hores que toca, com els avisos de l'AEMET,
+        # i el tram en porta el nivell més alt i què és.
+        ara = "2026-10-12T07:30:00+02:00"
+        f = lambda h, avisos=(): {"hora": f"2026-10-12T{h:02d}:00", "fins": f"2026-10-12T{h + 1:02d}:00", "avisos": list(avisos)}
+        risc = {"tipus": "pluja_1h", "origen": "previsio", "nivell": "taronja",
+                "des_de": "2026-10-12T08:00+02:00", "fins": "2026-10-12T09:00+02:00"}
+        hores = [f(7), f(8, [{"nivell": "groc", "tipus": ["pluja"]}]), f(9)]
+        expr = (f"hs = {json.dumps(hores)}; for (const x of hs) x.riscos_hora = riscosHora(x, [{json.dumps(risc)}]);"
+                "[hs.map((x) => avisHora(x) && [avisHora(x).nivell, avisHora(x).fonts, avisHora(x).noms]), perillTram(hs)]")
+        r = self.avalua(ara, expr)
+        # Només el que dona el nivell més alt: el groc de l'AEMET per pluja queda sota el taronja de la web.
+        self.assertEqual(r[0], [None, ["taronja", "web", ["pluja molt forta"]], None])
+        self.assertEqual(r[1], {"nivell": "taronja", "noms": ["pluja molt forta"]})
+        self.assertIsNone(self.avalua(ara, f"perillTram({json.dumps([f(7)])})"))
 
     def test_la_franja_del_radar_nomes_si_diu_alguna_cosa(self):
         # «No s'acosta pluja» només surt si la previsió en dona en les dues

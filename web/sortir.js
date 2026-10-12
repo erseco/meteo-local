@@ -533,6 +533,15 @@ function horesVigents(hores, ara) {
   return (hores || []).filter((f) => new Date(f.fins) > ara);
 }
 
+// Els avisos vigents; es tornen a pintar quan arriba l'historial de «Perill»,
+// per la riera (ADR 0076).
+function repintaAvisos() {
+  if (!DADES || dadesVelles(DADES)) return;
+  $('avisos').querySelector('.avisos-actius')?.remove();
+  const actius = blocAvisos(DADES);
+  if (actius) $('avisos').prepend(actius);
+}
+
 function pinta(dades) {
   dades = { ...dades, hores: horesVigents(dades.hores, new Date()) };
   DADES = dades;
@@ -558,10 +567,8 @@ function pinta(dades) {
     return;
   }
   if (explica) explica.hidden = explicat() || amagats().size > 0;
-  const avisos = $('avisos');
-  avisos.replaceChildren();
-  const actius = blocAvisos(dades);
-  if (actius) avisos.append(actius);
+  $('avisos').replaceChildren();
+  repintaAvisos();
   if (dades.hores && dades.hores.length >= 2) pintaSelectors(dades.hores, new Date());
   pintaSortida();
   obreDelEnllac();

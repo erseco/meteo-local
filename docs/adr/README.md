@@ -77,5 +77,6 @@
 | [0073](0073-pagina-de-privacidad.md) | Página de privacidad | aceptado |
 | [0074](0074-portada-que-responde-al-abrir.md) | Portada que responde al abrir | aceptado |
 | [0075](0075-cada-aviso-lleva-a-su-detalle.md) | Cada aviso lleva a su detalle | aceptado |
+| [0076](0076-avisos-que-se-comparten-y-se-entienden-en-un-momento-de-peligro.md) | Avisos que se comparten y se entienden en un momento de peligro | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.
