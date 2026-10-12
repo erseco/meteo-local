@@ -38,6 +38,11 @@ var IDIOMA = {
     "Talls de llum al barri": "Cortes de luz en el barrio",
     "Enllaç copiat": "Enlace copiado",
     "Avís copiat, amb l’enllaç": "Aviso copiado, con el enlace",
+    // L'oferta d'avisos a qui té la web instal·lada (ADR 0080).
+    "Avisos de perill al mòbil": "Avisos de peligro en el móvil",
+    "Riera, incendis, avisos oficials i temps extrem a Montflorit, al moment.": "Riera, incendios, avisos oficiales y tiempo extremo en Montflorit, al momento.",
+    "Activa-ho": "Actívalo", "Ara no": "Ahora no",
+    "Fet: t’arribaran els avisos de perill i de la riera. Per triar-ne més, toca la campana.": "Hecho: te llegarán los avisos de peligro y de la riera. Para elegir más, toca la campana.",
     "1 tren ha passat amb retard a la darrera mitja hora.": "1 tren ha pasado con retraso en la última media hora.",
     "{0} trens han passat amb retard a la darrera mitja hora.": "{0} trenes han pasado con retraso en la última media hora.",
     // El mapa de cada tall de llum (ADR 0077).

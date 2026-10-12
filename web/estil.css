@@ -888,3 +888,14 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .mapa-tall-svg { display: block; width: 100%; max-width: 32rem; height: auto; border: 1px solid var(--vora);
   border-radius: .5rem; background: #f4f1ea; }
 .mapa-tall figcaption { margin-top: .3rem; font-size: .85rem; color: var(--suau); }
+
+/* L'oferta d'avisos a qui té la web instal·lada (ADR 0080): sota «Ara», sense finestra. */
+.targeta.oferta-avisos { --color: var(--enllac); margin-top: .8rem; }
+.oferta-avisos p { margin: 0; }
+.oferta-avisos .oferta-titol { font-weight: 700; margin-bottom: .2rem; }
+.oferta-botons { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .7rem !important; }
+.oferta-avisos .boto { padding: .5rem 1rem; border: 0; border-radius: 999px; background: var(--enllac); color: var(--fons);
+  font: inherit; font-weight: 600; cursor: pointer; }
+.oferta-avisos .boto.secundari { background: transparent; color: var(--enllac); border: 1px solid var(--vora); }
+.oferta-avisos .boto:focus-visible { outline: 2px solid var(--enllac); outline-offset: 2px; }
+.oferta-estat:not(:empty) { margin-top: .5rem !important; font-size: .92rem; color: var(--suau); }

@@ -4,7 +4,6 @@
 // (subscripcio.php, a IONOS) desa l'adreça de notificacions del dispositiu i
 // el que s'hi tria; bot/push.py els envia. Els canvis es desen sols.
 
-const SERVIDOR = DADES_URL + 'subscripcio.php';
 const TIPUS_PUSH = [
   ['perill', T('Situacions de perill'), 'i-triangle-alert'],
   ['riera', T('Desbordament de la riera de Sant Cugat (en proves)'), 'i-waves'],
@@ -12,8 +11,8 @@ const TIPUS_PUSH = [
   // Els talls de llum del barri (ADR 0072).
   ['llum', T('Talls de llum al barri'), 'i-zap-off'],
 ];
-// Per començar, com al bot: la riera i el perill.
-const PER_DEFECTE_PUSH = ['riera', 'perill'];
+// Per començar, com al bot: la riera i el perill (AVISOS_PER_DEFECTE, a comu.js).
+const PER_DEFECTE_PUSH = AVISOS_PER_DEFECTE;
 // Com al bot (ADR 0055): una hora al matí, o cap, i, a part, la de demà a les 21 h.
 const HORES_PUSH = [['', T('Cap')], ['6', T('6 h')], ['7', T('7 h')], ['8', T('8 h')]];
 const IDIOMA_PUSH = document.documentElement.lang === 'es' ? 'es' : 'ca';
@@ -21,23 +20,8 @@ const IDIOMA_PUSH = document.documentElement.lang === 'es' ? 'es' : 'ca';
 let registrePush = null;
 let subscripcioPush = null;
 
-async function crida(cos) {
-  const r = await fetch(SERVIDOR, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cos),
-  });
-  const dades = await r.json().catch(() => ({}));
-  if (!r.ok) throw Object.assign(new Error(dades.error || r.status), { estat: r.status });
-  return dades;
-}
-
-// La clau pública del servidor, en bytes, com la vol el navegador.
-async function clauServidor() {
-  const r = await fetch(SERVIDOR, { cache: 'no-store' });
-  if (!r.ok) throw new Error(r.status);
-  const b64 = (await r.json()).clau.replace(/-/g, '+').replace(/_/g, '/');
-  const bin = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
-  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
-}
+// Les crides al servidor i la clau, a comu.js (ADR 0080).
+const crida = cridaAvisos;
 
 function estat(text, error) {
   const p = $('push-estat');
@@ -89,16 +73,7 @@ async function activa(e) {
       estat(T('El navegador té bloquejades les notificacions d’aquesta web. Permet-les a la configuració del navegador (al cadenat, al costat de l’adreça) i torna-ho a provar.'), true);
       return;
     }
-    const clau = await clauServidor();
-    try {
-      subscripcioPush = await registrePush.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: clau });
-    } catch (ex) {
-      // Una subscripció d'abans amb una altra clau: es treu i es torna a fer.
-      const vella = await registrePush.pushManager.getSubscription();
-      if (!vella) throw ex;
-      await vella.unsubscribe();
-      subscripcioPush = await registrePush.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: clau });
-    }
+    subscripcioPush = await subscriuAvisos(registrePush);
     await desa();
     pinta(triat());
     estat(T('Fet: els avisos que has triat t’arribaran a aquest dispositiu. Pots enviar-te una prova.'));

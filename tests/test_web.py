@@ -814,6 +814,24 @@ espera.then(() => console.log(JSON.stringify([mostrades, enviats])));
         self.assertEqual(self.avalua("2026-10-12T10:00:00+02:00",
                                      "n = 0; enArribarUnAvis(() => { n += 1; }); enArribarUnAvis(() => { n += 10; }); arribaUnAvis(); n"), 11)
 
+    def test_oferta_d_avisos_nomes_a_qui_te_la_web_installada(self):
+        # ADR 0080: la targeta surt si la web és instal·lada, encara no té els avisos, no s'ha dit
+        # «Ara no» i el navegador no els té bloquejats.
+        def cal(installada=True, subscrit=False, no=False, permis="default"):
+            expr = (f"matchMedia = (q) => ({{ matches: {json.dumps(installada)} && q.includes('standalone'), addEventListener() {{}} }});"
+                    f"Notification = {{ permission: {json.dumps(permis)} }}; PushManager = function () {{}};"
+                    "window.Notification = Notification; window.PushManager = PushManager;"
+                    f"navigator.serviceWorker = {{ ready: Promise.resolve({{ pushManager: {{ getSubscription: () => Promise.resolve({json.dumps(subscrit)} ? {{}} : null) }} }}) }};"
+                    f"localStorage.getItem = (k) => ({json.dumps(no)} && k === 'meteo.oferta-avisos' ? 'no' : null);"
+                    "calOfertaAvisos()")
+            return self.avalua("2026-10-12T10:00:00+02:00", expr, arnes=ARNES_ASYNC.replace(
+                "Date: FakeDate, Math,", "Date: FakeDate, Math, PushManager: undefined, Notification: undefined,"))
+        self.assertTrue(cal())
+        self.assertFalse(cal(installada=False))
+        self.assertFalse(cal(subscrit=True))
+        self.assertFalse(cal(no=True))
+        self.assertFalse(cal(permis="denied"))
+
     def test_la_franja_del_radar_nomes_si_diu_alguna_cosa(self):
         # «No s'acosta pluja» només surt si la previsió en dona en les dues
         # hores que venen (Juanjo, 10-10-2026; ADR 0019).

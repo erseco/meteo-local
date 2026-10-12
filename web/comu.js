@@ -1271,6 +1271,45 @@ document.addEventListener('click', (e) => {
   location.replace(desti.href);
 });
 
+// --- Activar els avisos al navegador (ADR 0048): el fan servir «Avisos» i
+// l'oferta de la portada a qui té la web instal·lada (ADR 0080). El servidor
+// (subscripcio.php, a IONOS) desa l'adreça de notificacions i què s'hi tria. ---
+const SERVIDOR_AVISOS = DADES_URL + 'subscripcio.php';
+// Per començar, com al bot: la riera i el perill.
+const AVISOS_PER_DEFECTE = ['riera', 'perill'];
+
+async function cridaAvisos(cos) {
+  const r = await fetch(SERVIDOR_AVISOS, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cos),
+  });
+  const dades = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(dades.error || r.status), { estat: r.status });
+  return dades;
+}
+
+// La clau pública del servidor, en bytes, com la vol el navegador.
+async function clauAvisos() {
+  const r = await fetch(SERVIDOR_AVISOS, { cache: 'no-store' });
+  if (!r.ok) throw new Error(r.status);
+  const b64 = (await r.json()).clau.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+
+// L'adreça de notificacions d'aquest dispositiu; si n'hi havia una d'abans
+// amb una altra clau, es treu i es torna a fer.
+async function subscriuAvisos(registre) {
+  const clau = await clauAvisos();
+  try {
+    return await registre.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: clau });
+  } catch (ex) {
+    const vella = await registre.pushManager.getSubscription();
+    if (!vella) throw ex;
+    await vella.unsubscribe();
+    return registre.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: clau });
+  }
+}
+
 // Per poder instal·lar la web com a aplicació (sw.js).
 if ('serviceWorker' in navigator) navigator.serviceWorker.register(ARREL + 'sw.js').catch(() => {});
 

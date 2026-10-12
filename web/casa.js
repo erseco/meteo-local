@@ -701,6 +701,7 @@ function pinta(dades) {
   }
   const ara = dades.ara_casa && blocAra(dades.ara_casa, dades.radar, dades.vent, dades.veines, dades.hores);
   if (ara) cont.append(ara);
+  if (OFERTA_AVISOS) cont.append(OFERTA_AVISOS);
   const resum = blocsResum(dades);
   cont.append(...resum);
   // Sense resum (casa.json no en porta), l'enllaç de la pluja, a «Ara» (ADR 0072).
@@ -714,6 +715,74 @@ function pinta(dades) {
   pintaHorari(dades);
   posaVersio(dades.versio);
 }
+
+// L'oferta d'avisos a qui té la web instal·lada (Juanjo, 12-10-2026; ADR 0080):
+// el navegador no deixa enviar notificacions sense permís, i el permís només
+// es pot demanar quan la persona toca un botó. Qui instal·la la web la vol a
+// mà: en obrir-la instal·lada, i si encara no té els avisos, una targeta sota
+// «Ara», sense finestra, amb un sol toc per rebre els de perill i la riera
+// (AVISOS_PER_DEFECTE). «Ara no» la treu per sempre en aquest dispositiu.
+const CLAU_OFERTA_AVISOS = 'meteo.oferta-avisos';
+let OFERTA_AVISOS = null;
+
+function webInstallada() {
+  return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+
+async function calOfertaAvisos() {
+  if (!webInstallada() || !('serviceWorker' in navigator) || !('PushManager' in window)
+      || !('Notification' in window) || Notification.permission === 'denied') return false;
+  try { if (localStorage.getItem(CLAU_OFERTA_AVISOS) === 'no') return false; } catch (_) {}
+  const registre = await navigator.serviceWorker.ready;
+  return !(await registre.pushManager.getSubscription());
+}
+
+function targetaOfertaAvisos() {
+  const sec = element('section', 'targeta oferta-avisos');
+  sec.setAttribute('aria-label', T('Avisos de perill al mòbil'));
+  const estat = element('p', 'oferta-estat');
+  estat.setAttribute('role', 'status');
+  const si = element('button', 'boto', T('Activa-ho'));
+  const no = element('button', 'boto secundari', T('Ara no'));
+  si.type = 'button';
+  no.type = 'button';
+  const botons = element('p', 'oferta-botons');
+  botons.append(si, no);
+  sec.append(element('p', 'oferta-titol', T('Avisos de perill al mòbil')),
+    element('p', null, T('Riera, incendis, avisos oficials i temps extrem a Montflorit, al moment.')), botons, estat);
+  no.addEventListener('click', () => {
+    try { localStorage.setItem(CLAU_OFERTA_AVISOS, 'no'); } catch (_) {}
+    sec.remove();
+    OFERTA_AVISOS = null;
+  });
+  si.addEventListener('click', async () => {
+    si.disabled = true;
+    try {
+      if ((await Notification.requestPermission()) !== 'granted') {
+        estat.textContent = T('El navegador té bloquejades les notificacions d’aquesta web. Permet-les a la configuració del navegador (al cadenat, al costat de l’adreça) i torna-ho a provar.');
+        return;
+      }
+      const subscripcio = await subscriuAvisos(await navigator.serviceWorker.ready);
+      await cridaAvisos({ accio: 'desa', subscripcio: subscripcio.toJSON(), avisos: AVISOS_PER_DEFECTE, resum: '', nit: false,
+        idioma: document.documentElement.lang === 'es' ? 'es' : 'ca' });
+      botons.remove();
+      estat.textContent = T('Fet: t’arribaran els avisos de perill i de la riera. Per triar-ne més, toca la campana.');
+      OFERTA_AVISOS = null;
+    } catch (_) {
+      estat.textContent = T('No s’han pogut activar els avisos. Torna-ho a provar d’aquí a una estona.');
+    } finally {
+      si.disabled = false;
+    }
+  });
+  return sec;
+}
+
+calOfertaAvisos().then((cal) => {
+  if (!cal) return;
+  OFERTA_AVISOS = targetaOfertaAvisos();
+  const ara = document.querySelector('#casa .targeta.ara');
+  if (ara) ara.after(OFERTA_AVISOS);
+}).catch(() => {});
 
 carrega(FITXER_DADES, pinta, () => {
   $('casa').replaceChildren(element('p', 'avis', T('No s’ha pogut carregar la previsió. Torna-ho a provar d’aquí a una estona.')));
