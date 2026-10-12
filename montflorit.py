@@ -333,7 +333,21 @@ def alternes(html, nom):
     enllacos = (f'\n  <link rel="alternate" hreflang="ca" href="{ca}">'
                 f'\n  <link rel="alternate" hreflang="es" href="{WEB}es/{"" if nom == "index.html" else nom}">'
                 f'\n  <link rel="alternate" hreflang="x-default" href="{ca}">')
-    return canvia(html, [("\n</head>", enllacos + "\n</head>")], nom)
+    return canvia(html, [("\n</head>", enllacos + IDIOMA_RECORDAT + "\n</head>")], nom)
+
+
+# L'idioma triat amb el selector (comu.js el desa): si no és el de la pàgina,
+# la mateixa pàgina en l'altre, abans de pintar-la (ADR 0083). Sense triar,
+# cada pàgina surt en el seu idioma, i l'inici (també el de l'app), en català.
+IDIOMA_RECORDAT = """
+  <script>
+    try {
+      const triat = localStorage.getItem('meteo.idioma');
+      const altre = triat && triat !== document.documentElement.lang
+        && document.querySelector(`link[rel="alternate"][hreflang="${triat}"]`);
+      if (altre) location.replace(new URL(altre.href).pathname + location.search + location.hash);
+    } catch (_) {}
+  </script>"""
 
 
 def index(casa_html):

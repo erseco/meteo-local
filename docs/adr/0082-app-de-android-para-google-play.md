@@ -74,8 +74,8 @@ Versión 3.73.0 de la web; la app empieza en la 1.0.0.
   se abre en su ventana, pero no está garantizado.
 - Sin Chrome (o un navegador compatible con TWA) en el móvil, la app abre la
   web en una pestaña personalizada, con barra de dirección.
-- Como la web instalada, la app abre siempre en catalán; en castellano hay que
-  pulsar «ES».
+- La app abre en catalán hasta que se elige otro idioma; desde la 3.74.0, la
+  web recuerda el elegido (ADR 0083).
 - Solo Android; en iPhone, la web (ADR 0015 y 0048).
 
 ## Validación

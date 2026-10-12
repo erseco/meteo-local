@@ -1240,6 +1240,15 @@ try {
   sessionStorage.removeItem(CLAU_PROFUNDITAT);
 } catch (_) {}
 
+// L'idioma triat amb el selector es recorda en aquest aparell (ADR 0083): la
+// web i l'app s'obren en català fins que algú en tria un altre, i després en
+// el triat. Qui hi porta és el <head> de cada pàgina pública (montflorit.py).
+const CLAU_IDIOMA = 'meteo.idioma';
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('.idiomes a[hreflang]');
+  if (a) try { localStorage.setItem(CLAU_IDIOMA, a.hreflang); } catch (_) {}
+});
+
 document.addEventListener('click', (e) => {
   const a = e.target.closest('a[href]');
   if (!a || e.defaultPrevented || a.target || a.hasAttribute('download') || e.button !== 0

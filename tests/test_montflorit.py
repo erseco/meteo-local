@@ -168,6 +168,14 @@ class Web(unittest.TestCase):
         # Cada versión enlaza la otra.
         self.assertIn(M.selector_idioma("es", ""), index)
         self.assertIn(M.selector_idioma("ca", ""), self.llegeix("index.html"))
+        # L'idioma triat es recorda (ADR 0083): cada pàgina, en les dues
+        # llengües, porta a la triada abans de pintar-se; comu.js la desa.
+        for nom in [p for p in M.PECES if p.endswith(".html") or p.endswith("/")]:
+            html = self.llegeix(nom.replace("es/", "es/index.html") if nom == "es/" else
+                                "index.html" if nom == "./" else nom)
+            self.assertIn(M.IDIOMA_RECORDAT, html, nom)
+            self.assertLess(html.index('hreflang="es"'), html.index(M.IDIOMA_RECORDAT), nom)
+        self.assertIn("localStorage.setItem(CLAU_IDIOMA, a.hreflang)", self.llegeix("comu.js"))
         # Sota el títol, què hi ha a la web.
         self.assertIn(f'<p class="ruta">{M.DESCRIPCIO}</p>', self.llegeix("index.html"))
         # No queda catalán en lo que se lee.
