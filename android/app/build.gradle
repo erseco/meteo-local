@@ -55,7 +55,7 @@ android {
     namespace "io.github.meteo_montflorit"
     defaultConfig {
         applicationId "io.github.meteo_montflorit"
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion 36
         versionCode 1
         versionName "1.0.0"
@@ -76,12 +76,12 @@ android {
             // The URL the Web Manifest for the Progressive Web App that the TWA points to. This
             // is used by Chrome OS and Meta Quest to open the Web version of the PWA instead of
             // the TWA, as it will probably give a better user experience for non-mobile devices.
-            resValue "string", "webManifestUrl", 'http://127.0.0.1:8765/manifest.webmanifest'
+            resValue "string", "webManifestUrl", 'https://meteo-montflorit.github.io/manifest.webmanifest'
         
 
         
             // This is used by Meta Quest.
-            resValue "string", "fullScopeUrl", 'http://127.0.0.1:8765/'
+            resValue "string", "fullScopeUrl", 'https://meteo-montflorit.github.io/'
         
 
         

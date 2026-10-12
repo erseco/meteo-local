@@ -29,7 +29,9 @@ Versión 3.73.0 de la web; la app empieza en la 1.0.0.
   1.27 (Google Chrome Labs, Apache-2.0) en `android/`, a partir del manifiesto
   de la web publicada (`android/twa-manifest.json`). Identificador
   `io.github.meteo_montflorit`, nombre «Temps a Montflorit» y, bajo el icono,
-  «Montflorit». Android 16 (API 36) como objetivo, que es lo que exige Play.
+  «Montflorit». Android 16 (API 36) como objetivo, que es lo que exige Play, y
+  Android 7 (API 24) como mínimo, lo que pide la biblioteca de Google
+  (`androidbrowserhelper` 2.7.4).
 - **Avisos**: los mismos de la web (ADR 0048). La TWA delega las
   notificaciones en la app (`enableNotifications`), así que salen con el
   nombre y el icono de la app, y Android 13 o posterior pide el permiso como a
@@ -81,6 +83,15 @@ Versión 3.73.0 de la web; la app empieza en la 1.0.0.
 - Pruebas: `test_app_d_android` comprueba que la web publicada lleva
   `assetlinks.json` con el identificador de la app y el icono de una sola
   tinta.
-- Pendiente: compilar, instalar el APK en el móvil de Juanjo, comprobar que se
-  abre sin barra de dirección con la web publicada y que llegan los avisos; y
-  después, la subida a Play.
+- Compilación (12-10-2026, `android/construeix.sh`): APK firmado de 1,0 MB y
+  AAB de 1,1 MB; `aapt2` da `io.github.meteo_montflorit`, versión 1.0.0,
+  objetivo API 36. `apksigner` da la huella SHA-256 de la clave de subida, la
+  misma que publica la web, y la API de Digital Asset Links de Google ya
+  devuelve el vínculo entre la web y la app.
+- Para compilar hacen falta el JDK 17 con compilador (`openjdk-17-jdk-headless`;
+  el JRE no basta), el SDK en `~/Android/Sdk` con `build-tools;36.1.0` y
+  `platforms;android-36`, y un enlace `~/Android/Sdk/bin` a
+  `cmdline-tools/latest/bin`, porque Bubblewrap busca ahí `sdkmanager`.
+  Configuración de Bubblewrap: `~/.bubblewrap/config.json`.
+- Pendiente: instalar el APK en el móvil de Juanjo y comprobar que se abre sin
+  barra de dirección y que llegan los avisos; después, la subida a Play.
