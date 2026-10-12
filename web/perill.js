@@ -57,14 +57,14 @@ function idFitxa(e) {
     .replace(/[^A-Za-z0-9-]+/g, '-').replace(/-+/g, '-').toLowerCase();
 }
 
-function botoCompartir(e, titol) {
+function botoCompartir(id, titol) {
   const b = element('button', 'compartir-avis');
   b.type = 'button';
   b.title = T('Comparteix aquest avís');
   b.setAttribute('aria-label', T('Comparteix aquest avís'));
   b.append(icona('i-share-2'));
   const url = new URL(location.href);
-  url.hash = idFitxa(e);
+  url.hash = id;
   b.addEventListener('click', () => comparteix(url.href, titol));
   return b;
 }
@@ -81,7 +81,7 @@ function fitxa(e, ara) {
   const titol = element('p', 'episodi-titol');
   titol.append(...nodesLinia(primera));
   const cap = element('div', 'episodi-cap');
-  cap.append(titol, botoCompartir(e, primera.map((t) => t.t).join('').trim()));
+  cap.append(titol, botoCompartir(art.id, primera.map((t) => t.t).join('').trim()));
   const estat = element('p', 'episodi-quan');
   if (fi) estat.append(element('span', 'episodi-acabat', `🟢 ${T('Acabat')}`), ' · ');
   else estat.append(element('span', 'episodi-actiu', T('Actiu ara')), ' · ');
@@ -129,11 +129,16 @@ function fitxaAlfa(alfa) {
   if (!dies.length && !tancats.length) return null;
   const maxim = Math.max(0, ...dies.map(([d]) => alfa[d]));
   const art = element('article', `avis-item episodi ${maxim >= 4 || !dies.length ? 'vermell' : 'taronja'}`);
+  // Amb el seu botó de compartir, com les altres fitxes (Juanjo, 12-10-2026;
+  // ADR 0075). Una adreça fixa: obre el Pla Alfa del dia en què s'obre.
+  art.id = 'pla-alfa';
   const titol = element('p', 'episodi-titol');
   const nivells = dies.map(([d, nom]) => T`nivell ${alfa[d]} ${nom}`).join(', ');
-  titol.append(element('strong', null, `${maxim >= 4 || !dies.length ? '🔴' : '🟠'} `
-    + (nivells ? T`Pla Alfa de Cerdanyola: ${nivells}` : T('Agents Rurals: espais naturals tancats'))));
-  art.append(titol, element('p', 'episodi-quan', T('El fixen cada dia els Agents Rurals; no arriba com a avís.')));
+  const text = nivells ? T`Pla Alfa de Cerdanyola: ${nivells}` : T('Agents Rurals: espais naturals tancats');
+  titol.append(element('strong', null, `${maxim >= 4 || !dies.length ? '🔴' : '🟠'} ${text}`));
+  const cap = element('div', 'episodi-cap');
+  cap.append(titol, botoCompartir(art.id, text));
+  art.append(cap, element('p', 'episodi-quan', T('El fixen cada dia els Agents Rurals; no arriba com a avís.')));
   if (dies.length) art.append(element('p', null, T('Accés restringit als espais forestals.')));
   for (const t of tancats) art.append(element('p', null, T`Tancat: ${t.espai}.`));
   const p = element('p');
