@@ -1017,7 +1017,7 @@ con las vecinas (`sol_estacio.py`, ADR 0081).
 **Lo esperado.** Con $V$ la mediana de las vecinas leídas en la última media
 hora (al menos dos), la temperatura esperada en casa es
 
-$$\hat T = V + d, \qquad d = \operatorname{mediana}_h \left( T_{\text{casa}}(h) - V(h) \right),$$
+$$\hat T = V + d, \qquad d = \text{mediana}_h \left( T_{\text{casa}}(h) - V(h) \right),$$
 
 con $d$, la **diferencia habitual**, sobre las horas en punto de los últimos
 30 días sin sol en el termómetro (hacen falta 24). La estación está en una
@@ -1025,11 +1025,12 @@ zona algo más fría del barrio: el 12-10-2026, $d = -1{,}0$ °C. La mediana
 evita que una vecina con un fallo arrastre el resultado.
 
 **Cuándo hay sol en el termómetro.** De día (radiación mayor que cero), con
-$T$ la lectura de ahora y $T_{30}$ la más baja de los últimos 30 minutos:
+$T$ la lectura de ahora y $T_{30}$ la más baja de los últimos 30 minutos,
+empieza si se cumplen las dos condiciones
 
-$$\text{empieza si } T - T_{30} \ge 1{,}5 \text{ °C} \;\text{ y }\; T - \hat T \ge 1{,}5 \text{ °C}; \qquad \text{sigue mientras } T - \hat T \ge 0{,}7 \text{ °C},$$
+$$T - T_{30} \ge 1{,}5 \text{ °C} \qquad \text{y} \qquad T - \hat T \ge 1{,}5 \text{ °C},$$
 
-de día y como mucho 3 horas. Las dos condiciones de inicio separan el sol en
+y sigue mientras $T - \hat T \ge 0{,}7$ °C, de día y como mucho 3 horas. Las dos condiciones de inicio separan el sol en
 el termómetro de un calentamiento del aire, que es más lento y también se ve
 en las vecinas.
 
@@ -1037,7 +1038,7 @@ en las vecinas.
 corrige: el sensor caliente la marca más baja, pero el agua del aire, y por
 tanto el punto de rocío $T_d$, no cambia. Con la fórmula de Magnus,
 
-$$HR = 100 \, \frac{\exp\!\left(\dfrac{17{,}625\,T_d}{243{,}04 + T_d}\right)}{\exp\!\left(\dfrac{17{,}625\,\hat T}{243{,}04 + \hat T}\right)} \;\%.$$
+$$HR = 100 \cdot \frac{E(T_d)}{E(\hat T)}\ \%, \qquad E(x) = e^{17{,}625\, x / (243{,}04 + x)}.$$
 
 Con $T_d = 12{,}7$ °C, a 13 °C reales son un 98 %; con el sensor a 16,6 °C, la
 estación marcaría un 80 %. La presión y la lluvia no las altera el sol, y el
