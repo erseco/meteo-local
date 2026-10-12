@@ -40,9 +40,10 @@ registros de decisiones de arquitectura (ADR, siglas en inglés de
 14. [Si surts](#14-si-surts)
 15. [La calidad del aire](#15-la-calidad-del-aire)
 16. [El viento de ahora con las vecinas](#16-el-viento-de-ahora-con-las-vecinas)
-17. [Límites](#17-límites)
-18. [Operación](#18-operación)
-19. [Dónde está cada cosa](#19-dónde-está-cada-cosa)
+17. [El sol sobre el termómetro de casa](#17-el-sol-sobre-el-termómetro-de-casa)
+18. [Límites](#18-límites)
+19. [Operación](#19-operación)
+20. [Dónde está cada cosa](#20-dónde-está-cada-cosa)
 
 ## 1. Qué se registra
 
@@ -59,7 +60,8 @@ servicio meteorológico alemán, a 7 km. En cada pasada, el servidor guarda:
   rellenan las horas que falten. Su pluviómetro solo cuenta cuando marca
   lluvia (ADR 0017). Hasta el 09-10-2026 se guardaba también lo que medía la
   estación de Montflorit de meteocerdanyola.com, retirada desde entonces
-  (ADR 0058).
+  (ADR 0058). Desde el 12-10-2026 se apuntan también los ratos en que el sol
+  da en su termómetro, que no cuentan para aprender (apartado 17).
 - **La lluvia por horas de las estaciones vecinas de Montflorit** (Weather
   Underground, a menos de 1 km) y, de respaldo, **de las de Meteocat** de
   Sabadell y Sant Cugat (a 2,5 y 4,6 km): deciden qué pasó en las horas en que
@@ -345,7 +347,8 @@ error al prever (última columna).
 
 Con **14 días** registrados, cada día se ajusta el mismo modelo con lo que
 se previó de verdad y lo que midió casa, con la antelación real de cada hora,
-y se compara con el primero (apartado 8).
+y se compara con el primero (apartado 8). Las horas con sol en el termómetro
+de casa no cuentan (apartado 17).
 
 ## 4. Las dos primeras horas: el radar llevado hacia delante
 
@@ -502,7 +505,7 @@ horas como mínimo y hasta las 21 h de mañana. Acaba siempre al final de un
 tramo del día, a las 7, las 14 o las 21 h, así que tiene entre 24 y 38 filas:
 38 cuando se calcula a las 7 h. Más allá de 24 horas, la antelación del modelo de lluvia y
 de la corrección de temperatura vale como un día, porque
-$\min(t/24, 1) = 1$ (apartado 17). El registro con que se aprende y el riesgo
+$\min(t/24, 1) = 1$ (apartado 18). El registro con que se aprende y el riesgo
 propio (apartado 11) usan solo las 24 primeras horas.
 
 **Lo que no cambia la estadística.** Los avisos de la AEMET y los planes de
@@ -558,7 +561,7 @@ estación de casa y ejecuta `aprenentatge.py diari`:
 4. **Solo cambia si el error baja al menos un 5 %**:
    $E_{\text{nuevo}} < 0{,}95 \, E_{\text{actual}}$. Un método nuevo se
    propone, se comunica con las cifras y se aplica al día siguiente, salvo
-   que se pare antes (apartado 18).
+   que se pare antes (apartado 19).
 5. Si el método no cambia, los pesos se ponen al día con los datos nuevos.
 6. Si un modelo propio deja de mejorar, se propone volver al anterior, de la
    misma manera.
@@ -1000,7 +1003,57 @@ de calma, fueron 1,6, 3,3 y 1,0 km/h. Cuando haya 12 medias horas con 15 km/h
 o más en Sant Cugat, el programa envía las cifras a Juanjo una vez, y él
 decide si la página pasa a usar la estimación.
 
-## 17. Límites
+## 17. El sol sobre el termómetro de casa
+
+Las mañanas de sol, un rayo llega al termómetro de la estación de casa: en
+media hora sube de 3 a 5 °C y luego baja, mientras las vecinas suben poco a
+poco (el 09-10-2026, de 9,2 °C a las 8:30 a 14,7 °C a las 9:05; las vecinas,
+10,5 °C a las 9). La hora cambia con la época del año, y en verano o en
+invierno también hay tardes. El sensor de radiación no lo ve: durante el
+salto marca de 20 a 37 W/m², lo mismo que más tarde sin salto. Por eso no se
+mira la hora ni la radiación, sino el salto de la propia estación comparado
+con las vecinas (`sol_estacio.py`, ADR 0081).
+
+**Lo esperado.** Con $V$ la mediana de las vecinas leídas en la última media
+hora (al menos dos), la temperatura esperada en casa es
+
+$$\hat T = V + d, \qquad d = \operatorname{mediana}_h \left( T_{\text{casa}}(h) - V(h) \right),$$
+
+con $d$, la **diferencia habitual**, sobre las horas en punto de los últimos
+30 días sin sol en el termómetro (hacen falta 24). La estación está en una
+zona algo más fría del barrio: el 12-10-2026, $d = -1{,}0$ °C. La mediana
+evita que una vecina con un fallo arrastre el resultado.
+
+**Cuándo hay sol en el termómetro.** De día (radiación mayor que cero), con
+$T$ la lectura de ahora y $T_{30}$ la más baja de los últimos 30 minutos:
+
+$$\text{empieza si } T - T_{30} \ge 1{,}5 \text{ °C} \;\text{ y }\; T - \hat T \ge 1{,}5 \text{ °C}; \qquad \text{sigue mientras } T - \hat T \ge 0{,}7 \text{ °C},$$
+
+de día y como mucho 3 horas. Las dos condiciones de inicio separan el sol en
+el termómetro de un calentamiento del aire, que es más lento y también se ve
+en las vecinas.
+
+**Mientras dura**, «Ara» muestra $\hat T$. La humedad relativa también se
+corrige: el sensor caliente la marca más baja, pero el agua del aire, y por
+tanto el punto de rocío $T_d$, no cambia. Con la fórmula de Magnus,
+
+$$HR = 100 \, \frac{\exp\!\left(\dfrac{17{,}625\,T_d}{243{,}04 + T_d}\right)}{\exp\!\left(\dfrac{17{,}625\,\hat T}{243{,}04 + \hat T}\right)} \;\%.$$
+
+Con $T_d = 12{,}7$ °C, a 13 °C reales son un 98 %; con el sensor a 16,6 °C, la
+estación marcaría un 80 %. La presión y la lluvia no las altera el sol, y el
+viento no sale de esta estación.
+
+**Esas horas no enseñan.** Cada episodio queda en `registre/sol-estacio.csv`,
+y sus horas no cuentan para corregir la temperatura de la previsión
+(apartado 3) ni para comparar con ayer. Del 9 al 12-10-2026 hubo cuatro, entre
+las 8:45 y las 9:25 (el 12, hasta las 10:25), de 3,4 a 5,2 °C por encima de lo
+esperado.
+
+**Límites.** Las vecinas dan grados enteros: $\hat T$ tiene un margen de
+unos ±0,5 °C. Una subida real muy brusca del aire, de día, podría tomarse por
+sol si las vecinas no la registran a la vez.
+
+## 18. Límites
 
 - **La lluvia es rara**: un 4 % de las horas. Las cifras del archivo se
   apoyan en unas 3.600 horas con lluvia; los tramos de la tabla de fiabilidad
@@ -1025,7 +1078,8 @@ decide si la página pasa a usar la estimación.
   conjunto. La nota de la tabla lo advierte.
 - **La verdad de la temperatura es una estación de aficionado.** Coincide con
   Montflorit (casa da 0,4 °C menos de media en las primeras 36 horas
-  comparadas), pero no se ha comprobado con días de sol fuerte en las dos.
+  comparadas), pero no se ha comprobado con días de sol fuerte en las dos. El
+  sol directo sobre su termómetro se detecta y se quita (apartado 17).
 - **El corto plazo del archivo de temperatura** también une las primeras horas
   de cada pasada: el error al prever puede parecer algo más útil de lo que es
   con la antelación real. El registro propio lo medirá.
@@ -1038,7 +1092,7 @@ decide si la página pasa a usar la estimación.
   12) y la corrección del aire es un factor único para todo el día
   (apartado 15).
 
-## 18. Operación
+## 19. Operación
 
 Detalles internos para la persona que mantiene el código.
 
@@ -1085,7 +1139,7 @@ marca algo en él o en la hora de antes o de después. Con tres episodios
 débiles, o a los 45 días, se comunica el resultado para decidir si la página
 vuelve a fiarse de su cero.
 
-## 19. Dónde está cada cosa
+## 20. Dónde está cada cosa
 
 | Archivo | Qué hace |
 |---|---|
@@ -1098,6 +1152,7 @@ vuelve a fiarse de su cero.
 | `riscos.py` | Las situaciones de peligro con los umbrales de la AEMET |
 | `riera.py` | El índice de la riera |
 | `aire.py` | La calidad del aire y su corrección |
+| `sol_estacio.py` | El sol sobre el termómetro de casa: lo detecta, estima la temperatura y la humedad, y apunta los episodios |
 | `web/casa.js`, `web/sortir.js` | Cómo se dice en la página y las reglas de «Si surts» |
 | `calibracio/pluja_casa.py`, `calibracio/pluja_casa.json` | Ajusta y comprueba el modelo de lluvia del archivo; sus pesos y la comprobación |
 | `calibracio/estacio_casa.py`, `calibracio/temperatura_casa.json` | Ajusta la corrección de temperatura con el año de casa y comprueba las señales de casa para la lluvia; sus pesos |
@@ -1105,4 +1160,4 @@ vuelve a fiarse de su cero.
 | `calibracio/regla_moto.py` | Compara con el archivo las reglas de lluvia de la moto |
 | `calibracio/moviment_radar.py` | Comprueba de dónde medir el movimiento del radar |
 | `ecowitt.py`, `registre.py`, `pluviometre.py` | Leen y guardan lo que miden casa y las estaciones de Meteocat; vigilan el pluviómetro |
-| `tests/test_aprenentatge.py`, `tests/test_estacio_casa.py` | Pruebas, con un registro inventado |
+| `tests/test_aprenentatge.py`, `tests/test_estacio_casa.py`, `tests/test_sol_estacio.py` | Pruebas, con un registro inventado |
