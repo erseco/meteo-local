@@ -1,6 +1,6 @@
 # 82. App de Android para Google Play
 
-Fecha: 2026-10-12 · Estado: aceptado (en preparación: sin subir a Play)
+Fecha: 2026-10-12 · Estado: aceptado (en revisión en Google Play)
 
 ## Contexto
 
@@ -117,4 +117,9 @@ Versión 3.73.0 de la web; la app empieza en la 1.0.0.
 - El sistema de permisos de Claude Code no deja al agente pulsar «Crear
   aplicación» ni preparar la versión de producción: esos pasos los hace
   Juanjo.
-- Pendiente: la versión de producción y la revisión de Google.
+- Versión de producción 1 (1.0.0), solo España, enviada a revisión por Juanjo
+  el 12-10-2026, con la publicación gestionada desactivada: si Google la
+  aprueba, sale sola en la tienda.
+- Pendiente: el resultado de la revisión. Después, añadir al manifiesto de la
+  web `related_applications` con la app de Play, para que Chrome en Android
+  ofrezca la app en lugar de instalar la web (propuesto, sin decidir).
