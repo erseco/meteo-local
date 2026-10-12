@@ -789,7 +789,7 @@ function blocTrens(trens) {
   estat.append(T('Estat del servei: '));
   Object.values(ESTAT_OPERADOR).forEach((e, n) => estat.append(...(n ? [' · '] : []), enllacExtern(e.text(), e.href())));
   return [llista, estat, element('p', 'nota',
-    T`Dades de Renfe i d’FGC de les ${horaCurta(trens.hora)}, consultades automàticament: l’autor no es fa responsable de la seva exactitud.`)];
+    T`Dades de Rodalies, Renfe i FGC de les ${horaCurta(trens.hora)}, consultades automàticament: l’autor no es fa responsable de la seva exactitud.`)];
 }
 
 // Les incidències de trànsit de prop (ADR 0052), tal com les publica el Servei

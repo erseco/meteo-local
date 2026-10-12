@@ -229,7 +229,7 @@ var IDIOMA = {
     "Protector solar, gorra i ulleres de sol: índex UV {0} ({1}) cap a les {2}\u00a0h.": "Protector solar, gorra y gafas de sol: índice UV {0} ({1}) hacia las {2}\u00a0h.",
     "demà {0}": "mañana {0}",
     "Roba: {0}": "Ropa: {0}",
-    "Dades de Renfe i d\u2019FGC de les {0}, consultades automàticament: l\u2019autor no es fa responsable de la seva exactitud.": "Datos de Renfe y de FGC de las {0}, consultados automáticamente: el autor no se hace responsable de su exactitud.",
+    "Dades de Rodalies, Renfe i FGC de les {0}, consultades automàticament: l\u2019autor no es fa responsable de la seva exactitud.": "Datos de Rodalies, Renfe y FGC de las {0}, consultados automáticamente: el autor no se hace responsable de su exactitud.",
     "Pot ploure mentre ets fora: porta paraigua.": "Puede llover mientras estás fuera: lleva paraguas.",
     "Avís de l\u2019AEMET per pluja mentre ets fora: ni el radar, ni les estacions, ni els models hi veuen pluja. Per si de cas, porta paraigua.": "Aviso de la AEMET por lluvia mientras estás fuera: ni el radar, ni las estaciones, ni los modelos ven lluvia. Por si acaso, lleva paraguas.",
     "Avís de l\u2019AEMET per pluja {0}: ni el radar, ni les estacions, ni els models hi veuen pluja.": "Aviso de la AEMET por lluvia {0}: ni el radar, ni las estaciones, ni los modelos ven lluvia.",

@@ -5,9 +5,14 @@
 Les línies que paren al terme de Cerdanyola: R4, R7 i R8 de Rodalies i S2
 d'FGC (Bellaterra i Universitat Autònoma). Per a cada una:
 
-- **Avisos**: els de Renfe (GTFS-RT en JSON, `gtfsrt.renfe.com`) i els de FGC
-  (GTFS-RT en protobuf, al portal de dades obertes). Un avís «propi» només
-  parla d'aquella línia; un de «general», de moltes.
+- **Avisos**: els de Rodalies, de l'API de la seva web
+  (`serveisgrs.rodalies.gencat.cat`, la mateixa que fa servir
+  rodalies.gencat.cat) i, si no respon, els de Renfe (GTFS-RT en JSON,
+  `gtfsrt.renfe.com`), que el 12-10-2026 encara portava avisos del 6 i del 7
+  que la web de Rodalies ja no tenia (ADR 0078); els d'FGC (GTFS-RT en
+  protobuf, al portal de dades obertes). Un avís «propi» només parla d'aquella
+  línia; un de «general», de moltes. Un avís que només diu que el servei és
+  normal («Servei ferroviari a tot el recorregut») no és una incidència.
 - **Trens que es mouen** a TRENS_RADI_KM o menys de l'estació de la línia a
   Cerdanyola. Un tren aturat també envia la seva posició (el 07-10-2026, amb
   tot Rodalies parat, dos de l'R7 apareixien «a l'estació»): per això es
@@ -44,6 +49,9 @@ import urllib.request
 import config as C
 
 RENFE = "https://gtfsrt.renfe.com/"
+# Els avisos de la web de Rodalies (ADR 0078): no és un servei documentat, i
+# es vigila cada dia (comprova).
+RODALIES = "https://serveisgrs.rodalies.gencat.cat/api/notices?limit=500&sort=date,desc&sort=time,desc"
 FGC = "https://dadesobertes.fgc.cat/api/explore/v2.1/catalog/datasets/"
 UA = {"User-Agent": "meteo-local/" + C.VERSION}
 ESTAT = os.path.join(os.environ.get("TRENS_DIR", "/estat"), "trens-posicions.json")
@@ -186,6 +194,72 @@ def avisos_renfe(dades=None):
     return res
 
 
+def avisos_rodalies(dades=None):
+    """[{linies, text, inici}] dels avisos de la web de Rodalies: els vigents,
+    amb la data i l'hora en què es van publicar (hora local)."""
+    d = dades or get(RODALIES)
+    res = []
+    for n in d["included"]:
+        linies = {l.get("id") for l in n.get("lines") or []} - {None}
+        text = n.get("description") or n.get("title") or {}
+        textos = {k: " ".join((text.get(k) or "").split()) for k in ("ca", "es") if text.get(k)}
+        if not linies or not textos:
+            continue
+        textos.setdefault("ca", textos.get("es"))
+        textos.setdefault("es", textos.get("ca"))
+        inici = None
+        if n.get("date"):
+            inici = dt.datetime.fromisoformat(f"{n['date']}T{(n.get('time') or '00:00:00')[:5]}").astimezone() \
+                .isoformat(timespec="minutes")
+        res.append({"linies": linies, "text": textos, "inici": inici, "fi": None, "font": "rodalies"})
+    return res
+
+
+def avisos_rodalies_o_renfe(errors):
+    """Els de Rodalies; si la seva API no respon, els de Renfe, i es diu."""
+    try:
+        return avisos_rodalies()
+    except Exception as ex:
+        errors.append(f"avisos de Rodalies: {ex}")
+        return avisos_renfe()
+
+
+def prova(get_json=None):
+    """Si l'API d'avisos de Rodalies respon amb el que cal. None si va bé; si no, per què."""
+    try:
+        d = (get_json or get)(RODALIES)
+        if not isinstance(d.get("included"), list):
+            return "no porta la llista d'avisos («included»)"
+        for n in d["included"][:3]:
+            if not {"date", "lines"} <= set(n) or not (n.get("description") or n.get("title")):
+                return "els avisos no porten data, línies o text"
+    except Exception as ex:
+        return f"no respon: {ex}"
+    return None
+
+
+def comprova(marca, avisa=True, get_json=None):
+    """La prova diària (aprenentatge.diari), com la dels talls de llum (ADR
+    0072): l'API no és un servei documentat; si deixa de respondre o canvia, es
+    diu un cop a Juanjo, i un altre quan torna (marca rodalies-falla).
+    Mentrestant, la pàgina fa servir els avisos de Renfe."""
+    import subprocess
+    error = prova(get_json)
+    text = None
+    if error and not os.path.exists(marca):
+        open(marca, "w").close()
+        text = (f"Temps a Montflorit: l'API d'avisos de Rodalies ha deixat de funcionar ({error}). "
+                "Mentrestant, els trens fan servir els avisos de Renfe, que poden anar endarrerits: mira trens.py.")
+    elif not error and os.path.exists(marca):
+        os.remove(marca)
+        text = "Temps a Montflorit: l'API d'avisos de Rodalies torna a funcionar."
+    if text:
+        print(text)
+        if avisa:
+            subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", text], check=False)
+    return error
+
+
 def trens_renfe(dades=None, ara=None):
     """Posicions dels trens de Renfe. Si el feed és de fa més de
     POSICIONS_VELLES_MIN minuts, no serveix: una resposta correcta no vol dir
@@ -254,7 +328,11 @@ def es_mouen(trens, abans, ara):
 
 # Avisos que diuen com va el servei: per carretera o amb trens. Entre els
 # propis d'una línia, mana el més recent d'aquests.
-SERVEI = re.compile(r"carretera|circulaci[oó]n? ferrovi", re.I)
+SERVEI = re.compile(r"carretera|circulaci[oó]n? ferrovi|servei ferrovi|servicio ferrovi", re.I)
+# Un avís que només diu que el servei és normal a tota la línia (Rodalies el
+# publica quan es recupera): no és una incidència (ADR 0078).
+NORMAL = re.compile(r"^\s*(servei|circulaci[oó]n?|servicio) ferrovi\w* (a|en) (tot|todo) (el|su) (seu )?(recorregut|recorrido)\.?\s*$",
+                    re.I)
 
 
 def vigent(a, ara):
@@ -294,7 +372,10 @@ def estat_linia(linia, mouen, vist, avisos, ara):
     # vigents: un avís que encara no ha començat o que ja ha acabat es mostra,
     # però no decideix (auditoria del 08-10-2026).
     carretera = lambda a: bool(re.search(r"carretera", a["text"]["ca"] + a["text"]["es"], re.I))
-    servei = [a for a in nomes if SERVEI.search(a["text"]["ca"] + a["text"]["es"]) and vigent(a, ara)]
+    # Els generals de Rodalies també decideixen: la seva API només porta els
+    # vigents i al dia; els de Renfe, no, que s'hi quedaven avisos vells (ADR 0078).
+    al_dia = mes_nous_primer([a for a in avisos if linia in a["linies"] and (a["linies"] == {linia} or a.get("font") == "rodalies")])
+    servei = [a for a in al_dia if SERVEI.search(a["text"]["ca"] + a["text"]["es"]) and vigent(a, ara)]
     bus = (carretera(servei[0]) if servei[0].get("inici") else any(carretera(a) for a in servei)) if servei else False
     # Si l'avís de servei més nou diu que hi ha circulació ferroviària, mana
     # ell encara que no s'hagi vist cap tren: no es diu «sense trens», sinó
@@ -306,7 +387,8 @@ def estat_linia(linia, mouen, vist, avisos, ara):
     if bus:
         estat = "bus"
     elif circula:
-        estat = "incidencies" if propis or generals else "circula"
+        incidencies = [t for t in propis + generals if not (NORMAL.match(t.get("ca") or "") or NORMAL.match(t.get("es") or ""))]
+        estat = "incidencies" if incidencies else "circula"
     elif de_dia and ferroviari:
         estat, no_vist = "incidencies", True
     else:
@@ -341,7 +423,7 @@ def calcula(ara=None):
     res = {"hora": ara.isoformat(timespec="minutes"), "linies": [], "errors": []}
     trens = []
     for operador, llegeix_avisos, llegeix_trens in (
-            ("rodalies", avisos_renfe, trens_renfe),
+            ("rodalies", lambda: avisos_rodalies_o_renfe(res["errors"]), trens_renfe),
             ("fgc", avisos_fgc, lambda: trens_fgc([l for l, o, _ in C.TRENS if o == "fgc"]))):
         try:
             avisos, tr = llegeix_avisos(), llegeix_trens()

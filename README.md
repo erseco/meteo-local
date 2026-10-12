@@ -128,9 +128,10 @@ Fuentes de la previsión:
    estación particular (ADR 0061).
 4. **Avisos de AEMET** del Prelitoral de Barcelona y **planes de Protección
    Civil** (ADR 0008).
-5. **Trenes**: avisos y posición en tiempo real de Renfe (R4, R7 y R8) y de FGC
-   (S2), para «Si surts» (`trens.py`, ADR 0029), con el horario de cada línea
-   en Cerdanyola sacado de sus GTFS (ADR 0038).
+5. **Trenes**: los avisos de Rodalies, de la API de su web (ADR 0078; si no
+   responde, los de Renfe), la posición en tiempo real de Renfe (R4, R7 y R8)
+   y de FGC (S2), para «Si surts» (`trens.py`, ADR 0029), con el horario de
+   cada línea en Cerdanyola sacado de sus GTFS (ADR 0038).
 6. **Tráfico**: las incidencias del Servei Català de Trànsit a 5 km o menos
    (retenciones, accidentes, averías y obras que desvían o cortan la vía), de
    los datos abiertos de la Generalitat (`transit.py`, ADR 0052).
@@ -170,7 +171,7 @@ Umbrales y lugares, en `config.py`. El porqué, en los ADR.
 | `que_toca.py` | Si toca actualizar en este minuto, según el horario publicado |
 | `nas/` | Contenedor del NAS: `compose.yml`, `Dockerfile` y `reloj.sh`; `copia-registre.sh`, la copia diaria del registro en el repositorio privado `meteo-local-registre`, (ADR 0044) |
 | `RESTAURAR.md` | Cómo volver a montarlo todo en otro NAS o en otro hosting, con las claves y el registro de la copia privada (ADR 0044 y 0045) |
-| `trens.py` | Estado de las líneas de tren de Cerdanyola con los datos en tiempo real de Renfe y FGC (ADR 0029) |
+| `trens.py` | Estado de las líneas de tren de Cerdanyola con los avisos de Rodalies y los datos en tiempo real de Renfe y FGC (ADR 0029 y 0078) |
 | `transit.py` | Incidencias de tráfico de cerca, del Servei Català de Trànsit (ADR 0052) |
 | `pollen.py` | Polen y esporas de la semana en Bellaterra, del Punt d'Informació Aerobiològica (ADR 0054) |
 | `aire.py` | Calidad del aire ahora y lo peor de hoy, del modelo CAMS por Open-Meteo (ADR 0054) |
@@ -236,7 +237,8 @@ estaciones vecinas de [Weather Underground](https://www.wunderground.com/) (The
 Weather Company; uso personal y no comercial),
 radar y advección de [Meteocat](https://www.meteo.cat/observacions/radar) y,
 de reserva, de [RainViewer](https://www.rainviewer.com/), avisos de AEMET a
-través de [Meteoalarm](https://meteoalarm.org/), y trenes de
+través de [Meteoalarm](https://meteoalarm.org/), avisos de trenes de la
+[web de Rodalies de Catalunya](https://rodalies.gencat.cat/), y trenes de
 [Renfe](https://data.renfe.com/) y de las
 [dades obertes d'FGC](https://dadesobertes.fgc.cat/) (las dos, CC BY 4.0), e
 incidencias de tráfico del

@@ -553,6 +553,12 @@ def diari(avui=None, avisa=True):
         llum.comprova(os.path.join(DIR, "llum-falla"), avisa)
     except Exception as ex:
         print("No he pogut comprovar el mapa de talls de llum:", ex)
+    # La API de avisos de Rodalies, que tampoco es un servicio documentado (ADR 0078).
+    try:
+        import trens
+        trens.comprova(os.path.join(DIR, "rodalies-falla"), avisa)
+    except Exception as ex:
+        print("No he pogut comprovar l'API d'avisos de Rodalies:", ex)
     # Qué dijo «Si surts» de cada medio y qué pasó (ADR 0047 y 0068).
     try:
         print("Si surts: hores noves verificades:", verifica_sortir())

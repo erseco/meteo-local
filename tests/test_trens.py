@@ -139,6 +139,54 @@ class Estat(unittest.TestCase):
         nit = ARA.replace(hour=2)
         self.assertEqual(T.estat_linia("R4", [], None, [], nit)["estat"], "fora_horari")
 
+    def test_avisos_de_la_web_de_rodalies(self):
+        # ADR 0078: el 12-10-2026 la web de Rodalies deia «Servei ferroviari a tot el recorregut» per a
+        # l'R4 (07:34) i el GTFS-RT de Renfe encara portava avisos del 6 i del 7.
+        api = {"included": [{"date": "2026-10-12", "time": "07:34:00",
+                             "title": {"ca": "Servei ferroviari a tot el recorregut."},
+                             "description": {"ca": "Servei ferroviari a tot el recorregut.",
+                                             "es": "Servicio ferroviario en todo su recorrido."},
+                             "lines": [{"id": "R1"}, {"id": "R4"}, {"id": "R7"}]},
+                            {"date": "2026-10-12", "time": "07:21:00", "description": {"ca": "Sense línies."}, "lines": []}]}
+        a = T.avisos_rodalies(api)
+        self.assertEqual(len(a), 1)
+        self.assertEqual(a[0]["linies"], {"R1", "R4", "R7"})
+        self.assertEqual(a[0]["text"]["es"], "Servicio ferroviario en todo su recorrido.")
+        self.assertTrue(a[0]["inici"].startswith("2026-10-12T07:34"))
+        self.assertIsNone(T.prova(lambda url: api))
+        self.assertIn("llista", T.prova(lambda url: {"total": 0}))
+
+    def test_avis_de_servei_normal_no_es_incidencia(self):
+        # ADR 0078: «Servei ferroviari a tot el recorregut» diu que tot va bé.
+        ara = ARA.replace(day=12, hour=8)
+        normal = self.avis(["R1", "R4", "R7"], "Servei ferroviari a tot el recorregut.",
+                           "Servicio ferroviario en todo su recorrido.", "2026-10-12T07:34+02:00")
+        normal["font"] = "rodalies"
+        mou = [tren("R4", *C.TRENS_ESTACIONS["R4"])]
+        r = T.estat_linia("R4", mou, None, [normal], ara)
+        self.assertEqual(r["estat"], "circula")
+        self.assertEqual(r["avisos"][0]["ca"], "Servei ferroviari a tot el recorregut.")
+        parcial = self.avis(["R4"], "Servei ferroviari entre Montcada i Cerdanyola.", inici="2026-10-12T07:40+02:00")
+        self.assertEqual(T.estat_linia("R4", mou, None, [parcial], ara)["estat"], "incidencies")
+
+    def test_els_generals_de_rodalies_decideixen_i_els_de_renfe_no(self):
+        ara = ARA.replace(day=12, hour=8)
+        bus = self.avis(["R1", "R4", "R7"], "Servei alternatiu per carretera en tot el seu recorregut.",
+                        inici="2026-10-12T07:30+02:00")
+        self.assertEqual(T.estat_linia("R4", [], None, [bus], ara)["estat"], "sense_trens")      # de Renfe
+        self.assertEqual(T.estat_linia("R4", [], None, [{**bus, "font": "rodalies"}], ara)["estat"], "bus")
+
+    def test_si_rodalies_no_respon_es_fan_servir_els_de_renfe(self):
+        errors = []
+        orig_r, orig_f = T.avisos_rodalies, T.avisos_renfe
+        try:
+            T.avisos_rodalies = lambda dades=None: (_ for _ in ()).throw(OSError("caiguda"))
+            T.avisos_renfe = lambda dades=None: ["de renfe"]
+            self.assertEqual(T.avisos_rodalies_o_renfe(errors), ["de renfe"])
+        finally:
+            T.avisos_rodalies, T.avisos_renfe = orig_r, orig_f
+        self.assertEqual(errors, ["avisos de Rodalies: caiguda"])
+
     def test_horari_de_cada_linia(self):
         # 08-10-2026, 05:39: «l'R7 no circula», però el primer tren és a les 06:40.
         general = self.avis(["R4", "R7", "R8"], "No es pot garantir la prestació del servei.")
