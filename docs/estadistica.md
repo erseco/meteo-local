@@ -1044,7 +1044,15 @@ y sigue mientras $`T - \hat T \ge 0\text{,}7`$ °C, de día y como mucho 3 horas
 el termómetro de un calentamiento del aire, que es más lento y también se ve
 en las vecinas.
 
-**Mientras dura**, «Ara» muestra $`\hat T`$. La humedad relativa también se
+**Cuándo no se corrige.** Si aún no hay 24 horas comparables o en la última
+media hora no se han leído al menos dos vecinas (las cuatro de Weather
+Underground, apartado 16), «Ara» muestra lo que mide la estación. Tampoco
+corrige la reserva de IONOS, que publica cuando falla el NAS: no tiene el
+registro de la estación ni el de las vecinas.
+
+**Mientras dura**, «Ara» muestra $`\hat T`$: en la web y en el bot, redondeada
+a décimas y sin ninguna nota; lo que midió la estación queda en los datos
+(`temperatura_estacio`). La humedad relativa también se
 corrige: el sensor caliente la marca más baja, pero el agua del aire, y por
 tanto el punto de rocío $`T_d`$, no cambia. Con la fórmula de Magnus,
 
@@ -1064,7 +1072,11 @@ esperado.
 
 **Límites.** Las vecinas dan grados enteros: $`\hat T`$ tiene un margen de
 unos ±0,5 °C. Una subida real muy brusca del aire, de día, podría tomarse por
-sol si las vecinas no la registran a la vez.
+sol si las vecinas no la registran a la vez. La diferencia habitual es una sola para
+todo el día, pero cambia con la hora: del 9 al 12-10-2026, entre −0,5 y
+−0,9 °C de 8 a 10 h y hasta −2,7 °C por la tarde, con una mediana de −1,2 °C.
+A primera hora, $`\hat T`$ puede quedar unos 0,5 °C por debajo de la real. Con
+más días se decidirá si se calcula por franjas horarias.
 
 ## 18. Límites
 
