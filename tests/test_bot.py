@@ -120,8 +120,8 @@ class Menu(unittest.TestCase):
                                           ("2026-10-04", "web", "baixa", None)):
             B.moviment(canal, tipus, origen, dia=dia)
         text = B.text_moviments(dt.date(2026, 10, 12))
-        self.assertEqual(text, "Últimos 7 días: navegador, 2 altas (app Android 1, navegador 1), 0 bajas y 1 direcciones "
-                               "muertas; bot, 1 altas, 0 bajas y 1 bloqueos.\n")
+        self.assertEqual(text, "Últimos 7 días: avisos de la web, 2 altas (app Android 1, navegador 1), 0 bajas y "
+                               "1 dirección muerta; bot, 1 alta, 0 bajas y 1 bloqueo.\n")
         B.desa(os.path.join(B.BASE, "push.json"), {"a": {"avisos": ["riera"], "origen": "app"}, "b": {"avisos": []}})
         self.assertIn("2 dispositivos (app Android 1, sin origen 1, riera 1", B.text_push())
 

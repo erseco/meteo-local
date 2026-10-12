@@ -1703,9 +1703,11 @@ def text_moviments(fins=None):
             o = ORIGENS_ES.get(m.get("origen"), "sin origen")
             origen[o] = origen.get(o, 0) + 1
     detall = f" ({', '.join(f'{o} {k}' for o, k in origen.items())})" if origen else ""
-    return (f"Últimos 7 días: navegador, {n('web', 'alta')} altas{detall}, {n('web', 'baixa')} bajas y "
-            f"{n('web', 'morta')} direcciones muertas; bot, {n('bot', 'alta')} altas, {n('bot', 'baixa')} bajas "
-            f"y {n('bot', 'bloqueig')} bloqueos.\n")
+    q = lambda k, una, moltes: f"{k} {una if k == 1 else moltes}"
+    return (f"Últimos 7 días: avisos de la web, {q(n('web', 'alta'), 'alta', 'altas')}{detall}, "
+            f"{q(n('web', 'baixa'), 'baja', 'bajas')} y {q(n('web', 'morta'), 'dirección muerta', 'direcciones muertas')}; "
+            f"bot, {q(n('bot', 'alta'), 'alta', 'altas')}, {q(n('bot', 'baixa'), 'baja', 'bajas')} y "
+            f"{q(n('bot', 'bloqueig'), 'bloqueo', 'bloqueos')}.\n")
 
 
 def informe():
