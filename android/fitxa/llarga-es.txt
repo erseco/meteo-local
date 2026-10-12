@@ -1,0 +1,27 @@
+Montflorit al dia es la web «Temps a Montflorit» (Cerdanyola del Vallès) en forma de app: lo que pasa ahora en el barrio y lo que vendrá, en catalán y en castellano.
+
+EL TIEMPO
+• Ahora: temperatura, humedad, presión y lluvia de las estaciones del barrio, y el viento.
+• Si llega la lluvia en las próximas dos horas, con el radar llevado hacia delante.
+• Previsión hora a hora hasta las 21 h de mañana, corregida con lo que ha pasado de verdad en el barrio.
+
+PELIGRO
+• Avisos de la AEMET y de Meteocat, planes de Protección Civil, incendios de Collserola y de Cerdanyola y tiempo extremo.
+• Aviso propio del riesgo de desbordamiento de la riera de Sant Cugat (en pruebas, no oficial).
+
+SI SALES
+• Para una hora de ida y otra de vuelta: cómo irá a pie, en bici o patinete, en moto, en coche o en transporte público, qué ropa hace falta y consejos.
+• Trenes que paran en Cerdanyola (R4, R7, R8 y S2) y tráfico a menos de 5 km.
+
+CONSULTAS
+• Sol e índice UV, calidad del aire, polen de la semana y cortes de luz en el barrio.
+
+AVISOS EN EL MÓVIL
+• Eliges qué recibes: peligro, riera, lluvia unos 15 minutos antes de que llegue, cortes de luz y la previsión del día.
+
+DE DÓNDE SALE
+Estaciones meteorológicas del barrio; Meteocat (estaciones, radar y avisos) y RainViewer; modelos de Météo-France y del servicio alemán a través de Open-Meteo; AEMET; Protección Civil, Agents Rurals y Bombers de la Generalitat; Rodalies, Renfe y FGC; Servei Català de Trànsit; Copernicus y estaciones de la Generalitat (aire); Punt d'Informació Aerobiològica de la UAB (polen); e-distribución (cortes de luz). La lista completa y cómo se calcula cada cosa, en la propia app.
+
+Es una previsión calculada automáticamente, no una previsión oficial. Gratuita, sin anuncios, cookies ni estadísticas: solo se guarda lo mínimo para enviarte los avisos que activas. Software libre (AGPL v3).
+
+Hecho con IA (Claude Code), nivel 4 del MIAE: https://jjdeharo.github.io/miae/?nivel=4

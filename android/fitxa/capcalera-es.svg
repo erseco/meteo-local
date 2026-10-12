@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <!-- SPDX-License-Identifier: AGPL-3.0-or-later. Núvol amb pluja: Lucide (ISC). Imatge de capçalera de la fitxa de Google Play (ADR 0082). -->
+  <rect width="1024" height="500" fill="#1d4ed8"/>
+  <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" transform="translate(84 120) scale(10)">
+    <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+    <path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/>
+  </g>
+  <text x="380" y="205" fill="#fff" font-family="Inter" font-weight="700" font-size="64">Montflorit al dia</text>
+  <text x="382" y="262" fill="#dbe4ff" font-family="Inter" font-weight="500" font-size="27">El tiempo del barrio,</text>
+  <text x="382" y="295" fill="#dbe4ff" font-family="Inter" font-weight="500" font-size="27">alertas meteorológicas de peligro</text>
+  <text x="382" y="328" fill="#dbe4ff" font-family="Inter" font-weight="500" font-size="27">y de la riera,</text>
+  <text x="382" y="361" fill="#dbe4ff" font-family="Inter" font-weight="500" font-size="27">y lo que hay que saber para salir</text>
+  <text x="382" y="406" fill="#dbe4ff" font-family="Inter" font-weight="400" font-size="22">Cerdanyola del Vallès</text>
+</svg>
