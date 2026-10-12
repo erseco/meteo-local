@@ -69,8 +69,8 @@ Al cambiar algo:
   navegador (página «Avisos», ADR 0048) también viven allí: `bot/push.py`
   envía cada minuto y `bot/subscripcio.php` guarda las suscripciones en
   `.temps-bot/push.json`, igual de personales. Las altas y bajas de los dos (ADR 0084) van
-  a `.temps-bot/moviments.json`, sin identificadores; el resumen semanal lo
-  manda `push.py` los lunes a las 9 h. Estado: `ssh ionos-webspace
+  a `.temps-bot/moviments.json`, sin identificadores; el resumen va en el
+  informe de los lunes (`bot.py informe`). Estado: `ssh ionos-webspace
   '.meteo-reserva/v/bin/python .meteo-reserva/repo/bot/push.py estat'`.
 - La app de Android (ADR 0082) es la web publicada dentro de una TWA de
   Bubblewrap, en `android/`. No se toca con cada versión de la web; solo al

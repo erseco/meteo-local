@@ -18,7 +18,7 @@ cada alta, las bajas y un resumen.
 
 ## Decisión
 
-Versión 3.75.0.
+Versión 3.75.0; 3.75.1, el resumen dentro del informe de los lunes.
 
 - **Registro de movimientos** (`~/.temps-bot/moviments.json` en IONOS, 400
   días): cada alta, baja, bloqueo del bot o dirección muerta de la web, con el
@@ -46,9 +46,11 @@ Versión 3.75.0.
   > riera. Total: 7 (app Android 3, web instal·lada 2, navegador 2).
   
   Las del bot y del canal siguen como estaban.
-- **Resumen semanal**, los lunes desde las 9 h, de la semana anterior: altas
-  (con su origen), bajas y direcciones muertas de la web, altas, bajas y
-  bloqueos del bot, los totales y los miembros del canal.
+- **Resumen semanal en el informe de los lunes** (`bot.py informe`, a las 9 h,
+  que ya daba los totales del bot, de la web y del canal y el uso del bot): se
+  añaden las altas de los últimos 7 días (con su origen), las bajas y las
+  direcciones muertas de la web, y las altas, bajas y bloqueos del bot; y, en
+  el total de la web, de dónde se activaron. Un solo mensaje, no dos.
 - **Página «Privacitat»**: dice que se guarda desde dónde se activaron los
   avisos y que se cuentan las altas y las bajas de cada día, sin saber quién.
 
@@ -74,9 +76,9 @@ Versión 3.75.0.
 
 ## Validación
 
-- Pruebas: `test_alta_amb_origen_i_moviments` y `test_resum_setmanal`
-  (`test_push.py`), `test_moviments_del_bot` (`test_bot.py`); ninguna guarda
-  ni muestra un identificador.
+- Pruebas: `test_alta_amb_origen_i_moviments` (`test_push.py`),
+  `test_moviments_del_bot` y `test_moviments_a_l_informe` (`test_bot.py`);
+  ninguna guarda ni muestra un identificador.
 - `subscripcio.php` con PHP 8.2 y un servidor local (12-10-2026): el alta desde
   la app guarda «app»; un cambio posterior con «navegador» no lo cambia; un
   origen inventado no se guarda.

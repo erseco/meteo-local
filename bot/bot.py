@@ -1673,13 +1673,39 @@ def mostra_estat():
         pass
 
 
+ORIGENS_ES = {"app": "app Android", "installada": "web instalada", "navegador": "navegador"}
+
+
 def text_push():
-    """Los avisos en el navegador (bot/push.py, ADR 0048), en el recuento."""
+    """Los avisos en el navegador (bot/push.py, ADR 0048), en el recuento, con
+    desde dónde se activaron (ADR 0084)."""
     push = llegeix(os.path.join(BASE, "push.json"), {})
     n = lambda x: sum(x in s.get("avisos", []) for s in push.values())
-    return (f"Avisos en el navegador: {len(push)} dispositivos (riera {n('riera')}, peligro {n('perill')}, "
+    origen = {}
+    for s in push.values():
+        o = ORIGENS_ES.get(s.get("origen"), "sin origen")
+        origen[o] = origen.get(o, 0) + 1
+    on = "".join(f"{o} {origen[o]}, " for o in list(ORIGENS_ES.values()) + ["sin origen"] if o in origen)
+    return (f"Avisos en el navegador: {len(push)} dispositivos ({on}riera {n('riera')}, peligro {n('perill')}, "
             f"lluvia {n('pluja')}, previsión diaria "
             f"{sum(bool(s.get('resum')) for s in push.values())}).\n")
+
+
+def text_moviments(fins=None):
+    """Las altas y bajas de los siete días antes de «fins» (ADR 0084)."""
+    fins = fins or ara().date()
+    des_de = (fins - dt.timedelta(days=7)).isoformat()
+    setmana = [m for m in llegeix(os.path.join(BASE, "moviments.json"), []) if des_de <= m["dia"] < fins.isoformat()]
+    n = lambda canal, tipus: sum(m["canal"] == canal and m["tipus"] == tipus for m in setmana)
+    origen = {}
+    for m in setmana:
+        if m["canal"] == "web" and m["tipus"] == "alta":
+            o = ORIGENS_ES.get(m.get("origen"), "sin origen")
+            origen[o] = origen.get(o, 0) + 1
+    detall = f" ({', '.join(f'{o} {k}' for o, k in origen.items())})" if origen else ""
+    return (f"Últimos 7 días: navegador, {n('web', 'alta')} altas{detall}, {n('web', 'baixa')} bajas y "
+            f"{n('web', 'morta')} direcciones muertas; bot, {n('bot', 'alta')} altas, {n('bot', 'baixa')} bajas "
+            f"y {n('bot', 'bloqueig')} bloqueos.\n")
 
 
 def informe():
@@ -1695,6 +1721,7 @@ def informe():
             f"lluvia {n('pluja')}, previsión diaria "
             f"{sum(bool(s.get('resum')) for s in subs.values())}) y {canal} miembros en el canal.\n"
             + text_push()
+            + text_moviments()
             + text_estadistiques(dies=(7,)))
     propi = llegeix(os.environ.get("AVISAR_CONFIG", os.path.expanduser("~/.vigilancia-nas/config.json")), {})
     if propi.get("token") and propi.get("chat_id"):

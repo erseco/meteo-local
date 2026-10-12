@@ -317,55 +317,6 @@ def altes(estat, mortes=()):
                        f"Total: {desglossa(actuals)}.")
 
 
-# --- Resum setmanal (ADR 0084): els dilluns a les 9 h, la setmana anterior. ---
-RESUM_DIA, RESUM_HORA = 0, 9
-MESOS = ["gener", "febrer", "març", "abril", "maig", "juny", "juliol", "agost", "setembre", "octubre",
-         "novembre", "desembre"]
-
-
-def data_ca(d):
-    mes = MESOS[d.month - 1]
-    return f"{d.day} {'d' + chr(8217) if mes[0] in 'aeiou' else 'de '}{mes}"
-
-
-def text_setmana(moviments, subs_web, subs_bot, canal, fins):
-    """El resum de la setmana que acaba el dia abans de «fins»."""
-    des_de = fins - dt.timedelta(days=7)
-    setmana = [m for m in moviments if des_de.isoformat() <= m["dia"] < fins.isoformat()]
-    n = lambda canal_, tipus: sum(m["canal"] == canal_ and m["tipus"] == tipus for m in setmana)
-    altes_web = [m for m in setmana if m["canal"] == "web" and m["tipus"] == "alta"]
-    origen = {}
-    for m in altes_web:
-        o = ORIGENS.get(m.get("origen"), "sense origen")
-        origen[o] = origen.get(o, 0) + 1
-    detall = f" ({', '.join(f'{o} {k}' for o, k in origen.items())})" if origen else ""
-    linies = [f"Temps a Montflorit, del {data_ca(des_de)} al {data_ca(fins - dt.timedelta(days=1))}:",
-              f"Avisos de la web: {len(altes_web)} altes{detall}, {n('web', 'baixa')} baixes, "
-              f"{n('web', 'morta')} adreces mortes. Ara: {desglossa(subs_web)}.",
-              f"Bot: {n('bot', 'alta')} altes, {n('bot', 'baixa')} baixes, {n('bot', 'bloqueig')} bloquejos. "
-              f"Ara: {len(subs_bot)}."]
-    if canal is not None:
-        linies.append(f"Canal: ara en són {canal}.")
-    return "\n".join(linies)
-
-
-def resum_setmanal(estat, moment):
-    """Una vegada per setmana, el dilluns a partir de les 9 h."""
-    if moment.weekday() != RESUM_DIA or moment.hour < RESUM_HORA:
-        return
-    setmana = moment.date().isoformat()
-    if estat.get("resum_setmanal") == setmana:
-        return
-    estat["resum_setmanal"] = setmana
-    try:
-        canal = B.Api(B.llegeix(os.path.join(B.BASE, "config.json"), {})["token"])(
-            "getChatMemberCount", chat_id=B.CANAL)
-    except Exception:
-        canal = None
-    B.avisa_juanjo(text_setmana(B.llegeix(os.path.join(B.BASE, "moviments.json"), []), B.llegeix(SUBS, {}),
-                                B.llegeix(B.SUBS, {}), canal, moment.date()))
-
-
 def volta():
     os.makedirs(B.BASE, exist_ok=True)
     cadenat = open(os.path.join(B.BASE, "push-volta.lock"), "w")
@@ -378,7 +329,6 @@ def volta():
         moment = B.ara()
         mortes = reparteix(estat, moment)
         altes(estat, mortes)
-        resum_setmanal(estat, moment)
     finally:
         B.desa(ESTAT, estat)
 

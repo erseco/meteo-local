@@ -111,6 +111,20 @@ class Menu(unittest.TestCase):
         self.assertNotIn('"5"', json.dumps(B.llegeix(ruta, [])))
         self.assertTrue(all(m["canal"] == "bot" and len(m["dia"]) == 10 for m in B.llegeix(ruta, [])))
 
+    def test_moviments_a_l_informe(self):
+        # El resum dels dilluns (bot.py informe) porta les altes i baixes de la setmana (ADR 0084).
+        B.desa(os.path.join(B.BASE, "moviments.json"), [])
+        for dia, canal, tipus, origen in (("2026-10-05", "web", "alta", "app"), ("2026-10-07", "web", "alta", "navegador"),
+                                          ("2026-10-08", "web", "morta", None), ("2026-10-09", "bot", "alta", None),
+                                          ("2026-10-10", "bot", "bloqueig", None), ("2026-10-12", "web", "alta", "app"),
+                                          ("2026-10-04", "web", "baixa", None)):
+            B.moviment(canal, tipus, origen, dia=dia)
+        text = B.text_moviments(dt.date(2026, 10, 12))
+        self.assertEqual(text, "Últimos 7 días: navegador, 2 altas (app Android 1, navegador 1), 0 bajas y 1 direcciones "
+                               "muertas; bot, 1 altas, 0 bajas y 1 bloqueos.\n")
+        B.desa(os.path.join(B.BASE, "push.json"), {"a": {"avisos": ["riera"], "origen": "app"}, "b": {"avisos": []}})
+        self.assertIn("2 dispositivos (app Android 1, sin origen 1, riera 1", B.text_push())
+
     def test_neteja_de_restes(self):
         estat = {"resums": {"1": "d", "9": "d"}, "pendents": {"x": {"avis": {}, "canal": False, "chats": ["1", "9"]}}}
         B.neteja({"1": {}}, estat)
