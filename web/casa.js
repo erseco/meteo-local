@@ -739,7 +739,7 @@ async function calOfertaAvisos() {
 
 function targetaOfertaAvisos() {
   const sec = element('section', 'targeta oferta-avisos');
-  sec.setAttribute('aria-label', T('Avisos de perill al mòbil'));
+  sec.setAttribute('aria-label', T('Avisos de perill'));
   const estat = element('p', 'oferta-estat');
   estat.setAttribute('role', 'status');
   const si = element('button', 'boto', T('Activa-ho'));
@@ -748,7 +748,7 @@ function targetaOfertaAvisos() {
   no.type = 'button';
   const botons = element('p', 'oferta-botons');
   botons.append(si, no);
-  sec.append(element('p', 'oferta-titol', T('Avisos de perill al mòbil')),
+  sec.append(element('p', 'oferta-titol', T('Avisos de perill')),
     element('p', null, T('Riera, incendis, avisos oficials i temps extrem a Montflorit, al moment.')), botons, estat);
   no.addEventListener('click', () => {
     try { localStorage.setItem(CLAU_OFERTA_AVISOS, 'no'); } catch (_) {}

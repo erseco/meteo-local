@@ -39,7 +39,7 @@ var IDIOMA = {
     "Enllaç copiat": "Enlace copiado",
     "Avís copiat, amb l’enllaç": "Aviso copiado, con el enlace",
     // L'oferta d'avisos a qui té la web instal·lada (ADR 0080).
-    "Avisos de perill al mòbil": "Avisos de peligro en el móvil",
+    "Avisos de perill": "Avisos de peligro",
     "Riera, incendis, avisos oficials i temps extrem a Montflorit, al moment.": "Riera, incendios, avisos oficiales y tiempo extremo en Montflorit, al momento.",
     "Activa-ho": "Actívalo", "Ara no": "Ahora no",
     "Fet: t’arribaran els avisos de perill i de la riera. Per triar-ne més, toca la campana.": "Hecho: te llegarán los avisos de peligro y de la riera. Para elegir más, toca la campana.",

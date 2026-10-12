@@ -68,3 +68,12 @@ Versión 3.71.0.
   «Activa els avisos», sin errores de JavaScript).
 - axe-core sin incidencias en la portada (catalán y castellano) y en
   «Avisos», con tema claro y oscuro.
+
+## Ampliación del 12-10-2026 (3.71.1): sin «al mòbil»
+
+Juanjo, con una captura del ordenador: «pone avisos al mòbil, pero esta
+captura está sacada de un ordenador». Los avisos llegan también al ordenador.
+La campana se llama ahora «Avisos» (el nombre de su página); la tarjeta,
+«Avisos de perill»; en «Privacitat», «Avisos al mòbil o a l'ordinador»; en
+«Perill», «…arriben al mòbil, a l'ordinador i a Telegram».
+
