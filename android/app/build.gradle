@@ -24,8 +24,8 @@ def twaManifest = [
     applicationId: 'io.github.meteo_montflorit',
     hostName: 'meteo-montflorit.github.io', // The domain being opened in the TWA.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
-    name: 'Temps a Montflorit', // The application name.
-    launcherName: 'Montflorit', // The name shown on the Android Launcher.
+    name: 'Montflorit al dia', // The application name.
+    launcherName: 'Montflorit al dia', // The name shown on the Android Launcher.
     themeColor: '#1D4ED8', // The color used for the status bar.
     themeColorDark: '#000000', // The color used for the dark status bar.
     navigationColor: '#000000', // The color used for the navigation bar.

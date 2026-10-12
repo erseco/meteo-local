@@ -28,8 +28,11 @@ Versión 3.73.0 de la web; la app empieza en la 1.0.0.
 - **Generada con [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap)**
   1.27 (Google Chrome Labs, Apache-2.0) en `android/`, a partir del manifiesto
   de la web publicada (`android/twa-manifest.json`). Identificador
-  `io.github.meteo_montflorit`, nombre «Temps a Montflorit» y, bajo el icono,
-  «Montflorit». Android 16 (API 36) como objetivo, que es lo que exige Play, y
+  `io.github.meteo_montflorit` y nombre «Montflorit al dia», también bajo el
+  icono. Juanjo pidió que se distinguiera de la web instalada, que bajo el
+  icono pone «Montflorit», y que el nombre no fuera solo del tiempo: la web da
+  también avisos de peligro, trenes, tráfico, cortes de luz, aire y polen
+  («no es solo meteo, dice muchas cosas esta web»). Android 16 (API 36) como objetivo, que es lo que exige Play, y
   Android 7 (API 24) como mínimo, lo que pide la biblioteca de Google
   (`androidbrowserhelper` 2.7.4).
 - **Avisos**: los mismos de la web (ADR 0048). La TWA delega las

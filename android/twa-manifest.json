@@ -1,8 +1,8 @@
 {
   "packageId": "io.github.meteo_montflorit",
   "host": "meteo-montflorit.github.io",
-  "name": "Temps a Montflorit",
-  "launcherName": "Montflorit",
+  "name": "Montflorit al dia",
+  "launcherName": "Montflorit al dia",
   "display": "standalone",
   "themeColor": "#1D4ED8",
   "themeColorDark": "#000000",
