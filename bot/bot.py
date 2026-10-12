@@ -453,18 +453,28 @@ DIES = {"ca": ("dilluns", "dimarts", "dimecres", "dijous", "divendres", "dissabt
 HORA_DEMA = 18
 
 
+def text_franges(pluges, idioma):
+    """«pluja de 7 a 10 h (probabilitat fins al 95 %); possible pluja de 18 a 19 h
+    (fins al 25 %)», en minúscula. Les paraules, les de la columna «Cel» de la
+    web: «pluja» des del 50 %, «possible pluja» des del 20 % (Juanjo,
+    12-10-2026: deia «possible» amb un 95 %)."""
+    es = idioma == "es"
+    parts = []
+    for n, (a, b, p) in enumerate(pluges):
+        nom = ("lluvia" if es else "pluja") if p >= 0.5 else ("posible lluvia" if es else "possible pluja")
+        prob = ((f"probabilidad hasta el {round(p * 100)} %" if es else f"probabilitat fins al {round(p * 100)} %") if not n
+                else (f"hasta el {round(p * 100)} %" if es else f"fins al {round(p * 100)} %"))
+        parts.append(f"{nom} de {a.hour} a {b.hour} h ({prob})")
+    return "; ".join(parts)
+
+
 def text_pluja(tram, idioma, icona=True):
     """Sense pluja, sense icona: la línia destaca només quan n'hi ha (ADR 0065)."""
     pluges = franges(tram)
     if not pluges:
         return "Sin lluvia prevista." if idioma == "es" else "Sense pluja prevista."
-    if idioma == "es":
-        text = "Lluvia: " + "; ".join(f"posible de {a.hour} a {b.hour} h (probabilidad hasta el {round(p * 100)} %)"
-                                      for a, b, p in pluges) + "."
-    else:
-        text = "Pluja: " + "; ".join(f"possible de {a.hour} a {b.hour} h (probabilitat fins al {round(p * 100)} %)"
-                                     for a, b, p in pluges) + "."
-    return amb_icona(emoji_pluja(tram) if icona else None, text)
+    text = text_franges(pluges, idioma)
+    return amb_icona(emoji_pluja(tram) if icona else None, text[0].upper() + text[1:] + ".")
 
 
 # Cuántos grados más o menos que el día anterior (Juanjo, 10-10-2026: «la
@@ -638,8 +648,8 @@ def resum(dades, idioma, moment, dema=False, avui=False):
         linies = [(f"<b>Previsión para mañana, {nom_dia}, en Montflorit</b>" if idioma == "es"
                    else f"<b>Previsió per a demà, {nom_dia}, a Montflorit</b>") + fins]
         if franges(nit):    # la noche, solo si se espera lluvia
-            linies.append(amb_icona(emoji_pluja(nit), ("Esta noche: lluvia " if idioma == "es" else "Aquesta nit: pluja ")
-                                    + text_pluja(nit, idioma, icona=False).split(": ", 1)[1]))
+            linies.append(amb_icona(emoji_pluja(nit), ("Esta noche: " if idioma == "es" else "Aquesta nit: ")
+                                    + text_franges(franges(nit), idioma) + "."))
         linies.append(text_temperatura(dia, idioma, "Temperatura", compara_temp(dades, dia), "avui"))
         linies.append(text_pluja(dia, idioma))
         roba = text_roba(dia, idioma)
@@ -662,8 +672,8 @@ def resum(dades, idioma, moment, dema=False, avui=False):
             fi_nit = dt.datetime.combine(moment.date() + dt.timedelta(days=1), dt.time(6))
             nit = [f for f in hores if fi_dia <= hora(f) < fi_nit]
             if franges(nit):
-                linies.append(amb_icona(emoji_pluja(nit), ("Esta noche: lluvia " if idioma == "es" else "Aquesta nit: pluja ")
-                                        + text_pluja(nit, idioma, icona=False).split(": ", 1)[1]))
+                linies.append(amb_icona(emoji_pluja(nit), ("Esta noche: " if idioma == "es" else "Aquesta nit: ")
+                                        + text_franges(franges(nit), idioma) + "."))
         linies += text_avisos_aemet(dades, idioma, moment.date(), moment)
         linies.append(text_trens_resum(dades, idioma))
     # La ropa, al final y aparte (Juanjo, 08-10-2026: «muy desordenado»).

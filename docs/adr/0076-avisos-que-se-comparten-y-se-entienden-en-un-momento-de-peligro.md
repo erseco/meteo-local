@@ -121,3 +121,14 @@ Versión 3.66.0.
   oscuro) en «El temps», «Perill», «Si surts», «Consultes» y «Com funciona»,
   en catalán y castellano, sin errores ni desbordamiento; axe-core sin
   incidencias.
+
+## Ampliación del 12-10-2026 (3.66.1): «pluja» o «possible pluja»
+
+El resumen del día decía «Pluja: possible de 7 a 10 h (probabilitat fins al
+95 %)»: «possible» con un 95 %. Ahora usa las palabras de la columna «Cel» de
+la tabla (Juanjo: «hazlo»): «pluja» desde el 50 % y «possible pluja» desde el
+20 %, en cada franja: «Pluja de 7 a 10 h (probabilitat fins al 95 %); possible
+pluja de 18 a 19 h (fins al 25 %).». Lo mismo en «Aquesta nit: …», en
+«Consultes › Avui» y «Demà», y en el resumen diario de Telegram y del móvil
+(`bot.text_franges`).
+

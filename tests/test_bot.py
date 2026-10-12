@@ -145,10 +145,10 @@ class Resum(unittest.TestCase):
     def test_resum(self):
         r = B.resum(dades(), "ca", ARA)
         self.assertIn("Ara mateix: 16 °C, no plou.", r)
-        self.assertIn("Pluja: possible de 12 a 15 h (probabilitat fins al 40 %).", r)
+        self.assertIn("Possible pluja de 12 a 15 h (probabilitat fins al 40 %).", r)
         self.assertIn("Avís groc de l'AEMET per tempestes al Vallès fins a les 20:00.", r)
         self.assertIn("Trens de Cerdanyola: 🔴 R4 sense trens.", r)
-        self.assertIn("Lluvia: posible de 12 a 15 h", B.resum(dades(), "es", ARA))
+        self.assertIn("Posible lluvia de 12 a 15 h", B.resum(dades(), "es", ARA))
 
     def test_ara_amb_l_estacio_particular_i_fins_a_mitjanit(self):
         # La temperatura d'ara, de l'estació particular; la pluja, de qualsevol.
@@ -233,7 +233,7 @@ class Resum(unittest.TestCase):
         r = B.resum(d, "ca", vespre)
         self.assertTrue(r.startswith("<b>Previsió per a demà, dijous, a Montflorit</b> (fins a les 20 h)"))
         self.assertIn("Temperatura: entre ", r)
-        self.assertIn("Pluja: possible de 12 a 15 h (probabilitat fins al 40 %).", r)
+        self.assertIn("Possible pluja de 12 a 15 h (probabilitat fins al 40 %).", r)
         self.assertIn("Avís groc de l'AEMET per pluja al Vallès de 10:00 a 20:00.", r)
         self.assertNotIn("Ara mateix", r)
         self.assertNotIn("Trens", r)
@@ -272,8 +272,8 @@ class Resum(unittest.TestCase):
         d = dades(vespre)
         for f in d["hores"][:3]:
             f["probabilitat"] = 0.56
-        self.assertIn("Aquesta nit: pluja possible de 20 a 23 h (probabilitat fins al 56 %).", B.resum(d, "ca", vespre))
-        self.assertIn("Esta noche: lluvia posible de 20 a 23 h (probabilidad hasta el 56 %).", B.resum(d, "es", vespre))
+        self.assertIn("Aquesta nit: pluja de 20 a 23 h (probabilitat fins al 56 %).", B.resum(d, "ca", vespre))
+        self.assertIn("Esta noche: lluvia de 20 a 23 h (probabilidad hasta el 56 %).", B.resum(d, "es", vespre))
 
     def test_roba_de_tot_el_dia(self):
         # Les dades de prova van de 15 °C (7 h) a 24 °C (16 h): dues peces, per ordre d'hora.
@@ -764,7 +764,10 @@ class AvisosPublics(unittest.TestCase):
         self.assertEqual(B.emoji_pluja([fila(12, 0.3, 0.5, 61), fila(13, 0.7, 3, 61)]), "🌧️")
         self.assertEqual(B.emoji_pluja([fila(12, 0.7, 3, 61), fila(13, 0.6, 5, 95)]), "⛈️")
         self.assertEqual(B.text_pluja([fila(12, 0.1, 0, 3)], "ca"), "Sense pluja prevista.")
-        self.assertTrue(B.text_pluja([fila(12, 0.6, 5, 95)], "es").startswith("⛈️ Lluvia: posible de 12 a 13 h"))
+        self.assertTrue(B.text_pluja([fila(12, 0.6, 5, 95)], "es").startswith("⛈️ Lluvia de 12 a 13 h"))
+        # «Pluja» des del 50 %, «possible pluja» des del 20 %, com la columna «Cel» de la web (ADR 0076).
+        self.assertEqual(B.text_pluja([fila(12, 0.3, 1, 61), fila(13, 0.1, 0, 3), fila(14, 0.95, 5, 61)], "ca", icona=False),
+                         "Possible pluja de 12 a 13 h (probabilitat fins al 30 %); pluja de 14 a 15 h (fins al 95 %).")
 
     def test_perill_acabat(self):
         # Quan ja no en queda cap, un avís que ho diu (abans només el rebia Juanjo).
