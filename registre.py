@@ -194,7 +194,10 @@ def temperatures_casa(ahora, hores=72, recents=None):
         clau = fin.strftime("%Y-%m-%dT%H:%M")
         if clau >= desde and h.get("temperatura") is not None:
             res[clau] = round(h["temperatura"], 1)
-    return dict(sorted(res.items()))
+    # Sin las horas con sol directo sobre el termómetro (ADR 0081).
+    import sol_estacio
+    fora = sol_estacio.hores_tocades(res)
+    return dict(sorted((k, v) for k, v in res.items() if k not in fora))
 
 
 # Cuánto se rellena hacia atrás como mucho: Ecowitt guarda 90 días cada 5 minutos.

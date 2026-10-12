@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""El sol directo sobre el termómetro de la estación de casa (ADR 0081)."""
+import datetime as dt
+import os
+import sys
+import tempfile
+import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sol_estacio as SE  # noqa: E402
+
+T0 = dt.datetime(2026, 10, 9, 8, 30).astimezone()
+
+
+def lectures(valors, inici=T0):
+    return [(inici + dt.timedelta(minutes=5 * i), v) for i, v in enumerate(valors)]
+
+
+class Sol(unittest.TestCase):
+    def test_el_salt_del_9_d_octubre(self):
+        # 8:30 9,2 °C → 8:50 13,0; vecinas 10,5 y la estación, 1 °C más fría de normal.
+        l = lectures([9.2, 9.2, 9.9, 11.6, 13.0])
+        ara = l[-1][0]
+        estat, esperada, exces = SE.avalua(l, [10.5, 10.0, 11.0], -1.0, None, ara, 22)
+        self.assertIsNotNone(estat)
+        self.assertAlmostEqual(esperada, 9.5)
+        self.assertAlmostEqual(exces, 3.5)
+        # Sigue mientras esté por encima; acaba cuando vuelve a lo esperado.
+        seg = ara + dt.timedelta(minutes=30)
+        estat2, _, _ = SE.avalua(lectures([13.4], seg), [12.5, 12.0, 13.0], -1.0, estat, seg, 25)
+        self.assertIsNotNone(estat2)
+        fi = ara + dt.timedelta(minutes=80)
+        self.assertIsNone(SE.avalua(lectures([13.1], fi), [14.0, 13.5, 14.5], -1.0, estat2, fi, 23)[0])
+
+    def test_sense_salt_no_hi_ha_sol(self):
+        # Por encima de las vecinas, pero subiendo poco a poco: no es el sol en el termómetro.
+        l = lectures([12.0, 12.2, 12.4, 12.6, 12.8, 13.0, 13.2])
+        self.assertIsNone(SE.avalua(l, [10.0, 10.5, 10.0], -1.0, None, l[-1][0], 200)[0])
+        # Un salto de noche (sin radiación), tampoco.
+        l = lectures([9.0, 9.0, 11.0, 12.0])
+        self.assertIsNone(SE.avalua(l, [9.0, 9.5, 9.0], -1.0, None, l[-1][0], 0)[0])
+        # Sin diferencia habitual o con menos de dos vecinas, no se decide.
+        self.assertIsNone(SE.avalua(l, [9.0, 9.5], None, None, l[-1][0], 20)[0])
+        self.assertIsNone(SE.avalua(l, [9.0], -1.0, None, l[-1][0], 20)[0])
+
+    def test_diferencia_habitual_sense_les_hores_de_sol(self):
+        ara = dt.datetime(2026, 10, 12, 12).astimezone()
+        casa, veines = {}, {"A": {}, "B": {}}
+        for h in range(30):
+            c = (ara - dt.timedelta(hours=h + 1)).strftime("%Y-%m-%dT%H:%M")
+            casa[c] = 10.0
+            veines["A"][c] = veines["B"][c] = 11.0
+        c9 = (ara - dt.timedelta(hours=3)).strftime("%Y-%m-%dT%H:%M")
+        casa[c9] = 15.0
+        eps = [(dt.datetime.fromisoformat(c9).astimezone(), dt.datetime.fromisoformat(c9).astimezone())]
+        self.assertEqual(SE.ofset(casa, veines, ara, eps), -1.0)
+        self.assertEqual(SE.hores_tocades(casa, eps), {c9})
+        self.assertIsNone(SE.ofset({k: v for k, v in list(casa.items())[:10]}, veines, ara, eps))
+
+    def test_humitat_amb_el_punt_de_rosada(self):
+        # 98 % a 13 °C (rocío 12,7): con el sensor a 16,6, la estación diría ~80 %.
+        self.assertAlmostEqual(SE.humitat(12.7, 13.0), 98, delta=1)
+        self.assertLess(SE.humitat(12.7, 16.6), 82)
+
+    def test_apunta_i_allarga_l_episodi(self):
+        with tempfile.TemporaryDirectory() as d:
+            ruta = os.path.join(d, "sol.csv")
+            SE.apunta(T0, T0 + dt.timedelta(minutes=10), 2.0, ruta)
+            SE.apunta(T0, T0 + dt.timedelta(minutes=40), 3.0, ruta)
+            self.assertEqual(SE.episodis(ruta), [(T0, T0 + dt.timedelta(minutes=40))])
+
+
+if __name__ == "__main__":
+    unittest.main()

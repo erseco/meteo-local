@@ -171,6 +171,7 @@ Umbrales y lugares, en `config.py`. El porqué, en los ADR.
 | `que_toca.py` | Si toca actualizar en este minuto, según el horario publicado |
 | `nas/` | Contenedor del NAS: `compose.yml`, `Dockerfile` y `reloj.sh`; `copia-registre.sh`, la copia diaria del registro en el repositorio privado `meteo-local-registre`, (ADR 0044) |
 | `RESTAURAR.md` | Cómo volver a montarlo todo en otro NAS o en otro hosting, con las claves y el registro de la copia privada (ADR 0044 y 0045) |
+| `sol_estacio.py` | Detecta el sol directo sobre el termómetro de la estación de casa y estima la temperatura y la humedad con las vecinas (ADR 0081) |
 | `trens.py` | Estado de las líneas de tren de Cerdanyola con los avisos de Rodalies y los datos en tiempo real de Renfe y FGC (ADR 0029 y 0078) |
 | `transit.py` | Incidencias de tráfico de cerca, del Servei Català de Trànsit (ADR 0052) |
 | `pollen.py` | Polen y esporas de la semana en Bellaterra, del Punt d'Informació Aerobiològica (ADR 0054) |

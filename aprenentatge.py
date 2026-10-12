@@ -326,6 +326,9 @@ def mostres():
     estaciones de Meteocat y la vecina fiable para confirmar las horas secas
     (ADR 0058 y 0060)."""
     casa, meteocat, veines = _llegeix("estacio-casa.csv"), _meteocat(), _veines()
+    # Sin la temperatura de las horas con sol directo sobre el termómetro (ADR 0081).
+    import sol_estacio
+    amb_sol = sol_estacio.hores_tocades(casa)
     res = []
     for arxiu in sorted(glob.glob(os.path.join(REGISTRE, "casa-*.jsonl"))):
         with open(arxiu, encoding="utf-8") as f:
@@ -334,7 +337,7 @@ def mostres():
                 plujas = [x for x in (ara_casa.get("pluja_1h"),) if x is not None]
                 for h in linea["hores"]:
                     obs_pluja = observada(casa, meteocat, veines, h["fins"])
-                    obs_temp = _num((casa.get(h["fins"]) or {}).get("temperatura"))
+                    obs_temp = None if h["fins"] in amb_sol else _num((casa.get(h["fins"]) or {}).get("temperatura"))
                     if obs_pluja is None and obs_temp is None:
                         continue
                     res.append({**h, "emes": linea["emes"], "pluja_1h_emes": max(plujas) if plujas else None,

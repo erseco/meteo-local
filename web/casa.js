@@ -264,6 +264,13 @@ function blocAra(casa, radarDades, vent, veines, hores) {
   termometre.classList.add('vehicle');
   temp.append(termometre, `${coma(casa.temperatura)} °C`);
   sec.append(temp);
+  // El sol toca el termòmetre de l'estació: la temperatura és l'esperada amb les
+  // veïnes i la diferència habitual (sol_estacio.py, ADR 0081).
+  if (casa.sol_directe) {
+    const nota = element('p', 'ara-menys', T('Estimada: el sol toca l’estació.'));
+    nota.title = T`L’estació en marca ${coma(casa.temperatura_estacio)} °C perquè li toca el sol directe.`;
+    sec.append(nota);
+  }
   // Plou si el pluviòmetre ha recollit res en els últims 15 minuts
   // (config.PLOU_ARA_MIN, ecowitt.resum_ara) o si ho ha fet alguna de les
   // estacions veïnes de Weather Underground que compten (ADR 0060).

@@ -41,6 +41,7 @@ import riscos as RS
 import smp as SMP
 import vent_veines as VV
 import llum as LL
+import sol_estacio as SE
 import transit as TT
 import trens as TR
 import wunderground as WU
@@ -439,6 +440,17 @@ def recoger(anterior=None):
             print(f"La clau de lectura de Weather Underground caduca d'aquí a {dies} dies "
                   f"({C.WU_CLAU_CADUCA}): cal regenerar-la (RESTAURAR.md).", file=sys.stderr)
     salida["veines"] = [{k: v for k, v in x.items() if k != "files"} for x in veines]
+    # El sol directo sobre el termómetro de casa (ADR 0081): se corrige con las
+    # vecinas y la diferencia habitual, y esas horas no cuentan para comparar.
+    if salida["ara_casa"] and R.hay_registro():
+        try:
+            salida["ara_casa"] = SE.corregeix(salida["ara_casa"], casa.get("files") if casa else None, veines, P.AHORA)
+            if salida["temperatura_mesurada"]:
+                fora = SE.hores_tocades(salida["temperatura_mesurada"])
+                salida["temperatura_mesurada"] = {k: v for k, v in salida["temperatura_mesurada"].items()
+                                                  if k not in fora} or None
+        except Exception as ex:
+            print("No he pogut mirar el sol directe a l'estació:", ex, file=sys.stderr)
     # Si llueve ahora, en casa o en una vecina que cuenta: lo que miran el
     # bot, los avisos y la web (plou_ara de la primera hora de la tabla).
     salida["plou_ara"] = llueve_ahora_en(casa, veines)

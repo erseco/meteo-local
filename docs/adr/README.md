@@ -82,5 +82,6 @@
 | [0078](0078-avisos-de-rodalies-de-su-web-y-no-del-canal-de-renfe.md) | Avisos de Rodalies de su web y no del canal de Renfe | aceptado |
 | [0079](0079-retrasos-de-la-s2-con-la-puntualidad-de-fgc.md) | Retrasos de la S2 con la puntualidad de FGC | aceptado |
 | [0080](0080-oferta-de-avisos-a-quien-instala-la-web.md) | Oferta de avisos a quien instala la web | aceptado |
+| [0081](0081-sol-directo-sobre-el-termometro-de-la-estacion.md) | Sol directo sobre el termómetro de la estación | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.
