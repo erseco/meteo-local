@@ -1253,3 +1253,19 @@ document.addEventListener('click', (e) => {
 
 // Per poder instal·lar la web com a aplicació (sw.js).
 if ('serviceWorker' in navigator) navigator.serviceWorker.register(ARREL + 'sw.js').catch(() => {});
+
+// En obrir la web o tornar-hi, les seves notificacions marxen de la safata,
+// com a Telegram o WhatsApp (Juanjo, 12-10-2026): el que deien ja és a dalt,
+// a «Avisos actius», i a «Perill», i un avís vell que s'hi quedés podria fer
+// creure que el perill continua (ADR 0048). Només es treuen de la safata.
+function tancaNotificacions() {
+  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.getRegistration) return Promise.resolve(0);
+  return navigator.serviceWorker.getRegistration()
+    .then((r) => (r && r.getNotifications ? r.getNotifications() : []))
+    .then((ns) => { ns.forEach((n) => n.close()); return ns.length; })
+    .catch(() => 0);
+}
+tancaNotificacions();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') tancaNotificacions();
+});

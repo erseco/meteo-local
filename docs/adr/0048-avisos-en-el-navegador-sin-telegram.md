@@ -161,3 +161,20 @@ las categorías actuales), y el tiempo de vida que se daba al servicio era
 toda la vigencia del aviso en vez de lo que le quedaba (RFC 8030, 5.2):
 ahora es lo que queda, la notificación lleva `expira` y `sw.js` no muestra
 la que llega caducada.
+
+## Cambio del 12-10-2026 (3.68.0): al abrir la web, las notificaciones se van
+
+Juanjo: «cuando se abre la app [Telegram o WhatsApp] ya hace que la
+notificación desaparezca, ¿eso es posible con nuestra app?». Al abrir la web
+o volver a ella (`visibilitychange`), `tancaNotificacions` (en `comu.js`)
+pide al service worker sus notificaciones (`getNotifications`) y las cierra.
+Solo se quitan de la bandeja: lo que decían sigue en «Avisos actius» y en
+«Perill». Motivo principal: un aviso viejo que se queda en la bandeja (un
+peligro de la riera que ya ha pasado) puede hacer creer que sigue; además,
+no se acumulan.
+
+Validado en Chromium: con una notificación de la web mostrada, al volver a
+abrir la página, `getNotifications` da 0. En Firefox y en iPhone (Safari lo
+admite desde la 16.4), sin probar; si no funcionara, las notificaciones se
+quedarían como antes. Prueba: `test_en_obrir_la_web_marxen_les_notificacions`.
+

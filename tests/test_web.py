@@ -784,6 +784,15 @@ class Web(unittest.TestCase):
         self.assertEqual(r[1], {"nivell": "taronja", "noms": ["pluja molt forta"]})
         self.assertIsNone(self.avalua(ara, f"perillTram({json.dumps([f(7)])})"))
 
+    def test_en_obrir_la_web_marxen_les_notificacions(self):
+        # ADR 0048: en obrir la web o tornar-hi, les seves notificacions es treuen de la safata.
+        expr = ("tancades = 0; const n = () => ({ close() { tancades += 1; } });"
+                "navigator.serviceWorker = { getRegistration: () => Promise.resolve({ getNotifications: () => Promise.resolve([n(), n()]) }) };"
+                "tancaNotificacions().then((k) => [k, tancades])")
+        self.assertEqual(self.avalua("2026-10-12T10:00:00+02:00", expr, arnes=ARNES_ASYNC), [2, 2])
+        # Sense service worker (un navegador antic), res.
+        self.assertEqual(self.avalua("2026-10-12T10:00:00+02:00", "tancaNotificacions()", arnes=ARNES_ASYNC), 0)
+
     def test_la_franja_del_radar_nomes_si_diu_alguna_cosa(self):
         # «No s'acosta pluja» només surt si la previsió en dona en les dues
         # hores que venen (Juanjo, 10-10-2026; ADR 0019).
