@@ -8,7 +8,7 @@
 // navegador per enviar-li notificacions i el que tria: res de qui és.
 //
 // GET              la clau pública (VAPID) per subscriure's
-// POST {accio: "desa", subscripcio: {endpoint, keys}, avisos, resum, idioma, origen}
+// POST {accio: "desa", subscripcio: {endpoint, keys}, avisos, resum, idioma}
 // POST {accio: "estat" | "prova" | "baixa", endpoint}
 
 date_default_timezone_set('Europe/Madrid');
@@ -18,9 +18,6 @@ const TIPUS = ['riera', 'perill', 'pluja', 'llum'];
 // La del matí, una hora o cap; la de demà a les 21 h, a part (ADR 0055).
 const HORES = ['', '6', '7', '8'];
 const IDIOMES = ['ca', 'es'];
-// D'on s'activen (ADR 0084): l'app de Google Play, la web instal·lada o el
-// navegador. Només el tipus, perquè Juanjo sàpiga d'on vénen les altes.
-const ORIGENS_ALTA = ['app', 'installada', 'navegador'];
 // Els serveis de notificacions dels navegadors: cap altra adreça s'accepta.
 const SERVEIS = '/^https:\/\/(fcm\.googleapis\.com|android\.googleapis\.com|[a-z0-9.-]*push\.services\.mozilla\.com'
     . '|web\.push\.apple\.com|[a-z0-9.-]*\.notify\.windows\.com)\//';
@@ -98,17 +95,12 @@ if ($accio === 'desa') {
     if ($resum === '20' || $resum === '21') { $resum = ''; $nit = true; }
     $idioma = (string)($p['idioma'] ?? 'ca');
     if (!in_array($resum, HORES, true) || !in_array($idioma, IDIOMES, true)) respon(400, ['error' => 'opcions']);
-    $origen_alta = (string)($p['origen'] ?? '');
-    if (!in_array($origen_alta, ORIGENS_ALTA, true)) $origen_alta = '';
     $nou = !isset($subs[$endpoint]);
     if ($nou && count($subs) >= MAXIM) respon(503, ['error' => 'ple']);
     $subs[$endpoint] = ['keys' => ['p256dh' => $claus['p256dh'], 'auth' => $claus['auth']],
                         'avisos' => $avisos, 'resum' => $resum, 'nit' => $nit, 'idioma' => $idioma,
                         'alta' => $subs[$endpoint]['alta'] ?? date('Y-m-d')]
-                       + (isset($subs[$endpoint]['prova']) ? ['prova' => $subs[$endpoint]['prova']] : [])
-                       // El de l'alta es queda: un canvi des d'un altre lloc no el canvia.
-                       + (($subs[$endpoint]['origen'] ?? $origen_alta) !== ''
-                          ? ['origen' => $subs[$endpoint]['origen'] ?? $origen_alta] : []);
+                       + (isset($subs[$endpoint]['prova']) ? ['prova' => $subs[$endpoint]['prova']] : []);
     desa_subs($base, $subs);
     respon(200, ['ok' => true, 'nou' => $nou] + opcions($subs[$endpoint]));
 }

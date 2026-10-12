@@ -39,8 +39,7 @@ function triat() {
 }
 
 function desa() {
-  return crida({ accio: 'desa', subscripcio: subscripcioPush.toJSON(), ...triat(), idioma: IDIOMA_PUSH,
-    origen: origenAvisos() });
+  return crida({ accio: 'desa', subscripcio: subscripcioPush.toJSON(), ...triat(), idioma: IDIOMA_PUSH });
 }
 
 // Els canvis, d'un en un i sempre amb el que hi ha marcat en aquell moment: si

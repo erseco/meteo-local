@@ -271,50 +271,25 @@ def reparteix(estat, moment, envia=envia_push):
     return mortes
 
 
-# D'on s'ha activat cada subscripció (ADR 0084): l'envia la web.
-ORIGENS = {"app": "app Android", "installada": "web instal·lada", "navegador": "navegador"}
-NOMS_AVISOS = {"riera": "riera", "perill": "perill", "pluja": "pluja", "llum": "talls de llum"}
-
-
-def desglossa(subs):
-    """«7 (app Android 3, navegador 4)»: el total i d'on vénen."""
-    compte = {}
-    for v in subs.values():
-        o = ORIGENS.get(v.get("origen"), "sense origen")
-        compte[o] = compte.get(o, 0) + 1
-    ordre = list(ORIGENS.values()) + ["sense origen"]
-    return f"{len(subs)}" + (" (" + ", ".join(f"{o} {compte[o]}" for o in ordre if o in compte) + ")" if compte else "")
-
-
-def que_tria(v):
-    triat = [NOMS_AVISOS[x] for x in v.get("avisos", []) if x in NOMS_AVISOS]
-    if v.get("resum"):
-        triat.append(f"previsió de les {v['resum']} h")
-    if v.get("nit"):
-        triat.append("previsió de demà")
-    return ", ".join(triat) or "res"
-
-
 def altes(estat, mortes=()):
-    """A Juanjo, cada alta nova amb d'on ve, què tria i el total; i al registre
-    de moviments, les altes, les baixes («Desactiva») i les adreces mortes.
-    Sense res de qui: ni l'adreça."""
+    """A Juanjo, cada alta nova amb el total, com al bot; i al registre de
+    moviments, quantes altes, baixes («Desactiva») i adreces mortes hi ha cada
+    dia (ADR 0084). Només els totals: res de qui ni d'on."""
     with subscripcions() as s:
-        actuals = {e: dict(v) for e, v in s.items()}
+        actuals = list(s)
     coneguts = estat.get("coneguts", []) if estat.get("coneguts_inici") else None
-    estat["coneguts"], estat["coneguts_inici"] = list(actuals), True
+    estat["coneguts"], estat["coneguts_inici"] = actuals, True
     if coneguts is None:                  # la primera vegada només aprèn les que hi ha
         return
     vells = set(coneguts)
     nous = [e for e in actuals if e not in vells]
     for e in vells - set(actuals):
         B.moviment("web", "morta" if e in mortes else "baixa")
-    for e in nous:
-        B.moviment("web", "alta", actuals[e].get("origen") or "desconegut")
-        v = actuals[e]
-        B.avisa_juanjo(f"Temps a Montflorit: alta nova als avisos de la web "
-                       f"({ORIGENS.get(v.get('origen'), 'sense origen')}): {que_tria(v)}. "
-                       f"Total: {desglossa(actuals)}.")
+    for _ in nous:
+        B.moviment("web", "alta")
+    if nous:
+        B.avisa_juanjo(f"Temps a Montflorit: {'alta nova' if len(nous) == 1 else f'{len(nous)} altes noves'} "
+                       f"als avisos de la web (ja en són {len(actuals)}).")
 
 
 def volta():
@@ -336,7 +311,7 @@ def volta():
 def mostra_estat():
     subs = B.llegeix(SUBS, {})
     estat = B.llegeix(ESTAT, {})
-    print(f"Subscripcions: {desglossa(subs)}")
+    print(f"Subscripcions: {len(subs)}")
     for x in B.TIPUS:
         print(f"  {x}: {sum(x in s.get('avisos', []) for s in subs.values())}")
     print(f"  resum: {sum(bool(s.get('resum')) for s in subs.values())}")

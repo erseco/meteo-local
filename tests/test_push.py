@@ -193,28 +193,26 @@ class Push(unittest.TestCase):
         B.desa(P.SUBS, subs)
         P.altes(estat)
         self.avisa.assert_called_once()
-        self.assertIn("Total: 3", self.avisa.call_args[0][0])
+        self.assertIn("ja en són 3", self.avisa.call_args[0][0])
 
-    def test_alta_amb_origen_i_moviments(self):
-        # Juanjo vol saber d'on vénen les altes i quantes baixes hi ha (ADR 0084).
+    def test_altes_i_baixes_nomes_els_totals(self):
+        # Només quantes: res de qui, d'on ni què tria (ADR 0084; Juanjo: «me interesa el total»).
         estat = {}
         P.altes(estat)
         subs = B.llegeix(P.SUBS, {})
-        nova = "https://fcm.googleapis.com/fcm/send/app"
-        subs[nova] = {**subs[CA], "avisos": ["riera"], "resum": "", "origen": "app"}
+        nova = "https://fcm.googleapis.com/fcm/send/nova"
+        subs[nova] = subs[CA]
         del subs[ES]                                  # «Desactiva»
         B.desa(P.SUBS, subs)
         P.altes(estat)
-        text = self.avisa.call_args[0][0]
-        self.assertIn("(app Android): riera.", text)
-        self.assertIn("Total: 2 (app Android 1, sense origen 1)", text)
-        self.assertNotIn("fcm.googleapis", text)      # res de qui
+        self.assertEqual(self.avisa.call_args[0][0], "Temps a Montflorit: alta nova als avisos de la web (ja en són 2).")
         del subs[nova]
         B.desa(P.SUBS, subs)
         P.altes(estat, mortes={nova})                 # l'app desinstal·lada
-        moviments = [(m["canal"], m["tipus"], m.get("origen")) for m in B.llegeix(os.path.join(B.BASE, "moviments.json"), [])]
-        self.assertEqual(moviments, [("web", "baixa", None), ("web", "alta", "app"), ("web", "morta", None)])
-        self.assertFalse(any("fcm" in json.dumps(m) for m in B.llegeix(os.path.join(B.BASE, "moviments.json"), [])))
+        ruta = os.path.join(B.BASE, "moviments.json")
+        self.assertEqual([(m["canal"], m["tipus"]) for m in B.llegeix(ruta, [])],
+                         [("web", "baixa"), ("web", "alta"), ("web", "morta")])
+        self.assertTrue(all(set(m) == {"dia", "canal", "tipus"} for m in B.llegeix(ruta, [])))
 
 
 if __name__ == "__main__":

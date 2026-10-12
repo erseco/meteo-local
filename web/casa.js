@@ -766,7 +766,7 @@ function targetaOfertaAvisos() {
       }
       const subscripcio = await subscriuAvisos(await navigator.serviceWorker.ready);
       await cridaAvisos({ accio: 'desa', subscripcio: subscripcio.toJSON(), avisos: AVISOS_PER_DEFECTE, resum: '', nit: false,
-        idioma: document.documentElement.lang === 'es' ? 'es' : 'ca', origen: origenAvisos() });
+        idioma: document.documentElement.lang === 'es' ? 'es' : 'ca' });
       botons.remove();
       estat.textContent = T('Fet: t’arribaran els avisos de perill i de la riera. Per triar-ne més, toca la campana.');
       OFERTA_AVISOS = null;

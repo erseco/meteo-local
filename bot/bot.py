@@ -1293,21 +1293,21 @@ def avisa_juanjo(text):
 
 
 # --- Altes i baixes (ADR 0084) ---
-# Juanjo vol portar el control de qui s'apunta i qui se'n va (12-10-2026):
-# del bot i dels avisos de la web, cada alta, baixa, bloqueig o adreça morta,
-# amb el dia i d'on ve, sense cap identificador (ni el xat ni l'adreça).
+# Juanjo vol saber quanta gent s'apunta i se'n va (12-10-2026), només els
+# totals: del bot i dels avisos de la web, quantes altes, baixes, bloquejos i
+# adreces mortes hi ha cada dia, sense res de qui («me interesa el total»).
 MOVIMENTS_DIES = 400
 
 
-def moviment(canal, tipus, origen=None, dia=None):
+def moviment(canal, tipus, dia=None):
     """Apunta un moviment: canal «bot» o «web»; tipus «alta», «baixa»,
-    «bloqueig» (bot) o «morta» (web); origen, el de les altes de la web."""
+    «bloqueig» (bot) o «morta» (web). Només el dia: res més."""
     ruta = os.path.join(BASE, "moviments.json")
     dia = dia or ara().date().isoformat()
     with open(os.path.join(BASE, "moviments.lock"), "a") as cadenat:
         fcntl.flock(cadenat, fcntl.LOCK_EX)
         m = llegeix(ruta, [])
-        m.append({k: v for k, v in (("dia", dia), ("canal", canal), ("tipus", tipus), ("origen", origen)) if v})
+        m.append({"dia": dia, "canal": canal, "tipus": tipus})
         limit = (dt.date.fromisoformat(dia) - dt.timedelta(days=MOVIMENTS_DIES)).isoformat()
         desa(ruta, [x for x in m if x["dia"] >= limit])
 
@@ -1673,38 +1673,23 @@ def mostra_estat():
         pass
 
 
-ORIGENS_ES = {"app": "app Android", "installada": "web instalada", "navegador": "navegador"}
-
-
 def text_push():
-    """Los avisos en el navegador (bot/push.py, ADR 0048), en el recuento, con
-    desde dónde se activaron (ADR 0084)."""
+    """Los avisos en el navegador (bot/push.py, ADR 0048), en el recuento."""
     push = llegeix(os.path.join(BASE, "push.json"), {})
     n = lambda x: sum(x in s.get("avisos", []) for s in push.values())
-    origen = {}
-    for s in push.values():
-        o = ORIGENS_ES.get(s.get("origen"), "sin origen")
-        origen[o] = origen.get(o, 0) + 1
-    on = "".join(f"{o} {origen[o]}, " for o in list(ORIGENS_ES.values()) + ["sin origen"] if o in origen)
-    return (f"Avisos en el navegador: {len(push)} dispositivos ({on}riera {n('riera')}, peligro {n('perill')}, "
+    return (f"Avisos en el navegador: {len(push)} dispositivos (riera {n('riera')}, peligro {n('perill')}, "
             f"lluvia {n('pluja')}, previsión diaria "
             f"{sum(bool(s.get('resum')) for s in push.values())}).\n")
 
 
 def text_moviments(fins=None):
-    """Las altas y bajas de los siete días antes de «fins» (ADR 0084)."""
+    """Cuántas altas y bajas en los siete días antes de «fins» (ADR 0084)."""
     fins = fins or ara().date()
     des_de = (fins - dt.timedelta(days=7)).isoformat()
     setmana = [m for m in llegeix(os.path.join(BASE, "moviments.json"), []) if des_de <= m["dia"] < fins.isoformat()]
     n = lambda canal, tipus: sum(m["canal"] == canal and m["tipus"] == tipus for m in setmana)
-    origen = {}
-    for m in setmana:
-        if m["canal"] == "web" and m["tipus"] == "alta":
-            o = ORIGENS_ES.get(m.get("origen"), "sin origen")
-            origen[o] = origen.get(o, 0) + 1
-    detall = f" ({', '.join(f'{o} {k}' for o, k in origen.items())})" if origen else ""
     q = lambda k, una, moltes: f"{k} {una if k == 1 else moltes}"
-    return (f"Últimos 7 días: avisos de la web, {q(n('web', 'alta'), 'alta', 'altas')}{detall}, "
+    return (f"Últimos 7 días: avisos de la web, {q(n('web', 'alta'), 'alta', 'altas')}, "
             f"{q(n('web', 'baixa'), 'baja', 'bajas')} y {q(n('web', 'morta'), 'dirección muerta', 'direcciones muertas')}; "
             f"bot, {q(n('bot', 'alta'), 'alta', 'altas')}, {q(n('bot', 'baixa'), 'baja', 'bajas')} y "
             f"{q(n('bot', 'bloqueig'), 'bloqueo', 'bloqueos')}.\n")
