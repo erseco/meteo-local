@@ -793,6 +793,27 @@ class Web(unittest.TestCase):
         # Sense service worker (un navegador antic), res.
         self.assertEqual(self.avalua("2026-10-12T10:00:00+02:00", "tancaNotificacions()", arnes=ARNES_ASYNC), 0)
 
+    def test_un_avis_amb_la_web_oberta_la_posa_al_dia(self):
+        # ADR 0048: el service worker mostra la notificació i avisa les finestres obertes; la pàgina,
+        # en rebre-ho, torna a llegir el que tenia apuntat.
+        sw = r"""
+const vm = require('vm'); const fs = require('fs');
+const [web] = process.argv.slice(1);
+const h = {}; const enviats = []; let mostrades = 0;
+const ctx = vm.createContext({ Date, URL, JSON, String, Promise, console, location: { origin: 'https://m.test' },
+  self: { addEventListener(t, f) { h[t] = f; }, registration: { scope: 'https://m.test/',
+    showNotification() { mostrades += 1; return Promise.resolve(); } },
+    clients: { matchAll: () => Promise.resolve([{ postMessage: (m) => enviats.push(m) }]) } } });
+vm.runInContext(fs.readFileSync(`${web}/sw.js`, 'utf8'), ctx);
+let espera;
+h.push({ data: { json: () => ({ title: 'Perill', body: 'x' }) }, waitUntil(p) { espera = p; } });
+espera.then(() => console.log(JSON.stringify([mostrades, enviats])));
+"""
+        r = subprocess.run(["node", "-e", sw, WEB], capture_output=True, text=True, check=True)
+        self.assertEqual(json.loads(r.stdout), [1, [{"tipus": "avis"}]])
+        self.assertEqual(self.avalua("2026-10-12T10:00:00+02:00",
+                                     "n = 0; enArribarUnAvis(() => { n += 1; }); enArribarUnAvis(() => { n += 10; }); arribaUnAvis(); n"), 11)
+
     def test_la_franja_del_radar_nomes_si_diu_alguna_cosa(self):
         # «No s'acosta pluja» només surt si la previsió en dona en les dues
         # hores que venen (Juanjo, 10-10-2026; ADR 0019).

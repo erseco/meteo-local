@@ -45,12 +45,18 @@ self.addEventListener('push', (e) => {
   // Un avís que arriba quan ja ha caducat (el mòbil apagat una estona) no es
   // mostra: push.py hi posa «expira» (auditoria del 09-10-2026).
   if (d.expira && Date.now() > Date.parse(d.expira)) return;
-  e.waitUntil(self.registration.showNotification(d.title || 'Temps a Montflorit', {
-    body: d.body || '',
-    icon: 'icones/icona-192.png',
-    tag: d.tag,
-    data: { url: new URL(d.url || './', self.registration.scope).href, dia: d.dia },
-  }));
+  e.waitUntil(Promise.all([
+    self.registration.showNotification(d.title || 'Temps a Montflorit', {
+      body: d.body || '',
+      icon: 'icones/icona-192.png',
+      tag: d.tag,
+      data: { url: new URL(d.url || './', self.registration.scope).href, dia: d.dia },
+    }),
+    // Si la web és oberta, que es posi al dia ara mateix: l'avís ha de sortir
+    // a la pàgina alhora que la notificació (Juanjo, 12-10-2026; ADR 0048).
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((finestres) => finestres.forEach((f) => f.postMessage({ tipus: 'avis' }))),
+  ]));
 });
 
 // El dia d'avui al rellotge del dispositiu, «AAAA-MM-DD».

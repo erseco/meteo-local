@@ -242,3 +242,5 @@ function llegeix() {
 
 llegeix();
 setInterval(llegeix, RELLEGEIX_MIN * 60000);
+// Un avís que arriba amb la pàgina oberta, de seguida (ADR 0048).
+enArribarUnAvis(llegeix);

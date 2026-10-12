@@ -347,7 +347,20 @@ function carrega(url, pinta, error) {
     if (!dades || Date.now() >= previst) llegeix();
     else pinta(dades);
   });
+  enArribarUnAvis(llegeix);
   llegeix();
+}
+
+// Quan arriba un avís al dispositiu amb la web oberta, el service worker ho
+// diu (sw.js) i la pàgina torna a llegir ara mateix les dades i l'historial de
+// «Perill», en lloc d'esperar la propera lectura (Juanjo, 12-10-2026; ADR 0048).
+const ALARRIBAR_AVIS = [];
+function enArribarUnAvis(f) { ALARRIBAR_AVIS.push(f); }
+function arribaUnAvis() { ALARRIBAR_AVIS.forEach((f) => f()); }
+if ('serviceWorker' in navigator && navigator.serviceWorker.addEventListener) {
+  navigator.serviceWorker.addEventListener('message', (e) => {
+    if (e.data && e.data.tipus === 'avis') arribaUnAvis();
+  });
 }
 
 // Avisos de l'AEMET al Vallès, amb el dia i la franja de cadascun.
@@ -1099,6 +1112,7 @@ if (!/(^|\/)perill\.html$/.test(location.pathname) && document.querySelectorAll(
   }, () => {});
   miraPerill();
   setInterval(miraPerill, 5 * 60000);
+  enArribarUnAvis(miraPerill);
 }
 
 // Compartir (Juanjo, 11-10-2026: «cualquier pagina o consulta … quiero que se

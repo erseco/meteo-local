@@ -178,3 +178,20 @@ abrir la página, `getNotifications` da 0. En Firefox y en iPhone (Safari lo
 admite desde la 16.4), sin probar; si no funcionara, las notificaciones se
 quedarían como antes. Prueba: `test_en_obrir_la_web_marxen_les_notificacions`.
 
+## Cambio del 12-10-2026 (3.68.1): un aviso con la web abierta la pone al día
+
+Juanjo: «¿qué pasa si la alerta sale mientras tengo la app abierta?». La
+notificación salía (y se mantiene: con sonido, porque la pantalla puede estar
+encendida sin que se mire), pero la página no se enteraba hasta su siguiente
+lectura (el historial de «Perill», cada 5 minutos; los datos, con su horario).
+Ahora el service worker, al mostrar la notificación, envía `{tipus: 'avis'}` a
+las ventanas abiertas, y la página vuelve a leer al momento lo que tenía
+apuntado (`enArribarUnAvis`): los datos (`carrega`), el historial de la riera y
+del punto rojo (`miraPerill`) y, en «Perill», sus fichas. Cuando el aviso sale,
+`avisos.json` y los datos ya están publicados: `push.py` los envía después.
+
+Validado: en Chromium, con el mensaje del service worker, la portada vuelve a
+pedir `avisos.json` y `montflorit.json`, y «Perill», `avisos.json`. Prueba:
+`test_un_avis_amb_la_web_oberta_la_posa_al_dia` (el service worker avisa a las
+ventanas; la página relee).
+
