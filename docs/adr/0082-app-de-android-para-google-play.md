@@ -103,4 +103,18 @@ Versión 3.73.0 de la web; la app empieza en la 1.0.0.
 - Play Console (12-10-2026): app creada, versión 1 (1.0.0) en la prueba
   interna, con Juanjo como único probador; huella de la clave de Google
   añadida a `assetlinks.json`.
-- Pendiente: la ficha, los formularios y la revisión de Google para producción.
+- Ficha y formularios (12-10-2026), con Juanjo revisando los textos y las
+  imágenes: ficha en catalán (predeterminada) y castellano, con los textos y
+  las imágenes de `android/fitxa/` (descripción corta «El temps del barri i
+  alertes de perill: temps, incendis i riera.»); categoría «Tiempo»; contacto
+  `jjdeharo@gmail.com` y la web; política de privacidad `privacitat.html`;
+  sin anuncios ni cuentas; clasificación IARC «informativa» con contenido en
+  línea; público de 13 años en adelante (no infantil); seguridad de los
+  datos: solo un identificador (la dirección de las notificaciones),
+  opcional, cifrado en tránsito, no compartido, borrable con «Desactiva»;
+  icono y cabeceras etiquetados como hechos con IA, las capturas no; solo
+  España.
+- El sistema de permisos de Claude Code no deja al agente pulsar «Crear
+  aplicación» ni preparar la versión de producción: esos pasos los hace
+  Juanjo.
+- Pendiente: la versión de producción y la revisión de Google.
