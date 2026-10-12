@@ -271,16 +271,99 @@ def reparteix(estat, moment, envia=envia_push):
     return mortes
 
 
-def altes(estat):
-    """A Juanjo, cada alta nueva con el total, como en el bot (sin nada de quién)."""
+# D'on s'ha activat cada subscripció (ADR 0084): l'envia la web.
+ORIGENS = {"app": "app Android", "installada": "web instal·lada", "navegador": "navegador"}
+NOMS_AVISOS = {"riera": "riera", "perill": "perill", "pluja": "pluja", "llum": "talls de llum"}
+
+
+def desglossa(subs):
+    """«7 (app Android 3, navegador 4)»: el total i d'on vénen."""
+    compte = {}
+    for v in subs.values():
+        o = ORIGENS.get(v.get("origen"), "sense origen")
+        compte[o] = compte.get(o, 0) + 1
+    ordre = list(ORIGENS.values()) + ["sense origen"]
+    return f"{len(subs)}" + (" (" + ", ".join(f"{o} {compte[o]}" for o in ordre if o in compte) + ")" if compte else "")
+
+
+def que_tria(v):
+    triat = [NOMS_AVISOS[x] for x in v.get("avisos", []) if x in NOMS_AVISOS]
+    if v.get("resum"):
+        triat.append(f"previsió de les {v['resum']} h")
+    if v.get("nit"):
+        triat.append("previsió de demà")
+    return ", ".join(triat) or "res"
+
+
+def altes(estat, mortes=()):
+    """A Juanjo, cada alta nova amb d'on ve, què tria i el total; i al registre
+    de moviments, les altes, les baixes («Desactiva») i les adreces mortes.
+    Sense res de qui: ni l'adreça."""
     with subscripcions() as s:
-        n = len(s)
-        nous = [e for e in s if e not in set(estat.get("coneguts", []))]
-        estat["coneguts"] = list(s)
-    if nous and estat.get("coneguts_inici"):
-        B.avisa_juanjo(f"Temps a Montflorit: {'alta nova' if len(nous) == 1 else f'{len(nous)} altes noves'} "
-                       f"als avisos de la web (ja en són {n}).")
-    estat["coneguts_inici"] = True
+        actuals = {e: dict(v) for e, v in s.items()}
+    coneguts = estat.get("coneguts", []) if estat.get("coneguts_inici") else None
+    estat["coneguts"], estat["coneguts_inici"] = list(actuals), True
+    if coneguts is None:                  # la primera vegada només aprèn les que hi ha
+        return
+    vells = set(coneguts)
+    nous = [e for e in actuals if e not in vells]
+    for e in vells - set(actuals):
+        B.moviment("web", "morta" if e in mortes else "baixa")
+    for e in nous:
+        B.moviment("web", "alta", actuals[e].get("origen") or "desconegut")
+        v = actuals[e]
+        B.avisa_juanjo(f"Temps a Montflorit: alta nova als avisos de la web "
+                       f"({ORIGENS.get(v.get('origen'), 'sense origen')}): {que_tria(v)}. "
+                       f"Total: {desglossa(actuals)}.")
+
+
+# --- Resum setmanal (ADR 0084): els dilluns a les 9 h, la setmana anterior. ---
+RESUM_DIA, RESUM_HORA = 0, 9
+MESOS = ["gener", "febrer", "març", "abril", "maig", "juny", "juliol", "agost", "setembre", "octubre",
+         "novembre", "desembre"]
+
+
+def data_ca(d):
+    mes = MESOS[d.month - 1]
+    return f"{d.day} {'d' + chr(8217) if mes[0] in 'aeiou' else 'de '}{mes}"
+
+
+def text_setmana(moviments, subs_web, subs_bot, canal, fins):
+    """El resum de la setmana que acaba el dia abans de «fins»."""
+    des_de = fins - dt.timedelta(days=7)
+    setmana = [m for m in moviments if des_de.isoformat() <= m["dia"] < fins.isoformat()]
+    n = lambda canal_, tipus: sum(m["canal"] == canal_ and m["tipus"] == tipus for m in setmana)
+    altes_web = [m for m in setmana if m["canal"] == "web" and m["tipus"] == "alta"]
+    origen = {}
+    for m in altes_web:
+        o = ORIGENS.get(m.get("origen"), "sense origen")
+        origen[o] = origen.get(o, 0) + 1
+    detall = f" ({', '.join(f'{o} {k}' for o, k in origen.items())})" if origen else ""
+    linies = [f"Temps a Montflorit, del {data_ca(des_de)} al {data_ca(fins - dt.timedelta(days=1))}:",
+              f"Avisos de la web: {len(altes_web)} altes{detall}, {n('web', 'baixa')} baixes, "
+              f"{n('web', 'morta')} adreces mortes. Ara: {desglossa(subs_web)}.",
+              f"Bot: {n('bot', 'alta')} altes, {n('bot', 'baixa')} baixes, {n('bot', 'bloqueig')} bloquejos. "
+              f"Ara: {len(subs_bot)}."]
+    if canal is not None:
+        linies.append(f"Canal: ara en són {canal}.")
+    return "\n".join(linies)
+
+
+def resum_setmanal(estat, moment):
+    """Una vegada per setmana, el dilluns a partir de les 9 h."""
+    if moment.weekday() != RESUM_DIA or moment.hour < RESUM_HORA:
+        return
+    setmana = moment.date().isoformat()
+    if estat.get("resum_setmanal") == setmana:
+        return
+    estat["resum_setmanal"] = setmana
+    try:
+        canal = B.Api(B.llegeix(os.path.join(B.BASE, "config.json"), {})["token"])(
+            "getChatMemberCount", chat_id=B.CANAL)
+    except Exception:
+        canal = None
+    B.avisa_juanjo(text_setmana(B.llegeix(os.path.join(B.BASE, "moviments.json"), []), B.llegeix(SUBS, {}),
+                                B.llegeix(B.SUBS, {}), canal, moment.date()))
 
 
 def volta():
@@ -292,8 +375,10 @@ def volta():
         return
     estat = B.llegeix(ESTAT, {})
     try:
-        reparteix(estat, B.ara())
-        altes(estat)
+        moment = B.ara()
+        mortes = reparteix(estat, moment)
+        altes(estat, mortes)
+        resum_setmanal(estat, moment)
     finally:
         B.desa(ESTAT, estat)
 
@@ -301,7 +386,7 @@ def volta():
 def mostra_estat():
     subs = B.llegeix(SUBS, {})
     estat = B.llegeix(ESTAT, {})
-    print(f"Subscripcions: {len(subs)}")
+    print(f"Subscripcions: {desglossa(subs)}")
     for x in B.TIPUS:
         print(f"  {x}: {sum(x in s.get('avisos', []) for s in subs.values())}")
     print(f"  resum: {sum(bool(s.get('resum')) for s in subs.values())}")

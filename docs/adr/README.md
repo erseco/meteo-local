@@ -85,5 +85,6 @@
 | [0081](0081-sol-directo-sobre-el-termometro-de-la-estacion.md) | Sol directo sobre el termómetro de la estación | aceptado |
 | [0082](0082-app-de-android-para-google-play.md) | App de Android para Google Play | aceptado |
 | [0083](0083-idioma-elegido-recordado.md) | Idioma elegido, recordado | aceptado |
+| [0084](0084-control-de-altas-y-bajas.md) | Control de altas y bajas | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

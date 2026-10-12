@@ -1287,6 +1287,20 @@ const SERVIDOR_AVISOS = DADES_URL + 'subscripcio.php';
 // Per començar, com al bot: la riera i el perill.
 const AVISOS_PER_DEFECTE = ['riera', 'perill'];
 
+// D'on s'activen els avisos (ADR 0084), perquè Juanjo sàpiga quantes altes
+// vénen de l'app de Google Play: només el tipus, res de qui. L'app obre la web
+// amb la referència android-app://; es recorda només durant la sessió, perquè
+// l'app i Chrome comparteixen el que es desa al dispositiu.
+const CLAU_APP = 'meteo.app';
+try {
+  if (document.referrer.startsWith('android-app://io.github.meteo_montflorit')) sessionStorage.setItem(CLAU_APP, '1');
+} catch (_) {}
+
+function origenAvisos() {
+  try { if (sessionStorage.getItem(CLAU_APP) === '1') return 'app'; } catch (_) {}
+  return matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'installada' : 'navegador';
+}
+
 async function cridaAvisos(cos) {
   const r = await fetch(SERVIDOR_AVISOS, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cos),

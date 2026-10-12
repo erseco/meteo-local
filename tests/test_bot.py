@@ -97,6 +97,20 @@ class Menu(unittest.TestCase):
         self.assertEqual(estat["pendents"]["riera:1"]["chats"], ["6"])
         self.assertEqual(json.dumps(estat).count('"5"'), 0)
 
+    def test_moviments_del_bot(self):
+        # Altes, baixes i bloquejos, amb el dia i sense el xat (ADR 0084).
+        ruta = os.path.join(B.BASE, "moviments.json")
+        B.desa(ruta, [])
+        api, subs = Api(bloquejats=["7"]), {}
+        B.atén(api, subs, {"message": {"chat": {"id": 5, "type": "private"}, "from": {}, "text": "/start"}})
+        B.atén(api, subs, {"message": {"chat": {"id": 5, "type": "private"}, "from": {}, "text": "/baixa"}}, {})
+        B.atén(api, subs, {"message": {"chat": {"id": 5, "type": "private"}, "from": {}, "text": "/baixa"}}, {})
+        subs["7"] = {"idioma": "ca", "avisos": ["perill"], "resum": None, "nit": False}
+        B.treu(subs, {}, "7", "bloqueig")
+        self.assertEqual([m["tipus"] for m in B.llegeix(ruta, [])], ["alta", "baixa", "bloqueig"])   # la 2a baixa no compta
+        self.assertNotIn('"5"', json.dumps(B.llegeix(ruta, [])))
+        self.assertTrue(all(m["canal"] == "bot" and len(m["dia"]) == 10 for m in B.llegeix(ruta, [])))
+
     def test_neteja_de_restes(self):
         estat = {"resums": {"1": "d", "9": "d"}, "pendents": {"x": {"avis": {}, "canal": False, "chats": ["1", "9"]}}}
         B.neteja({"1": {}}, estat)

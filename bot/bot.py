@@ -1292,11 +1292,45 @@ def avisa_juanjo(text):
             registra(f"no se ha podido avisar a Juanjo: {ex}")
 
 
+# --- Altes i baixes (ADR 0084) ---
+# Juanjo vol portar el control de qui s'apunta i qui se'n va (12-10-2026):
+# del bot i dels avisos de la web, cada alta, baixa, bloqueig o adreça morta,
+# amb el dia i d'on ve, sense cap identificador (ni el xat ni l'adreça).
+MOVIMENTS_DIES = 400
+
+
+def moviment(canal, tipus, origen=None, dia=None):
+    """Apunta un moviment: canal «bot» o «web»; tipus «alta», «baixa»,
+    «bloqueig» (bot) o «morta» (web); origen, el de les altes de la web."""
+    ruta = os.path.join(BASE, "moviments.json")
+    dia = dia or ara().date().isoformat()
+    with open(os.path.join(BASE, "moviments.lock"), "a") as cadenat:
+        fcntl.flock(cadenat, fcntl.LOCK_EX)
+        m = llegeix(ruta, [])
+        m.append({k: v for k, v in (("dia", dia), ("canal", canal), ("tipus", tipus), ("origen", origen)) if v})
+        limit = (dt.date.fromisoformat(dia) - dt.timedelta(days=MOVIMENTS_DIES)).isoformat()
+        desa(ruta, [x for x in m if x["dia"] >= limit])
+
+
+def treu(subs, estat, chat, tipus):
+    """Fora del bot: amb /baixa («baixa») o perquè l'ha bloquejat («bloqueig»)."""
+    if subs.pop(chat, None) is not None:
+        try:
+            moviment("bot", tipus)
+        except Exception as ex:               # el control no pot aturar el bot
+            registra(f"moviments: {ex}")
+    esborra(estat, chat)
+
+
 def alta(subs, chat, usuari):
     """El suscriptor de este chat; si es nuevo, se le da de alta y se avisa a
     Juanjo con el número total."""
     if chat not in subs:
         subs[chat] = nou_subscriptor(usuari)
+        try:
+            moviment("bot", "alta")
+        except Exception as ex:
+            registra(f"moviments: {ex}")
         avisa_juanjo(f"Temps a Montflorit: alta nova al bot (ja en són {len(subs)}).")
     return subs[chat]
 
@@ -1333,8 +1367,7 @@ def migra(api, subs, estat):
             try:
                 envia(api, chat, T[sub["idioma"]]["sense_trens"])
             except Bloquejat:
-                subs.pop(chat, None)
-                esborra(estat, chat)
+                treu(subs, estat, chat, "bloqueig")
                 continue
             except Exception as ex:
                 registra(f"l'avís de la fi dels avisos de trens no ha entrat: {ex}")
@@ -1392,8 +1425,8 @@ def atén(api, subs, update, estat=None):
         except Exception as ex:              # el comptador no pot aturar el bot
             registra(f"comptador: {ex}")
     if ordre == "/baixa":
-        idioma = (subs.pop(chat, None) or nou_subscriptor(m.get("from", {})))["idioma"]
-        esborra(estat, chat)
+        idioma = (subs.get(chat) or nou_subscriptor(m.get("from", {})))["idioma"]
+        treu(subs, estat, chat, "baixa")
         envia(api, chat, T[idioma]["baixa"])
         return
     nou = chat not in subs
@@ -1504,8 +1537,7 @@ def reparteix(api, subs, estat, moment):
             try:
                 envia(api, chat, a[sub["idioma"]], html=True)
             except Bloquejat:
-                subs.pop(chat, None)
-                esborra(estat, chat)
+                treu(subs, estat, chat, "bloqueig")
             except Exception as ex:
                 queden.append(chat)
                 motius.append(str(ex))
@@ -1550,8 +1582,7 @@ def reparteix(api, subs, estat, moment):
                 envia(api, chat, resum(dades, sub["idioma"], moment), html=True)
                 resums[chat] = {**fets, hora: avui}
             except Bloquejat:
-                subs.pop(chat, None)
-                esborra(estat, chat)
+                treu(subs, estat, chat, "bloqueig")
             except Exception as ex:
                 registra(f"un resumen de las {hora} h no ha entrado: {ex}")
 

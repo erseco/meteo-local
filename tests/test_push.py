@@ -193,7 +193,50 @@ class Push(unittest.TestCase):
         B.desa(P.SUBS, subs)
         P.altes(estat)
         self.avisa.assert_called_once()
-        self.assertIn("ja en són 3", self.avisa.call_args[0][0])
+        self.assertIn("Total: 3", self.avisa.call_args[0][0])
+
+    def test_alta_amb_origen_i_moviments(self):
+        # Juanjo vol saber d'on vénen les altes i quantes baixes hi ha (ADR 0084).
+        estat = {}
+        P.altes(estat)
+        subs = B.llegeix(P.SUBS, {})
+        nova = "https://fcm.googleapis.com/fcm/send/app"
+        subs[nova] = {**subs[CA], "avisos": ["riera"], "resum": "", "origen": "app"}
+        del subs[ES]                                  # «Desactiva»
+        B.desa(P.SUBS, subs)
+        P.altes(estat)
+        text = self.avisa.call_args[0][0]
+        self.assertIn("(app Android): riera.", text)
+        self.assertIn("Total: 2 (app Android 1, sense origen 1)", text)
+        self.assertNotIn("fcm.googleapis", text)      # res de qui
+        del subs[nova]
+        B.desa(P.SUBS, subs)
+        P.altes(estat, mortes={nova})                 # l'app desinstal·lada
+        moviments = [(m["canal"], m["tipus"], m.get("origen")) for m in B.llegeix(os.path.join(B.BASE, "moviments.json"), [])]
+        self.assertEqual(moviments, [("web", "baixa", None), ("web", "alta", "app"), ("web", "morta", None)])
+        self.assertFalse(any("fcm" in json.dumps(m) for m in B.llegeix(os.path.join(B.BASE, "moviments.json"), [])))
+
+    def test_resum_setmanal(self):
+        dilluns = dt.datetime(2026, 10, 12, 9, 5).astimezone()
+        for dia, canal, tipus, origen in (("2026-10-05", "web", "alta", "app"), ("2026-10-07", "web", "alta", "navegador"),
+                                          ("2026-10-08", "web", "morta", None), ("2026-10-09", "bot", "alta", None),
+                                          ("2026-10-10", "bot", "bloqueig", None), ("2026-10-12", "web", "alta", "app"),
+                                          ("2026-10-04", "web", "baixa", None)):
+            B.moviment(canal, tipus, origen, dia=dia)
+        unittest.mock.patch.object(B, "SUBS", os.path.join(B.BASE, "subscriptors.json")).start()
+        B.desa(B.SUBS, {"1": {}, "2": {}})
+        with unittest.mock.patch.object(B, "Api", side_effect=RuntimeError):
+            estat = {}
+            P.resum_setmanal(estat, dilluns.replace(hour=8))      # abans de les 9, res
+            self.avisa.assert_not_called()
+            P.resum_setmanal(estat, dilluns)
+            P.resum_setmanal(estat, dilluns.replace(hour=15))     # una sola vegada
+        self.avisa.assert_called_once()
+        text = self.avisa.call_args[0][0]
+        self.assertIn("del 5 d’octubre al 11 d’octubre", text)
+        self.assertIn("Avisos de la web: 2 altes (app Android 1, navegador 1), 0 baixes, 1 adreces mortes", text)
+        self.assertIn("Bot: 1 altes, 0 baixes, 1 bloquejos. Ara: 2.", text)
+        self.assertNotIn("Canal", text)                         # si Telegram no respon, sense la línia
 
 
 if __name__ == "__main__":
