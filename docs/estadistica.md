@@ -85,25 +85,25 @@ otra para la temperatura.
 
 ### Qué es
 
-Una fórmula que convierte varias señales $x_1, \dots, x_k$ en una
+Una fórmula que convierte varias señales $`x_1, \dots, x_k`$ en una
 probabilidad entre 0 y 1:
 
 ```math
 p = \frac{1}{1 + e^{-(w_0 + w_1 x_1 + \dots + w_k x_k)}}
 ```
 
-Cada señal $x_j$ tiene un peso $w_j$. **Los pesos se ajustan con los casos
-reales**: son los que hacen más verosímil lo que pasó en las $n$ horas
+Cada señal $`x_j`$ tiene un peso $`w_j`$. **Los pesos se ajustan con los casos
+reales**: son los que hacen más verosímil lo que pasó en las $`n`$ horas
 registradas, con una penalización pequeña que evita pesos exagerados cuando
-hay pocos datos. Si $y_i = 1$ cuando llovió en la hora $i$ e $y_i = 0$ cuando
-no, y $p_i$ es la probabilidad que da la fórmula, se minimiza
+hay pocos datos. Si $`y_i = 1`$ cuando llovió en la hora $`i`$ e $`y_i = 0`$ cuando
+no, y $`p_i`$ es la probabilidad que da la fórmula, se minimiza
 
 ```math
 -\sum_{i=1}^{n} \left[ y_i \ln p_i + (1 - y_i) \ln (1 - p_i) \right]
 + \frac{\lambda}{2} \sum_{j=1}^{k} w_j^2, \qquad \lambda = 1,
 ```
 
-con el método de Newton-Raphson. La constante $w_0$ no se penaliza
+con el método de Newton-Raphson. La constante $`w_0`$ no se penaliza
 (`aprenentatge.py`, `ajustar`).
 
 «Llueve» quiere decir 0,2 mm o más en la hora, el umbral a partir del cual ya
@@ -113,20 +113,20 @@ moja en moto (`UMBRAL_MM` de `config.py`).
 
 | Señal | Cómo entra | Por qué |
 |---|---|---|
-| Lluvia de AROME HD, AROME e ICON-EU | $\ln(1 + \text{mm})$, una por modelo | Cada modelo acierta de forma distinta; el logaritmo evita que un chubasco extremo pese demasiado |
+| Lluvia de AROME HD, AROME e ICON-EU | $`\ln(1 + \text{mm})`$, una por modelo | Cada modelo acierta de forma distinta; el logaritmo evita que un chubasco extremo pese demasiado |
 | Si cada modelo da lluvia | 1 si da 0,1 mm o más; si no, 0. Una por modelo | Que un modelo ponga algo de lluvia ya dice mucho, aunque sea poca: con solo ICON-EU dando 0,2 mm llovió una de cada diez horas |
 | Cuántos modelos coinciden | 1 si dan lluvia dos o más; otra, 1 si la dan los tres | La coincidencia no suma sin más: con un modelo solo llovió el 21-23 % de las horas; con los tres, el 66 % |
 | Lo anterior según la antelación | La cantidad de cada modelo, «alguno da lluvia» y «la dan los tres», multiplicados por la antelación | La lluvia prevista para dentro de un día se cumple menos que la de las próximas horas |
-| Antelación | $\min(t / 24, 1)$, con $t$ en horas | Una previsión a 24 horas es menos segura que una a 2 |
-| Hora del día | $\sin(2\pi h / 24)$ y $\cos(2\pi h / 24)$, con $h$ la hora en que acaba el tramo | Las tormentas de tarde no se reparten igual que la lluvia de frente |
-| Día del año | $\sin(2\pi d / 365{,}25)$ y $\cos(2\pi d / 365{,}25)$ | La lluvia de otoño no es la de verano |
+| Antelación | $`\min(t / 24, 1)`$, con $`t`$ en horas | Una previsión a 24 horas es menos segura que una a 2 |
+| Hora del día | $`\sin(2\pi h / 24)`$ y $`\cos(2\pi h / 24)`$, con $`h`$ la hora en que acaba el tramo | Las tormentas de tarde no se reparten igual que la lluvia de frente |
+| Día del año | $`\sin(2\pi d / 365\text{,}25)`$ y $`\cos(2\pi d / 365\text{,}25)`$ | La lluvia de otoño no es la de verano |
 | Fracción del conjunto* | de 0 a 1 | Cuántas de las 40 simulaciones de ICON-EU-EPS ven lluvia |
-| Lluvia medida al prever* | $\ln(1 + \text{mm de la última hora})$ en casa si $t \le 4$; si no, 0 | Si ya llueve, es probable que siga |
-| Sequedad del aire al prever* | $\min(\max(T - T_d, 0), 15) / 10$ en casa si $t \le 4$; si no, 0 | Con el aire seco, la lluvia cercana es menos probable |
-| Lluvia en Sant Cugat al prever*† | $\ln(1 + \text{mm de la última hora})$ en la estación de Meteocat de Sant Cugat (4,6 km al oeste, en la cuenca de la riera) si $t \le 4$; si no, 0 | Lo que llueve cerca puede llegar o anticipar. Es una hipótesis: se ajusta en una variante aparte y solo se adopta si acierta más (ADR 0042) |
-| Lluvia en las vecinas al prever*† | $\ln(1 + \text{mm de la última hora})$, la mediana de las vecinas fiables de Montflorit, si $t \le 4$; si no, 0 | Lo que llueve ahora en el barrio, aunque el pluviómetro de casa no lo recoja. En el archivo (75 días) bajó el error a corto plazo un 8 %; se ajusta en una variante aparte y solo se adopta si acierta más (ADR 0070) |
+| Lluvia medida al prever* | $`\ln(1 + \text{mm de la última hora})`$ en casa si $`t \le 4`$; si no, 0 | Si ya llueve, es probable que siga |
+| Sequedad del aire al prever* | $`\min(\max(T - T_d, 0), 15) / 10`$ en casa si $`t \le 4`$; si no, 0 | Con el aire seco, la lluvia cercana es menos probable |
+| Lluvia en Sant Cugat al prever*† | $`\ln(1 + \text{mm de la última hora})`$ en la estación de Meteocat de Sant Cugat (4,6 km al oeste, en la cuenca de la riera) si $`t \le 4`$; si no, 0 | Lo que llueve cerca puede llegar o anticipar. Es una hipótesis: se ajusta en una variante aparte y solo se adopta si acierta más (ADR 0042) |
+| Lluvia en las vecinas al prever*† | $`\ln(1 + \text{mm de la última hora})`$, la mediana de las vecinas fiables de Montflorit, si $`t \le 4`$; si no, 0 | Lo que llueve ahora en el barrio, aunque el pluviómetro de casa no lo recoja. En el archivo (75 días) bajó el error a corto plazo un 8 %; se ajusta en una variante aparte y solo se adopta si acierta más (ADR 0070) |
 
-\* Solo con datos propios: el archivo no las tiene (apartado 2.2). $T_d$ es
+\* Solo con datos propios: el archivo no las tiene (apartado 2.2). $`T_d`$ es
 el punto de rocío. † Registrada desde el 08-10-2026. Meteocat es el Servei
 Meteorològic de Catalunya.
 
@@ -249,9 +249,9 @@ una sola vez el error de las dos a las mismas horas. Si la estación cercana
 ayuda, se valorará añadir la del aeropuerto de Sabadell (5 km al norte),
 que publica la AEMET (ADR 0042).
 
-Una tercera variante añade lo oficial de cada hora (ADR 0047): $a$, 1 si hay
+Una tercera variante añade lo oficial de cada hora (ADR 0047): $`a`$, 1 si hay
 aviso de la AEMET por lluvia o tormentas en el Prelitoral de Barcelona, y
-$c$, 1 si el INUNCAT está en alerta o emergencia. Así el peso de un aviso
+$`c`$, 1 si el INUNCAT está en alerta o emergencia. Así el peso de un aviso
 sale de lo que pasa en Montflorit en lugar de fijarse a mano. Como se
 registran desde el 08-10-2026, se valida solo con esas horas y se adopta con
 las mismas condiciones que las otras.
@@ -279,8 +279,8 @@ casa. La diferencia suele repetirse: en casa, el modelo da de media 0,8 °C
 más, y sobre todo de noche.
 
 Se ajusta una regresión lineal del **error del modelo**,
-$e = T_{\text{modelo}} - T_{\text{medida}}$, con la temperatura medida en la
-estación de casa, a partir de unas señales $\mathbf{z}$:
+$`e = T_{\text{modelo}} - T_{\text{medida}}`$, con la temperatura medida en la
+estación de casa, a partir de unas señales $`\mathbf{z}`$:
 
 | Señal | Cómo entra | Por qué |
 |---|---|---|
@@ -288,15 +288,15 @@ estación de casa, a partir de unas señales $\mathbf{z}$:
 | Nubes y humedad previstas | de 0 a 1 | Las noches despejadas y secas enfrían más en casa que en la celda |
 | Radiación prevista | en kW/m² | Con sol fuerte, el error de día cambia |
 | Hora del día y día del año | seno y coseno | El error tiene ciclo diario y estacional |
-| Antelación | $\min(t / 24, 1)$ | Cuanto más lejos, más incierto |
-| Error al prever* | $e_0 \, e^{-t/3}$ y $e_0 \, e^{-t/24}$ | Si el modelo se equivoca ahora, en las horas siguientes suele equivocarse igual |
+| Antelación | $`\min(t / 24, 1)`$ | Cuanto más lejos, más incierto |
+| Error al prever* | $`e_0 \, e^{-t/3}`$ y $`e_0 \, e^{-t/24}`$ | Si el modelo se equivoca ahora, en las horas siguientes suele equivocarse igual |
 
-\* $e_0$ es el error del modelo en el momento de prever: su temperatura en
+\* $`e_0`$ es el error del modelo en el momento de prever: su temperatura en
 ese momento, interpolada entre las dos horas en punto, menos la que mide
-casa. Se apaga con la antelación $t$: una parte en unas tres horas y otra en
+casa. Se apaga con la antelación $`t`$: una parte en unas tres horas y otra en
 un día. Los pesos deciden cuánto cuenta cada una.
 
-Los pesos $\mathbf{v}$ minimizan
+Los pesos $`\mathbf{v}`$ minimizan
 
 ```math
 \sum_{i=1}^{n} \left( e_i - \mathbf{v}^\top \mathbf{z}_i \right)^2
@@ -321,7 +321,7 @@ T_{18\text{–}19} = \tfrac{1}{2}\left(T_{\text{mostrada}}(18) + T_{\text{mostra
 ```
 
 Se mide con el error medio absoluto,
-$\frac{1}{n} \sum_i \lvert T_i - T_{\text{medida},i} \rvert$.
+$`\frac{1}{n} \sum_i \lvert T_i - T_{\text{medida},i} \rvert`$.
 
 ### 3.1 Primer modelo: un año de la estación de casa
 
@@ -364,15 +364,15 @@ La imagen es la última del radar de Meteocat (cada 6 minutos; el radar de
 Vallirana está a unos 20 km) o la de RainViewer, una composición de la
 AEMET cada 10 minutos, si es bastante más nueva. Cada píxel se pasa a
 reflectividad en dBZ (decibelios de reflectividad) con la leyenda de cada
-radar, y de ahí a intensidad $R$ en mm/h con la relación de Marshall-Palmer:
+radar, y de ahí a intensidad $`R`$ en mm/h con la relación de Marshall-Palmer:
 
 ```math
-Z = 200\,R^{1{,}6}, \qquad Z = 10^{\text{dBZ}/10}
+Z = 200\,R^{1\text{,}6}, \qquad Z = 10^{\text{dBZ}/10}
 \quad\Longrightarrow\quad
-R = \left(\frac{Z}{200}\right)^{1/1{,}6}
+R = \left(\frac{Z}{200}\right)^{1/1\text{,}6}
 ```
 
-Se considera que llueve en un píxel desde $R \ge 0{,}5$ mm/h, unos 18 dBZ.
+Se considera que llueve en un píxel desde $`R \ge 0\text{,}5`$ mm/h, unos 18 dBZ.
 
 ### El movimiento
 
@@ -381,27 +381,27 @@ las tres últimas imágenes, si tiene menos de 60 minutos. Se mide el
 desplazamiento entre su primera y su última imagen prevista, **en la lluvia
 que hay a 60 km o menos de casa** (ADR 0023): la que puede llegar es esa, y
 la de más lejos puede moverse de otra manera. Se busca la traslación
-$\Delta$ que más hace coincidir las dos manchas de lluvia, con el índice de
+$`\Delta`$ que más hace coincidir las dos manchas de lluvia, con el índice de
 Jaccard
 
 ```math
 J(\Delta) = \frac{\left|A_{\Delta} \cap B\right|}{\left|A_{\Delta} \cup B\right|},
 ```
 
-donde $A_{\Delta}$ son los píxeles con lluvia de la primera imagen
-desplazados y $B$ los de la segunda. Solo se acepta si $J \ge 0{,}3$, si cada
+donde $`A_{\Delta}`$ son los píxeles con lluvia de la primera imagen
+desplazados y $`B`$ los de la segunda. Solo se acepta si $`J \ge 0\text{,}3`$, si cada
 imagen tiene al menos 50 píxeles con lluvia cerca y si el mejor salto no
 queda en el borde de la búsqueda, que llega a 120 km/h como mucho.
 
 Si no se cumple, el movimiento se mide en un cuadro de unos 300 km con la
-correlación de fase de las dos imágenes $a$ y $b$, tomadas como
-$\ln(1 + R)$ y con una ventana de Hann:
+correlación de fase de las dos imágenes $`a`$ y $`b`$, tomadas como
+$`\ln(1 + R)`$ y con una ventana de Hann:
 
 ```math
 c = \mathcal{F}^{-1}\!\left[\frac{\mathcal{F}(b)\,\overline{\mathcal{F}(a)}}{\left|\mathcal{F}(b)\,\overline{\mathcal{F}(a)}\right|}\right]
 ```
 
-El desplazamiento es la posición del máximo de $c$, afinada con una parábola
+El desplazamiento es la posición del máximo de $`c`$, afinada con una parábola
 en cada eje. Sin advección, se usan pares de imágenes de RainViewer separados
 30 minutos, solo si los pares difieren menos de 20 km/h.
 
@@ -414,12 +414,12 @@ pasó de 0,184 a 0,126 (0,179 con la lluvia quieta).
 ### Hacia delante
 
 Para cada lugar (casa y el centro de la cuenca de la riera) y cada 5 minutos
-$t$, hasta 120, se mira la lluvia de ahora en el punto de donde vendrá,
-$\mathbf{x} - \mathbf{v}\,t$, y en un círculo $\mathcal{C}_t$ alrededor, de
+$`t`$, hasta 120, se mira la lluvia de ahora en el punto de donde vendrá,
+$`\mathbf{x} - \mathbf{v}\,t`$, y en un círculo $`\mathcal{C}_t`$ alrededor, de
 radio
 
 ```math
-r(t) = 3 + 0{,}08\,t \ \text{km} \qquad (t \ \text{en minutos}),
+r(t) = 3 + 0\text{,}08\,t \ \text{km} \qquad (t \ \text{en minutos}),
 ```
 
 que crece porque el movimiento es incierto. Cada píxel del círculo es un caso
@@ -428,7 +428,7 @@ posible:
 ```math
 \hat R(t) = \frac{1}{\left|\mathcal{C}_t\right|}\sum_{j \in \mathcal{C}_t} R_j,
 \qquad
-p(t) = \frac{\left|\{\, j \in \mathcal{C}_t : R_j \ge 0{,}5 \,\}\right|}{\left|\mathcal{C}_t\right|}
+p(t) = \frac{\left|\{\, j \in \mathcal{C}_t : R_j \ge 0\text{,}5 \,\}\right|}{\left|\mathcal{C}_t\right|}
 ```
 
 La lluvia que nace o muere en ese tiempo no se ve: por eso solo dos horas, y
@@ -447,8 +447,8 @@ sobre los pasos de 5 minutos que caen en ella. Cómo se combina con lo demás
 está en el apartado 6.
 
 En la tarjeta de ahora, «Arribaria pluja cap a les…» es el primer paso con
-$p(t) \ge 0{,}5$, la mitad del círculo con lluvia, y «Pot arribar pluja cap a
-les…», el primero con $p(t) \ge 0{,}2$. La hora en que pararía está en el
+$`p(t) \ge 0\text{,}5`$, la mitad del círculo con lluvia, y «Pot arribar pluja cap a
+les…», el primero con $`p(t) \ge 0\text{,}2`$. La hora en que pararía está en el
 apartado 9.
 
 ## 5. La persistencia de la lluvia medida
@@ -457,13 +457,13 @@ Si ya llueve, lo más probable es que siga lloviendo un rato, aunque los
 modelos no lo vean. Con la lluvia cada media hora de Sabadell y Sant Cugat
 entre 2024 y 2026 (`calibracio/analitza.py`, guardada en
 `calibracio/calibracio.json`), se cuenta qué pasó después de cada hora con
-lluvia. Para una clase $c$ de lluvia en una hora y $k$ horas después:
+lluvia. Para una clase $`c`$ de lluvia en una hora y $`k`$ horas después:
 
 ```math
-P_k(c) = \frac{\#\{\, h : \text{mm}(h) \ge c,\ \text{mm}(h+k) \ge 0{,}2 \,\}}{\#\{\, h : \text{mm}(h) \ge c \,\}}
+P_k(c) = \frac{\#\{\, h : \text{mm}(h) \ge c,\ \text{mm}(h+k) \ge 0\text{,}2 \,\}}{\#\{\, h : \text{mm}(h) \ge c \,\}}
 ```
 
-y la lluvia esperada es la mediana de $\text{mm}(h+k)$ en esas horas:
+y la lluvia esperada es la mediana de $`\text{mm}(h+k)`$ en esas horas:
 
 | Lluvia en la última hora | 1 h después | 2 h | 3 h | 4 h | Casos |
 |---|---|---|---|---|---|
@@ -472,7 +472,7 @@ y la lluvia esperada es la mediana de $\text{mm}(h+k)$ en esas horas:
 | 4 mm o más | 86 % (2,0 mm) | 57 % (0,4 mm) | 43 % (0 mm) | 38 % (0 mm) | 245 |
 
 Se aplica con la lluvia de la última hora en casa a las cuatro primeras
-filas de la tabla: la primera, la hora en curso, usa $k = 1$.
+filas de la tabla: la primera, la hora en curso, usa $`k = 1`$.
 
 ## 6. Cómo se calcula cada hora de la tabla
 
@@ -483,7 +483,7 @@ Para cada hora, en este orden (`casa.py`, `previsio`):
    puede, porque falta la lluvia de algún modelo, la fracción de las 40
    simulaciones de ICON-EU-EPS con 0,2 mm o más.
 2. **Milímetros**: el máximo de los tres modelos finos,
-   $\text{mm} = \max(\text{AROME HD}, \text{AROME}, \text{ICON-EU})$; sin
+   $`\text{mm} = \max(\text{AROME HD}, \text{AROME}, \text{ICON-EU})`$; sin
    ninguno, el de Météo-France que Open-Meteo da por defecto. Un solo modelo
    puede fallar: la mañana del 05-10-2026 AROME daba 0,0 mm mientras en
    Montflorit caían más de 20 mm/h. **La regresión da la probabilidad, no los
@@ -494,8 +494,8 @@ Para cada hora, en este orden (`casa.py`, `previsio`):
    caído 0,2 mm o más, la probabilidad y los milímetros suben a los del
    apartado 5, cada uno si es mayor. Estas cifras llevan «*».
 5. **Radar**, en las dos primeras horas: la probabilidad sube a
-   $p_{\text{radar}}$ si es mayor y llega al 20 %; los milímetros suben a
-   $\text{mm}_{\text{radar}}$ si es mayor, llega a 0,2 mm y el radar cubre al
+   $`p_{\text{radar}}`$ si es mayor y llega al 20 %; los milímetros suben a
+   $`\text{mm}_{\text{radar}}`$ si es mayor, llega a 0,2 mm y el radar cubre al
    menos 30 minutos de la hora. Nunca baja nada. Estas cifras llevan «†».
 6. **Lo medido manda**: si casa ha recogido lluvia en los últimos 15
    minutos, la primera hora es «Plou ara» con el 100 %.
@@ -505,7 +505,7 @@ horas como mínimo y hasta las 21 h de mañana. Acaba siempre al final de un
 tramo del día, a las 7, las 14 o las 21 h, así que tiene entre 24 y 38 filas:
 38 cuando se calcula a las 7 h. Más allá de 24 horas, la antelación del modelo de lluvia y
 de la corrección de temperatura vale como un día, porque
-$\min(t/24, 1) = 1$ (apartado 18). El registro con que se aprende y el riesgo
+$`\min(t/24, 1) = 1`$ (apartado 18). El registro con que se aprende y el riesgo
 propio (apartado 11) usan solo las 24 primeras horas.
 
 **Lo que no cambia la estadística.** Los avisos de la AEMET y los planes de
@@ -559,7 +559,7 @@ estación de casa y ejecuta `aprenentatge.py diari`:
    comparan además con el modelo sin su señal ajustado a sus mismas horas,
    y solo ganan si lo mejoran en la misma proporción (apartado 2).
 4. **Solo cambia si el error baja al menos un 5 %**:
-   $E_{\text{nuevo}} < 0{,}95 \, E_{\text{actual}}$. Un método nuevo se
+   $`E_{\text{nuevo}} < 0\text{,}95 \, E_{\text{actual}}`$. Un método nuevo se
    propone, se comunica con las cifras y se aplica al día siguiente, salvo
    que se pare antes (apartado 19).
 5. Si el método no cambia, los pesos se ponen al día con los datos nuevos.
@@ -570,8 +570,8 @@ estación de casa y ejecuta `aprenentatge.py diari`:
 
 El mismo día se comparan también los dos radares (`radar_fonts.py`, ADR
 0026). En cada pasada se apunta la probabilidad que daba cada uno para casa,
-$p_M$ (Meteocat) y $p_R$ (RainViewer), con su última imagen y el mismo
-movimiento, y si llovía en ese momento en casa ($o = 1$ u $o = 0$; sin la
+$`p_M`$ (Meteocat) y $`p_R`$ (RainViewer), con su última imagen y el mismo
+movimiento, y si llovía en ese momento en casa ($`o = 1`$ u $`o = 0`$; sin la
 estación, la pasada no cuenta). Para cada hora prevista entre 10 y 60 minutos después de la
 pasada, con una observación a menos de 4 minutos, se calcula la puntuación de
 Brier de los últimos 30 días:
@@ -583,24 +583,24 @@ B_R = \frac{1}{n}\sum_{i=1}^{n} (p_{R,i} - o_i)^2
 
 Cuanto más baja, mejor. Con al menos 30 casos con lluvia en 3 días
 distintos, se cambia de radar si el otro cumple la misma regla del 5 %:
-$B_{\text{otro}} < 0{,}95 \, B_{\text{actual}}$. Con RainViewer como
+$`B_{\text{otro}} < 0\text{,}95 \, B_{\text{actual}}`$. Con RainViewer como
 preferido, su imagen se usa en cuanto es 10 minutos más nueva que la de
 Meteocat; con Meteocat, solo si lo es más de 15.
 
 ## 9. Cuándo para la lluvia
 
 Cuando ya llueve, la tarjeta de ahora dice a qué hora pararía según el radar,
-con la marca «en entrenament» (`fi_pluja.py`, ADR 0049). Con la serie $p(t)$
-del apartado 4, el final previsto es el primer paso $t_k$, desde ahora o desde
+con la marca «en entrenament» (`fi_pluja.py`, ADR 0049). Con la serie $`p(t)`$
+del apartado 4, el final previsto es el primer paso $`t_k`$, desde ahora o desde
 que llegue la lluvia, en que la probabilidad queda por debajo de un umbral
-$u$ durante $s$ pasos seguidos de 5 minutos:
+$`u`$ durante $`s`$ pasos seguidos de 5 minutos:
 
 ```math
 t_{\text{fi}} = \min\left\{\, t_k \ge t_0 :\ p(t_{k+m}) < u \ \text{para}\ m = 0, \dots, s-1 \,\right\}
 ```
 
 Si no pasa en las dos horas del radar, «no s'acaba en 2 hores». La regla de
-partida es $u = 0{,}2$ y $s = 3$, es decir, menos del 20 % durante 15
+partida es $`u = 0\text{,}2`$ y $`s = 3`$, es decir, menos del 20 % durante 15
 minutos.
 
 **Qué es la verdad.** La lluvia de casa cada 5 minutos: un episodio son los
@@ -609,27 +609,27 @@ tramos con lluvia separados por menos de 30 minutos secos, y su final, el
 débil, un final real puede quedar antes de tiempo; se acepta como ruido de
 la medida (ADR 0058). Se juzgan las pasadas registradas mientras llovía,
 con el radar que usaba la página. El error de una pasada es
-$\lvert t_{\text{fi}} - t_{\text{real}} \rvert$ en minutos. Si la regla no da
+$`\lvert t_{\text{fi}} - t_{\text{real}} \rvert`$ en minutos. Si la regla no da
 final, el error es cero cuando el final real cae más allá del horizonte del
 radar y, si no, lo que faltaba hasta el horizonte. Un acierto es un error de
 15 minutos o menos.
 
 **Cómo aprende.** Cada día se prueban las nueve combinaciones de
-$u \in \{0{,}1;\ 0{,}2;\ 0{,}3\}$ y $s \in \{2, 3, 4\}$ con todos los
+$`u \in \{0\text{,}1;\ 0\text{,}2;\ 0\text{,}3\}`$ y $`s \in \{2, 3, 4\}`$ con todos los
 episodios registrados. Como con pocos episodios y nueve combinaciones la
 mejor puede ganar por azar, el error que decide no es el de la mejor
 combinación en los episodios con que se eligió, sino el de *elegir la
-mejor*: para cada episodio $j$ se toma la combinación que menos se equivoca
-en los demás y se mide solo en $j$ (validación dejando un episodio fuera),
+mejor*: para cada episodio $`j`$ se toma la combinación que menos se equivoca
+en los demás y se mide solo en $`j`$ (validación dejando un episodio fuera),
 
 ```math
 E_{\text{val}} = \frac{1}{N} \sum_{j} \sum_{i \in j} \left| t_{\text{fi}}^{(u_j, s_j)}(i) - t_{\text{real}}(i) \right|,
 \qquad (u_j, s_j) = \arg\min_{(u, s)} E_{-j}(u, s),
 ```
 
-donde $i$ recorre las pasadas del episodio $j$, $N$ es el total de pasadas y
-$E_{-j}$ es el error medio sin el episodio $j$. Con tres episodios o más, si
-$E_{\text{val}}$ es al menos un 5 % menor que el error de la regla en uso
+donde $`i`$ recorre las pasadas del episodio $`j`$, $`N`$ es el total de pasadas y
+$`E_{-j}`$ es el error medio sin el episodio $`j`$. Con tres episodios o más, si
+$`E_{\text{val}}`$ es al menos un 5 % menor que el error de la regla en uso
 (que, al estar fija, se mide sin sesgo en todos los episodios), se propone
 la combinación mejor con todos los episodios, se comunica con las cifras y
 se aplica al día siguiente, salvo que se pare antes, como el aprendizaje de
@@ -638,17 +638,17 @@ elegía y se medía con los mismos episodios y el cambio se aplicaba el mismo
 día (ADR 0049). Con cinco episodios, el resultado se comunica una vez, para
 decidir si se sigue mostrando «en entrenament».
 
-**Limitación conocida.** Con pocos episodios, $E_{\text{val}}$ sigue
+**Limitación conocida.** Con pocos episodios, $`E_{\text{val}}`$ sigue
 siendo una cifra con mucha incertidumbre; por eso se exige el 5 % de mejora
 y la propuesta espera un día.
 
 ## 10. Aviso antes de llover
 
 Tras cada pasada se mira cuántos minutos faltan para la llegada que da el
-radar, el primer paso con $p(t) \ge 0{,}5$ (`pluja_arriba.py`, ADR 0022). Si
+radar, el primer paso con $`p(t) \ge 0\text{,}5`$ (`pluja_arriba.py`, ADR 0022). Si
 faltan 21 o menos (15 minutos más el intervalo de 6 del modo aviso) y aún no
 llueve en casa, se avisa a los suscriptores (ADR 0048). La
-intensidad que se anuncia es el máximo de $\hat R$ en los 30 minutos
+intensidad que se anuncia es el máximo de $`\hat R`$ en los 30 minutos
 siguientes a la llegada: feble por debajo de 1 mm/h, moderada desde 1 y forta
 desde 4.
 
@@ -709,25 +709,25 @@ El índice es la lluvia de tres horas más alta que se alcanzará en la hora
 siguiente, y la de seis horas del mismo momento:
 
 ```math
-I_3(k) = M_{3-k} + P_k, \qquad I_6(k) = M_{6-k} + P_k, \qquad k \in \{0;\ 0{,}5;\ 1\}
+I_3(k) = M_{3-k} + P_k, \qquad I_6(k) = M_{6-k} + P_k, \qquad k \in \{0;\ 0\text{,}5;\ 1\}
 ```
 
-donde $M_h$ es la lluvia medida en las últimas $h$ horas y $P_k$ la prevista
-por el radar para las $k$ horas siguientes, contando también el hueco entre
-la última media hora medida y la imagen del radar. Para cada momento $k$ se
-aplica la tabla a la pareja $(I_3(k), I_6(k))$ y el nivel de la pasada es
+donde $`M_h`$ es la lluvia medida en las últimas $`h`$ horas y $`P_k`$ la prevista
+por el radar para las $`k`$ horas siguientes, contando también el hueco entre
+la última media hora medida y la imagen del radar. Para cada momento $`k`$ se
+aplica la tabla a la pareja $`(I_3(k), I_6(k))`$ y el nivel de la pasada es
 el más alto que alcanza algún momento; el índice que se publica es el de
 ese momento (entre varios, el de más lluvia de 3 horas). Hasta el
-09-10-2026 se tomaban el máximo de $I_3$ y el máximo de $I_6$ por separado,
+09-10-2026 se tomaban el máximo de $`I_3`$ y el máximo de $`I_6`$ por separado,
 de momentos distintos, y 50 mm sobre suelo seco ahora con 60 en 6 horas
 una hora después daban peligro sin que ningún momento cumpliera las dos
 condiciones (ADR 0057).
 
-| Nivel | Condición, en un mismo momento $k$ |
+| Nivel | Condición, en un mismo momento $`k`$ |
 |---|---|
-| Se registra el episodio | $I_3 \ge 20$ mm |
-| Atención: aviso | $I_3 \ge 35$ mm |
-| Peligro: segundo aviso | $I_3 \ge 50$ mm y $I_6 \ge 60$ mm |
+| Se registra el episodio | $`I_3 \ge 20`$ mm |
+| Atención: aviso | $`I_3 \ge 35`$ mm |
+| Peligro: segundo aviso | $`I_3 \ge 50`$ mm y $`I_6 \ge 60`$ mm |
 
 Cada nivel se avisa una sola vez por episodio, y un episodio acaba tras 3
 horas por debajo de 20 mm; al acabar se apunta en el registro con sus
@@ -792,7 +792,7 @@ ningún aviso real.
 ## 13. Cuando los modelos no ven la lluvia
 
 En cada pasada se suman la lluvia medida en casa en las tres últimas horas
-completas, $M$, y la que daban los modelos en esas horas, $P$ (el
+completas, $`M`$, y la que daban los modelos en esas horas, $`P`$ (el
 máximo de los tres, hora a hora). Si
 
 ```math
@@ -812,15 +812,15 @@ umbrales están en `web/sortir.js`.
 ### La lluvia en moto y en bici
 
 Desde el 08-10-2026 (ADR 0047), en moto y en bici decide **solo la
-probabilidad** $p$ de cada hora, la de la tabla, que ya reúne los modelos, el
+probabilidad** $`p`$ de cada hora, la de la tabla, que ya reúne los modelos, el
 conjunto de simulaciones, el radar, las estaciones y lo aprendido. Para la
 hora de ida y la de vuelta:
 
 ```math
 \text{nivel} =
 \begin{cases}
-\text{millor no} & \text{si } p \ge 0{,}40 \text{ o llueve ahora} \\
-\text{compte} & \text{si } p \ge 0{,}10 \text{ o hay aviso de la AEMET} \\
+\text{millor no} & \text{si } p \ge 0\text{,}40 \text{ o llueve ahora} \\
+\text{compte} & \text{si } p \ge 0\text{,}10 \text{ o hay aviso de la AEMET} \\
 \text{bé} & \text{en otro caso}
 \end{cases}
 ```
@@ -863,9 +863,11 @@ Desde el 10-10-2026 los umbrales de lluvia son los mismos para todos los
 medios y se aprenden. Qué tiene que cumplir cada nivel: con «pluja probable»
 tiene que llover al menos 2 de cada 3 veces; con «bé», como mucho 1 de cada
 100 y nunca más de 1 de cada 10 en ninguna franja de 5 puntos. Con la
-proporción $\hat f = k/n$ de horas con lluvia, se exige la cota de Wilson
+proporción $`\hat f = k/n`$ de horas con lluvia, se exige la cota de Wilson
 
-$$\frac{\hat f + \frac{z^2}{2n} \mp z\sqrt{\frac{\hat f(1-\hat f)}{n} + \frac{z^2}{4n^2}}}{1 + \frac{z^2}{n}}, \qquad z = 1{,}28,$$
+```math
+\frac{\hat f + \frac{z^2}{2n} \mp z\sqrt{\frac{\hat f(1-\hat f)}{n} + \frac{z^2}{4n^2}}}{1 + \frac{z^2}{n}}, \qquad z = 1\text{,}28,
+```
 
 la baja para «pluja probable» (≥ 2/3) y la alta para «bé» (≤ 1/100). Dos
 juegos: para dentro de 3 horas o menos y para más tarde. De partida, los del
@@ -904,16 +906,16 @@ pruebas comprueban que el nivel de cada hora es el mismo que da la página.
 ### La ropa
 
 La ropa sale del frío que se nota. Con 10 °C o menos y una velocidad
-$v \ge 5$ km/h, se usa el índice de enfriamiento por viento de Environment
+$`v \ge 5`$ km/h, se usa el índice de enfriamiento por viento de Environment
 Canada:
 
 ```math
-T_s = 13{,}12 + 0{,}6215\,T - 11{,}37\,v^{0{,}16} + 0{,}3965\,T\,v^{0{,}16}
+T_s = 13\text{,}12 + 0\text{,}6215\,T - 11\text{,}37\,v^{0\text{,}16} + 0\text{,}3965\,T\,v^{0\text{,}16}
 ```
 
-con $T$ en °C y $v$ en km/h. La velocidad es la del medio (bici 18 km/h,
+con $`T`$ en °C y $`v`$ en km/h. La velocidad es la del medio (bici 18 km/h,
 moto 45) y, a pie o hasta el coche o la estación, el viento previsto. La
-prenda sale de $T_s$ por tramos. Además se avisa de un cambio de temperatura
+prenda sale de $`T_s`$ por tramos. Además se avisa de un cambio de temperatura
 de 6 °C o más entre la ida y la vuelta, del calor desde 32 °C y de la
 protección solar con un índice ultravioleta (UV) de 3 o más.
 
@@ -927,28 +929,28 @@ zona, no una medida del barrio**.
 
 Cada día se corrige con las estaciones de la red de vigilancia de la
 contaminación atmosférica de la Generalitat (XVPCA) de Barberà, Sant Cugat y
-Montcada. Para cada contaminante $c$, con las horas de los últimos 30 días
+Montcada. Para cada contaminante $`c`$, con las horas de los últimos 30 días
 que tienen a la vez modelo y medida:
 
 ```math
 f_c = \frac{\sum_t \bar m_{c,t}}{\sum_t \hat m_{c,t}}
 ```
 
-donde $\bar m_{c,t}$ es la media de las estaciones que lo miden en la hora
-$t$ y $\hat m_{c,t}$ lo que daba el modelo. Solo se corrige con 72 horas
+donde $`\bar m_{c,t}`$ es la media de las estaciones que lo miden en la hora
+$`t`$ y $`\hat m_{c,t}`$ lo que daba el modelo. Solo se corrige con 72 horas
 emparejadas o más y si lo miden al menos dos estaciones. Las partículas de
 menos de 10 micras (PM10) solo las mide Montcada, junto a la cementera, y
 su factor diría más de Montcada que de Montflorit. El 09-10-2026 se corregían el dióxido de
 nitrógeno (NO₂), ×0,70, y el ozono, ×0,71, con 725 horas.
 
-Las concentraciones del modelo se multiplican por $f_c$ y el índice europeo
+Las concentraciones del modelo se multiplican por $`f_c`$ y el índice europeo
 de calidad del aire (EAQI, *European Air Quality Index*) se recalcula
 interpolando dentro del tramo de cada contaminante, con la tabla que publica
 Open-Meteo; el total es el del peor contaminante.
 
-**Solo si acierta más.** Antes de aplicar $f_c$ se comprueba en días que no
-sirvieron para calcularlo: para cada día $d$ de los 30, el factor se calcula
-con los demás días, $f_c^{(-d)}$, y se aplica a las horas de $d$. El error
+**Solo si acierta más.** Antes de aplicar $`f_c`$ se comprueba en días que no
+sirvieron para calcularlo: para cada día $`d`$ de los 30, el factor se calcula
+con los demás días, $`f_c^{(-d)}`$, y se aplica a las horas de $`d`$. El error
 medio del modelo corregido y el del modelo sin corregir, en µg/m³, son
 
 ```math
@@ -957,7 +959,7 @@ E_{\text{corr}} = \frac{1}{N} \sum_{d} \sum_{t \in d} \left| f_c^{(-d)} \hat m_{
 E_{\text{cru}} = \frac{1}{N} \sum_{t} \left| \hat m_{c,t} - \bar m_{c,t} \right|.
 ```
 
-El factor se aplica solo si $E_{\text{corr}} < 0{,}95\, E_{\text{cru}}$;
+El factor se aplica solo si $`E_{\text{corr}} < 0\text{,}95\, E_{\text{cru}}`$;
 si no, ese contaminante se muestra tal como lo da el modelo, y la
 corrección descartada queda guardada con sus dos errores
 (`aire-correccio.json`). Hasta el 09-10-2026 el factor se aplicaba sin esta
@@ -976,11 +978,13 @@ kilómetro y dan una lectura cada cinco minutos, pero sus anemómetros no están
 a 10 m ni en campo abierto: marcan menos viento que Meteocat. El programa
 aprende cada día cuánto menos.
 
-Para cada vecina $i$, con las medias horas en que hay dato suyo $x_t$ y de
-Sant Cugat $y_t$, el factor es el de mínimos cuadrados por el origen y el
+Para cada vecina $`i`$, con las medias horas en que hay dato suyo $`x_t`$ y de
+Sant Cugat $`y_t`$, el factor es el de mínimos cuadrados por el origen y el
 error, el cuadrático medio:
 
-$$f_i = \frac{\sum_t x_t\,y_t}{\sum_t x_t^2}, \qquad e_i = \frac{1}{n}\sum_t (f_i\,x_t - y_t)^2$$
+```math
+f_i = \frac{\sum_t x_t\,y_t}{\sum_t x_t^2}, \qquad e_i = \frac{1}{n}\sum_t (f_i\,x_t - y_t)^2
+```
 
 Una vecina cuenta si tiene 96 medias horas (dos días), una correlación con
 Sant Cugat de 0,6 o más y como mucho un 25 % de medias horas a cero cuando en
@@ -988,11 +992,13 @@ Sant Cugat sopla (5 km/h o más). La estimación es la media de las que cuentan
 y tienen lecturas en la última media hora, cada una con un peso inverso a su
 error:
 
-$$\hat v = \frac{\sum_i f_i\,x_i / e_i}{\sum_i 1 / e_i}$$
+```math
+\hat v = \frac{\sum_i f_i\,x_i / e_i}{\sum_i 1 / e_i}
+```
 
 La racha se estima igual, con las rachas. Del 3 al 10-10-2026 contaban el
-Puig de la Guàrdia ($f = 1{,}29$, correlación 0,82) y la de 600 m al nordeste
-($f = 1{,}87$, 0,75); las otras dos marcaban cero en el 36 % y el 68 % de las
+Puig de la Guàrdia ($`f = 1\text{,}29`$, correlación 0,82) y la de 600 m al nordeste
+($`f = 1\text{,}87`$, 0,75); las otras dos marcaban cero en el 36 % y el 68 % de las
 medias horas con viento.
 
 **Cómo se comprueba.** Se deja fuera cada día: se aprende con los demás y se
@@ -1014,33 +1020,39 @@ salto marca de 20 a 37 W/m², lo mismo que más tarde sin salto. Por eso no se
 mira la hora ni la radiación, sino el salto de la propia estación comparado
 con las vecinas (`sol_estacio.py`, ADR 0081).
 
-**Lo esperado.** Con $V$ la mediana de las vecinas leídas en la última media
+**Lo esperado.** Con $`V`$ la mediana de las vecinas leídas en la última media
 hora (al menos dos), la temperatura esperada en casa es
 
-$$\hat T = V + d, \qquad d = \text{mediana}_h \left( T_{\text{casa}}(h) - V(h) \right),$$
+```math
+\hat T = V + d, \qquad d = \text{mediana}_h \left( T_{\text{casa}}(h) - V(h) \right),
+```
 
-con $d$, la **diferencia habitual**, sobre las horas en punto de los últimos
+con $`d`$, la **diferencia habitual**, sobre las horas en punto de los últimos
 30 días sin sol en el termómetro (hacen falta 24). La estación está en una
-zona algo más fría del barrio: el 12-10-2026, $d = -1{,}0$ °C. La mediana
+zona algo más fría del barrio: el 12-10-2026, $`d = -1\text{,}0`$ °C. La mediana
 evita que una vecina con un fallo arrastre el resultado.
 
 **Cuándo hay sol en el termómetro.** De día (radiación mayor que cero), con
-$T$ la lectura de ahora y $T_{30}$ la más baja de los últimos 30 minutos,
+$`T`$ la lectura de ahora y $`T_{30}`$ la más baja de los últimos 30 minutos,
 empieza si se cumplen las dos condiciones
 
-$$T - T_{30} \ge 1{,}5 \text{ °C} \qquad \text{y} \qquad T - \hat T \ge 1{,}5 \text{ °C},$$
+```math
+T - T_{30} \ge 1\text{,}5 \text{ °C} \qquad \text{y} \qquad T - \hat T \ge 1\text{,}5 \text{ °C},
+```
 
-y sigue mientras $T - \hat T \ge 0{,}7$ °C, de día y como mucho 3 horas. Las dos condiciones de inicio separan el sol en
+y sigue mientras $`T - \hat T \ge 0\text{,}7`$ °C, de día y como mucho 3 horas. Las dos condiciones de inicio separan el sol en
 el termómetro de un calentamiento del aire, que es más lento y también se ve
 en las vecinas.
 
-**Mientras dura**, «Ara» muestra $\hat T$. La humedad relativa también se
+**Mientras dura**, «Ara» muestra $`\hat T`$. La humedad relativa también se
 corrige: el sensor caliente la marca más baja, pero el agua del aire, y por
-tanto el punto de rocío $T_d$, no cambia. Con la fórmula de Magnus,
+tanto el punto de rocío $`T_d`$, no cambia. Con la fórmula de Magnus,
 
-$$HR = 100 \cdot \frac{E(T_d)}{E(\hat T)}\ \%, \qquad E(x) = e^{17{,}625\, x / (243{,}04 + x)}.$$
+```math
+HR = 100 \cdot \frac{E(T_d)}{E(\hat T)}\ \%, \qquad E(x) = e^{17\text{,}625\, x / (243\text{,}04 + x)}.
+```
 
-Con $T_d = 12{,}7$ °C, a 13 °C reales son un 98 %; con el sensor a 16,6 °C, la
+Con $`T_d = 12\text{,}7`$ °C, a 13 °C reales son un 98 %; con el sensor a 16,6 °C, la
 estación marcaría un 80 %. La presión y la lluvia no las altera el sol, y el
 viento no sale de esta estación.
 
@@ -1050,7 +1062,7 @@ y sus horas no cuentan para corregir la temperatura de la previsión
 las 8:45 y las 9:25 (el 12, hasta las 10:25), de 3,4 a 5,2 °C por encima de lo
 esperado.
 
-**Límites.** Las vecinas dan grados enteros: $\hat T$ tiene un margen de
+**Límites.** Las vecinas dan grados enteros: $`\hat T`$ tiene un margen de
 unos ±0,5 °C. Una subida real muy brusca del aire, de día, podría tomarse por
 sol si las vecinas no la registran a la vez.
 
@@ -1072,7 +1084,7 @@ sol si las vecinas no la registran a la vez.
   entre una y otra, la fórmula interpola. Los datos propios, con la antelación
   real de cada hora, lo medirán mejor.
 - **Más allá de 24 horas**, desde la versión 3.40.0, la antelación vale como
-  un día ($\min(t/24, 1) = 1$): de 24 a 38 horas, la lluvia y la temperatura
+  un día ($`\min(t/24, 1) = 1`$): de 24 a 38 horas, la lluvia y la temperatura
   se calculan con una fórmula que no se ha comprobado a esa distancia. AROME,
   además, puede no llegar a las últimas horas: la lluvia sale entonces de los
   otros modelos y, sin la de alguno, la probabilidad es la fracción del
