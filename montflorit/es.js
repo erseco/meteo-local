@@ -36,9 +36,6 @@ var IDIOMA = {
     "Talls de llum al barri": "Cortes de luz en el barrio",
     "Enllaç copiat": "Enlace copiado",
     "Avís copiat, amb l’enllaç": "Aviso copiado, con el enlace",
-    // El sol directe a l'estació (ADR 0081).
-    "Estimada: el sol toca l’estació.": "Estimada: el sol da en la estación.",
-    "L’estació en marca {0} °C perquè li toca el sol directe.": "La estación marca {0} °C porque le da el sol directo.",
     // L'oferta d'avisos a qui té la web instal·lada (ADR 0080).
     "Avisos de perill": "Avisos de peligro",
     "Riera, incendis, avisos oficials i temps extrem a Montflorit, al moment.": "Riera, incendios, avisos oficiales y tiempo extremo en Montflorit, al momento.",

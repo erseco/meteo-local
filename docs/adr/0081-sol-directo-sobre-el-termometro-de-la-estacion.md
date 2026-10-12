@@ -35,8 +35,10 @@ Versión 3.72.0. `sol_estacio.py`:
   los últimos 30 minutos (al menos dos) más la **diferencia habitual** de la
   estación, la mediana de (casa − vecinas) en las horas en punto de los últimos
   30 días, sin las horas con sol directo. Así la zona más fría se conserva.
-- **Mientras dura**, «Ara» muestra la temperatura esperada con la nota
-  «Estimada: el sol toca l'estació» (con la medida en el rótulo emergente). La
+- **Mientras dura**, «Ara» muestra la temperatura esperada, sin nota: en la
+  3.72.1 se quitó la que decía «Estimada: el sol toca l'estació» (Juanjo:
+  «quita lo de que está dando el sol... esos detalles no interesan a la
+  gente»); el método sigue explicado en «D'on surt». La
   **humedad relativa** también se corrige: se recalcula con el punto de rocío
   medido, que el sol no cambia, y la temperatura esperada (Juanjo: «si lo ves
   conveniente aplica lo mismo al resto de mediciones»). La presión y la lluvia
