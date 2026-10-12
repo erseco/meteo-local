@@ -1,0 +1,14 @@
+# La clau de signatura no va mai al repositori públic (ADR 0082): és a
+# ~/.config/meteo-montflorit/android/ i, xifrada, a meteo-local-registre.
+upload.jks
+*.jks
+*.keystore
+clau.env
+# El que genera la compilació.
+.gradle/
+build/
+app/build/
+local.properties
+*.apk
+*.aab
+*.idsig

@@ -78,6 +78,17 @@ class Web(unittest.TestCase):
         for nom in ("app.js", "casa.html", "dades.json", "casa.json"):
             self.assertFalse(os.path.exists(os.path.join(self.tmp.name, nom)), nom)
 
+    def test_app_d_android(self):
+        # La app de Google Play obre la web sense barra d'adreça si la web
+        # diu que l'app és seva (ADR 0082).
+        enllac = json.loads(self.llegeix(".well-known/assetlinks.json"))[0]
+        self.assertEqual(enllac["target"]["package_name"], "io.github.meteo_montflorit")
+        self.assertTrue(enllac["target"]["sha256_cert_fingerprints"])
+        icones = json.loads(self.llegeix("manifest.webmanifest"))["icons"]
+        monocrom = [i["src"] for i in icones if i["purpose"] == "monochrome"]
+        self.assertEqual(monocrom, ["icones/icona-monocrom-192.png"])
+        self.assertTrue(os.path.exists(os.path.join(self.tmp.name, monocrom[0])))
+
     def test_no_parla_del_trajecte_ni_de_casa(self):
         index = self.llegeix("index.html")
         self.assertIn("<h1>Temps a Montflorit</h1>", index)

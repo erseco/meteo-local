@@ -83,5 +83,6 @@
 | [0079](0079-retrasos-de-la-s2-con-la-puntualidad-de-fgc.md) | Retrasos de la S2 con la puntualidad de FGC | aceptado |
 | [0080](0080-oferta-de-avisos-a-quien-instala-la-web.md) | Oferta de avisos a quien instala la web | aceptado |
 | [0081](0081-sol-directo-sobre-el-termometro-de-la-estacion.md) | Sol directo sobre el termómetro de la estación | aceptado |
+| [0082](0082-app-de-android-para-google-play.md) | App de Android para Google Play | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

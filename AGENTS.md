@@ -70,6 +70,14 @@ Al cambiar algo:
   envía cada minuto y `bot/subscripcio.php` guarda las suscripciones en
   `.temps-bot/push.json`, igual de personales. Estado: `ssh ionos-webspace
   '.meteo-reserva/v/bin/python .meteo-reserva/repo/bot/push.py estat'`.
+- La app de Android (ADR 0082) es la web publicada dentro de una TWA de
+  Bubblewrap, en `android/`. No se toca con cada versión de la web; solo al
+  cambiar el envoltorio o cuando Play exija otra versión de Android
+  (`bubblewrap update`, subir `appVersionCode`, `android/construeix.sh`). La
+  clave de subida está en `~/.config/meteo-montflorit/android/` y, cifrada, en
+  `claus/claus-android.tar.gz.gpg` de `meteo-local-registre`; nunca en este
+  repositorio. Si cambia la clave, cambia también su huella en
+  `montflorit/.well-known/assetlinks.json`.
 - Los automatismos de este proyecto figuran en el inventario del NAS
   (`vigilancia-nas/config/automatismos.json`, ficha «Automatismos» de
   bilateria.org/nas). Si se añade, cambia o retira uno, se actualiza allí.

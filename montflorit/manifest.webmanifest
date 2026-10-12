@@ -12,6 +12,7 @@
     {"src": "icones/icona-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
     {"src": "icones/icona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
     {"src": "icones/icona-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
-    {"src": "icones/icona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {"src": "icones/icona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+    {"src": "icones/icona-monocrom-192.png", "sizes": "192x192", "type": "image/png", "purpose": "monochrome"}
   ]
 }

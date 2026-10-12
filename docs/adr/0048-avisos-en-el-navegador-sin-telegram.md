@@ -195,3 +195,9 @@ pedir `avisos.json` y `montflorit.json`, y «Perill», `avisos.json`. Prueba:
 `test_un_avis_amb_la_web_oberta_la_posa_al_dia` (el service worker avisa a las
 ventanas; la página relee).
 
+
+## Cambio del 12-10-2026: app en Google Play
+
+La cuenta de Play de Juanjo es anterior al 13-11-2023 y no tiene que hacer la
+prueba cerrada de 12 personas; con eso, la app se hace (ADR 0082). Los avisos
+son los mismos: la app los recibe de este servidor.
