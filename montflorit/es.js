@@ -38,6 +38,8 @@ var IDIOMA = {
     "Talls de llum al barri": "Cortes de luz en el barrio",
     "Enllaç copiat": "Enlace copiado",
     "Avís copiat, amb l’enllaç": "Aviso copiado, con el enlace",
+    "1 tren ha passat amb retard a la darrera mitja hora.": "1 tren ha pasado con retraso en la última media hora.",
+    "{0} trens han passat amb retard a la darrera mitja hora.": "{0} trenes han pasado con retraso en la última media hora.",
     // El mapa de cada tall de llum (ADR 0077).
     "Mapa del tall de llum: punt aproximat a {0}.": "Mapa del corte de luz: punto aproximado en {0}.",
     "Mapa del tall de llum: punt aproximat.": "Mapa del corte de luz: punto aproximado.",
@@ -393,7 +395,7 @@ var IDIOMA = {
     "Compte": "Cuidado",
     "Millor no": "Mejor no",
     "Amb incidències": "Con incidencias",
-    "Sense incidències": "Sin incidencias",
+    "Sense incidències": "Sin incidencias", "Amb retard": "Con retraso",
     "Servei per carretera": "Servicio por carretera",
     "Sense trens": "Sin trenes",
     "Bellaterra i Universitat Autònoma": "Bellaterra y Universitat Autònoma",

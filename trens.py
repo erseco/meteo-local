@@ -298,9 +298,42 @@ def avisos_fgc():
 def trens_fgc(linies):
     q = "lin in (" + ",".join(f"'{x}'" for x in linies) + ")"
     url = FGC + "posicionament-dels-trens/records?limit=100&where=" + urllib.request.quote(q)
+    # «en_hora» (text «True» o «False»): si el tren va puntual (ADR 0079).
+    en_hora = lambda v: None if v in (None, "") else str(v).lower() == "true"
     return [{"id": "fgc-" + r["id"], "linia": r["lin"], "lat": r["geo_point_2d"]["lat"],
-             "lon": r["geo_point_2d"]["lon"], "aturat": bool(r.get("estacionat_a"))}
+             "lon": r["geo_point_2d"]["lon"], "aturat": bool(r.get("estacionat_a")), "en_hora": en_hora(r.get("en_hora"))}
             for r in get(url)["results"] if r.get("geo_point_2d")]
+
+
+# Retards (ADR 0079): les dades d'FGC diuen si cada tren va en hora. Una
+# línia surt «amb retard» si, dels trens vistos a prop de l'estació en els
+# últims RETARD_MIN minuts, van tard com a mínim RETARD_TRENS_MIN i més que
+# els puntuals: un sol tren no ho decideix (Juanjo, 12-10-2026). Renfe no ho
+# dona: només les línies d'FGC.
+RETARD_MIN = 30
+RETARD_TRENS_MIN = 2
+
+
+def puntualitat(registre, trens, ara):
+    """Afegeix al registre {linia: {id: [hora, en_hora]}} els trens que diuen
+    si van en hora i són a prop de l'estació de la seva línia, i treu els de fa
+    més de RETARD_MIN minuts. Torna el registre nou."""
+    nou = {l: {i: v for i, v in d.items()
+               if ara - dt.datetime.fromisoformat(v[0]) <= dt.timedelta(minutes=RETARD_MIN)}
+           for l, d in (registre or {}).items()}
+    for t in trens:
+        est = C.TRENS_ESTACIONS.get(t["linia"])
+        if t.get("en_hora") is None or not est or km((t["lat"], t["lon"]), est) > C.TRENS_RADI_KM:
+            continue
+        nou.setdefault(t["linia"], {})[t["id"]] = [ara.isoformat(timespec="minutes"), t["en_hora"]]
+    return {l: d for l, d in nou.items() if d}
+
+
+def amb_retard(registre_linia):
+    """Quants trens van tard, si la línia ha de sortir «amb retard»; si no, 0."""
+    tard = sum(1 for _, en_hora in (registre_linia or {}).values() if en_hora is False)
+    puntuals = sum(1 for _, en_hora in (registre_linia or {}).values() if en_hora is True)
+    return tard if tard >= RETARD_TRENS_MIN and tard > puntuals else 0
 
 
 def km(a, b):
@@ -420,6 +453,7 @@ def calcula(ara=None):
     except (OSError, ValueError):
         abans = None
     vistos = dict((abans or {}).get("vist") or {})
+    registre_puntualitat = (abans or {}).get("puntualitat") or {}
     res = {"hora": ara.isoformat(timespec="minutes"), "linies": [], "errors": []}
     trens = []
     for operador, llegeix_avisos, llegeix_trens in (
@@ -432,6 +466,8 @@ def calcula(ara=None):
             avisos, tr = None, []
         mouen = es_mouen(tr, abans, ara)
         trens += tr
+        if operador == "fgc":
+            registre_puntualitat = puntualitat(registre_puntualitat, tr, ara)
         for linia, op, estacio in C.TRENS:
             if op != operador:
                 continue
@@ -442,12 +478,17 @@ def calcula(ara=None):
                 fila.update(estat_linia(linia, mouen, vistos.get(linia), avisos, ara))
                 if fila["vist"]:
                     vistos[linia] = fila["vist"]
+                # Circula, però els trens van tard: «amb retard» (ADR 0079).
+                tard = amb_retard(registre_puntualitat.get(linia)) if op == "fgc" else 0
+                if fila["estat"] == "circula" and tard:
+                    fila.update(estat="retard", trens_tard=tard)
             fila.pop("vist", None)
             res["linies"].append(fila)
     posicions = {t["id"]: (round(t["lat"], 5), round(t["lon"], 5)) for t in trens}
     if os.path.isdir(os.path.dirname(ESTAT)) and posicions:
         with open(ESTAT + ".tmp", "w", encoding="utf-8") as f:
-            json.dump({"hora": res["hora"], "posicions": posicions, "vist": vistos}, f)
+            json.dump({"hora": res["hora"], "posicions": posicions, "vist": vistos,
+                       "puntualitat": registre_puntualitat}, f)
         os.replace(ESTAT + ".tmp", ESTAT)
     return res
 

@@ -732,7 +732,7 @@ function posaVersio(versio) {
 // «Consultes» (ADR 0054). ---
 
 const TEXT_ESTAT = {
-  circula: 'Sense incidències', incidencies: 'Amb incidències', bus: 'Servei per carretera',
+  circula: 'Sense incidències', incidencies: 'Amb incidències', retard: 'Amb retard', bus: 'Servei per carretera',
   sense_trens: 'Sense trens', fora_horari: 'Fora d’horari', sense_dades: 'Sense dades',
 };
 // On publica cada operador l'estat del servei: Rodalies, a la portada; FGC
@@ -743,7 +743,8 @@ const ESTAT_OPERADOR = {
   amb: { text: () => T('Busos de l’AMB'), href: () => `https://www.amb.cat/${IDIOMA.codi === 'es' ? 'es/' : ''}web/mobilitat` },
 };
 const COLOR_ESTAT = {
-  circula: 'be', incidencies: 'compte', bus: 'compte', sense_trens: 'no', fora_horari: 'neutre', sense_dades: 'neutre',
+  circula: 'be', incidencies: 'compte', retard: 'compte', bus: 'compte', sense_trens: 'no', fora_horari: 'neutre',
+  sense_dades: 'neutre',
 };
 
 // Trànsit (config.TRANSIT_NIVELL_SORTIDA): des d'aquest nivell (3, retencions;
@@ -773,6 +774,11 @@ function blocTrens(trens) {
       li.append(element('p', 'tren-nota', l.operador === 'fgc'
         ? T('FGC diu que hi ha circulació, però a l’última hora no s’ha vist cap tren a prop de l’estació.')
         : T('Rodalies diu que hi ha circulació ferroviària, però a l’última hora no s’ha vist cap tren a prop de l’estació.')));
+    }
+    // Amb retard: quants trens han passat tard (trens.py, ADR 0079).
+    if (l.estat === 'retard' && l.trens_tard) {
+      li.append(element('p', 'tren-nota', l.trens_tard === 1 ? T('1 tren ha passat amb retard a la darrera mitja hora.')
+        : T`${l.trens_tard} trens han passat amb retard a la darrera mitja hora.`));
     }
     // Els avisos, tal com els publica l'operador: no es tradueixen.
     const textos = (l.avisos || []).map((a) => (IDIOMA.codi === 'es' ? a.es : a.ca) || a.ca || a.es);

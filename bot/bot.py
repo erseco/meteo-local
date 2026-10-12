@@ -686,9 +686,9 @@ def text_trens_resum(dades, idioma):
     if not linies:
         return None
     no = {"ca": {"sense_trens": "sense trens", "bus": "per carretera", "incidencies": "amb incidències",
-                 "sense_dades": "sense dades"},
+                 "retard": "amb retard", "sense_dades": "sense dades"},
           "es": {"sense_trens": "sin trenes", "bus": "por carretera", "incidencies": "con incidencias",
-                 "sense_dades": "sin datos"}}[idioma]
+                 "retard": "con retraso", "sense_dades": "sin datos"}}[idioma]
     # Sense dades de cap línia (Renfe i FGC caiguts), no es pot dir que vagin bé.
     if all(l["estat"] == "sense_dades" for l in linies):
         return ("Trenes de Cerdanyola: ahora mismo no hay datos de Renfe ni de FGC." if idioma == "es"
@@ -712,16 +712,18 @@ def dades_velles(dades, idioma, moment):
     return None
 
 
-ESTAT_TREN = {"ca": {"circula": "sense incidències", "incidencies": "amb incidències", "bus": "servei per carretera",
+ESTAT_TREN = {"ca": {"circula": "sense incidències", "incidencies": "amb incidències", "retard": "amb retard",
+                     "bus": "servei per carretera",
                      "sense_trens": "sense trens", "fora_horari": "fora d'horari", "sense_dades": "sense dades"},
-              "es": {"circula": "sin incidencias", "incidencies": "con incidencias", "bus": "servicio por carretera",
+              "es": {"circula": "sin incidencias", "incidencies": "con incidencias", "retard": "con retraso",
+                     "bus": "servicio por carretera",
                      "sense_trens": "sin trenes", "fora_horari": "fuera de horario", "sense_dades": "sin datos"}}
 
 
 # Verd, circula; ambre, amb incidències, o diu que circula però no s'hi ha vist
 # cap tren; vermell, sense trens (també per carretera); blanc, sense dades o
 # fora d'horari: no se'n sap res.
-CERCLE_TREN = Escala(circula="baix", incidencies="alt", bus="maxim", sense_trens="maxim", fora_horari="nul",
+CERCLE_TREN = Escala(circula="baix", incidencies="alt", retard="alt", bus="maxim", sense_trens="maxim", fora_horari="nul",
                      sense_dades="nul")
 
 

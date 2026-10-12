@@ -187,6 +187,22 @@ class Estat(unittest.TestCase):
             T.avisos_rodalies, T.avisos_renfe = orig_r, orig_f
         self.assertEqual(errors, ["avisos de Rodalies: caiguda"])
 
+    def test_retard_de_la_s2(self):
+        # ADR 0079: «amb retard» si, dels trens vistos a prop de l'estació en l'última mitja hora, van
+        # tard com a mínim 2 i més que els puntuals; un sol tren no ho decideix.
+        s2 = C.TRENS_ESTACIONS["S2"]
+        t = lambda ident, en_hora, lat=s2[0]: {"id": ident, "linia": "S2", "lat": lat, "lon": s2[1], "en_hora": en_hora}
+        r = T.puntualitat({}, [t("a", False)], ARA)
+        self.assertEqual(T.amb_retard(r["S2"]), 0)                                  # un sol tren
+        r = T.puntualitat(r, [t("b", False), t("c", True)], ARA + dt.timedelta(minutes=10))
+        self.assertEqual(T.amb_retard(r["S2"]), 2)                                  # 2 tard, 1 puntual
+        r = T.puntualitat(r, [t("d", True), t("e", True)], ARA + dt.timedelta(minutes=20))
+        self.assertEqual(T.amb_retard(r["S2"]), 0)                                  # 2 tard, 3 puntuals
+        # Passada la mitja hora, els vells marxen; els trens lluny de l'estació no compten.
+        r = T.puntualitat(r, [t("f", False, lat=41.40)], ARA + dt.timedelta(minutes=45))
+        self.assertNotIn("a", r.get("S2", {}))
+        self.assertNotIn("f", r.get("S2", {}))
+
     def test_horari_de_cada_linia(self):
         # 08-10-2026, 05:39: «l'R7 no circula», però el primer tren és a les 06:40.
         general = self.avis(["R4", "R7", "R8"], "No es pot garantir la prestació del servei.")

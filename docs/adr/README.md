@@ -80,5 +80,6 @@
 | [0076](0076-avisos-que-se-comparten-y-se-entienden-en-un-momento-de-peligro.md) | Avisos que se comparten y se entienden en un momento de peligro | aceptado |
 | [0077](0077-mapa-de-cada-corte-de-luz-y-la-tabla-explicada-en-corto.md) | Mapa de cada corte de luz y la tabla explicada en corto | aceptado |
 | [0078](0078-avisos-de-rodalies-de-su-web-y-no-del-canal-de-renfe.md) | Avisos de Rodalies de su web y no del canal de Renfe | aceptado |
+| [0079](0079-retrasos-de-la-s2-con-la-puntualidad-de-fgc.md) | Retrasos de la S2 con la puntualidad de FGC | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.
