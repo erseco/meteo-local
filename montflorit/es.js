@@ -371,6 +371,7 @@ var IDIOMA = {
     "ara": "ahora",
     "Surt a les {0} i es pon a les {1}.": "Sale a las {0} y se pone a las {1}.",
     "Surt el sol a les": "Sale el sol a las",
+    "L’hora en què surt i es pon el sol, a la fila de l’hora en què passa.": "La hora a la que sale y se pone el sol, en la fila de la hora en que ocurre.",
     "Es pon el sol a les": "Se pone el sol a las",
     "Cap incidència a menys de 5\u00a0km de Montflorit.": "Ninguna incidencia a menos de 5\u00a0km de Montflorit.",
     "Trens de Cerdanyola": "Trenes de Cerdanyola",
