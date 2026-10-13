@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.77.0"
+VERSION = "3.78.0"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -46,11 +46,13 @@ ESTACIONES = {
 # 0070) y si su cero confirma las horas secas (examen del 05 al 10-10-2026,
 # ADR 0060; repetido con 75 días el 10-10-2026, ADR 0070: ICERDA18 e ICERDA28
 # también confirman).
+# «alta»: en la parte alta del barrio, más cálida que la de la riera, donde
+# están la estación de casa e ICERDA6 (Juanjo, 13-10-2026; ADR 0087).
 VEINES = {
-    "ICERDA6": {"nom": "a 1 km a l'est, vora la riera", "plou": True, "sec": True},
-    "ICERDA18": {"nom": "al Puig de la Guàrdia", "plou": True, "sec": True},
-    "ICERDA28": {"nom": "a 400 m al nord", "plou": True, "sec": True},
-    "ICERDA48": {"nom": "a 600 m al nord-est", "plou": False, "sec": False},
+    "ICERDA6": {"nom": "a 1 km a l'est, vora la riera", "plou": True, "sec": True, "alta": False},
+    "ICERDA18": {"nom": "al Puig de la Guàrdia", "plou": True, "sec": True, "alta": True},
+    "ICERDA28": {"nom": "a 400 m al nord", "plou": True, "sec": True, "alta": True},
+    "ICERDA48": {"nom": "a 600 m al nord-est", "plou": False, "sec": False, "alta": True},
 }
 # Lluvia en Montflorit para aprender (aprenentatge.pluja_observada, ADR 0070):
 # si casa no la marca, llueve si la marcan al menos estas vecinas de las que

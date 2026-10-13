@@ -31,8 +31,10 @@ import aprenentatge as A
 import config as C
 import ecowitt as E
 import entorn as EN
+import estacions as ES
 import fi_pluja as FP
 import nowcast as N
+import part_alta as PA
 import pollen as PO
 import prevision as P
 import radar_fonts as RF
@@ -202,6 +204,31 @@ def consens(ara_casa, casa, veines=None):
         res["rosada"] = rosada
         res["humitat"] = round(SE.humitat(rosada, res["temperatura"]))
     return res
+
+
+def ara_sense_casa(veines, taula, ahora):
+    """Si falla la estación de casa (ADR 0087): «Ara» con las vecinas leídas
+    en la última media hora. La temperatura, la de ICERDA6, la otra estación
+    junto a la riera, para que siga siendo la de la riera; sin ella, la de la
+    parte alta menos su diferencia habitual a esa hora (part_alta). La lluvia
+    y la humedad, por consenso de las vecinas (consens). Sin presión: la de
+    las vecinas no está calibrada. Sin vecinas, None, como hasta ahora."""
+    fresques = [v for v in veines or [] if v.get("hora")
+                and ahora - dt.datetime.fromisoformat(v["hora"]) <= dt.timedelta(minutes=PA.FRESCA_MIN)]
+    baixa = [v["temperatura"] for v in fresques
+             if not C.VEINES.get(v["estacio"], {}).get("alta") and v.get("temperatura") is not None]
+    if baixa:
+        temperatura = _mediana(baixa)
+    else:
+        alta = PA.mediana_alta([v.get("temperatura") for v in fresques if v["estacio"] in PA.ALTES])
+        dif = taula.get(ahora.hour)
+        if alta is None or dif is None:
+            return None
+        temperatura = round(alta - dif, 1)
+    res = {"hora": max(v["hora"] for v in fresques), "temperatura": temperatura, "pressio": None,
+           "humitat": _mediana([v.get("humitat") for v in fresques]), "pluja_avui": 0.0, "pluja_1h": 0.0,
+           "plou": False, "intensitat": 0.0, "font": "veines"}
+    return consens(res, None, fresques)
 
 
 def temperatura_model_ara(h, ahora):
@@ -526,6 +553,23 @@ def recoger(anterior=None):
             print("No he pogut mirar el sol directe a l'estació:", ex, file=sys.stderr)
     # La lluvia y la humedad de «Ara», por consenso de la red del barrio.
     salida["ara_casa"] = consens(salida["ara_casa"], casa, veines)
+    # La parte alta (ADR 0087): la diferencia de cada hora, para la previsión
+    # y, si falla la estación de casa, para «Ara»; y la de ahora, medida.
+    try:
+        taula_alta = PA.per_hores(P.AHORA) if R.hay_registro() else PA.inicial()
+    except Exception as ex:
+        print("No he pogut calcular la part alta:", ex, file=sys.stderr)
+        taula_alta = PA.inicial()
+    if not salida["ara_casa"] and veines:
+        salida["ara_casa"] = ara_sense_casa(veines, taula_alta, P.AHORA)
+    if salida["ara_casa"]:
+        salida["ara_casa"]["dif_alta"] = PA.ara(salida["ara_casa"].get("temperatura"), veines, P.AHORA)
+    # En el NAS, si dura un fallo de las estaciones, se le dice a Juanjo.
+    if R.hay_registro():
+        try:
+            ES.vigila(casa is not None, [v["estacio"] for v in veines], P.AHORA)
+        except Exception as ex:
+            print("No he pogut vigilar les estacions:", ex, file=sys.stderr)
     # Si llueve ahora, en casa o en una vecina que cuenta: lo que miran el
     # bot, los avisos y la web (plou_ara de la primera hora de la tabla).
     salida["plou_ara"] = llueve_ahora_en(casa, veines)
@@ -617,6 +661,7 @@ def recoger(anterior=None):
         model = A.carrega()
         salida["aprenentatge"] = A.resum_pagina(model)
         salida["hores"] = previsio(P.AHORA, h, e, avisos, model, casa, nc, planes, salida.get("riera"), veines)
+        PA.a_les_hores(salida["hores"], taula_alta)
         salida["models"] = comprobacion_modelos(P.AHORA, h, (casa or {}).get("files", []))
     except Exception as ex:
         salida["hores"] = salida["models"] = None

@@ -113,6 +113,7 @@ const NOM_TRAM_DEMA = { Matí: () => T('Demà matí'), Tarda: () => T('Demà tar
 const NOM_FENOMEN = {
   tempesta: () => T('tempesta'), pluja_forta: () => T('pluja forta'), pluja_torrencial: () => T('pluja torrencial'),
   neu: () => T('neu'), calor: () => T('calor'), glaçada: () => T('glaçada'),
+  glaçadaRiera: () => T('glaçada vora la riera'),
 };
 
 function tramDe(f) {
@@ -195,6 +196,9 @@ function resumTrams(hores, ara, mesurada) {
   dema.setDate(dema.getDate() + 1);
   return grups.map((g) => {
     const temps = g.files.map((f) => f.temperatura).filter((t) => t != null);
+    // Les temperatures són de la riera; a la part alta, amb la diferència de
+    // cada hora (part_alta.py, ADR 0087).
+    const alta = g.files.filter((f) => f.temperatura != null).map((f) => f.temperatura + (f.dif_alta || 0));
     const fenomens = [];
     const tempesta = (f) => f.codi >= 95 || (f.avisos || []).some((a) => (a.tipus || []).includes('tempestes'));
     if (g.files.some(tempesta)) fenomens.push([NOM_FENOMEN.tempesta(), 'i-cloud-lightning']);
@@ -204,7 +208,10 @@ function resumTrams(hores, ara, mesurada) {
     const ratxa = Math.max(...g.files.map((f) => f.ratxa || 0));
     if (ratxa >= FENOMENS.ratxa) fenomens.push([T`ratxes de ${Math.round(ratxa)}\u00a0km/h`, 'i-wind']);
     if (temps.length && Math.max(...temps) >= FENOMENS.calor) fenomens.push([NOM_FENOMEN.calor(), 'i-thermometer-sun']);
-    if (temps.length && Math.min(...temps) <= FENOMENS.glaçada) fenomens.push([NOM_FENOMEN.glaçada(), 'i-thermometer-snowflake']);
+    if (temps.length && Math.min(...temps) <= FENOMENS.glaçada) {
+      fenomens.push([Math.min(...alta) > FENOMENS.glaçada ? NOM_FENOMEN.glaçadaRiera() : NOM_FENOMEN.glaçada(),
+        'i-thermometer-snowflake']);
+    }
     const esDema = g.dia.toDateString() === dema.toDateString();
     const actual = new Date(g.files[0].hora) <= ara;
     const fi = new Date(g.files[g.files.length - 1].fins).getHours();
@@ -217,6 +224,9 @@ function resumTrams(hores, ara, mesurada) {
       prob: Math.max(...g.files.map((f) => f.probabilitat || 0)),
       mm: g.files.reduce((s, f) => s + (f.pluja_mm || 0), 0),
       tMin: temps.length ? Math.min(...temps) : null, tMax: temps.length ? Math.max(...temps) : null,
+      // Quant més fa a la part alta: la màxima de dia i la mínima de nit.
+      difAlta: temps.length ? (g.nom === 'Nit' ? Math.min(...alta) - Math.min(...temps)
+        : Math.max(...alta) - Math.max(...temps)) : null,
       compara: textComparacio(comparaTemp(g.files, g.nom === 'Nit', mesurada, hores), esDema),
       fenomens,
       avis: g.files.some((f) => avisHora(f)),
@@ -224,6 +234,25 @@ function resumTrams(hores, ara, mesurada) {
       files: g.files,
     };
   });
+}
+
+// La part alta del barri, quan la diferència arriba a un grau (ADR 0087):
+// «(+2 a la part alta)» al costat de la temperatura del tram i, a «Ara», una
+// línia amb la mesurada ara.
+function arrodoneixAlta(n) {
+  if (n == null || Math.abs(n) < 1) return 0;
+  return Math.round(n);
+}
+
+function textAltaTram(n) {
+  const r = arrodoneixAlta(n);
+  return r ? ' ' + T`(${(r > 0 ? '+' : '−') + Math.abs(r)} a la part alta)` : '';
+}
+
+function textAltaAra(n) {
+  const r = arrodoneixAlta(n);
+  if (!r) return null;
+  return r > 0 ? T`Vora la riera. A la part alta, ${r} °C més.` : T`Vora la riera. A la part alta, ${-r} °C menys.`;
 }
 
 // La capçalera del desplegable: el nom del tram, les hores i el resum.
@@ -242,7 +271,7 @@ function resumTram(t) {
     // La mínima en blau i la màxima en vermell, com Meteocat (ADR 0063).
     const [min, max] = [Math.round(t.tMin), Math.round(t.tMax)];
     const xifres = min === max ? [`${min}`] : [element('span', 'temp-min', `${min}`), '–', element('span', 'temp-max', `${max}`)];
-    peca('i-thermometer', [...xifres, ' °C' + (t.compara ? ` · ${t.compara}` : '')]);
+    peca('i-thermometer', [...xifres, ' °C' + textAltaTram(t.difAlta) + (t.compara ? ` · ${t.compara}` : '')]);
   }
   // El perill, primer i del color del nivell, com els avisos de dalt (ADR 0076).
   if (t.perill) {
@@ -264,6 +293,8 @@ function blocAra(casa, radarDades, vent, veines, hores) {
   termometre.classList.add('vehicle');
   temp.append(termometre, `${coma(casa.temperatura)} °C`);
   sec.append(temp);
+  const alta = textAltaAra(casa.dif_alta);
+  if (alta) sec.append(element('p', 'ara-menys', alta));
   // Plou si ha plogut en els últims 15 minuts a la xarxa del barri: l'estació
   // de casa o alguna de les veïnes que compten (ADR 0060), amb la intensitat
   // mediana de les que en marquen (casa.consens), sense dir de quina estació

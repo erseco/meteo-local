@@ -225,6 +225,23 @@ class Web(unittest.TestCase):
         self.assertEqual([f[0] for f in r[1]["fenomens"]], ["calor"])
         self.assertEqual(self.avalua("2026-10-08T22:30:00+02:00", f"resumTrams({json.dumps(hores)}, new Date())", "casa.js", ARNES)[0]["hores"], "fins a les 7 h")
 
+    def test_part_alta_al_costat_de_la_temperatura(self):
+        # Juanjo, 13-10-2026 (ADR 0087): les temperatures són de la riera; a la part alta, la diferència.
+        def fila(h, t, dif):
+            return {"hora": f"2026-10-08T{h:02d}:00", "fins": f"2026-10-08T{h + 1:02d}:00", "probabilitat": 0,
+                    "pluja_mm": 0, "temperatura": t, "ratxa": 10, "codi": 0, "neu": 0, "avisos": [], "dif_alta": dif}
+        hores = [fila(h, 20 + (h == 16) * 3, 1.8 if h == 16 else 0.3) for h in range(14, 21)] \
+            + [fila(21, -1, 1.5), fila(22, 0.5, 0.2)]
+        r = self.avalua("2026-10-08T13:30:00+02:00", f"resumTrams({json.dumps(hores)}, new Date())")
+        self.assertAlmostEqual(r[0]["difAlta"], 1.8)               # la màxima de la tarda
+        self.assertEqual(self.avalua("2026-10-08T13:30:00+02:00", f"textAltaTram({r[0]['difAlta']})"),
+                         " (+2 a la part alta)")
+        self.assertEqual(self.avalua("2026-10-08T13:30:00+02:00", "textAltaTram(0.4)"), "")
+        # A la nit, −1 a la riera i 0,5 a dalt: glaçada només vora la riera.
+        self.assertEqual([f[0] for f in r[1]["fenomens"]], ["glaçada vora la riera"])
+        self.assertEqual(self.avalua("2026-10-08T13:30:00+02:00", "[textAltaAra(2.4), textAltaAra(0.6), textAltaAra(-1.2)]"),
+                         ["Vora la riera. A la part alta, 2 °C més.", None, "Vora la riera. A la part alta, 1 °C menys."])
+
     def test_trams_oberts_de_sortida(self):
         # Juanjo, 09-10-2026: «no debería ser persistente?»: els de perill; amb «Desplega-ho tot» desat, tots.
         # Des de l'ADR 0074, el primer ja no: el resum del dia ja diu el que ve.
