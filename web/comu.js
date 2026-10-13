@@ -966,6 +966,9 @@ function nodesLinia(linia) {
 // obre la línia va a la columna de les icones; les altres línies hi porten la
 // del seu tema. ---
 const MARCA = /⟦([a-z-]+)⟧ ?/;
+// La part alta del barri, «(fins a 26 °C a la part alta)», en l'etiqueta de
+// color préssec de la previsió (ADR 0087; Juanjo, 13-10-2026).
+const ALTA = / ?\(((?:fins a|hasta) [^()]*? (?:a la part alta|en la parte alta))\)/;
 const NOM_CEL = () => ({
   'i-sun': T('Serè'), 'i-moon-cel': T('Serè'), 'i-cloud-sun': T('Poc ennuvolat'), 'i-cloud-moon': T('Poc ennuvolat'),
   'i-cloud': T('Mig ennuvolat'), 'i-cloudy': T('Molt ennuvolat'), 'i-cloud-fog': T('Boira'),
@@ -1009,7 +1012,12 @@ function ambMarques(linia) {
   for (const tros of linia) {
     tros.t.split(MARCA).forEach((part, n) => {
       if (n % 2) res.push({ marca: part });
-      else if (part) res.push({ ...tros, t: part });
+      else if (part) {
+        part.split(ALTA).forEach((p, m) => {
+          if (m % 2) res.push({ alta: p });
+          else if (p) res.push({ ...tros, t: p });
+        });
+      }
     });
   }
   return res;
@@ -1017,9 +1025,83 @@ function ambMarques(linia) {
 
 function nodesAmbMarques(trossos) {
   const nodes = [];
-  for (const tros of trossos) nodes.push(...(tros.marca ? [nodeMarca(tros.marca)] : nodesLinia([tros])));
+  for (const tros of trossos) {
+    if (tros.marca) nodes.push(nodeMarca(tros.marca));
+    else if (tros.alta) nodes.push(' ', etiquetaAlta(tros.alta));
+    else nodes.push(...nodesLinia([tros]));
+  }
   return nodes;
 }
+
+// La part alta del barri (ADR 0087): l'etiqueta de color préssec es pot prémer
+// i obre una bombolla amb què vol dir, que es tanca amb qualsevol clic o toc
+// (Juanjo, 13-10-2026). Dins de la capçalera d'un tram, que ja es prem per
+// desplegar-lo, és un «span» amb la descripció al «title»; a la resta, un botó.
+const TEXT_ALTA = () => T('Les temperatures són les de vora la riera, la zona més freda del barri; a la part alta sol fer més calor, i aquesta etiqueta diu quants graus més.');
+let BOMBOLLA = null;
+
+function etiquetaAlta(text, dinsDeTram = false) {
+  const el = element(dinsDeTram ? 'span' : 'button', 'alta');
+  if (dinsDeTram) el.title = TEXT_ALTA();
+  else {
+    el.type = 'button';
+    el.setAttribute('aria-expanded', 'false');
+  }
+  el.append(text);
+  return el;
+}
+
+function tancaBombolla() {
+  if (!BOMBOLLA) return;
+  if (BOMBOLLA.etiqueta.tagName === 'BUTTON') {
+    BOMBOLLA.etiqueta.removeAttribute('aria-describedby');
+    BOMBOLLA.etiqueta.setAttribute('aria-expanded', 'false');
+  }
+  BOMBOLLA.el.remove();
+  BOMBOLLA = null;
+}
+
+function obreBombolla(etiqueta) {
+  const b = element('div', 'bombolla-alta', TEXT_ALTA());
+  b.id = 'bombolla-alta';
+  b.setAttribute('role', 'tooltip');
+  // Dins del contingut principal, i fixa a la pantalla: es tanca en desplaçar-se.
+  (document.querySelector('main') || document.body).append(b);
+  // A sota de l'etiqueta i dins de la pantalla; si no hi cap (la barra de
+  // pestanyes del mòbil, a baix), a sobre.
+  const r = etiqueta.getBoundingClientRect();
+  const marge = 8;
+  const ample = document.documentElement.clientWidth;
+  const x = Math.max(marge, Math.min(r.left + r.width / 2 - b.offsetWidth / 2, ample - b.offsetWidth - marge));
+  let y = r.bottom + 6;
+  if (y + b.offsetHeight > innerHeight - 90) y = r.top - b.offsetHeight - 6;
+  b.style.left = `${x}px`;
+  b.style.top = `${y}px`;
+  if (etiqueta.tagName === 'BUTTON') {
+    etiqueta.setAttribute('aria-describedby', b.id);
+    etiqueta.setAttribute('aria-expanded', 'true');
+  }
+  BOMBOLLA = { el: b, etiqueta };
+}
+
+document.addEventListener('click', (e) => {
+  const etiqueta = e.target.closest && e.target.closest('.alta');
+  const jaOberta = BOMBOLLA && BOMBOLLA.etiqueta === etiqueta;
+  tancaBombolla();
+  if (!etiqueta) return;
+  // Que no desplegui el tram.
+  e.preventDefault();
+  e.stopPropagation();
+  if (!jaOberta) obreBombolla(etiqueta);
+}, true);
+// Tocar qualsevol altre lloc la tanca, també on el clic no arriba (Safari
+// de l'iPhone no envia «click» si es toca una cosa que no es pot prémer).
+document.addEventListener('pointerdown', (e) => {
+  if (BOMBOLLA && !(e.target.closest && e.target.closest('.alta'))) tancaBombolla();
+}, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') tancaBombolla(); });
+addEventListener('scroll', tancaBombolla, { passive: true });
+addEventListener('resize', tancaBombolla);
 
 function pintaResum(text) {
   const peces = [];

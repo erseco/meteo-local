@@ -237,7 +237,7 @@ function resumTrams(hores, ara, mesurada) {
 }
 
 // La part alta del barri, quan la diferència arriba a un grau (ADR 0087):
-// «(+2 a la part alta)» al costat de la temperatura del tram i, a «Ara», una
+// «+2 °C a la part alta» al costat de la temperatura del tram i, a «Ara», una
 // línia amb la mesurada ara.
 // Arrodonit: 0,9 compta com un grau (Juanjo, 13-10-2026).
 function arrodoneixAlta(n) {
@@ -248,13 +248,13 @@ function arrodoneixAlta(n) {
 
 function textAltaTram(n) {
   const r = arrodoneixAlta(n);
-  return r ? ' ' + T`(${(r > 0 ? '+' : '−') + Math.abs(r)} a la part alta)` : '';
+  return r ? T`${(r > 0 ? '+' : '−') + Math.abs(r)} °C a la part alta` : '';
 }
 
 function textAltaAra(n) {
   const r = arrodoneixAlta(n);
   if (!r) return null;
-  return r > 0 ? T`Vora la riera. A la part alta, ${r} °C més.` : T`Vora la riera. A la part alta, ${-r} °C menys.`;
+  return r > 0 ? T`A la part alta, ${r} °C més` : T`A la part alta, ${-r} °C menys`;
 }
 
 // La capçalera del desplegable: el nom del tram, les hores i el resum.
@@ -278,9 +278,15 @@ function resumTram(t) {
     const nucli = element('span', 'tros');
     nucli.append(...xifres, ' °C');
     const trossos = [nucli];
-    const alta = textAltaTram(t.difAlta).trim();
-    if (alta) trossos.push(' ', element('span', 'tros', alta));
-    if (t.compara) trossos.push(' ', element('span', 'tros', `· ${t.compara}`));
+    // La part alta i la comparació, diferenciades de la temperatura per
+    // llegir-ho d'una ullada (Juanjo, 13-10-2026).
+    const alta = textAltaTram(t.difAlta);
+    if (alta) {
+      const et = etiquetaAlta(alta, true);
+      et.classList.add('tros');
+      trossos.push(' ', et);
+    }
+    if (t.compara) trossos.push(' ', element('span', 'tros compara', `· ${t.compara}`));
     peca('i-thermometer', trossos, 'dada temp');
   }
   // El perill, primer i del color del nivell, com els avisos de dalt (ADR 0076).
@@ -303,8 +309,14 @@ function blocAra(casa, radarDades, vent, veines, hores) {
   termometre.classList.add('vehicle');
   temp.append(termometre, `${coma(casa.temperatura)} °C`);
   sec.append(temp);
+  // La part alta, en la seva etiqueta, si la diferència arriba a un grau; què
+  // vol dir, en prémer-la (etiquetaAlta, a comu.js).
   const alta = textAltaAra(casa.dif_alta);
-  if (alta) sec.append(element('p', 'ara-menys', alta));
+  if (alta) {
+    const linia = element('p', 'ara-menys');
+    linia.append(etiquetaAlta(alta));
+    sec.append(linia);
+  }
   // Plou si ha plogut en els últims 15 minuts a la xarxa del barri: l'estació
   // de casa o alguna de les veïnes que compten (ADR 0060), amb la intensitat
   // mediana de les que en marquen (casa.consens), sense dir de quina estació
@@ -666,18 +678,17 @@ function taula(hores, mesurada, riscos) {
   // Cada terme en negreta i què vol dir al costat (Juanjo, 13-10-2026: «usa
   // negritas… esto es muy rancio»).
   const llista = element('dl', 'llegenda');
-  const terme = (nom, text) => llista.append(element('dt', null, nom), element('dd', null, text));
+  const terme = (nom, text, classe = null) => {
+    const dt = element('dt');
+    dt.append(classe ? element('span', classe, nom) : nom);
+    llista.append(dt, element('dd', null, text));
+  };
   // Què fer amb la xifra, amb els mateixos llindars que el cel de la taula
   // (PROB_POSSIBLE i PROB_PLUJA; Juanjo, 13-10-2026: «alguna indicación útil»).
   terme(T('Prob.'), T('La probabilitat que plogui en aquella hora. Per sota del 20\u00a0%, no s’espera pluja; del 20 al 50\u00a0%, pot ploure: si surts, porta paraigua; del 50\u00a0% amunt, el més probable és que plogui. Per exemple, un 40\u00a0% vol dir que, de cada 10 vegades que la previsió dona un 40\u00a0% per a una hora, en 4 acaba plovent.'));
   terme(T('Pluja'), T('Els mil·límetres que caurien si plou.'));
   if (visibles.some((f) => f.segons_estacio)) terme('*', T('Hi compta la pluja que cau ara al barri.'));
   if (visibles.some((f) => f.segons_radar)) terme('\u2020', T('Hi compta la pluja que el radar veu acostar-se.'));
-  // La part alta, només si algun tram la diu (ADR 0087).
-  if (trams.some((t) => arrodoneixAlta(t.difAlta) || t.fenomens.some(([nom]) => nom === NOM_FENOMEN.glaçadaRiera()))) {
-    // La xifra no és fixa: surt del que s'ha mesurat i va canviant (Juanjo, 13-10-2026).
-    terme(T('+1, +2… a la part alta'), T('Les temperatures són les de vora la riera, la zona més freda del barri. La xifra diu quants graus més sol fer a la part alta a aquelles hores, segons el que han mesurat les estacions del barri els últims 30 dies; va canviant amb l’època de l’any.'));
-  }
   if (visibles.some((f) => avisHora(f))) terme(T('Barra de color'), T('Hores amb avís, del color del nivell.'));
   terme(T('Vent'), T('La mitjana en km/h i, entre parèntesis, les ratxes.'));
   // La taula arriba fins a les 21 h de demà (ADR 0041): més enllà d'un dia, menys fina.

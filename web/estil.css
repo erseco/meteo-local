@@ -29,11 +29,15 @@
   --c-lluna: #5b61b8;
   --c-lluna-fons: #e0e7ff;
   --c-maxima: #b91c1c;
+  --alta-fons: #ffedd5;     /* la part alta del barri (ADR 0087) */
+  --alta-text: #9a3412;
   --c-minima: #1d4ed8;
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
+  --alta-fons: #431407;
+  --alta-text: #fed7aa;
   --fons: #12161c;
   --superficie: #1b2129;
   --text: #e8ecf1;
@@ -348,6 +352,15 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .tram-hores .dada.temp { white-space: normal; align-items: flex-start; }
 .tram-hores .dada.temp svg { margin-top: .15em; }
 .tram-hores .tros { white-space: nowrap; }
+/* La part alta, en una etiqueta de color préssec, a la previsió i a la llegenda;
+   la comparació amb ahir, en gris (Juanjo, 13-10-2026). */
+.alta { background: var(--alta-fons); color: var(--alta-text); border-radius: .7rem; padding: .05rem .5rem; font-size: .92em; font-weight: 400; white-space: nowrap; }
+.tram-hores .compara { color: var(--suau); }
+/* L'etiqueta es prem i obre la bombolla (comu.js, etiquetaAlta). */
+.alta { display: inline-flex; align-items: center; gap: .25rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.alta:focus-visible { outline: 2px solid var(--alta-text); outline-offset: 2px; }
+button.alta { border: 0; font-family: inherit; line-height: inherit; }
+.bombolla-alta { position: fixed; z-index: 1000; max-width: min(20rem, calc(100vw - 16px)); background: var(--superficie); color: var(--text); border: 1px solid var(--vora); border-radius: .6rem; padding: .55rem .75rem; box-shadow: 0 4px 16px rgba(0, 0, 0, .18); font-size: .92rem; line-height: 1.4; }
 .tram-hores summary svg { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--suau); }
 .tram-hores .fenomen { color: var(--compte); font-weight: 600; }
 .tram-hores .fenomen svg { color: var(--compte); }

@@ -90,6 +90,20 @@ Versión 3.78.0.
   de la parte alta es «+1, +2… a la part alta», y la explicación dice que la
   cifra sale de lo medido y cambia con la época (3.79.2; Juanjo: «no pongas
   +2 como si siempre fuese eso, explícalo»).
+- **La etiqueta de la parte alta** (3.80.0; Juanjo, 13-10-2026, viendo
+  cada propuesta en local): en color melocotón, el mismo en «Ara» («A la part
+  alta, 2 °C més»), en el resumen del día («fins a 26 °C a la part alta») y
+  en cada tramo («+2 °C a la part alta», con los grados); «semblant a ahir»,
+  en gris. Se descartaron el gris, el naranja en negrita (se confunde con los
+  avisos naranja), la lavanda y el verde azulado. **Qué quiere decir sale al
+  pulsarla**, en una burbuja que se cierra con cualquier clic o toque, al
+  desplazarse o con Esc; en los tramos no despliega el tramo. Se probaron y
+  descartaron una línea fija encima de la previsión (la etiqueta salía antes
+  en «Ara» y el resumen), la explicación bajo la primera etiqueta de la página
+  y un recuadro de color («demasiado agresivo»), un «?» en la etiqueta y su
+  entrada en «Com es llegeix la previsió». Los textos de «D'on surt» y «Com
+  funciona» dicen que la diferencia cambia según la hora del día y la época
+  del año.
 - En el móvil, la línea de la temperatura del tramo se parte por trozos
   enteros («19–24 °C», «(+2 a la part alta)», «· semblant a ahir»): con el
   añadido no cabía y se salía (Juanjo: «en movil … se desborda»). Medido en
