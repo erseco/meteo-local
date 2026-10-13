@@ -76,6 +76,9 @@ servicio meteorológico alemán, a 7 km. En cada pasada, el servidor guarda:
   Estatal de Meteorología (AEMET) por lluvia o tormentas y si el plan de
   inundaciones de Protección Civil de Cataluña (INUNCAT) estaba en alerta o
   emergencia (ADR 0047).
+- **Las nubes que observa el aeropuerto de Sabadell**, a unos 7 km, por
+  horas, desde el 13-10-2026, y las que daba cada uno de los cuatro modelos
+  que forman el cielo (apartado 8, ADR 0088).
 - **El veredicto de cada medio en «Si surts»** (apartado 14).
 
 Al cruzar lo previsto con lo medido se obtiene, para cada hora prevista, qué
@@ -561,7 +564,10 @@ Meteocat (ADR 0043):
 
 - **Nubes**, por la fracción del cielo tapado: serè por debajo del 20 %, poc
   ennuvolat hasta el 45 %, mig ennuvolat hasta el 70 %, molt ennuvolat hasta
-  el 85 % y cobert por encima. Si la lluvia de la hora llega a 0,2 mm, las
+  el 85 % y cobert por encima. La fracción es la mezcla de cuatro modelos y,
+  en la hora en curso, la que observa el aeropuerto de Sabadell si ve capas
+  de nubes (apartado 8, «Qué modelos dan el cielo»). Hasta la 3.80 era la de
+  AROME solo. Si la lluvia de la hora llega a 0,2 mm, las
   nubes cuentan al menos como un 50 %, para que una hora con lluvia prevista
   no salga serena. De noche, la luna en lugar del sol.
 - **Intensidad de la lluvia**, por los milímetros de la hora: feble,
@@ -626,6 +632,47 @@ distintos, se cambia de radar si el otro cumple la misma regla del 5 %:
 $`B_{\text{otro}} < 0\text{,}95 \, B_{\text{actual}}`$. Con RainViewer como
 preferido, su imagen se usa en cuanto es 10 minutos más nueva que la de
 Meteocat; con Meteocat, solo si lo es más de 15.
+
+### Qué modelos dan el cielo
+
+El cielo de cada hora es la media ponderada de las nubes de cuatro modelos,
+AROME, ICON-EU, ECMWF IFS y GFS (`nuvols.py`, ADR 0088). Con $`n_m`$ el
+cielo tapado que da el modelo $`m`$, en %, y $`w_m`$ su peso:
+
+```math
+n = \frac{\sum_m w_m \, n_m}{\sum_m w_m}
+```
+
+contando solo los modelos que tienen dato. Se empieza con los cuatro al 25 %.
+En la hora en curso manda lo observado si el último informe del aeropuerto de
+Sabadell (METAR), de 45 minutos como mucho, da capas de nubes.
+
+**Lo observado.** El METAR dice cuánto tapa cada capa en octavos. Se toma la
+capa que más tapa, en el punto medio de su intervalo: FEW (1-2 octavos) 19 %,
+SCT (3-4) 44 %, BKN (5-7) 75 % y OVC (8) 100 %. El de una hora es la media de
+sus dos informes (y media y en punto). Si no da capas (CAVOK, NSC o NCD),
+solo se sabe que no hay nubes por debajo de unos 1.500 m: puede haber nubes
+más altas.
+
+**La comparación.** Cada día, con lo apuntado los últimos 30 días, se calcula
+el error medio de cada mezcla. En las horas con capas, contra lo observado
+$`o`$; en las horas sin capas, las nubes bajas de la mezcla, $`b`$, contra
+cero:
+
+```math
+E(w) = \frac{1}{N}\Big(\sum_{\text{con capas}} |n - o| + \sum_{\text{sin capas}} b\Big)
+```
+
+Se prueban todos los pesos múltiplos de 0,1 que suman 1. Con al menos 300
+horas observadas en 14 días distintos, se cambia a la mezcla que menos se
+equivoca si cumple la regla del 5 %: $`E_{\text{nueva}} < 0\text{,}95 \,
+E_{\text{actual}}`$. Se avisa a Juanjo, y también si pasa más de un día sin
+que llegue ningún METAR.
+
+**Con el archivo.** Del 27-09 al 13-10-2026 (378 horas, 246 con capas), el
+error medio fue: AROME 28,8 puntos, ICON-EU 29,7, ECMWF 27,0 y GFS 29,3; la
+media de los cuatro, 25,8, y la mejor mezcla, 25,7. AROME dio «serè» 12 horas
+en que Sabadell veía la mitad del cielo tapado o más; la media, ninguna.
 
 ## 9. Cuándo para la lluvia
 
@@ -1153,6 +1200,11 @@ más días se decidirá si se calcula por franjas horarias.
 - **El radar no ve la lluvia que nace** en las dos horas siguientes, y su
   círculo y su umbral del 50 % no se han ajustado con datos propios; el
   registro de avisos de lluvia (apartado 10) lo dirá.
+- **Las nubes se comprueban a 7 km**, en el aeropuerto de Sabadell, y el
+  METAR no siempre recoge las nubes altas. Los modelos dan de media más nubes
+  de las que observa (de 19 a 32 puntos en las horas con capas); no se sabe
+  qué parte es de nubes altas, y por eso no se corrige ese sesgo, solo se
+  eligen los pesos (apartado 8).
 - **Limitaciones de método** ya descritas: el error validado del final de
   la lluvia tiene mucha incertidumbre mientras haya pocos episodios
   (apartado 9), los umbrales de la riera salen de cuatro casos (apartado
@@ -1214,6 +1266,7 @@ vuelve a fiarse de su cero.
 | `casa.py` | Calcula cada hora de la tabla (apartado 6) y guarda las previsiones |
 | `nowcast.py` | El radar llevado hacia delante |
 | `radar_fonts.py` | Compara los dos radares |
+| `nuvols.py` | El cielo: mezcla los modelos, lee el METAR de Sabadell y elige los pesos |
 | `fi_pluja.py` | La hora en que para la lluvia y su aprendizaje |
 | `pluja_arriba.py` | El registro del aviso antes de llover |
 | `riscos.py` | Las situaciones de peligro con los umbrales de la AEMET |

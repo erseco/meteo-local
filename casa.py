@@ -34,6 +34,7 @@ import entorn as EN
 import estacions as ES
 import fi_pluja as FP
 import nowcast as N
+import nuvols as NV
 import part_alta as PA
 import pollen as PO
 import prevision as P
@@ -75,7 +76,7 @@ def modelos(desde, errors=None):
     dias = [desde.date().isoformat(), (desde + dt.timedelta(days=2)).date().isoformat()]
     q = urllib.parse.urlencode({
         "latitude": C.CASA[0], "longitude": C.CASA[1],
-        "hourly": "temperature_2m,precipitation,weather_code,cloud_cover,"
+        "hourly": "temperature_2m,precipitation,weather_code,cloud_cover,cloud_cover_low,"
                   "wind_speed_10m,wind_gusts_10m,relative_humidity_2m,shortwave_radiation,snowfall",
         "models": "meteofrance_seamless," + ",".join(C.MODELOS_FINOS),
         "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
@@ -102,6 +103,20 @@ def modelos(desde, errors=None):
             h[f"precipitation_{C.MODEL_ECMWF}"] = serie
     except Exception as ex:
         print("No he pogut llegir ECMWF:", ex, file=sys.stderr)
+    # Las nubes de ECMWF y GFS, para mezclarlas con las de AROME e ICON-EU
+    # (nuvols.py, ADR 0088). Si fallan, el cielo sale de los otros dos.
+    q = urllib.parse.urlencode({
+        "latitude": C.CASA[0], "longitude": C.CASA[1], "hourly": "cloud_cover,cloud_cover_low",
+        "models": ",".join(NV.MODELS_APART), "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
+    try:
+        nv = json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}"))["hourly"]
+        if nv.get("time") == h.get("time"):
+            for m in NV.MODELS_APART:
+                for camp in ("cloud_cover", "cloud_cover_low"):
+                    if nv.get(f"{camp}_{m}"):
+                        h[f"{camp}_{m}"] = nv[f"{camp}_{m}"]
+    except Exception as ex:
+        print("No he pogut llegir els núvols d'ECMWF i GFS:", ex, file=sys.stderr)
     return h, e
 
 
@@ -334,15 +349,22 @@ def variables_hora(desde, h, prob, i, prever):
     for campo in ("temperature_2m", "relative_humidity_2m", "cloud_cover",
                   "wind_speed_10m", "wind_gusts_10m", "weather_code", "shortwave_radiation"):
         d[campo] = h.get(f"{campo}_meteofrance_seamless", [None] * (i + 1))[i]
+    # Las nubes de cada modelo, todas y las bajas, para saber cuál acierta
+    # más (ADR 0088).
+    d.update({f"nuvols_{nom}": v for nom, v in NV.valors_hora(h, i).items()})
+    d.update({f"nuvols_baixos_{nom}": v for nom, v in NV.valors_hora(h, i, "cloud_cover_low").items()})
     d.update(prever or {})
     return d
 
 
-def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, riera=None, veines=None):
+def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, riera=None, veines=None,
+             nuvols_ara=None):
     """Una fila por tramo de una hora («de 10 a 11»), de la hora actual a 24
     horas después como mínimo, hasta las 21 h de mañana y acabando un tramo
     del día (FI_TRAMS). Open-Meteo da la lluvia acumulada en la hora anterior: el
-    tramo de 10 a 11 se lee en la hora 11:00, y los demás valores también."""
+    tramo de 10 a 11 se lee en la hora 11:00, y los demás valores también.
+    nuvols_ara: el cielo tapado que observa ahora el aeropuerto de Sabadell
+    (nuvols.ara), que manda en la hora en curso (ADR 0088)."""
     prob = prob_ensemble(e)
     llueve_ahora = llueve_ahora_en(casa, veines)
     prever = al_prever(desde, h, casa, riera, veines)
@@ -413,7 +435,8 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
             "segons_radar": segun_radar and not plou_ara and not segun_estacion,
             "radar": radar,
             "avisos": avisos_del_tramo(ini, fin, avisos),
-            "nuvols": valor("cloud_cover", i), "codi": valor("weather_code", i),
+            "nuvols": nuvols_ara if n == 0 and nuvols_ara is not None else NV.mescla(NV.valors_hora(h, i)),
+            "codi": valor("weather_code", i),
             "vent": valor("wind_speed_10m", i), "ratxa": valor("wind_gusts_10m", i),
             "neu": valor("snowfall", i)})
     return filas
@@ -437,7 +460,7 @@ def filas_registro(desde, h, e, mostradas, casa=None, avisos=None, planes=None, 
         d["mostrat"] = {"pluja_mm": f["pluja_mm"], "probabilitat": f["probabilitat"],
                         "temperatura": f["temperatura"], "segons_estacio": f["segons_estacio"],
                         "segons_radar": f.get("segons_radar", False), "plou_ara": f.get("plou_ara", False),
-                        "ratxa": f.get("ratxa")}
+                        "ratxa": f.get("ratxa"), "nuvols": f.get("nuvols")}
         # Lo que daba el radar llevado hacia delante, para aprender (ADR 0019).
         d["radar_mm"] = (f.get("radar") or {}).get("mm")
         d["radar_prob"] = (f.get("radar") or {}).get("prob")
@@ -445,9 +468,9 @@ def filas_registro(desde, h, e, mostradas, casa=None, avisos=None, planes=None, 
     return filas
 
 
-def previsio_anterior(origen, avisos, casa=None, veines=None):
+def previsio_anterior(origen, avisos, casa=None, veines=None, nuvols_ara=None):
     """Las horas que aún no han pasado de la última previsión buena, con los
-    avisos y la lluvia de ahora. None si no la hay o tiene más de
+    avisos, la lluvia y el cielo de ahora. None si no la hay o tiene más de
     CASA_PREVISION_ANTERIOR_MAX_H horas."""
     if not origen:
         return None
@@ -475,6 +498,8 @@ def previsio_anterior(origen, avisos, casa=None, veines=None):
         f["plou_ara"] = n == 0 and llueve_ahora
         if f["plou_ara"]:
             f["probabilitat"], f["segons_estacio"] = 1.0, True
+        if n == 0 and nuvols_ara is not None:
+            f["nuvols"] = nuvols_ara
     return {"hores": hores, "previsio_de": de, "aprenentatge": antes.get("aprenentatge")}
 
 
@@ -656,18 +681,27 @@ def recoger(anterior=None):
         salida["errors"].append(f"riera: {ex}")
     salida["horari"] = P.horario([C.HORARIO_CASA_AVISO if motivos else C.HORARIO_CASA],
                                  C.INTERVALO_CASA_MIN, motivos)
+    # El cielo que se ve ahora desde el aeropuerto de Sabadell (ADR 0088). Si
+    # no se puede leer, el de la hora en curso es el de los modelos.
+    metars = []
+    try:
+        metars = NV.llegeix(P.get)
+    except Exception as ex:
+        print("No he pogut llegir el METAR de Sabadell:", ex, file=sys.stderr)
+    nuvols_ara = NV.ara(metars, P.AHORA)
     try:
         h, e = modelos(P.AHORA, salida["errors"])
         model = A.carrega()
         salida["aprenentatge"] = A.resum_pagina(model)
-        salida["hores"] = previsio(P.AHORA, h, e, avisos, model, casa, nc, planes, salida.get("riera"), veines)
+        salida["hores"] = previsio(P.AHORA, h, e, avisos, model, casa, nc, planes, salida.get("riera"), veines,
+                                   nuvols_ara)
         PA.a_les_hores(salida["hores"], taula_alta)
         salida["models"] = comprobacion_modelos(P.AHORA, h, (casa or {}).get("files", []))
     except Exception as ex:
         salida["hores"] = salida["models"] = None
         salida["errors"].append(f"previsió: {ex}")
         # Sin modelos: la última previsión buena, si es reciente, avisando.
-        antes = previsio_anterior(anterior, avisos, casa, veines)
+        antes = previsio_anterior(anterior, avisos, casa, veines, nuvols_ara)
         if antes:
             salida.update(antes)
     # Para «Si surts» (ADR 0029): el índice UV de cada hora y si circulan los
@@ -764,6 +798,13 @@ def recoger(anterior=None):
             VV.apunta(vent_mitges)
         except Exception as ex:
             print("No he podido apuntar el viento por medias horas:", ex, file=sys.stderr)
+        # Las nubes observadas en Sabadell, para saber qué modelo acierta más
+        # (ADR 0088).
+        if metars:
+            try:
+                NV.apunta(metars, P.AHORA)
+            except Exception as ex:
+                print("No he podido apuntar las nubes de Sabadell:", ex, file=sys.stderr)
         # Lo que daba cada radar, para saber cuál acierta más (ADR 0026).
         try:
             RF.apunta(P.AHORA, nc, salida["ara_casa"])

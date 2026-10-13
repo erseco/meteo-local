@@ -563,6 +563,13 @@ def diari(avui=None, avisa=True):
         radar_fonts.verifica(dt.date.fromisoformat(avui), avisa)
     except Exception as ex:
         print("No he pogut comparar els radars:", ex)
+    # Qué mezcla de modelos acierta más el cielo, con lo observado en el
+    # aeropuerto de Sabadell (nuvols.py, ADR 0088).
+    try:
+        import nuvols
+        nuvols.verifica(dt.date.fromisoformat(avui), avisa)
+    except Exception as ex:
+        print("No he pogut comparar els núvols:", ex)
     # A qué hora para la lluvia, según el radar: con 5 episodios, el resultado
     # a Juanjo, una vez (ADR 0049).
     try:
