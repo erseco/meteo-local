@@ -127,7 +127,12 @@ Versión 3.78.0.
 - La diferencia habitual es una mediana de 30 días: suaviza las noches de
   helada fuerte, que son pocas. Pendiente: con el invierno hora a hora,
   comprobar si conviene un ajuste para las noches despejadas y sin viento, y
-  solo si la validación lo respalda.
+  solo si la validación lo respalda. Desde el 13-10-2026 el cron del NAS baja
+  cada madrugada (01:30) unas 400 consultas del historial horario de las
+  cuatro vecinas, de noviembre a marzo de 2023-2024, 2024-2025 y 2025-2026
+  (`calibracio/descarrega_hivern.py`, 1.816 consultas, unos cinco días), para
+  no quitar cuota a la web; lo deja en `estat/hivern-wu/` y escribe
+  `complet` al acabar.
 - Las vecinas dan grados enteros: la diferencia tiene medio grado de margen.
 - Con ICERDA6 en lugar de casa, la temperatura de «Ara» va en grados
   enteros.
