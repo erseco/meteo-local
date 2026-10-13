@@ -47,7 +47,7 @@ para mañana»).
   se pide (hasta el final de pasado mañana). Cuando AROME no llega, la
   lluvia sale de los otros modelos y la probabilidad, del ensemble, sin
   hueco. La probabilidad aprendida se entrenó con previsiones de hasta un
-  día antes; por eso «Com es llegeix la taula» avisa, si la tabla pasa de
+  día antes; por eso «Com es llegeix la previsió» (antes «Com es llegeix la taula») avisa, si la tabla pasa de
   24 horas, de que más allá es menos precisa. **Los riesgos y sus avisos**
   (`HORES_RISC` en `riscos.py`) y **el registro con el que se aprende**
   siguen con las 24 primeras horas, para no avisar antes ni cambiar el
@@ -94,7 +94,7 @@ para mañana»).
   vuelve a empezar en el siguiente.
 - **Las notas de la tabla** (asterisco, cruz, barra de aviso, viento, de
   dónde se aprende la probabilidad y, si pasa de 24 horas, que más allá es
-  menos precisa) van plegadas en «Com es llegeix la taula», con el aspecto
+  menos precisa) van plegadas en «Com es llegeix la previsió» (antes «… la taula»), con el aspecto
   de «D'on surt».
 - **La tarjeta de ahora ya no lleva el resumen**: desde la 3.40.0 está en
   las cabeceras de los desplegables, justo debajo. Entre el 08-10-2026 y la

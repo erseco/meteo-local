@@ -46,7 +46,7 @@ Versión 3.67.0.
   punto ya es aproximado), y **deja de publicar su distancia a casa**
   (`km`), que con dos o tres puntos diría dónde está. Dentro sigue sirviendo
   para ordenarlos.
-- **«Com es llegeix la taula», solo lo que significa cada cosa**: qué son
+- **«Com es llegeix la taula» (desde el 13-10-2026, «Com es llegeix la previsió»), solo lo que significa cada cosa**: qué son
   «Prob.» y «Pluja (mm)», el asterisco («hi compta la pluja que cau ara al
   barri»), la cruz («la pluja que el radar veu acostar-se»), la barra de
   color, el viento y que más allá de 24 horas es menos segura. Fuera de la

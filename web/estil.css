@@ -344,6 +344,10 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .tram-hores[open] > summary { border-bottom: 1px solid var(--vora); }
 .tram-hores .quan { color: var(--suau); margin-left: -.4rem; }
 .tram-hores .dada { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; vertical-align: middle; }
+/* La temperatura del tram es parteix entre trossos sencers (ADR 0087). */
+.tram-hores .dada.temp { white-space: normal; align-items: flex-start; }
+.tram-hores .dada.temp svg { margin-top: .15em; }
+.tram-hores .tros { white-space: nowrap; }
 .tram-hores summary svg { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--suau); }
 .tram-hores .fenomen { color: var(--compte); font-weight: 600; }
 .tram-hores .fenomen svg { color: var(--compte); }

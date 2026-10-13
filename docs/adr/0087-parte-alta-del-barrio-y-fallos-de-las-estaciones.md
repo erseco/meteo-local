@@ -73,7 +73,14 @@ Versión 3.78.0.
   día. Sin Weather Underground no se avisa de la parte alta ni de cada
   vecina. Estado en `/estat/estacions-falla.json`.
 - La web no dice el nombre de la calle; «D'on surt» explica la riera y la
-  parte alta.
+  parte alta, y «Com es llegeix la previsió» (antes «… la taula», Juanjo:
+  «cambia taula por previsió») lo que quiere decir «+2 a la part alta», solo
+  si algún tramo lo lleva (3.78.1).
+- En el móvil, la línea de la temperatura del tramo se parte por trozos
+  enteros («19–24 °C», «(+2 a la part alta)», «· semblant a ahir»): con el
+  añadido no cabía y se salía (Juanjo: «en movil … se desborda»). Medido en
+  Chromium, Firefox y WebKit a 320, 360, 375 y 412 px, en catalán y
+  castellano.
 
 ## Alternativas descartadas
 

@@ -187,6 +187,7 @@ var IDIOMA = {
     "Vora la riera. A la part alta, {0} °C menys.": "Junto a la riera. En la parte alta, {0} °C menos.",
     "({0} a la part alta)": "({0} en la parte alta)",
     "glaçada vora la riera": "helada junto a la riera",
+    "Les temperatures són les de vora la riera, la zona més freda del barri. «+2 a la part alta» vol dir que allà sol fer 2\u00a0°C més a aquelles hores, segons el que han mesurat les estacions del barri els últims 30 dies.": "Las temperaturas son las de junto a la riera, la zona más fría del barrio. «+2 en la parte alta» quiere decir que allí suele hacer 2\u00a0°C más a esas horas, según lo que han medido las estaciones del barrio los últimos 30 días.",
     "Pluja a sobre": "Lluvia encima",
     " · pararia cap a les\u00a0{0}": " · pararía hacia las\u00a0{0}",
     " · no s\u2019acaba en 2 hores": " · no acaba en 2 horas",
@@ -204,7 +205,7 @@ var IDIOMA = {
     "Prob.": "Prob.",
     "Vent": "Viento",
     "Plou ara": "Llueve ahora",
-    // «Com es llegeix la taula» (ADR 0077).
+    // «Com es llegeix la previsió» (ADR 0077 i 0087).
     "Prob.: la probabilitat que plogui en aquella hora. Pluja (mm): la que cauria si plou.": "Prob.: la probabilidad de que llueva en esa hora. Lluvia (mm): la que caería si llueve.",
     "* Hi compta la pluja que cau ara al barri.": "* Cuenta la lluvia que cae ahora en el barrio.",
     "\u2020 Hi compta la pluja que el radar veu acostar-se.": "\u2020 Cuenta la lluvia que el radar ve acercarse.",
@@ -255,7 +256,7 @@ var IDIOMA = {
     ": accés restringit als espais forestals.": ": acceso restringido a los espacios forestales.",
     "Agents Rurals: tancat {0}": "Agents Rurals: cerrado {0}",
     "avui": "hoy", "demà": "mañana",
-    "Com es llegeix la taula": "Cómo se lee la tabla",
+    "Com es llegeix la previsió": "Cómo se lee la previsión",
     "Matí": "Mañana", "Tarda": "Tarde", "Nit": "Noche",
     "Demà matí": "Mañana por la mañana", "Demà tarda": "Mañana por la tarde", "Demà nit": "Mañana por la noche",
     "fins a les {0} h": "hasta las {0} h",

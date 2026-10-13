@@ -271,7 +271,15 @@ function resumTram(t) {
     // La mínima en blau i la màxima en vermell, com Meteocat (ADR 0063).
     const [min, max] = [Math.round(t.tMin), Math.round(t.tMax)];
     const xifres = min === max ? [`${min}`] : [element('span', 'temp-min', `${min}`), '–', element('span', 'temp-max', `${max}`)];
-    peca('i-thermometer', [...xifres, ' °C' + textAltaTram(t.difAlta) + (t.compara ? ` · ${t.compara}` : '')]);
+    // Cada tros sencer; si no hi cap, la part alta i la comparació passen a
+    // la línia següent (Juanjo, 13-10-2026: «en movil … se desborda»).
+    const nucli = element('span', 'tros');
+    nucli.append(...xifres, ' °C');
+    const trossos = [nucli];
+    const alta = textAltaTram(t.difAlta).trim();
+    if (alta) trossos.push(' ', element('span', 'tros', alta));
+    if (t.compara) trossos.push(' ', element('span', 'tros', `· ${t.compara}`));
+    peca('i-thermometer', trossos, 'dada temp');
   }
   // El perill, primer i del color del nivell, com els avisos de dalt (ADR 0076).
   if (t.perill) {
@@ -650,7 +658,7 @@ function taula(hores, mesurada, riscos) {
   // Les notes, plegades: només les que diuen alguna cosa de les hores d'ara.
   const visibles = trams.flatMap((t) => t.files);
   const notes = element('details', 'com notes-taula');
-  notes.append(element('summary', null, T('Com es llegeix la taula')));
+  notes.append(element('summary', null, T('Com es llegeix la previsió')));
   // Només què vol dir cada cosa; com es calcula, a «D'on surt» (Juanjo,
   // 12-10-2026: «dice cosas poco útiles … solo lo que significa»; ADR 0077).
   notes.append(element('p', 'nota', T('Prob.: la probabilitat que plogui en aquella hora. Pluja (mm): la que cauria si plou.')));
@@ -662,6 +670,10 @@ function taula(hores, mesurada, riscos) {
   }
   if (visibles.some((f) => avisHora(f))) {
     notes.append(element('p', 'nota', T('La barra de color marca les hores amb avís, del color del nivell.')));
+  }
+  // La part alta, només si algun tram la diu (ADR 0087).
+  if (trams.some((t) => arrodoneixAlta(t.difAlta) || t.fenomens.some(([nom]) => nom === NOM_FENOMEN.glaçadaRiera()))) {
+    notes.append(element('p', 'nota', T('Les temperatures són les de vora la riera, la zona més freda del barri. «+2 a la part alta» vol dir que allà sol fer 2\u00a0°C més a aquelles hores, segons el que han mesurat les estacions del barri els últims 30 dies.')));
   }
   notes.append(element('p', 'nota', T('Vent en km/h: mitjana i, entre parèntesis, les ratxes.')));
   // La taula arriba fins a les 21 h de demà (ADR 0041): més enllà d'un dia, menys fina.
