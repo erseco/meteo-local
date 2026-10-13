@@ -22,7 +22,7 @@ Del 3 al 10-10-2026, en medias horas (`vent_veines.py omple` y `apren`):
 |---|---|---|---|
 | Puig de la Guàrdia (ICERDA18) | 1,29 | 0,82 | 3 % |
 | A 600 m al nord-est (ICERDA48) | 1,87 | 0,75 | 4 % |
-| A 400 m al nord (ICERDA28) | 3,26 | 0,67 | 36 % |
+| A 300 m al nord-oest (ICERDA28) | 3,26 | 0,67 | 36 % |
 | A 1 km a l'est (ICERDA6) | 3,70 | 0,45 | 68 % |
 
 Una media simple daría menos de la mitad del viento real: dos vecinas están

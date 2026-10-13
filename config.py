@@ -51,7 +51,7 @@ ESTACIONES = {
 VEINES = {
     "ICERDA6": {"nom": "a 1 km a l'est, vora la riera", "plou": True, "sec": True, "alta": False},
     "ICERDA18": {"nom": "al Puig de la Guàrdia", "plou": True, "sec": True, "alta": True},
-    "ICERDA28": {"nom": "a 400 m al nord", "plou": True, "sec": True, "alta": True},
+    "ICERDA28": {"nom": "a 300 m al nord-oest", "plou": True, "sec": True, "alta": True},
     "ICERDA48": {"nom": "a 600 m al nord-est", "plou": False, "sec": False, "alta": True},
 }
 # Lluvia en Montflorit para aprender (aprenentatge.pluja_observada, ADR 0070):

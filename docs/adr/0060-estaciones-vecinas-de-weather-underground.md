@@ -19,7 +19,7 @@ de Juanjo). Caduca a los seis meses.
 Juanjo había pedido examinar primero las vecinas («habría que examinar las
 3 y ver si las podemos usar como verdad de lluvia y quizás también de más
 datos») y decidir con los números delante. En la red hay cuatro a menos de
-1 km: ICERDA28 (a 400 m al norte), ICERDA48 (a 600 m al nordeste), ICERDA18
+1 km: ICERDA28 (a 300 m al noroeste), ICERDA48 (a 600 m al nordeste), ICERDA18
 (en el Puig de la Guàrdia) e ICERDA6 (a 1 km al este, junto a la riera).
 
 ## Decisión
