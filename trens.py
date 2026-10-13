@@ -341,31 +341,49 @@ def km(a, b):
     return 111.2 * math.hypot(a[0] - b[0], (a[1] - b[1]) * math.cos(lat))
 
 
+def km_al_tram(p, a, b):
+    """Distància (km) del punt p al tram recte entre a i b."""
+    lat = math.radians(p[0])
+    xy = lambda q: (111.2 * (q[1] - p[1]) * math.cos(lat), 111.2 * (q[0] - p[0]))
+    (ax, ay), (bx, by) = xy(a), xy(b)
+    dx, dy = bx - ax, by - ay
+    f = max(0, min(1, -(ax * dx + ay * dy) / (dx * dx + dy * dy))) if dx or dy else 0
+    return math.hypot(ax + f * dx, ay + f * dy)
+
+
 def es_mouen(trens, abans, ara):
     """Els trens que es mouen a prop de l'estació de la seva línia: comparats
-    amb la passada anterior si és recent; si no, els que no estan aturats."""
+    amb la passada anterior si és recent; si no, els que no estan aturats.
+    També els que hi han passat entre les dues passades: l'R8 fa un tren per
+    hora i sentit, i cadascun és uns 12 minuts dins del radi; amb passades
+    cada 15 minuts, un retard de pocs minuts el deixava sense veure i la
+    línia sortia «Sense trens» amb l'avís «Circulació normalitzada» (Juanjo,
+    13-10-2026)."""
     estacions = {linia: coord for linia, coord in C.TRENS_ESTACIONS.items()}
-    prop = [t for t in trens if t["linia"] in estacions
-            and km((t["lat"], t["lon"]), estacions[t["linia"]]) <= C.TRENS_RADI_KM]
     recent = abans and ara - dt.datetime.fromisoformat(abans["hora"]) <= dt.timedelta(minutes=POSICIONS_MAX_MIN)
     res = []
-    for t in prop:
+    for t in trens:
+        if t["linia"] not in estacions:
+            continue
+        ara_es, estacio = (t["lat"], t["lon"]), estacions[t["linia"]]
         antiga = recent and abans["posicions"].get(t["id"])
         if antiga:
-            if km(antiga, (t["lat"], t["lon"])) * 1000 >= MOGUT_M:
+            if (km(antiga, ara_es) * 1000 >= MOGUT_M
+                    and km_al_tram(estacio, antiga, ara_es) <= C.TRENS_RADI_KM):
                 res.append(t)
-        elif not t["aturat"]:
+        elif not t["aturat"] and km(ara_es, estacio) <= C.TRENS_RADI_KM:
             res.append(t)
     return res
 
 
 # Avisos que diuen com va el servei: per carretera o amb trens. Entre els
 # propis d'una línia, mana el més recent d'aquests.
-SERVEI = re.compile(r"carretera|circulaci[oó]n? ferrovi|servei ferrovi|servicio ferrovi", re.I)
+SERVEI = re.compile(r"carretera|circulaci[oó]n? (ferrovi|normali)|servei ferrovi|servicio ferrovi", re.I)
 # Un avís que només diu que el servei és normal a tota la línia (Rodalies el
-# publica quan es recupera): no és una incidència (ADR 0078).
-NORMAL = re.compile(r"^\s*(servei|circulaci[oó]n?|servicio) ferrovi\w* (a|en) (tot|todo) (el|su) (seu )?(recorregut|recorrido)\.?\s*$",
-                    re.I)
+# publica quan es recupera): no és una incidència (ADR 0078). També
+# «Circulació normalitzada» (13-10-2026, R8).
+NORMAL = re.compile(r"^\s*((servei|circulaci[oó]n?|servicio) ferrovi\w* (a|en) (tot|todo) (el|su) (seu )?(recorregut|recorrido)"
+                    r"|circulaci[oó]n? normali(tz|z)ada)\.?\s*$", re.I)
 
 
 def vigent(a, ara):

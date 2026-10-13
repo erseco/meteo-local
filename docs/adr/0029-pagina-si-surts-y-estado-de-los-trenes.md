@@ -120,6 +120,43 @@ tren a prop de l'estació»), como con los avisos del tiempo: lo oficial manda y
 la contradicción se dice. Y de los avisos de servicio vigentes solo se muestra
 el más nuevo: los anteriores ya no valen.
 
+## Cambio del 13-10-2026 (3.81.4): los trenes que pasan entre dos consultas
+
+La R8 salía «Sense trens» con el aviso de Rodalies «Circulació normalitzada.»
+(16:47). Juanjo: «no es coherente». Comprobado ese día a las 18:50:
+
+- **El feed de Renfe traía todos los trenes**: los dos de la R8 que según el
+  horario (GTFS de Renfe del 13-10-2026) circulaban, y 17 de los 18 de la R4.
+- **La R8 lleva un tren por hora y sentido, y los dos se cruzan en
+  Cerdanyola Universitat** (a las :49 y :50). Cada uno está dentro del radio
+  de 6 km unos 12 a 14 minutos (de Sant Cugat Coll Favà a Santa Perpètua
+  Riera de Caldes, con Rubí Can Vallhonrat a 6,9 km y Santa Perpètua a 6,8).
+  Con consultas cada 15 minutos, unos minutos de retraso bastan para que
+  ninguna lo vea dentro del radio. El NAS la había visto por última vez a las
+  17:07: los trenes de las 17:49 y las 17:50 no se detectaron, y a las 18:45
+  la línea salía «Sense trens».
+- **«Circulació normalitzada» no se reconocía como aviso de servicio**: ni
+  decidía, como «Circulació ferroviària a tot el recorregut» (cambio del
+  09-10-2026), ni se tenía por aviso de servicio normal (ADR 0078).
+
+Decisión:
+
+- **Un tren también cuenta si ha pasado por la estación entre dos
+  consultas**: si se ha movido 300 m o más y el tramo recto entre su posición
+  anterior y la de ahora pasa a 6 km o menos de la estación de su línea
+  (`km_al_tram`). La posición anterior solo vale si es de hace 40 minutos o
+  menos, como antes. Un tren que se mueve lejos de la estación, por un mismo
+  lado, sigue sin contar: la R4 por el tramo sur del 07-10-2026 seguiría
+  saliendo «Sense trens».
+- **«Circulació normalitzada» / «Circulación normalizada» es un aviso de
+  servicio y de servicio normal**: con trenes vistos, la línea sale «Sense
+  incidències»; sin trenes en la última hora, «Amb incidències» con la
+  contradicción dicha, como el 09-10-2026.
+- Alternativa descartada: **ampliar la ventana o el radio de la R8**. Con un
+  retraso que se repite cada hora (los trenes pasan siempre a la misma hora
+  y las consultas también), ninguna ventana evita el fallo; un radio mayor
+  dejaría de distinguir un servicio parcial.
+
 ## Consecuencias
 
 - Los datos públicos llevan `trens` y, en cada hora, `uv`.

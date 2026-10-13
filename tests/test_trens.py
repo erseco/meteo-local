@@ -125,6 +125,30 @@ class Estat(unittest.TestCase):
         abans = {"hora": (ARA - dt.timedelta(minutes=15)).isoformat(), "posicions": {"1": (41.48, 2.12)}}
         self.assertEqual(len(T.es_mouen([tren("R7", *R7)], abans, ARA)), 1)
 
+    def test_ha_passat_entre_dues_passades(self):
+        # 13-10-2026: l'R8 (un tren per hora i sentit) era a Rubí Can
+        # Vallhonrat (6,9 km) en una passada i a Santa Perpètua (6,8 km) a la
+        # següent: no s'havia vist mai a menys de 6 km, però hi ha passat.
+        rubi, santa_perpetua = (41.4752, 2.0371), (41.5262, 2.1863)
+        abans = {"hora": (ARA - dt.timedelta(minutes=15)).isoformat(), "posicions": {"1": rubi}}
+        self.assertEqual(len(T.es_mouen([tren("R8", *santa_perpetua)], abans, ARA)), 1)
+        # De Martorell a Castellbisbal es mou, però lluny de Cerdanyola.
+        abans["posicions"]["1"] = (41.4793, 1.9253)
+        self.assertEqual(T.es_mouen([tren("R8", 41.4734, 1.9676)], abans, ARA), [])
+        # Sense passada anterior, només compta el que és a prop.
+        self.assertEqual(T.es_mouen([tren("R8", *santa_perpetua)], None, ARA), [])
+
+    def test_circulacio_normalitzada(self):
+        # 13-10-2026: l'R8 sortia «Sense trens» amb l'avís «Circulació normalitzada».
+        ara = ARA.replace(day=13, hour=18, minute=45)
+        normal = self.avis(["R8"], "Circulació normalitzada.", "Circulación normalizada.", "2026-10-13T16:47+02:00")
+        normal["font"] = "rodalies"
+        mou = [tren("R8", *C.TRENS_ESTACIONS["R8"])]
+        self.assertEqual(T.estat_linia("R8", mou, None, [normal], ara)["estat"], "circula")
+        r = T.estat_linia("R8", [], None, [normal], ara)
+        self.assertEqual(r["estat"], "incidencies")
+        self.assertTrue(r["no_vist"])
+
     def avis(self, linies, ca, es=None, inici=None):
         return {"linies": set(linies), "text": {"ca": ca, "es": es or ca}, "inici": inici}
 
