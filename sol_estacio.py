@@ -25,9 +25,11 @@ sino el salto de la propia estación comparado con las vecinas.
   rocío (el agua que hay en el aire) no cambia, y con él y la temperatura
   esperada sale la humedad de verdad (Juanjo: «si lo ves conveniente aplica lo
   mismo al resto de mediciones»). La presión y la lluvia no las toca el sol.
-- Cada episodio se apunta en el registro (sol-estacio.csv) y sus horas no
-  cuentan ni para comparar con ayer (registre.temperatures_casa) ni para
-  aprender la corrección de la temperatura (aprenentatge.mostres).
+- Cada episodio se apunta en el registro (sol-estacio.csv). Para comparar con
+  ayer (registre.temperatures_casa), sus horas llevan la temperatura esperada,
+  la misma cuenta que «Ara» (Juanjo, 13-10-2026: «no es que no haya datos,
+  solo no hay datos de mi estación»); para aprender la corrección de la
+  temperatura (aprenentatge.mostres), no cuentan.
 
 Uso:
   python3 sol_estacio.py omple [DIES]   repasa el historial cada 5 minutos y apunta los episodios
@@ -123,6 +125,30 @@ def ofset(casa_hores, veines_hores, ara, eps=None):
         if m is not None:
             difs.append(casa_hores[c] - m)
     return statistics.median(difs) if len(difs) >= HORES_OFSET_MIN else None
+
+
+def amb_esperades(temperatures, ara, eps=None, casa_hores=None, veines_hores=None):
+    """Las temperaturas de la estación por horas ({"AAAA-MM-DDTHH:MM": °C})
+    con las horas de sol directo cambiadas por la esperada (mediana de las
+    vecinas + diferencia habitual), como en «Ara». Si en esa hora no hay
+    VEINES_MIN vecinas o no hay diferencia habitual, la hora se quita."""
+    fora = hores_tocades(temperatures, eps)
+    if not fora:
+        return dict(temperatures)
+    if casa_hores is None:
+        casa_hores = _llegeix_hores(os.path.join(DIR, "estacio-casa.csv"))
+    if veines_hores is None:
+        veines_hores = {e: _llegeix_hores(os.path.join(DIR, f"veina-{e}.csv")) for e in C.VEINES}
+    ofs = ofset(casa_hores, veines_hores, ara, eps)
+    res = {}
+    for c, v in temperatures.items():
+        if c in fora:
+            m = mediana_veines([vh.get(c) for vh in veines_hores.values()]) if ofs is not None else None
+            if m is None:
+                continue
+            v = round(m + ofs, 1)
+        res[c] = v
+    return res
 
 
 def avalua(lectures, veines_ara, ofs, estat, ara, solar):

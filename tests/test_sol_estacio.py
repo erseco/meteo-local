@@ -57,6 +57,29 @@ class Sol(unittest.TestCase):
         self.assertEqual(SE.hores_tocades(casa, eps), {c9})
         self.assertIsNone(SE.ofset({k: v for k, v in list(casa.items())[:10]}, veines, ara, eps))
 
+    def test_les_hores_de_sol_amb_la_temperatura_esperada(self):
+        # El 12-10-2026 faltaban las 9 y las 10 en la comparación con ayer:
+        # ahora llevan la mediana de las vecinas más la diferencia habitual.
+        ara = dt.datetime(2026, 10, 13, 6).astimezone()
+        casa, veines = {}, {"A": {}, "B": {}, "C": {}}
+        for h in range(40):
+            c = (ara - dt.timedelta(hours=h + 1)).strftime("%Y-%m-%dT%H:%M")
+            casa[c] = 12.0
+            veines["A"][c] = veines["B"][c] = veines["C"][c] = 13.0
+        c9, c10 = "2026-10-12T09:00", "2026-10-12T10:00"
+        casa[c9], casa[c10] = 19.0, 18.0
+        veines["A"][c9], veines["B"][c9], veines["C"][c9] = 14.0, 14.0, 15.0
+        veines["A"][c10], veines["B"][c10] = 16.0, None
+        veines["C"][c10] = None
+        eps = [(dt.datetime(2026, 10, 12, 8, 40).astimezone(), dt.datetime(2026, 10, 12, 10, 5).astimezone())]
+        res = SE.amb_esperades(casa, ara, eps, casa, veines)
+        self.assertEqual(res[c9], 13.0)   # 14 − 1
+        self.assertNotIn(c10, res)        # una sola vecina: no se estima
+        self.assertEqual(len(res), len(casa) - 1)
+        # Sin diferencia habitual (pocas horas), las horas de sol se quitan.
+        pocas = {c9: 19.0, "2026-10-12T11:00": 18.0}
+        self.assertEqual(SE.amb_esperades(pocas, ara, eps, pocas, veines), {"2026-10-12T11:00": 18.0})
+
     def test_humitat_amb_el_punt_de_rosada(self):
         # 98 % a 13 °C (rocío 12,7): con el sensor a 16,6, la estación diría ~80 %.
         self.assertAlmostEqual(SE.humitat(12.7, 13.0), 98, delta=1)

@@ -1066,7 +1066,9 @@ viento no sale de esta estación.
 
 **Esas horas no enseñan.** Cada episodio queda en `registre/sol-estacio.csv`,
 y sus horas no cuentan para corregir la temperatura de la previsión
-(apartado 3) ni para comparar con ayer. Del 9 al 12-10-2026 hubo cuatro, entre
+(apartado 3). Para comparar con ayer («2 graus més que ahir») llevan
+$`\hat T`$, como «Ara»: el dato de esas horas existe, solo falta el de la
+estación; si no hay dos vecinas o diferencia habitual, la hora se quita. Del 9 al 12-10-2026 hubo cuatro, entre
 las 8:45 y las 9:25 (el 12, hasta las 10:25), de 3,4 a 5,2 °C por encima de lo
 esperado.
 

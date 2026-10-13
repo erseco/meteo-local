@@ -441,14 +441,13 @@ def recoger(anterior=None):
                   f"({C.WU_CLAU_CADUCA}): cal regenerar-la (RESTAURAR.md).", file=sys.stderr)
     salida["veines"] = [{k: v for k, v in x.items() if k != "files"} for x in veines]
     # El sol directo sobre el termómetro de casa (ADR 0081): se corrige con las
-    # vecinas y la diferencia habitual, y esas horas no cuentan para comparar.
+    # vecinas y la diferencia habitual, también en las horas para comparar
+    # (por si el episodio ha empezado en esta pasada).
     if salida["ara_casa"] and R.hay_registro():
         try:
             salida["ara_casa"] = SE.corregeix(salida["ara_casa"], casa.get("files") if casa else None, veines, P.AHORA)
             if salida["temperatura_mesurada"]:
-                fora = SE.hores_tocades(salida["temperatura_mesurada"])
-                salida["temperatura_mesurada"] = {k: v for k, v in salida["temperatura_mesurada"].items()
-                                                  if k not in fora} or None
+                salida["temperatura_mesurada"] = SE.amb_esperades(salida["temperatura_mesurada"], P.AHORA) or None
         except Exception as ex:
             print("No he pogut mirar el sol directe a l'estació:", ex, file=sys.stderr)
     # Si llueve ahora, en casa o en una vecina que cuenta: lo que miran el

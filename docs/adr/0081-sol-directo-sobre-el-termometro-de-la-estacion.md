@@ -44,9 +44,16 @@ Versión 3.72.0. `sol_estacio.py`:
   conveniente aplica lo mismo al resto de mediciones»). La presión y la lluvia
   no las toca el sol.
 - **No se aprende de esas horas**: cada episodio se apunta en
-  `registre/sol-estacio.csv`, y sus horas no cuentan para comparar con ayer
-  (`registre.temperatures_casa`) ni para la corrección de la temperatura de la
-  previsión (`aprenentatge.mostres`).
+  `registre/sol-estacio.csv`, y sus horas no cuentan para la corrección de la
+  temperatura de la previsión (`aprenentatge.mostres`).
+- **Para comparar con ayer llevan la temperatura esperada** (versión 3.75.4;
+  `sol_estacio.amb_esperades`, desde `registre.temperatures_casa` y
+  `casa.py`), la misma cuenta que «Ara». Hasta la 3.75.3 se quitaban, y como
+  la comparación de un tramo necesita todas sus horas, la mañana de los días
+  de sol se quedaba sin «graus més o menys que ahir». Juanjo (13-10-2026):
+  «no es que no haya datos, solo no hay datos de mi estación». Si en esa hora
+  no hay dos vecinas o no hay diferencia habitual, la hora se quita, como
+  antes.
 - `python3 sol_estacio.py omple [DIES]` repasa el historial cada 5 minutos y
   apunta los episodios pasados (donde hay vecinas por horas).
 - La subida a Weather Underground (ADR 0059) sigue con lo que mide la
@@ -89,3 +96,8 @@ Versión 3.72.0. `sol_estacio.py`:
   acaba; sin salto, de noche, sin diferencia habitual o con una sola vecina, no
   se decide; la diferencia habitual sin las horas de sol; la humedad con el
   punto de rocío; apuntar y alargar un episodio. 407 pruebas en verde.
+- 3.75.4: `test_les_hores_de_sol_amb_la_temperatura_esperada` (la hora de sol
+  con la esperada; con una sola vecina o sin diferencia habitual, fuera). Con
+  el registro del NAS del 12-10-2026 (diferencia habitual −1,1 °C), las 9 h
+  pasan a 12,9 °C (vecinas 14, 14, 14 y 15) y las 10 h a 14,9 °C (16, 15, 16 y
+  16). 412 pruebas en verde.
