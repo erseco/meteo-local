@@ -123,3 +123,21 @@ Versión 3.73.0 de la web; la app empieza en la 1.0.0.
 - Pendiente: el resultado de la revisión. Después, añadir al manifiesto de la
   web `related_applications` con la app de Play, para que Chrome en Android
   ofrezca la app en lugar de instalar la web (propuesto, sin decidir).
+
+## Cambio del 13-10-2026: rechazada por la política de afirmaciones engañosas
+
+Google rechazó el primer envío el 13-10-2026 («Falta el enlace a la fuente de
+información gubernamental»): la app muestra información de organismos
+públicos y la descripción los citaba sin enlace. Para una app no asociada a
+ninguno, Google pide en la descripción las fuentes oficiales con su dirección
+y un aviso visible de que no representa a ninguna entidad pública. Juanjo
+aprobó el texto («aplícalo») y la descripción larga (`android/fitxa/llarga-ca.txt`
+y `llarga-es.txt`) lleva ahora, tras el primer párrafo, «No és una app
+oficial: no representa cap organisme públic ni hi està vinculada…», y en
+«D'on surt» cada fuente con su enlace (en el idioma del texto cuando existe;
+todas comprobadas ese día), sin dejar ninguna. Se añadieron las que faltaban
+desde las versiones 3.77-3.81: las observaciones del aeropuerto de Sabadell
+(Aviation Weather Center, NOAA) y los modelos de ECMWF y NOAA. Unos 2.900 y
+3.000 caracteres de los 4.000. Cambiado en Play Console y enviado otra vez a
+revisión el mismo día, con los mismos once cambios del primer envío.
+
