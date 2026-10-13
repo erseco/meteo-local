@@ -25,8 +25,9 @@ observado.
 
 - **El cielo de cada hora es la media ponderada de cuatro modelos**: AROME
   (`meteofrance_seamless`), ICON-EU, ECMWF IFS y GFS (`nuvols.py`, `MODELS`).
-  ECMWF y GFS llegan en una petición aparte a Open-Meteo; si falla, el cielo
-  sale de los otros dos. Se empieza con los cuatro al 25 %.
+  ECMWF y GFS llegan en una petición aparte a Open-Meteo cada uno; si falla
+  uno, el cielo sale de los demás (desde la 3.81.1: el mismo día de
+  publicarlo, Open-Meteo, sobrecargado, rechazaba ECMWF y no siempre GFS). Se empieza con los cuatro al 25 %.
 - **La observación es el METAR del aeropuerto de Sabadell** (LELL, a unos
   7 km), cada media hora, día y noche. Se lee del servicio público de la
   NOAA (aviationweather.gov, en JSON) y da cuánto tapa cada capa, en octavos.
@@ -78,7 +79,7 @@ observado.
   Sabadell observaba la mitad del cielo tapado o más; la media de los cuatro,
   ninguna.
 - La media también suaviza los extremos: «Serè» y «Cobert» salen menos.
-- Una petición más a Open-Meteo por pasada y una a aviationweather.gov.
+- Dos peticiones más a Open-Meteo por pasada y una a aviationweather.gov.
   Unos 4 KB más por línea del registro de la previsión.
 - El bot de Telegram y la tarjeta de «Ara» usan el mismo dato (`nuvols` de
   cada hora): cambian igual.

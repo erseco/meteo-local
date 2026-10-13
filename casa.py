@@ -104,19 +104,21 @@ def modelos(desde, errors=None):
     except Exception as ex:
         print("No he pogut llegir ECMWF:", ex, file=sys.stderr)
     # Las nubes de ECMWF y GFS, para mezclarlas con las de AROME e ICON-EU
-    # (nuvols.py, ADR 0088). Si fallan, el cielo sale de los otros dos.
-    q = urllib.parse.urlencode({
-        "latitude": C.CASA[0], "longitude": C.CASA[1], "hourly": "cloud_cover,cloud_cover_low",
-        "models": ",".join(NV.MODELS_APART), "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
-    try:
-        nv = json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}"))["hourly"]
-        if nv.get("time") == h.get("time"):
-            for m in NV.MODELS_APART:
+    # (nuvols.py, ADR 0088). Una petición por modelo: si falla uno, el cielo
+    # sale de los demás.
+    for m in NV.MODELS_APART:
+        q = urllib.parse.urlencode({
+            "latitude": C.CASA[0], "longitude": C.CASA[1], "hourly": "cloud_cover,cloud_cover_low",
+            "models": m, "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
+        try:
+            nv = json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}"))["hourly"]
+            if nv.get("time") == h.get("time"):
                 for camp in ("cloud_cover", "cloud_cover_low"):
-                    if nv.get(f"{camp}_{m}"):
-                        h[f"{camp}_{m}"] = nv[f"{camp}_{m}"]
-    except Exception as ex:
-        print("No he pogut llegir els núvols d'ECMWF i GFS:", ex, file=sys.stderr)
+                    serie = nv.get(camp) or nv.get(f"{camp}_{m}")
+                    if serie:
+                        h[f"{camp}_{m}"] = serie
+        except Exception as ex:
+            print(f"No he pogut llegir els núvols de {m}:", ex, file=sys.stderr)
     return h, e
 
 
