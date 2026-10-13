@@ -41,13 +41,23 @@ observado.
   (el %, si había capas y los METAR). Lo que daba cada modelo, todas sus
   nubes y las bajas, va en el registro de la previsión (`nuvols_<modelo>` y
   `nuvols_baixos_<modelo>` en `casa-AAAA-MM.jsonl`).
-- **Cada día, en `aprenentatge.diari`, se busca la mezcla que menos se
-  equivoca** en los últimos 30 días. Se prueban todos los pesos múltiplos de
-  0,1 que suman 1. Las horas con capas se comparan con todas las nubes de la
-  mezcla; las horas sin capas, con sus nubes bajas, que tendrían que ser cero.
-  Como el radar (ADR 0026), solo cambia con bastantes datos (300 horas
-  observadas en 14 días) y si la mezcla nueva se equivoca al menos un 5 %
-  menos, salvo que exista `aprenentatge/atura`. Los pesos se guardan en
+- **Cada día, en `aprenentatge.diari`, se ajustan los pesos con un método
+  estadístico** con lo apuntado los últimos 30 días (desde la 3.81.3; antes
+  se probaban pesos de 0,1 en 0,1 y se cambiaba con un 5 % menos de error en
+  los mismos datos, y Juanjo lo cuestionó el 13-10-2026: «si vas probando no
+  estás usando ninguna metodología estadística»). Las horas con capas se
+  comparan con todas las nubes de la mezcla; las horas sin capas, con sus
+  nubes bajas, que tendrían que ser cero.
+  - **Ajuste**: la combinación de previsiones de Granger y Ramanathan (1984),
+    mínimos cuadrados con los pesos positivos y sumando 1, resuelta de forma
+    exacta (el sistema de Lagrange en cada subconjunto de modelos, 15 con
+    cuatro modelos). Sin scipy, que no está en el NAS ni en IONOS: solo numpy.
+  - **Comprobación**: validación cruzada por semanas, como la lluvia y la
+    temperatura (cuatro grupos por la semana de la hora observada).
+  - **Cambio**: solo si los pesos ajustados se equivocan menos que los de
+    ahora, en las semanas no vistas, en al menos el 95 % de 2.000 remuestreos
+    de los días con reposición (*bootstrap*), con al menos 300 horas
+    observadas en 14 días, y salvo que exista `aprenentatge/atura`. Los pesos se guardan en
   `aprenentatge/nuvols-pesos.json`, se usan en la pasada siguiente y se
   avisa a Juanjo por Telegram.
 - **La página lo explica** en «D'on surt», en «Com funciona», en «Fonts i
@@ -71,6 +81,13 @@ observado.
 - **Contar las horas sin capas como cielo despejado**: con CAVOK o NSC puede
   haber nubes altas. Contadas como 0 %, todos los modelos parecen equivocarse
   unos 40 puntos de cielo tapado.
+- **Probar pesos de 0,1 en 0,1 y cambiar con un 5 % menos de error** (la
+  3.81.0 a la 3.81.2): los pesos eran aproximados y se elegían y puntuaban con
+  las mismas horas, y el 5 % no decía si la mejora era casualidad.
+- **Minimizar el error absoluto en lugar del cuadrático**: es lo que se lee
+  en el resumen, pero para resolverlo de forma exacta hace falta programación
+  lineal (scipy), que no está en el NAS ni en IONOS. Mínimos cuadrados con
+  restricciones es además el método de referencia para combinar previsiones.
 - **Corregir el sesgo de los modelos con el METAR**: los modelos dan, de
   media, más nubes de las que observa Sabadell, también en las horas con capas
   (de 19 a 32 puntos). Parte puede ser de nubes altas que el METAR no recoge.
@@ -97,8 +114,10 @@ observado.
   coordenadas de casa: 378 horas en 17 días, 246 con capas y 132 sin capas.
 - Error medio, en puntos de cielo tapado, con la comparación de la Decisión:
   AROME 28,8; ICON-EU 29,7; ECMWF 27,0; GFS 29,3. Media de los cuatro, 25,8.
-  La mejor mezcla posible (AROME 0,3, ICON-EU 0,1, ECMWF 0,4, GFS 0,2), 25,7:
-  empezar con todos iguales es casi lo mejor.
+  Con el método de la 3.81.3: pesos ajustados AROME 0,23, ICON-EU 0,20,
+  ECMWF 0,30 y GFS 0,27; en semanas no vistas, 26,3. Ganan a todos iguales
+  solo en el 0,4 % de los remuestreos (no se cambiaría) y a AROME solo en el
+  100 %: mezclar es claramente mejor; afinar los pesos, con estos datos, no.
 - Si las horas sin capas contaran como despejadas: AROME 44,7, ICON-EU 40,7,
   ECMWF 37,9, GFS 43,2. En esas horas los modelos daban de media entre un 44
   y un 54 % de cielo tapado, sobre todo nubes medias y altas.
@@ -122,7 +141,9 @@ observado.
 ## Validación
 
 - Pruebas: `tests/test_nuvols.py` (lectura del METAR, horas, observación de
-  ahora, mezcla, comparación diaria y aviso sin observaciones).
+  ahora, mezcla, comparación diaria y aviso sin observaciones; el ajuste
+  recupera unos pesos conocidos, respeta las restricciones y ningún punto de
+  una rejilla fina lo mejora; sin mejora clara, no cambia).
 - En local, el 13-10-2026 a las 16:52, la hora de 16 a 17 pasó de «Serè»
   (AROME, 14 %) a 75 % observado, «Molt ennuvolat»; las siguientes, a la media
   de los cuatro (45 y 48 %).

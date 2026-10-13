@@ -660,24 +660,55 @@ sus dos informes (y media y en punto). Si no da capas (CAVOK, NSC o NCD),
 solo se sabe que no hay nubes por debajo de unos 1.500 m: puede haber nubes
 más altas.
 
-**La comparación.** Cada día, con lo apuntado los últimos 30 días, se calcula
-el error medio de cada mezcla. En las horas con capas, contra lo observado
-$`o`$; en las horas sin capas, las nubes bajas de la mezcla, $`b`$, contra
-cero:
+**Qué se compara.** Cada día se toman todas las previsiones apuntadas para
+las horas observadas de los últimos 30 días. En las horas con capas, la mezcla
+$`n`$ se compara con lo observado $`o`$; en las horas sin capas, las nubes
+bajas de la mezcla, $`b`$, con cero, porque es lo único que se sabe. Para
+leerlo se da el error medio, en puntos de cielo tapado:
 
 ```math
 E(w) = \frac{1}{N}\Big(\sum_{\text{con capas}} |n - o| + \sum_{\text{sin capas}} b\Big)
 ```
 
-Se prueban todos los pesos múltiplos de 0,1 que suman 1. Con al menos 300
-horas observadas en 14 días distintos, se cambia a la mezcla que menos se
-equivoca si cumple la regla del 5 %: $`E_{\text{nueva}} < 0\text{,}95 \,
-E_{\text{actual}}`$. Se avisa a Juanjo, y también si pasa más de un día sin
+**Cómo se ajustan los pesos.** Con la combinación de previsiones de Granger y
+Ramanathan (1984): una regresión de mínimos cuadrados de lo observado sobre
+lo que dio cada modelo, sin término independiente y con los pesos positivos y
+sumando 1. Con $`x_{i,m}`$ lo que dio el modelo $`m`$ para el caso $`i`$ y
+$`y_i`$ lo observado:
+
+```math
+\hat w = \arg\min_{w} \sum_{i} \Big(y_i - \sum_m w_m x_{i,m}\Big)^2
+\quad \text{con} \quad w_m \ge 0, \quad \sum_m w_m = 1
+```
+
+La solución es exacta: el mínimo está en el interior de alguna cara del
+conjunto de pesos posibles (cada cara es un subconjunto de modelos). En cada
+una se resuelve el sistema de Lagrange con la suma igual a 1, y de las
+soluciones con todos los pesos positivos se queda la de menor error. Con
+cuatro modelos son 15 sistemas.
+
+**Cómo se comprueban.** Como la lluvia y la temperatura, en semanas que no
+han visto (validación cruzada): las horas se reparten en cuatro grupos por la
+semana de la hora observada, y cada grupo se predice con pesos ajustados con
+los otros tres. Los pesos de ahora, fijos, se aplican a las mismas horas.
+
+**Cuándo se cambian.** Solo si la mejora es segura, no por un margen fijo. Se
+remuestrean los días con reposición 2.000 veces (*bootstrap*); los días
+enteros, porque las horas de un mismo día se parecen y no son casos
+independientes. En cada remuestreo se compara el error cuadrático medio de
+los pesos ajustados, en las semanas no vistas, con el de los de ahora. Si los
+ajustados se equivocan menos en al menos el 95 % de los remuestreos, y hay al
+menos 300 horas observadas en 14 días distintos, pasan a usarse los ajustados
+con todos los datos. Se avisa a Juanjo, y también si pasa más de un día sin
 que llegue ningún METAR.
 
-**Con el archivo.** Del 27-09 al 13-10-2026 (378 horas, 246 con capas), el
-error medio fue: AROME 28,8 puntos, ICON-EU 29,7, ECMWF 27,0 y GFS 29,3; la
-media de los cuatro, 25,8, y la mejor mezcla, 25,7. AROME dio «serè» 12 horas
+**Con el archivo.** Del 27-09 al 13-10-2026 (378 horas en 16 días, 246 con
+capas), el error medio fue: AROME 28,8 puntos, ICON-EU 29,7, ECMWF 27,0 y GFS
+29,3; la media de los cuatro, 25,8. Los pesos ajustados (AROME 0,23, ICON-EU
+0,20, ECMWF 0,30, GFS 0,27) se equivocan 26,3 en las semanas no vistas y ganan
+a la media solo en el 0,4 % de los remuestreos: con estos datos, afinar los
+pesos no mejora nada y se usan todos iguales. Frente a AROME solo, en cambio,
+ganan en el 100 %: mezclar sí es claramente mejor. AROME dio «serè» 12 horas
 en que Sabadell veía la mitad del cielo tapado o más; la media, ninguna.
 
 ## 9. Cuándo para la lluvia

@@ -19,9 +19,12 @@ tendrían que ser cero.
 
 En cada pasada se apunta lo observado por horas (nuvols-sabadell.csv); lo
 que daba cada modelo ya va en el registro de la previsión (casa-AAAA-MM.jsonl,
-campos nuvols_<modelo> y nuvols_baixos_<modelo>). Cada día, con los últimos DIES días, se busca la
-mezcla de los cuatro que menos se equivoca y, si mejora en un 5 % la que se
-usa, la sustituye y avisa, como el radar (ADR 0026).
+campos nuvols_<modelo> y nuvols_baixos_<modelo>). Cada día, con los últimos
+DIES días, se ajustan los pesos con la combinación de previsiones de Granger
+y Ramanathan (mínimos cuadrados con los pesos positivos y sumando 1), se
+comprueban en semanas que no han visto (validación cruzada) y, si se
+equivocan menos que los de ahora en al menos el 95 % de los remuestreos por
+días (bootstrap), sustituyen a los de ahora y se avisa (ADR 0088).
 
 Uso:
   python3 nuvols.py verifica   compara y, si toca, cambia los pesos
@@ -62,8 +65,9 @@ ARA_MAX_MIN = 45
 DIES = 30
 MIN_HORES = 300          # horas observadas con los cuatro modelos, como mínimo
 MIN_DIES = 14            # en días distintos
-MILLORA = 0.95           # error de la mezcla nueva, como mucho este factor del actual
-PAS = 0.1                # paso de los pesos que se prueban
+SETMANES_VALIDACIO = 4   # grupos de semanas de la validación cruzada
+REMOSTREJOS = 2000       # remuestreos por días del bootstrap
+SEGURETAT = 0.95         # proporción de remuestreos en que la nueva tiene que ganar
 
 
 def percentatge(metar):
@@ -214,16 +218,46 @@ def error(matriu, obs, p):
     return float(np.mean(np.abs(matriu @ w - obs)))
 
 
-def candidats():
-    """Todas las mezclas con pesos múltiplos de PAS que suman 1."""
-    n = round(1 / PAS)
-    noms = list(MODELS)
-    for parts in itertools.product(range(n + 1), repeat=len(noms) - 1):
-        if sum(parts) <= n:
-            yield dict(zip(noms, [k / n for k in parts] + [(n - sum(parts)) / n]))
+def ajusta(x, y):
+    """Los pesos de la combinación de previsiones de Granger y Ramanathan
+    (1984): mínimos cuadrados con los pesos positivos y sumando 1,
+    min ||x w - y||² con w >= 0 y sum(w) = 1. Solución exacta: el mínimo
+    está en el interior de alguna cara del símplex; en cada cara (cada
+    subconjunto de modelos) se resuelve el sistema de Lagrange con la suma
+    igual a 1 y, de las soluciones con todos los pesos positivos, se queda la
+    de menor error. Con cuatro modelos son 15 sistemas."""
+    k = x.shape[1]
+    millor = None
+    for r in range(1, k + 1):
+        for cara in itertools.combinations(range(k), r):
+            xs = x[:, cara]
+            a = np.zeros((r + 1, r + 1))
+            a[:r, :r] = 2 * xs.T @ xs
+            a[:r, r] = a[r, :r] = 1
+            b = np.append(2 * xs.T @ y, 1)
+            w = np.linalg.lstsq(a, b, rcond=None)[0][:r]
+            if (w < -1e-9).any():
+                continue
+            tots = np.zeros(k)
+            tots[list(cara)] = np.clip(w, 0, None)
+            tots /= tots.sum()
+            sse = float(np.sum((x @ tots - y) ** 2))
+            if millor is None or sse < millor[0] - 1e-9:
+                millor = (sse, tots)
+    return millor[1]
+
+
+def grup_setmana(fins):
+    """Grupo de validación por la semana de la hora observada, como la lluvia
+    y la temperatura (aprenentatge.grupo_semana)."""
+    any_, setmana, _ = dt.date.fromisoformat(fins[:10]).isocalendar()
+    return (any_ * 53 + setmana) % SETMANES_VALIDACIO
 
 
 def compara(ps, actual):
+    """La mezcla ajustada frente a la de ahora, en semanas que no ha visto
+    (validación cruzada), y con qué seguridad es mejor: la proporción de
+    remuestreos por días en que se equivoca menos (bootstrap)."""
     hores_obs = {f for f, _, _ in ps}
     res = {"parelles": len(ps), "hores": len(hores_obs), "dies": len({f[:10] for f in hores_obs})}
     if not ps:
@@ -233,18 +267,36 @@ def compara(ps, actual):
     res["error_actual"] = round(error(matriu, obs, actual), 1)
     for nom in MODELS:
         res[f"error_{nom}"] = round(error(matriu, obs, {m: float(m == nom) for m in MODELS}), 1)
-    millor = min(candidats(), key=lambda p: error(matriu, obs, p))
-    res["millor"] = {m: round(w, 2) for m, w in millor.items()}
-    res["error_millor"] = round(error(matriu, obs, millor), 1)
+    w = ajusta(matriu, obs)
+    res["ajustats"] = {m: round(float(x), 3) for m, x in zip(MODELS, w)}
+    grup = np.array([grup_setmana(f) for f, _, _ in ps])
+    if len(set(grup)) < 2:
+        return res
+    pred = np.zeros(len(obs))
+    for g in set(grup):
+        ent = grup != g
+        pred[~ent] = matriu[~ent] @ ajusta(matriu[ent], obs[ent])
+    pred_actual = matriu @ np.array([actual[m] for m in MODELS])
+    res["error_ajustats"] = round(float(np.mean(np.abs(pred - obs))), 1)
+    # El remuestreo, por días enteros: las horas de un mismo día se parecen
+    # y no son casos independientes.
+    dies = np.array([f[:10] for f, _, _ in ps])
+    unics, idx = np.unique(dies, return_inverse=True)
+    guany = np.bincount(idx, (pred_actual - obs) ** 2 - (pred - obs) ** 2, len(unics))
+    n = np.bincount(idx, minlength=len(unics))
+    tria = np.random.default_rng(0).integers(0, len(unics), (REMOSTREJOS, len(unics)))
+    millora = guany[tria].sum(axis=1) / n[tria].sum(axis=1)
+    res["seguretat"] = round(float(np.mean(millora > 0)), 3)
     return res
 
 
 def decideix(c, actual):
-    """Los pesos que tocan: la mejor mezcla, si hay bastantes horas y se
-    equivoca al menos un 5 % menos que la de ahora; si no, los de ahora."""
-    if c["hores"] < MIN_HORES or c["dies"] < MIN_DIES:
+    """Los pesos que tocan: los ajustados con todo, si hay bastantes horas y
+    se equivocan menos que los de ahora en las semanas que no han visto en
+    al menos el 95 % de los remuestreos; si no, los de ahora."""
+    if c["hores"] < MIN_HORES or c["dies"] < MIN_DIES or c.get("seguretat") is None:
         return actual
-    return c["millor"] if c["error_millor"] < MILLORA * c["error_actual"] else actual
+    return c["ajustats"] if c["seguretat"] >= SEGURETAT else actual
 
 
 def sense_observacions(ahora):
@@ -282,9 +334,10 @@ def verifica(avui=None, avisa=True):
     if nous != actual:
         noms = ", ".join(f"{NOMS[m]} {round(w * 100)} %" for m, w in nous.items() if w)
         coma = lambda x: f"{x:.1f}".replace(".", ",")  # noqa: E731
-        text = (f"Temps a Montflorit, el cel: ara la mescla de models és {noms}. En els últims {DIES} dies "
-                f"s'equivoca de mitjana en {coma(c['error_millor'])} punts de cel tapat, contra "
-                f"{coma(c['error_actual'])} de l'anterior ({c['hores']} hores observades a l'aeroport "
+        text = (f"Temps a Montflorit, el cel: ara la mescla de models és {noms}. En setmanes que no ha vist, "
+                f"dels últims {DIES} dies, s'equivoca de mitjana en {coma(c['error_ajustats'])} punts de cel "
+                f"tapat, contra {coma(c['error_actual'])} de l'anterior, i encerta més en el "
+                f"{round(c['seguretat'] * 100)} % dels remostrejos ({c['hores']} hores observades a l'aeroport "
                 f"de Sabadell en {c['dies']} dies).")
         print(text)
         if avisa:

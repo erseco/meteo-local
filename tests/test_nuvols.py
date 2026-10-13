@@ -14,6 +14,7 @@ import casa  # noqa: E402
 import config as C  # noqa: E402
 import nuvols as NV  # noqa: E402
 import registre as R  # noqa: E402
+import numpy as np  # noqa: E402
 
 
 def metar(hora_utc, capes, brut=None):
@@ -103,6 +104,39 @@ class Mescla(unittest.TestCase):
                          (14, 89, 17, 100))
 
 
+class Ajust(unittest.TestCase):
+    def test_recupera_els_pesos(self):
+        rng = np.random.default_rng(1)
+        x = rng.uniform(0, 100, (2000, 4))
+        y = x @ np.array([0.1, 0.0, 0.6, 0.3]) + rng.normal(0, 5, 2000)
+        w = NV.ajusta(x, y)
+        np.testing.assert_allclose(w, [0.1, 0.0, 0.6, 0.3], atol=0.02)
+        self.assertAlmostEqual(w.sum(), 1)
+
+    def test_pesos_positius_que_sumen_1(self):
+        # Sin restricciones, el mejor sería 2·x0 − x1: aquí no puede haber
+        # pesos negativos ni que pasen de 1.
+        rng = np.random.default_rng(2)
+        x = rng.uniform(0, 100, (500, 4))
+        w = NV.ajusta(x, 2 * x[:, 0] - x[:, 1])
+        self.assertTrue((w >= 0).all())
+        self.assertAlmostEqual(w.sum(), 1)
+        self.assertEqual(int(np.argmax(w)), 0)
+
+    def test_exacte_contra_la_reixa(self):
+        # Ningún peso de una rejilla fina se equivoca menos que el ajuste.
+        rng = np.random.default_rng(3)
+        x = rng.uniform(0, 100, (300, 4))
+        y = np.clip(x @ np.array([0.35, 0.25, 0.4, 0]) + rng.normal(0, 20, 300), 0, 100)
+        sse = lambda w: float(np.sum((x @ np.array(w) - y) ** 2))  # noqa: E731
+        millor = sse(NV.ajusta(x, y))
+        n = 20
+        for a in range(n + 1):
+            for b in range(n + 1 - a):
+                for c in range(n + 1 - a - b):
+                    self.assertGreaterEqual(sse([a / n, b / n, c / n, (n - a - b - c) / n]) + 1e-6, millor)
+
+
 class Aprenentatge(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp()
@@ -152,6 +186,24 @@ class Aprenentatge(unittest.TestCase):
                               "nuvols_baixos_ecmwf": 0, "nuvols_baixos_gfs": 0}, capes=0)
         c = NV.verifica(dt.date(2026, 10, 13), avisa=False)["comparacio"]
         self.assertEqual((c["error_arome"], c["error_gfs"]), (60.0, 0.0))
+
+    def test_sense_millora_clara_no_canvia(self):
+        # Cada modelo acierta unos días y falla otros, al azar: la mezcla
+        # ajustada no gana de forma segura a la de todos iguales.
+        inici = dt.datetime(2026, 9, 14)
+        rng = np.random.default_rng(4)
+        with open(NV.OBSERVATS, "w", encoding="utf-8") as fo, \
+                open(os.path.join(self.dir, "casa-2026-09.jsonl"), "w", encoding="utf-8") as fp:
+            fo.write("fins,nuvols,capes,metars\n")
+            for k in range(29 * 24):
+                fins = f"{(inici + dt.timedelta(hours=k)):%Y-%m-%dT%H:%M}"
+                o = float(rng.uniform(0, 100))
+                fo.write(f"{fins},{o},1,x\n")
+                prev = {f"nuvols_{m}": float(np.clip(o + rng.normal(0, 30), 0, 100)) for m in NV.MODELS}
+                fp.write(json.dumps({"hores": [dict(fins=fins, **prev)]}) + "\n")
+        estat = NV.verifica(dt.date(2026, 10, 13), avisa=False)
+        self.assertLess(estat["comparacio"]["seguretat"], NV.SEGURETAT)
+        self.assertEqual(estat["pesos"], NV.per_defecte())
 
     def test_atura(self):
         self.registra(29, 80, {"nuvols_arome": 0, "nuvols_icon_eu": 80, "nuvols_ecmwf": 0, "nuvols_gfs": 0})
