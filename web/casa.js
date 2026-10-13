@@ -675,7 +675,8 @@ function taula(hores, mesurada, riscos) {
   if (visibles.some((f) => f.segons_radar)) terme('\u2020', T('Hi compta la pluja que el radar veu acostar-se.'));
   // La part alta, només si algun tram la diu (ADR 0087).
   if (trams.some((t) => arrodoneixAlta(t.difAlta) || t.fenomens.some(([nom]) => nom === NOM_FENOMEN.glaçadaRiera()))) {
-    terme(T('+2 a la part alta'), T('Les temperatures són les de vora la riera, la zona més freda del barri; a la part alta hi sol fer 2\u00a0°C més a aquelles hores, segons les estacions del barri dels últims 30 dies.'));
+    // La xifra no és fixa: surt del que s'ha mesurat i va canviant (Juanjo, 13-10-2026).
+    terme(T('+1, +2… a la part alta'), T('Les temperatures són les de vora la riera, la zona més freda del barri. La xifra diu quants graus més sol fer a la part alta a aquelles hores, segons el que han mesurat les estacions del barri els últims 30 dies; va canviant amb l’època de l’any.'));
   }
   if (visibles.some((f) => avisHora(f))) terme(T('Barra de color'), T('Hores amb avís, del color del nivell.'));
   terme(T('Vent'), T('La mitjana en km/h i, entre parèntesis, les ratxes.'));

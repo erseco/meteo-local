@@ -99,10 +99,6 @@ CANVIS_INDEX = [
     # Sota el títol, què hi ha a la web (Juanjo, 09-10-2026).
     ('<h1>Temps a casa</h1>\n      <p class="ruta">Montflorit, Cerdanyola del Vallès</p>',
      f'<h1>Temps a Montflorit</h1>\n      <p class="ruta">{DESCRIPCIO}</p>'),
-    ("(reduïda al nivell del mar), de l'estació de casa, vora", "(reduïda al nivell del mar), d'una estació particular del barri, vora"),
-    ("amb el que ha mesurat l'estació de casa des de", "amb el que ha mesurat l'estació particular des de"),
-    ("quan hi hagi prou dades, a casa. Comprovada", "quan hi hagi prou dades, a Montflorit. Comprovada"),
-    ("la pluja real de l'estació de casa.", "la pluja real de l'estació particular."),
 ]
 
 CANVIS_FONTS = [

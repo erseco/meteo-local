@@ -91,3 +91,21 @@ Versión 3.67.0.
   oscuro) en «Consultes › Llum», en catalán y castellano, en «Com funciona» y
   en la portada: sin errores ni desbordamiento; axe-core sin incidencias.
 - Juanjo lo miró en su móvil con el ejemplo («perfecto, publica»).
+
+## Actualización (13-10-2026, versión 3.79.2)
+
+**«D'on surt», en corto.** Juanjo: «hay demasiado texto» y «no hablas de las
+5 estaciones locales usadas». Pasa de unas 1.300 palabras en 15 apartados a
+unas 300 en 7 (estaciones del barrio, viento, previsión, probabilidad,
+primeras horas, avisos y actualización), con las cinco estaciones sin
+nombres (dos junto a la riera y tres en la parte alta) y un enlace a «Com
+funciona» para el detalle. Lo provisional se dice en cada punto (Juanjo: «lo
+das como fuente única y no es así, es solo temporal»): el viento de Sant
+Cugat, hasta que se pueda hacer con las estaciones del barrio; la diferencia
+con la parte alta en las noches de helada; el cálculo de la probabilidad con
+los datos del barrio; la hora en que para la lluvia y el aviso de la riera.
+La diferencia con la parte alta se explica como lo que es, medida y
+cambiante, no como «+2» fijo. Sale un dato caducado («ara, RainViewer»: hoy
+manda Meteocat). «Fonts i crèdits» y «Com funciona» cuentan también las
+cinco estaciones y el viento provisional.
+
