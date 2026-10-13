@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.76.0"
+VERSION = "3.77.0"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -115,6 +115,9 @@ MODELOS_FINOS = [
     "meteofrance_arome_france",     # 2,5 km
     "icon_eu",                      # 7 km
 ]
+# ECMWF IFS a 9 km: entra en la probabilidad de lluvia como un modelo más
+# (ADR 0086), no en los milímetros de la tabla.
+MODEL_ECMWF = "ecmwf_ifs"
 # Ensemble horario usado como probabilidad.
 ENSEMBLE = "icon_eu_eps"
 

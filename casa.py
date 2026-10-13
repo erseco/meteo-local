@@ -88,6 +88,18 @@ def modelos(desde, errors=None):
             raise
         errors.append(f"ensemble: {ex}")
         e = {}
+    # ECMWF, para la probabilidad de lluvia (ADR 0086), aparte: si falla, la
+    # probabilidad sale del modelo sin él y la página no lo dice.
+    q = urllib.parse.urlencode({
+        "latitude": C.CASA[0], "longitude": C.CASA[1], "hourly": "precipitation",
+        "models": C.MODEL_ECMWF, "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
+    try:
+        ec = json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}"))["hourly"]
+        serie = ec.get("precipitation") or ec.get(f"precipitation_{C.MODEL_ECMWF}")
+        if serie and ec.get("time") == h.get("time"):
+            h[f"precipitation_{C.MODEL_ECMWF}"] = serie
+    except Exception as ex:
+        print("No he pogut llegir ECMWF:", ex, file=sys.stderr)
     return h, e
 
 
@@ -290,8 +302,8 @@ def variables_hora(desde, h, prob, i, prever):
     fin = dt.datetime.fromisoformat(t).astimezone()
     d = {"fins": t, "antelacio_h": round((fin - desde).total_seconds() / 3600, 2),
          "prob_ens": prob.get(t)}
-    for m in C.MODELOS_FINOS:
-        d[f"pluja_{m}"] = h.get(f"precipitation_{m}", [None] * (i + 1))[i]
+    for m in C.MODELOS_FINOS + [C.MODEL_ECMWF]:
+        d[f"pluja_{m}"] = (h.get(f"precipitation_{m}") or [None] * (i + 1))[i]
     for campo in ("temperature_2m", "relative_humidity_2m", "cloud_cover",
                   "wind_speed_10m", "wind_gusts_10m", "weather_code", "shortwave_radiation"):
         d[campo] = h.get(f"{campo}_meteofrance_seamless", [None] * (i + 1))[i]

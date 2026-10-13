@@ -67,7 +67,8 @@ servicio meteorológico alemán, a 7 km. En cada pasada, el servidor guarda:
   Sabadell y Sant Cugat (a 2,5 y 4,6 km): deciden qué pasó en las horas en que
   el pluviómetro de casa marca cero (apartado 2.2, ADR 0070).
 - **Lo que daban los modelos**, una vez por hora y para las 24 horas
-  siguientes: la lluvia de los tres modelos finos (AROME HD, AROME e ICON-EU),
+  siguientes: la lluvia de los tres modelos finos (AROME HD, AROME e ICON-EU)
+  y, desde el 13-10-2026, la de ECMWF IFS,
   la fracción de las 40 simulaciones del conjunto ICON-EU-EPS con lluvia, la
   temperatura, las nubes, el viento, la humedad, la radiación, la antelación,
   lo que medían las estaciones al prever y lo que mostró la página. Desde el
@@ -117,6 +118,7 @@ moja en moto (`UMBRAL_MM` de `config.py`).
 | Si cada modelo da lluvia | 1 si da 0,1 mm o más; si no, 0. Una por modelo | Que un modelo ponga algo de lluvia ya dice mucho, aunque sea poca: con solo ICON-EU dando 0,2 mm llovió una de cada diez horas |
 | Cuántos modelos coinciden | 1 si dan lluvia dos o más; otra, 1 si la dan los tres | La coincidencia no suma sin más: con un modelo solo llovió el 21-23 % de las horas; con los tres, el 66 % |
 | Lo anterior según la antelación | La cantidad de cada modelo, «alguno da lluvia» y «la dan los tres», multiplicados por la antelación | La lluvia prevista para dentro de un día se cumple menos que la de las próximas horas |
+| Lluvia de ECMWF‡ | $`\ln(1 + \text{mm})`$, si la da (0,1 mm o más), su cantidad por la antelación, 1 si la dan los cuatro modelos y 1 si solo la da ECMWF | El modelo europeo de referencia (ECMWF IFS, a 9 km) acierta más a un día vista: con el archivo, el error baja un 5,5 % un día antes y un 2,5 % a corto plazo (ADR 0086) |
 | Antelación | $`\min(t / 24, 1)`$, con $`t`$ en horas | Una previsión a 24 horas es menos segura que una a 2 |
 | Hora del día | $`\sin(2\pi h / 24)`$ y $`\cos(2\pi h / 24)`$, con $`h`$ la hora en que acaba el tramo | Las tormentas de tarde no se reparten igual que la lluvia de frente |
 | Día del año | $`\sin(2\pi d / 365\text{,}25)`$ y $`\cos(2\pi d / 365\text{,}25)`$ | La lluvia de otoño no es la de verano |
@@ -126,7 +128,12 @@ moja en moto (`UMBRAL_MM` de `config.py`).
 | Lluvia en Sant Cugat al prever*† | $`\ln(1 + \text{mm de la última hora})`$ en la estación de Meteocat de Sant Cugat (4,6 km al oeste, en la cuenca de la riera) si $`t \le 4`$; si no, 0 | Lo que llueve cerca puede llegar o anticipar. Es una hipótesis: se ajusta en una variante aparte y solo se adopta si acierta más (ADR 0042) |
 | Lluvia en las vecinas al prever*† | $`\ln(1 + \text{mm de la última hora})`$, la mediana de las vecinas fiables de Montflorit, si $`t \le 4`$; si no, 0 | Lo que llueve ahora en el barrio, aunque el pluviómetro de casa no lo recoja. En el archivo (75 días) bajó el error a corto plazo un 8 %; se ajusta en una variante aparte y solo se adopta si acierta más (ADR 0070) |
 
-\* Solo con datos propios: el archivo no las tiene (apartado 2.2). $`T_d`$ es
+‡ Desde el 13-10-2026, en un modelo del archivo aparte
+(`calibracio/pluja_casa_ecmwf.json`, ajustado con `pluja_casa_ecmwf.py`) que
+se usa cuando la pasada tiene ECMWF; si no, el de siempre. Con un día de
+antelación solo hay ECMWF de 9 km desde octubre de 2025: ese modelo se
+ajusta con las horas a corto plazo de todo el archivo y las de un día antes
+de ese año. \* Solo con datos propios: el archivo no las tiene (apartado 2.2). $`T_d`$ es
 el punto de rocío. † Registrada desde el 08-10-2026. Meteocat es el Servei
 Meteorològic de Catalunya.
 
@@ -230,10 +237,11 @@ acierta mejor en semanas que no ha visto (apartado 8). En otoño llueve unas
 25 horas al mes (entre 9 y 48 en Sabadell y Sant Cugat desde 2024): puede
 tardar de uno a varios meses.
 
-Si al prever falta alguna señal del modelo propio (por ejemplo, la estación
-de casa), se usa el del archivo. Si tampoco se puede, porque falta la lluvia
-de alguno de los tres modelos, la probabilidad es la fracción del conjunto
-ICON-EU-EPS (apartado 6).
+Mientras manda el modelo del archivo, se usa el que lleva ECMWF si la
+pasada lo tiene, y si no, el de siempre. Si al prever falta alguna señal del
+modelo propio (por ejemplo, la estación de casa), se usa el del archivo. Si
+tampoco se puede, porque falta la lluvia de alguno de los tres modelos, la
+probabilidad es la fracción del conjunto ICON-EU-EPS (apartado 6).
 
 Se ajustan dos variantes, sin y con la lluvia de Sant Cugat. La variante
 se valida solo con las muestras que llevan ese dato y, con esas mismas

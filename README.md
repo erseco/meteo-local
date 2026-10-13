@@ -125,7 +125,8 @@ Fuentes de la previsión:
 2. **Radar** de Meteocat o, si su imagen va 10 minutos por detrás, de
    RainViewer; una comparación diaria decide cuál acierta más (ADR 0026).
 3. **Modelos** de Open-Meteo (AROME HD, AROME e ICON-EU, y el ensemble
-   ICON-EU-EPS), con el índice UV del modelo por defecto. Cada tramo dice
+   ICON-EU-EPS; ECMWF IFS a 9 km, solo para la probabilidad de lluvia, ADR
+   0086), con el índice UV del modelo por defecto. Cada tramo dice
    cuántos grados más o menos que el día antes, con lo medido en la
    estación particular (ADR 0061).
 4. **Avisos de AEMET** del Prelitoral de Barcelona y **planes de Protección

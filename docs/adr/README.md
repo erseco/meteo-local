@@ -87,5 +87,6 @@
 | [0083](0083-idioma-elegido-recordado.md) | Idioma elegido, recordado | aceptado |
 | [0084](0084-control-de-altas-y-bajas.md) | Control de altas y bajas | aceptado |
 | [0085](0085-consenso-de-la-red-del-barrio.md) | Consenso de la red del barrio: la lluvia y la humedad | aceptado |
+| [0086](0086-ecmwf-en-la-probabilidad-de-lluvia.md) | ECMWF en la probabilidad de lluvia | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

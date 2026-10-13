@@ -43,6 +43,7 @@ import config as C
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 ARXIU = os.path.join(AQUI, "calibracio", "pluja_casa.json")
+ARXIU_ECMWF = os.path.join(AQUI, "calibracio", "pluja_casa_ecmwf.json")
 ARXIU_TEMPERATURA = os.path.join(AQUI, "calibracio", "temperatura_casa.json")
 REGISTRE = os.environ.get("REGISTRE_DIR", "/estat/registre")
 DIR = os.environ.get("APRENENTATGE_DIR", "/estat/aprenentatge")
@@ -70,6 +71,12 @@ RASGOS_ARXIU = ["constant", "arome_hd", "arome", "icon_eu", "antelacio",
                 "plou_arome_hd", "plou_arome", "plou_icon_eu", "dos_models", "tres_models",
                 "arome_hd_antelacio", "arome_antelacio", "icon_eu_antelacio",
                 "algun_antelacio", "tres_antelacio"]
+# ECMWF IFS a 9 km como un modelo más (ADR 0086): su lluvia, si la da, la
+# antelación, si la dan los cuatro y si solo la da él. El modelo del archivo
+# con ECMWF (pluja_casa_ecmwf.json) se usa si la pasada lo tiene; si no, el
+# de siempre.
+RASGOS_ECMWF = ["ecmwf", "plou_ecmwf", "ecmwf_antelacio", "quatre_models", "nomes_ecmwf"]
+RASGOS_ARXIU_ECMWF = RASGOS_ARXIU + RASGOS_ECMWF
 RASGOS_PROPIS = RASGOS_ARXIU + ["ensemble", "persistencia", "sequedat"]
 # Con la lluvia de la última hora en Sant Cugat (Meteocat, a 4,6 km, en la
 # cuenca de la riera): se ajusta aparte y solo gana si acierta más (ADR 0042).
@@ -148,6 +155,14 @@ def rasgos(d, noms):
         valors["tres_models"] = float(sum(plou) == 3)
         valors["algun_antelacio"] = float(sum(plou) >= 1) * ant
         valors["tres_antelacio"] = valors["tres_models"] * ant
+        ec = d.get(f"pluja_{C.MODEL_ECMWF}")
+        if ec is not None:
+            p_ec = float(ec >= MM_MODEL_PLOU - 1e-9)
+            valors["ecmwf"] = math.log1p(max(ec, 0))
+            valors["plou_ecmwf"] = p_ec
+            valors["ecmwf_antelacio"] = valors["ecmwf"] * ant
+            valors["quatre_models"] = float(p_ec and sum(plou) == 3)
+            valors["nomes_ecmwf"] = float(p_ec and sum(plou) == 0)
     x = [valors.get(n) for n in noms]
     return None if any(v is None for v in x) else x
 
@@ -189,6 +204,14 @@ def modelo_arxiu():
         return json.load(f)
 
 
+def modelo_arxiu_ecmwf():
+    try:
+        with open(ARXIU_ECMWF, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
 def modelo_arxiu_temperatura():
     with open(ARXIU_TEMPERATURA, encoding="utf-8") as f:
         m = json.load(f)
@@ -214,9 +237,15 @@ def carrega():
 
 
 def prob_pluja(model, d):
-    """Probabilidad de lluvia. Si el modelo propio necesita la estación de
+    """Probabilidad de lluvia. Con el modelo del archivo, el que lleva ECMWF si
+    la pasada lo tiene (ADR 0086). Si el modelo propio necesita la estación de
     casa y no hay dato, la del archivo."""
     m = (model or {}).get("pluja")
+    if m and m.get("origen") == "arxiu":
+        me = modelo_arxiu_ecmwf()
+        xe = rasgos(d, me["rasgos"]) if me else None
+        if xe is not None:
+            return float(predecir(np.array(me["w"]), np.array(xe)))
     x = rasgos(d, m["rasgos"]) if m else None
     if x is None and m and m.get("origen") != "arxiu":
         m = modelo_arxiu()

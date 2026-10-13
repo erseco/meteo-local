@@ -78,6 +78,30 @@ class Rasgos(unittest.TestCase):
         self.assertGreater(dos, uno)
         self.assertGreater(tres, dos)
 
+    def test_ecmwf_com_un_model_mes(self):
+        # ADR 0086: si la pasada tiene ECMWF, se usa el modelo del archivo con él.
+        d = hora("2026-10-13T15:00", mm=0.0, antelacio=24)
+        self.assertIsNone(A.rasgos(d, A.RASGOS_ARXIU_ECMWF))
+        sense = A.prob_pluja({"pluja": A.modelo_arxiu()}, d)
+        d[f"pluja_{C.MODEL_ECMWF}"] = 2.0
+        x = dict(zip(A.RASGOS_ARXIU_ECMWF, A.rasgos(d, A.RASGOS_ARXIU_ECMWF)))
+        self.assertEqual((x["plou_ecmwf"], x["nomes_ecmwf"], x["quatre_models"]), (1.0, 1.0, 0.0))
+        self.assertAlmostEqual(x["ecmwf_antelacio"], math.log1p(2.0))
+        amb = A.prob_pluja({"pluja": A.modelo_arxiu()}, d)
+        self.assertNotEqual(amb, sense)
+        # Que solo lo vea ECMWF sube la probabilidad, sin pasar de lo que dan los cuatro.
+        tots = hora("2026-10-13T15:00", mm=2.0, antelacio=24)
+        tots[f"pluja_{C.MODEL_ECMWF}"] = 2.0
+        self.assertGreater(amb, sense)
+        self.assertGreater(A.prob_pluja({"pluja": A.modelo_arxiu()}, tots), amb)
+        # El modelo guardado se ajustó con ECMWF y mejora a un día vista.
+        me = A.modelo_arxiu_ecmwf()
+        self.assertEqual(me["rasgos"], A.RASGOS_ARXIU_ECMWF)
+        self.assertGreaterEqual(me["validacio"]["un_dia_abans"]["millora_pct"], 5)
+        # Con un modelo propio en uso, no cambia nada.
+        propi = {"origen": "propi", "rasgos": A.RASGOS_ARXIU, "w": A.modelo_arxiu()["w"]}
+        self.assertAlmostEqual(A.prob_pluja({"pluja": propi}, d), A.prob_pluja({"pluja": propi}, hora("2026-10-13T15:00", antelacio=24)))
+
     def test_fiabilidad_del_modelo_del_archivo(self):
         # La comprobación guardada con el modelo: en cada tramo de
         # probabilidad con bastantes horas, lo dado y lo que llovió no se

@@ -1,0 +1,207 @@
+{
+ "origen": "arxiu",
+ "ecmwf": true,
+ "des_de": "2024-01-01",
+ "fins": "2026-10-05",
+ "rasgos": [
+  "constant",
+  "arome_hd",
+  "arome",
+  "icon_eu",
+  "antelacio",
+  "hora_sin",
+  "hora_cos",
+  "dia_sin",
+  "dia_cos",
+  "plou_arome_hd",
+  "plou_arome",
+  "plou_icon_eu",
+  "dos_models",
+  "tres_models",
+  "arome_hd_antelacio",
+  "arome_antelacio",
+  "icon_eu_antelacio",
+  "algun_antelacio",
+  "tres_antelacio",
+  "ecmwf",
+  "plou_ecmwf",
+  "ecmwf_antelacio",
+  "quatre_models",
+  "nomes_ecmwf"
+ ],
+ "w": [
+  -5.80223,
+  0.48974,
+  0.37716,
+  1.11481,
+  0.50511,
+  -0.04526,
+  0.18571,
+  0.25527,
+  0.57898,
+  2.5298,
+  2.76375,
+  2.88616,
+  -2.09889,
+  -2.11362,
+  0.13363,
+  -0.256,
+  -0.14261,
+  -0.19872,
+  -0.53511,
+  0.54056,
+  0.64444,
+  0.0278,
+  -0.18789,
+  2.17447
+ ],
+ "mostres": 65388,
+ "hores_pluja": 2517,
+ "validacio": {
+  "metode": "validació creuada en 4 grups de setmanes, les mateixes mostres amb ECMWF i sense",
+  "curt_termini": {
+   "des_de": "2024-01-01",
+   "mostres": 47676,
+   "hores_pluja": 1825,
+   "error_sense_ecmwf": 0.02252,
+   "error": 0.02195,
+   "millora_pct": 2.5,
+   "fiabilitat": [
+    {
+     "de": 0,
+     "a": 0.05,
+     "hores": 41687,
+     "donada": 0.005,
+     "va_ploure": 0.005,
+     "part_pluja": 0.107
+    },
+    {
+     "de": 0.05,
+     "a": 0.1,
+     "hores": 1971,
+     "donada": 0.073,
+     "va_ploure": 0.075,
+     "part_pluja": 0.081
+    },
+    {
+     "de": 0.1,
+     "a": 0.2,
+     "hores": 1418,
+     "donada": 0.14,
+     "va_ploure": 0.15,
+     "part_pluja": 0.117
+    },
+    {
+     "de": 0.2,
+     "a": 0.3,
+     "hores": 657,
+     "donada": 0.246,
+     "va_ploure": 0.272,
+     "part_pluja": 0.098
+    },
+    {
+     "de": 0.3,
+     "a": 0.5,
+     "hores": 825,
+     "donada": 0.395,
+     "va_ploure": 0.396,
+     "part_pluja": 0.179
+    },
+    {
+     "de": 0.5,
+     "a": 0.7,
+     "hores": 593,
+     "donada": 0.591,
+     "va_ploure": 0.577,
+     "part_pluja": 0.187
+    },
+    {
+     "de": 0.7,
+     "a": 1,
+     "hores": 525,
+     "donada": 0.825,
+     "va_ploure": 0.804,
+     "part_pluja": 0.231
+    }
+   ],
+   "millora_per_grup_pct": [
+    3.2,
+    2.1,
+    2.9,
+    1.9
+   ]
+  },
+  "un_dia_abans": {
+   "des_de": "2025-10-01",
+   "mostres": 17712,
+   "hores_pluja": 692,
+   "error_sense_ecmwf": 0.02726,
+   "error": 0.02575,
+   "millora_pct": 5.5,
+   "fiabilitat": [
+    {
+     "de": 0,
+     "a": 0.05,
+     "hores": 15354,
+     "donada": 0.006,
+     "va_ploure": 0.005,
+     "part_pluja": 0.108
+    },
+    {
+     "de": 0.05,
+     "a": 0.1,
+     "hores": 504,
+     "donada": 0.074,
+     "va_ploure": 0.062,
+     "part_pluja": 0.045
+    },
+    {
+     "de": 0.1,
+     "a": 0.2,
+     "hores": 794,
+     "donada": 0.143,
+     "va_ploure": 0.161,
+     "part_pluja": 0.185
+    },
+    {
+     "de": 0.2,
+     "a": 0.3,
+     "hores": 336,
+     "donada": 0.243,
+     "va_ploure": 0.324,
+     "part_pluja": 0.158
+    },
+    {
+     "de": 0.3,
+     "a": 0.5,
+     "hores": 418,
+     "donada": 0.387,
+     "va_ploure": 0.414,
+     "part_pluja": 0.25
+    },
+    {
+     "de": 0.5,
+     "a": 0.7,
+     "hores": 222,
+     "donada": 0.588,
+     "va_ploure": 0.491,
+     "part_pluja": 0.158
+    },
+    {
+     "de": 0.7,
+     "a": 1,
+     "hores": 84,
+     "donada": 0.823,
+     "va_ploure": 0.798,
+     "part_pluja": 0.097
+    }
+   ],
+   "millora_per_grup_pct": [
+    5.0,
+    7.4,
+    4.2,
+    4.1
+   ]
+  }
+ }
+}
