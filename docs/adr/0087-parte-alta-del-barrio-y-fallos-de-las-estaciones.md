@@ -83,6 +83,10 @@ Versión 3.78.0.
   parte alta, y «Com es llegeix la previsió» (antes «… la taula», Juanjo:
   «cambia taula por previsió») lo que quiere decir «+2 a la part alta», solo
   si algún tramo lo lleva (3.78.1).
+- «Com es llegeix la previsió», como lista: cada término en negrita y lo que
+  quiere decir (3.79.1; Juanjo: «usa negritas… esto es muy rancio»). «Prob.»
+  dice qué hacer con la cifra, con los mismos umbrales que el cielo de la
+  tabla (20 % y 50 %), y un ejemplo de lo que significa un 40 %.
 - En el móvil, la línea de la temperatura del tramo se parte por trozos
   enteros («19–24 °C», «(+2 a la part alta)», «· semblant a ahir»): con el
   añadido no cabía y se salía (Juanjo: «en movil … se desborda»). Medido en

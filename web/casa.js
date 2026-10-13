@@ -663,25 +663,27 @@ function taula(hores, mesurada, riscos) {
   notes.append(element('summary', null, T('Com es llegeix la previsió')));
   // Només què vol dir cada cosa; com es calcula, a «D'on surt» (Juanjo,
   // 12-10-2026: «dice cosas poco útiles … solo lo que significa»; ADR 0077).
-  notes.append(element('p', 'nota', T('Prob.: la probabilitat que plogui en aquella hora. Pluja (mm): la que cauria si plou.')));
-  if (visibles.some((f) => f.segons_estacio)) {
-    notes.append(element('p', 'nota', T('* Hi compta la pluja que cau ara al barri.')));
-  }
-  if (visibles.some((f) => f.segons_radar)) {
-    notes.append(element('p', 'nota', T('\u2020 Hi compta la pluja que el radar veu acostar-se.')));
-  }
-  if (visibles.some((f) => avisHora(f))) {
-    notes.append(element('p', 'nota', T('La barra de color marca les hores amb avís, del color del nivell.')));
-  }
+  // Cada terme en negreta i què vol dir al costat (Juanjo, 13-10-2026: «usa
+  // negritas… esto es muy rancio»).
+  const llista = element('dl', 'llegenda');
+  const terme = (nom, text) => llista.append(element('dt', null, nom), element('dd', null, text));
+  // Què fer amb la xifra, amb els mateixos llindars que el cel de la taula
+  // (PROB_POSSIBLE i PROB_PLUJA; Juanjo, 13-10-2026: «alguna indicación útil»).
+  terme(T('Prob.'), T('La probabilitat que plogui en aquella hora. Per sota del 20\u00a0%, no s’espera pluja; del 20 al 50\u00a0%, pot ploure: si surts, porta paraigua; del 50\u00a0% amunt, el més probable és que plogui. Per exemple, un 40\u00a0% vol dir que, de cada 10 vegades que la previsió dona un 40\u00a0% per a una hora, en 4 acaba plovent.'));
+  terme(T('Pluja'), T('Els mil·límetres que caurien si plou.'));
+  if (visibles.some((f) => f.segons_estacio)) terme('*', T('Hi compta la pluja que cau ara al barri.'));
+  if (visibles.some((f) => f.segons_radar)) terme('\u2020', T('Hi compta la pluja que el radar veu acostar-se.'));
   // La part alta, només si algun tram la diu (ADR 0087).
   if (trams.some((t) => arrodoneixAlta(t.difAlta) || t.fenomens.some(([nom]) => nom === NOM_FENOMEN.glaçadaRiera()))) {
-    notes.append(element('p', 'nota', T('Les temperatures són les de vora la riera, la zona més freda del barri. «+2 a la part alta» vol dir que allà sol fer 2\u00a0°C més a aquelles hores, segons el que han mesurat les estacions del barri els últims 30 dies.')));
+    terme(T('+2 a la part alta'), T('Les temperatures són les de vora la riera, la zona més freda del barri; a la part alta hi sol fer 2\u00a0°C més a aquelles hores, segons les estacions del barri dels últims 30 dies.'));
   }
-  notes.append(element('p', 'nota', T('Vent en km/h: mitjana i, entre parèntesis, les ratxes.')));
+  if (visibles.some((f) => avisHora(f))) terme(T('Barra de color'), T('Hores amb avís, del color del nivell.'));
+  terme(T('Vent'), T('La mitjana en km/h i, entre parèntesis, les ratxes.'));
   // La taula arriba fins a les 21 h de demà (ADR 0041): més enllà d'un dia, menys fina.
   if (visibles.length && new Date(visibles[visibles.length - 1].fins) - new Date() > 24 * 3600e3) {
-    notes.append(element('p', 'nota', T('Més enllà de 24 hores, la previsió és menys segura.')));
+    terme(T('Demà'), T('Més enllà de 24 hores, la previsió és menys segura.'));
   }
+  notes.append(llista);
   sec.append(notes);
   return sec;
 }

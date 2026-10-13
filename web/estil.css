@@ -393,6 +393,14 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .boto-tot:focus-visible { outline: 2px solid var(--enllac); outline-offset: 2px; }
 .boto-tot svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .com.notes-taula { margin-top: .5rem; }
+/* «Com es llegeix la previsió»: cada terme en negreta i què vol dir (ADR 0087). */
+.llegenda { display: grid; grid-template-columns: max-content 1fr; gap: .45rem .9rem; margin: .6rem 0 0; }
+.llegenda dt { font-weight: 700; color: var(--text); }
+.llegenda dd { margin: 0; color: var(--suau); }
+@media (max-width: 420px) {
+  .llegenda { grid-template-columns: 1fr; gap: 0; }
+  .llegenda dd { margin-bottom: .55rem; }
+}
 
 /* Radar a «Ara a casa»: franja pròpia, amb el color del que diu. */
 .radar-ara {
