@@ -1085,7 +1085,8 @@ function obreBombolla(etiqueta) {
 }
 
 document.addEventListener('click', (e) => {
-  const etiqueta = e.target.closest && e.target.closest('.alta');
+  // La de la llegenda ja té l'explicació al costat.
+  const etiqueta = e.target.closest && !e.target.closest('.llegenda') && e.target.closest('.alta');
   const jaOberta = BOMBOLLA && BOMBOLLA.etiqueta === etiqueta;
   tancaBombolla();
   if (!etiqueta) return;

@@ -689,6 +689,11 @@ function taula(hores, mesurada, riscos) {
   terme(T('Pluja'), T('Els mil·límetres que caurien si plou.'));
   if (visibles.some((f) => f.segons_estacio)) terme('*', T('Hi compta la pluja que cau ara al barri.'));
   if (visibles.some((f) => f.segons_radar)) terme('\u2020', T('Hi compta la pluja que el radar veu acostar-se.'));
+  // La part alta, només si algun tram la diu, amb l'etiqueta tal com surt
+  // (ADR 0087; Juanjo, 13-10-2026: «por qué ha desaparecido la explicación»).
+  if (trams.some((t) => arrodoneixAlta(t.difAlta) || t.fenomens.some(([nom]) => nom === NOM_FENOMEN.glaçadaRiera()))) {
+    terme(T('+1, +2… °C a la part alta'), T('Les temperatures són les de vora la riera, la zona més freda del barri. La xifra diu quants graus més sol fer a la part alta, que canvia segons l’hora del dia i l’època de l’any: surt del que han mesurat les estacions del barri a cada hora els últims 30 dies.'), 'alta');
+  }
   if (visibles.some((f) => avisHora(f))) terme(T('Barra de color'), T('Hores amb avís, del color del nivell.'));
   terme(T('Vent'), T('La mitjana en km/h i, entre parèntesis, les ratxes.'));
   // La taula arriba fins a les 21 h de demà (ADR 0041): més enllà d'un dia, menys fina.

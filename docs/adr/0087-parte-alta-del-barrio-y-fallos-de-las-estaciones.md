@@ -100,8 +100,10 @@ Versión 3.78.0.
   desplazarse o con Esc; en los tramos no despliega el tramo. Se probaron y
   descartaron una línea fija encima de la previsión (la etiqueta salía antes
   en «Ara» y el resumen), la explicación bajo la primera etiqueta de la página
-  y un recuadro de color («demasiado agresivo»), un «?» en la etiqueta y su
-  entrada en «Com es llegeix la previsió». Los textos de «D'on surt» y «Com
+  y un recuadro de color («demasiado agresivo»), y un «?» en la etiqueta.
+  «Com es llegeix la previsió» la explica, con el término en la misma
+  etiqueta; en la 3.80.0 desapareció por error al descartar la línea fija y
+  volvió en la 3.80.1. Los textos de «D'on surt» y «Com
   funciona» dicen que la diferencia cambia según la hora del día y la época
   del año.
 - En el móvil, la línea de la temperatura del tramo se parte por trozos

@@ -183,6 +183,8 @@ var IDIOMA = {
     "{0}° més que avui": "{0}° más que hoy",
     "{0}° menys que avui": "{0}° menos que hoy",
     "Plou": "Llueve",
+    "+1, +2… °C a la part alta": "+1, +2… °C en la parte alta",
+    "Les temperatures són les de vora la riera, la zona més freda del barri. La xifra diu quants graus més sol fer a la part alta, que canvia segons l’hora del dia i l’època de l’any: surt del que han mesurat les estacions del barri a cada hora els últims 30 dies.": "Las temperaturas son las de junto a la riera, la zona más fría del barrio. La cifra dice cuántos grados más suele hacer en la parte alta, que cambia según la hora del día y la época del año: sale de lo que han medido las estaciones del barrio a cada hora los últimos 30 días.",
     "Les temperatures són les de vora la riera, la zona més freda del barri; a la part alta sol fer més calor, i aquesta etiqueta diu quants graus més.": "Las temperaturas son las de junto a la riera, la zona más fría del barrio; en la parte alta suele hacer más calor, y esta etiqueta dice cuántos grados más.",
     "A la part alta, {0} °C més": "En la parte alta, {0} °C más",
     "A la part alta, {0} °C menys": "En la parte alta, {0} °C menos",
