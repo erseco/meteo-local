@@ -109,3 +109,14 @@ cambiante, no como «+2» fijo. Sale un dato caducado («ara, RainViewer»: hoy
 manda Meteocat). «Fonts i crèdits» y «Com funciona» cuentan también las
 cinco estaciones y el viento provisional.
 
+**«Com funciona», al día (3.79.3).** Juanjo: «revisa toda la página». La
+probabilidad dice que sale del archivo de Sabadell y Sant Cugat de momento y
+que cada día se entrena otra con la lluvia del barrio; la temperatura, que es
+la de junto a la riera y que hay una corrección con el registro propio en
+entrenamiento; dos apartados nuevos en «Una previsió que aprèn» (la
+diferencia con la parte alta y el viento, provisional); la lluvia que llega
+con probabilidad baja, recalculada con el cálculo actual (una de cada nueve
+horas de lluvia, con menos del 5 %); «D'on surt» ya no se presenta como
+detallado. Fuera «en un servidor domèstic» y las menciones al idioma de la
+metodología y de los ADR (Juanjo: «el que lo abra ya lo verá»).
+
