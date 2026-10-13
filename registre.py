@@ -84,7 +84,7 @@ def _desa_per_hores(ruta, campos, nuevas):
     with open(ruta + ".tmp", "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=campos)
         w.writeheader()
-        w.writerows(guardadas[k] for k in sorted(guardadas))
+        w.writerows(guardadas[k] for k in sorted(guardadas, key=P.ordre_hora))
     os.replace(ruta + ".tmp", ruta)
 
 
@@ -109,7 +109,7 @@ def cincs_casa(filas):
 
 def apunta_casa_5min(cincs):
     _desa_per_hores(ESTACIO_CASA_5MIN, CAMPOS_5MIN,
-                    {fin.strftime("%Y-%m-%dT%H:%M"): {"fins": fin.strftime("%Y-%m-%dT%H:%M"), "pluja_mm": round(mm, 1)}
+                    {P.clau_hora(fin): {"fins": P.clau_hora(fin), "pluja_mm": round(mm, 1)}
                      for fin, mm in cincs.items()})
 
 
@@ -129,7 +129,7 @@ def hores_meteocat(filas):
 
 def apunta_meteocat(codi, hores):
     _desa_per_hores(os.path.join(DIR, f"meteocat-{codi}.csv"), CAMPOS_METEOCAT,
-                    {fin.strftime("%Y-%m-%dT%H:%M"): {"fins": fin.strftime("%Y-%m-%dT%H:%M"), "pluja_mm": mm}
+                    {P.clau_hora(fin): {"fins": P.clau_hora(fin), "pluja_mm": mm}
                      for fin, mm in hores.items()})
 
 
@@ -164,7 +164,7 @@ def apunta_veina(estacio, hores):
     for fin, h in hores.items():
         if h.get("pluja_mm") is None and h.get("temperatura") is None:
             continue
-        clave = fin.strftime("%Y-%m-%dT%H:%M")
+        clave = P.clau_hora(fin)
         nuevas[clave] = {"fins": clave, **{k: h.get(k) for k in CAMPOS_VEINA[1:]}}
     _desa_per_hores(os.path.join(DIR, f"veina-{estacio}.csv"), CAMPOS_VEINA, nuevas)
 
@@ -191,13 +191,13 @@ def temperatures_casa(ahora, hores=72, recents=None):
                 if r["fins"] >= desde and _num(r["temperatura"]) is not None:
                     res[r["fins"]] = _num(r["temperatura"])
     for fin, h in (recents or {}).items():
-        clau = fin.strftime("%Y-%m-%dT%H:%M")
+        clau = P.clau_hora(fin)
         if clau >= desde and h.get("temperatura") is not None:
             res[clau] = round(h["temperatura"], 1)
     # Las horas con sol directo sobre el termómetro, con la temperatura
     # esperada según las vecinas (ADR 0081).
     import sol_estacio
-    return dict(sorted(sol_estacio.amb_esperades(res, ahora).items()))
+    return dict(sorted(sol_estacio.amb_esperades(res, ahora).items(), key=lambda kv: P.ordre_hora(kv[0])))
 
 
 # Cuánto se rellena hacia atrás como mucho: Ecowitt guarda 90 días cada 5 minutos.
@@ -216,12 +216,12 @@ def apunta_estacio_casa(nuevas):
         with open(ESTACIO_CASA, encoding="utf-8") as f:
             guardadas = {r["fins"]: r for r in csv.DictReader(f)}
     for fin, h in nuevas.items():
-        clave = fin.strftime("%Y-%m-%dT%H:%M")
+        clave = P.clau_hora(fin)
         guardadas[clave] = {"fins": clave, **{k: h.get(k) for k in CAMPOS_ESTACIO_CASA[1:]}}
     with open(ESTACIO_CASA + ".tmp", "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=CAMPOS_ESTACIO_CASA)
         w.writeheader()
-        w.writerows(guardadas[k] for k in sorted(guardadas))
+        w.writerows(guardadas[k] for k in sorted(guardadas, key=P.ordre_hora))
     os.replace(ESTACIO_CASA + ".tmp", ESTACIO_CASA)
 
 
@@ -258,7 +258,7 @@ def rehaz_pluja_casa(ahora=None):
         filas = list(csv.DictReader(f))
     desde = max(ahora - dt.timedelta(days=ESTACIO_CASA_DIES_MAX),
                 dt.datetime.fromisoformat(filas[0]["fins"]).astimezone() - dt.timedelta(hours=1))
-    buenas = {fin.strftime("%Y-%m-%dT%H:%M"): h["pluja_mm"]
+    buenas = {P.clau_hora(fin): h["pluja_mm"]
               for fin, h in E.hores(E.historial(desde, ahora, "5min")).items() if h["pluja_mm"] is not None}
     canvis = 0
     for r in filas:

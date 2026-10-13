@@ -18,6 +18,7 @@ import re
 import sys
 import urllib.parse
 import urllib.request
+from zoneinfo import ZoneInfo
 
 import config as C
 import nowcast as N
@@ -26,7 +27,43 @@ import ecowitt
 UA = {"User-Agent": "meteo-local/" + C.VERSION}
 DIR = os.path.dirname(os.path.abspath(__file__))
 TZ = "Europe/Madrid"
+ZONA = ZoneInfo(TZ)
 AHORA = dt.datetime.now().astimezone()
+
+
+def clau_hora(t):
+    """La hora (con zona) como texto, en hora de Madrid: «AAAA-MM-DDTHH:MM»,
+    como en todo el programa y los registros. La que se repite cuando el
+    reloj se atrasa en octubre (de 2 a 3, dos veces) lleva el desfase
+    («…T02:00+02:00» y «…T02:00+01:00»): sin él serían la misma hora."""
+    t = t.astimezone(ZONA)
+    if t.replace(fold=0).utcoffset() != t.replace(fold=1).utcoffset():
+        return t.isoformat(timespec="minutes")
+    return t.strftime("%Y-%m-%dT%H:%M")
+
+
+def ordre_hora(clau):
+    """Para ordenar claves de clau_hora por el momento real: como texto,
+    «…T02:00+01:00» iría antes que «…T02:00+02:00»."""
+    return dt.datetime.fromisoformat(clau).astimezone().timestamp()
+
+
+def horas_locales(resposta):
+    """Pasa a hora de Madrid las horas de una respuesta de Open-Meteo, en el
+    sitio. Open-Meteo pone a toda la serie el desfase del momento de la
+    consulta (utc_offset_seconds), no el de cada hora: el 13-10-2026, el
+    25-10 a las 22 h de invierno salía como «T23:00» (GMT+2). Las fechas
+    solas (daily) se quedan como están."""
+    desfase = dt.timezone(dt.timedelta(seconds=resposta.get("utc_offset_seconds") or 0))
+    local = lambda t: clau_hora(dt.datetime.fromisoformat(t).replace(tzinfo=desfase)) if t and len(t) > 10 else t
+    for bloc in ("hourly", "daily"):
+        b = resposta.get(bloc)
+        if not b:
+            continue
+        for camp in ("time", "sunrise", "sunset"):
+            if camp in b:
+                b[camp] = [local(t) for t in b[camp]]
+    return resposta
 
 
 def leer_calibracion():

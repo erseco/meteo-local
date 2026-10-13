@@ -146,7 +146,10 @@ function celTram(files, nit) {
 const COMPARA_MIN = 2;
 
 function diaAbans(clau) {
-  const [dia, hora] = clau.split('T');
+  // Sense el desfase de l'hora que es repeteix a l'octubre («T02:00+01:00»):
+  // el dia abans, aquella hora només hi és una vegada.
+  const [dia, resta] = clau.split('T');
+  const hora = resta.slice(0, 5);
   const t = new Date(`${dia}T12:00`);
   t.setDate(t.getDate() - 1);
   const dos = (n) => String(n).padStart(2, '0');
@@ -731,6 +734,14 @@ function taula(hores, mesurada, riscos, sol) {
   }
   if (visibles.some((f) => avisHora(f))) terme(T('Barra de color'), T('Hores amb avís, del color del nivell.'));
   terme(T('Vent'), T('La mitjana en km/h i, entre parèntesis, les ratxes.'));
+  // Si la taula travessa un canvi d'hora, la franja de 2 a 3 surt dues
+  // vegades (octubre) o no hi és (març): es diu per què (Juanjo, 13-10-2026).
+  const desfasos = visibles.map((f) => new Date(f.hora).getTimezoneOffset());
+  if (new Set(desfasos).size > 1) {
+    terme(T('Canvi d’hora'), desfasos[desfasos.length - 1] > desfasos[0]
+      ? T('Aquesta nit el rellotge es retarda una hora: a les 3 tornen a ser les 2, i la franja de 2 a 3 surt dues vegades.')
+      : T('Aquesta nit el rellotge s’avança una hora: a les 2 passen a ser les 3, i la franja de 2 a 3 no hi és.'));
+  }
   // La taula arriba fins a les 21 h de demà (ADR 0041): més enllà d'un dia, menys fina.
   if (visibles.length && new Date(visibles[visibles.length - 1].fins) - new Date() > 24 * 3600e3) {
     terme(T('Demà'), T('Més enllà de 24 hores, la previsió és menys segura.'));

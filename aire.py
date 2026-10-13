@@ -101,8 +101,9 @@ def get_json(url, params):
 
 
 def model(ara, dies_passats=0):
-    return get_json(API, {"latitude": C.CASA[0], "longitude": C.CASA[1], "timezone": P.TZ, "domains": "cams_europe",
-                          "hourly": ",".join(CONTAMINANTS), "past_days": dies_passats, "forecast_days": 1})
+    return P.horas_locales(get_json(API, {"latitude": C.CASA[0], "longitude": C.CASA[1], "timezone": P.TZ,
+                                          "domains": "cams_europe", "hourly": ",".join(CONTAMINANTS),
+                                          "past_days": dies_passats, "forecast_days": 1}))
 
 
 def mesures_xvpca(desde):

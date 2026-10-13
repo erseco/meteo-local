@@ -247,7 +247,7 @@ def franges(hores):
         p = f.get("probabilitat")
         if (p >= 0.2) if p is not None else (f.get("pluja_mm") or 0) >= 0.2:
             p = p or 0
-            h = dt.datetime.fromisoformat(f["hora"])
+            h = hora_local(f["hora"])
             if res and res[-1][1] == h:
                 res[-1] = (res[-1][0], h + dt.timedelta(hours=1), max(res[-1][2], p))
             else:
@@ -305,6 +305,15 @@ PROB_POSSIBLE = 0.2
 INTENSITAT_PLUJA = (6, 40, 80)
 CASA_COORD = (41.5, 2.1)       # com web/comu.js
 ZONA = ZoneInfo("Europe/Madrid")
+
+
+def hora_local(iso):
+    """L'hora d'una fila de la previsió, al rellotge de Madrid i sense zona.
+    L'hora que es repeteix a l'octubre arriba amb el desfase
+    («…T02:00+01:00», prevision.clau_hora): sense, es podria comparar amb
+    les altres i ordenar-les."""
+    t = dt.datetime.fromisoformat(iso)
+    return t.astimezone(ZONA).replace(tzinfo=None) if t.tzinfo else t
 
 
 def altura_sol(t):
@@ -407,7 +416,7 @@ def amb_icona(icona, text):
 def hora_ara(dades, moment):
     ara_n = moment.astimezone(ZONA).replace(tzinfo=None)
     for f in dades.get("hores") or []:
-        if dt.datetime.fromisoformat(f["hora"]) <= ara_n < dt.datetime.fromisoformat(f["fins"]):
+        if hora_local(f["hora"]) <= ara_n < hora_local(f["fins"]):
             return f
     return None
 
@@ -583,7 +592,7 @@ def text_roba(tram, idioma):
     piden prendas distintas, las dos, por orden de hora."""
     hores = []
     for f in tram:
-        h = dt.datetime.fromisoformat(f["hora"])
+        h = hora_local(f["hora"])
         if f.get("temperatura") is not None and h.hour in HORES_ROBA:
             # Redondeo como Math.round de la web (round() de Python lleva 14,5 a 14).
             s = math.floor(es_nota(f["temperatura"], f.get("vent") or 0) + 0.5)
@@ -643,8 +652,8 @@ def resum(dades, idioma, moment, dema=False, avui=False):
     if moment - generat > dt.timedelta(hours=DADES_VELLES_H):
         return t["velles"].format(generat.strftime("%H:%M"))
     ara_n = moment.replace(tzinfo=None)
-    hores = [f for f in dades.get("hores") or [] if dt.datetime.fromisoformat(f["fins"]) > ara_n]
-    hora = lambda f: dt.datetime.fromisoformat(f["hora"])
+    hores = [f for f in dades.get("hores") or [] if hora_local(f["fins"]) > ara_n]
+    hora = lambda f: hora_local(f["hora"])
     # /resum demana sempre la d'avui, /dema la de demà; el resum programat
     # canvia a demà a partir de HORA_DEMA (Juanjo, 08-10-2026).
     if dema or (moment.hour >= HORA_DEMA and not avui):

@@ -231,6 +231,7 @@ def omple(dies=10, ara=None):
     """Repasa el historial de la estación (cada 5 minutos, Ecowitt) con las
     vecinas por horas y apunta los episodios de los últimos días."""
     import ecowitt as E
+    import prevision as P
     ara = ara or dt.datetime.now().astimezone()
     casa_hores = _llegeix_hores(os.path.join(DIR, "estacio-casa.csv"))
     veines_hores = {e: _llegeix_hores(os.path.join(DIR, f"veina-{e}.csv")) for e in C.VEINES}
@@ -242,7 +243,7 @@ def omple(dies=10, ara=None):
     trobats, estat, ultima = [], None, None
     for i, f in enumerate(files):
         t = f["t"]
-        h = (t + dt.timedelta(minutes=30)).replace(minute=0, second=0, microsecond=0).strftime("%Y-%m-%dT%H:%M")
+        h = P.clau_hora((t + dt.timedelta(minutes=30)).replace(minute=0, second=0, microsecond=0))
         veines = [v.get(h) for v in veines_hores.values()]
         lectures = [(g["t"], g["temperatura"]) for g in files[max(0, i - 12):i + 1]]
         nou, _, _ = avalua(lectures, veines, ofs, estat, t, f.get("solar"))

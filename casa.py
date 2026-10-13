@@ -80,12 +80,12 @@ def modelos(desde, errors=None):
                   "wind_speed_10m,wind_gusts_10m,relative_humidity_2m,shortwave_radiation,snowfall",
         "models": "meteofrance_seamless," + ",".join(C.MODELOS_FINOS),
         "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
-    h = json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}"))["hourly"]
+    h = P.horas_locales(json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}")))["hourly"]
     q = urllib.parse.urlencode({
         "latitude": C.CASA[0], "longitude": C.CASA[1], "hourly": "precipitation",
         "models": C.ENSEMBLE, "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
     try:
-        e = json.loads(P.get(f"https://ensemble-api.open-meteo.com/v1/ensemble?{q}"))["hourly"]
+        e = P.horas_locales(json.loads(P.get(f"https://ensemble-api.open-meteo.com/v1/ensemble?{q}")))["hourly"]
     except Exception as ex:
         if errors is None:
             raise
@@ -97,7 +97,7 @@ def modelos(desde, errors=None):
         "latitude": C.CASA[0], "longitude": C.CASA[1], "hourly": "precipitation",
         "models": C.MODEL_ECMWF, "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
     try:
-        ec = json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}"))["hourly"]
+        ec = P.horas_locales(json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}")))["hourly"]
         serie = ec.get("precipitation") or ec.get(f"precipitation_{C.MODEL_ECMWF}")
         if serie and ec.get("time") == h.get("time"):
             h[f"precipitation_{C.MODEL_ECMWF}"] = serie
@@ -111,7 +111,7 @@ def modelos(desde, errors=None):
             "latitude": C.CASA[0], "longitude": C.CASA[1], "hourly": "cloud_cover,cloud_cover_low",
             "models": m, "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
         try:
-            nv = json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}"))["hourly"]
+            nv = P.horas_locales(json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}")))["hourly"]
             if nv.get("time") == h.get("time"):
                 for camp in ("cloud_cover", "cloud_cover_low"):
                     serie = nv.get(camp) or nv.get(f"{camp}_{m}")
@@ -129,7 +129,7 @@ def indice_uv(desde):
     dias = [desde.date().isoformat(), (desde + dt.timedelta(days=2)).date().isoformat()]
     q = urllib.parse.urlencode({"latitude": C.CASA[0], "longitude": C.CASA[1], "hourly": "uv_index",
                                 "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
-    h = json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}"))["hourly"]
+    h = P.horas_locales(json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}")))["hourly"]
     return {t: v for t, v in zip(h["time"], h["uv_index"]) if v is not None}
 
 
@@ -139,7 +139,7 @@ def sol(desde):
     q = urllib.parse.urlencode({"latitude": C.CASA[0], "longitude": C.CASA[1], "timezone": P.TZ,
                                 "daily": "sunrise,sunset,uv_index_max", "start_date": desde.date().isoformat(),
                                 "end_date": (desde + dt.timedelta(days=1)).date().isoformat()})
-    d = json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}"))["daily"]
+    d = P.horas_locales(json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}")))["daily"]
     return [{"dia": t, "sortida": s, "posta": p, "uv_max": uv}
             for t, s, p, uv in zip(d["time"], d["sunrise"], d["sunset"], d["uv_index_max"])]
 
@@ -253,7 +253,7 @@ def temperatura_model_ara(h, ahora):
     serie = h.get("temperature_2m_meteofrance_seamless") or []
     ini = ahora.replace(minute=0, second=0, microsecond=0)
     try:
-        i = h["time"].index(ini.strftime("%Y-%m-%dT%H:%M"))
+        i = h["time"].index(P.clau_hora(ini))
         a, b = serie[i], serie[i + 1]
     except (ValueError, IndexError):
         return None
@@ -430,7 +430,7 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
         if plou_ara:
             p, segun_estacion = 1.0, True
         filas.append({
-            "hora": ini.strftime("%Y-%m-%dT%H:%M"), "fins": t,
+            "hora": P.clau_hora(ini), "fins": t,
             "temperatura": None if temp is None else round(temp, 1),
             "pluja_mm": round(mm, 1), "probabilitat": round(p, 2) if p is not None else None,
             "plou_ara": plou_ara, "segons_estacio": segun_estacion,

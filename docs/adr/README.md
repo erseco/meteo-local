@@ -90,5 +90,6 @@
 | [0086](0086-ecmwf-en-la-probabilidad-de-lluvia.md) | ECMWF en la probabilidad de lluvia | aceptado |
 | [0087](0087-parte-alta-del-barrio-y-fallos-de-las-estaciones.md) | La parte alta del barrio y qué pasa si fallan las estaciones | aceptado |
 | [0088](0088-cielo-con-varios-modelos-comprobado-con-sabadell.md) | El cielo, con varios modelos y comprobado con el aeropuerto de Sabadell | aceptado |
+| [0089](0089-cambio-de-hora.md) | El cambio de hora | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

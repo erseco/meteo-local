@@ -106,6 +106,7 @@ def mitges_hores_meteocat(files):
 def apunta(columnes, ruta=None):
     """Añade al registro {estación: {fin: (media, racha)}}, fila a fila, sin
     borrar lo que ya tenían las otras columnas."""
+    import prevision as P
     ruta = ruta or CSV
     if not any(columnes.values()):
         return
@@ -116,14 +117,14 @@ def apunta(columnes, ruta=None):
             files = {r["fins"]: r for r in csv.DictReader(f)}
     for est, valors in columnes.items():
         for fin, (mitja, ratxa) in valors.items():
-            clau = fin.astimezone().strftime("%Y-%m-%dT%H:%M")
+            clau = P.clau_hora(fin)
             fila = files.setdefault(clau, {"fins": clau})
             fila[est], fila[f"{est}_ratxa"] = mitja, ratxa
     cs = camps()
     with open(ruta + ".tmp", "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=cs, extrasaction="ignore")
         w.writeheader()
-        w.writerows({k: files[c].get(k) for k in cs} for c in sorted(files))
+        w.writerows({k: files[c].get(k) for k in cs} for c in sorted(files, key=P.ordre_hora))
     os.replace(ruta + ".tmp", ruta)
 
 
@@ -243,6 +244,7 @@ def valida(files, var="mitja"):
     """Dejando fuera cada día: error medio absoluto contra Sant Cugat de la
     estimación, de Sabadell y de la media hora anterior de Sant Cugat, en las
     mismas medias horas."""
+    import prevision as P
     ref, con = _clau(REFERENCIA, var), _clau(CONTRAST, var)
     per_fins = {f["fins"]: f for f in files}
     dies = sorted({f["fins"][:10] for f in files})
@@ -254,8 +256,8 @@ def valida(files, var="mitja"):
             if f["fins"][:10] != dia or f.get(ref) is None or f.get(con) is None:
                 continue
             est, _ = estima(ajust, {e: f.get(_clau(e, var)) for e in C.VEINES})
-            abans = per_fins.get((dt.datetime.fromisoformat(f["fins"]) - dt.timedelta(minutes=30))
-                                 .strftime("%Y-%m-%dT%H:%M"), {}).get(ref)
+            abans = per_fins.get(P.clau_hora(dt.datetime.fromisoformat(f["fins"]).astimezone()
+                                             - dt.timedelta(minutes=30)), {}).get(ref)
             if est is None or abans is None:
                 continue
             err["estimacio"].append(abs(est - f[ref]))

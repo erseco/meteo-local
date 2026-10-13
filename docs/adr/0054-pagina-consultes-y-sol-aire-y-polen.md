@@ -163,3 +163,18 @@ a ese; el factor se adopta solo si el error medio corregido es al menos un
 quedan en `aire-correccio.json` con sus dos errores, y la página y el bot
 solo dicen «corregit» de los adoptados. `tests/test_aire.py` (nuevo): un
 sesgo constante se corrige; uno que cambia de signo entre días se descarta.
+
+## Cambio del 13-10-2026: la salida y la puesta del sol, también en la tabla
+
+Juanjo pidió indicar en la tabla de la previsión, «de algún modo que no
+estorbe», la salida y la puesta del sol. En la fila de la hora en que pasan,
+al lado del cielo: el icono de Lucide (`sunrise`, `sunset`) y la hora sin cero
+delante (8:02, como «8–9»), en gris y pequeños; para los lectores de pantalla,
+«Surt el sol a les…» y «Es pon el sol a les…». Hasta 480 px van en la línea
+del icono del cielo, que tenía sitio; si no caben, bajan de línea dentro de su
+casilla, nunca encima de la columna de al lado. Medido en Chromium y Firefox
+en 17 anchuras: de 320 a 400 px y desde 540 px, la fila mide lo mismo que las
+de su mismo cielo sin marca; a 412-500 px y justo a 640 px, una línea más (la
+columna del cielo no da para el icono, el texto en dos líneas y la hora).
+«Com es llegeix la previsió» lo explica con los dos iconos.
+

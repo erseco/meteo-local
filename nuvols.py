@@ -131,10 +131,11 @@ def ara(obs, ahora):
 def apunta(obs, ahora):
     """Las horas ya cerradas, en nuvols-sabadell.csv."""
     from registre import _desa_per_hores
+    import prevision as P
     nuevas = {}
     for fin, (pct, capes, brut) in hores(obs).items():
         if fin <= ahora:
-            clau = fin.strftime("%Y-%m-%dT%H:%M")
+            clau = P.clau_hora(fin)
             nuevas[clau] = {"fins": clau, "nuvols": pct, "capes": int(capes),
                             "metars": " | ".join(b or "" for b in brut)}
     _desa_per_hores(OBSERVATS, CAMPS_OBSERVATS, nuevas)

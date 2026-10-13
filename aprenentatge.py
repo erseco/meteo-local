@@ -767,8 +767,9 @@ def nivell_sortir(mitja, h, llindars=None):
 def ratxa_observada(vent, fins):
     """La racha máxima de la estación del viento (C.VENT_ESTACIO) en la hora que
     acaba en fins: las dos medias horas (vent-mitges-hores.csv)."""
-    t = dt.datetime.fromisoformat(fins)
-    vals = [_num((vent.get((t - dt.timedelta(minutes=m)).strftime("%Y-%m-%dT%H:%M")) or {}).get(f"{C.VENT_ESTACIO}_ratxa"))
+    import prevision as P
+    t = dt.datetime.fromisoformat(fins).astimezone()
+    vals = [_num((vent.get(P.clau_hora(t - dt.timedelta(minutes=m))) or {}).get(f"{C.VENT_ESTACIO}_ratxa"))
             for m in (0, 30)]
     vals = [v for v in vals if v is not None]
     return max(vals) if len(vals) == 2 else None
