@@ -237,7 +237,7 @@ function resumTrams(hores, ara, mesurada) {
 }
 
 // La part alta del barri, quan la diferència arriba a un grau (ADR 0087):
-// «+2 °C a la part alta» al costat de la temperatura del tram i, a «Ara», una
+// «+2» al costat de la temperatura del tram i, a «Ara», una
 // línia amb la mesurada ara.
 // Arrodonit: 0,9 compta com un grau (Juanjo, 13-10-2026).
 function arrodoneixAlta(n) {
@@ -248,7 +248,9 @@ function arrodoneixAlta(n) {
 
 function textAltaTram(n) {
   const r = arrodoneixAlta(n);
-  return r ? T`${(r > 0 ? '+' : '−') + Math.abs(r)} °C a la part alta` : '';
+  // Als trams, només la xifra; el text, a «Ara» i al resum del dia (Juanjo,
+  // 13-10-2026). Què vol dir, en prémer-la i a la llegenda.
+  return r ? (r > 0 ? '+' : '−') + Math.abs(r) : '';
 }
 
 function textAltaAra(n) {
@@ -692,7 +694,7 @@ function taula(hores, mesurada, riscos) {
   // La part alta, només si algun tram la diu, amb l'etiqueta tal com surt
   // (ADR 0087; Juanjo, 13-10-2026: «por qué ha desaparecido la explicación»).
   if (trams.some((t) => arrodoneixAlta(t.difAlta) || t.fenomens.some(([nom]) => nom === NOM_FENOMEN.glaçadaRiera()))) {
-    terme(T('+1, +2… °C a la part alta'), T('Les temperatures són les de vora la riera, la zona més freda del barri. La xifra diu quants graus més sol fer a la part alta, que canvia segons l’hora del dia i l’època de l’any: surt del que han mesurat les estacions del barri a cada hora els últims 30 dies.'), 'alta');
+    terme('+1, +2…', T('Les temperatures són les de vora la riera, la zona més freda del barri. La xifra diu quants graus més sol fer a la part alta, que canvia segons l’hora del dia i l’època de l’any: surt del que han mesurat les estacions del barri a cada hora els últims 30 dies.'), 'alta');
   }
   if (visibles.some((f) => avisHora(f))) terme(T('Barra de color'), T('Hores amb avís, del color del nivell.'));
   terme(T('Vent'), T('La mitjana en km/h i, entre parèntesis, les ratxes.'));

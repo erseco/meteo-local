@@ -93,8 +93,9 @@ Versión 3.78.0.
 - **La etiqueta de la parte alta** (3.80.0; Juanjo, 13-10-2026, viendo
   cada propuesta en local): en color melocotón, el mismo en «Ara» («A la part
   alta, 2 °C més»), en el resumen del día («fins a 26 °C a la part alta») y
-  en cada tramo («+2 °C a la part alta», con los grados); «semblant a ahir»,
-  en gris. Se descartaron el gris, el naranja en negrita (se confunde con los
+  en cada tramo solo la cifra, «+2» (3.80.2; Juanjo: «el texto ponlo solo
+  en ahora y el tiempo hoy… en el resto pon solo el número con un +»);
+  «semblant a ahir», en gris. Se descartaron el gris, el naranja en negrita (se confunde con los
   avisos naranja), la lavanda y el verde azulado. **Qué quiere decir sale al
   pulsarla**, en una burbuja que se cierra con cualquier clic o toque, al
   desplazarse o con Esc; en los tramos no despliega el tramo. Se probaron y

@@ -235,7 +235,7 @@ class Web(unittest.TestCase):
         r = self.avalua("2026-10-08T13:30:00+02:00", f"resumTrams({json.dumps(hores)}, new Date())")
         self.assertAlmostEqual(r[0]["difAlta"], 1.8)               # la màxima de la tarda
         self.assertEqual(self.avalua("2026-10-08T13:30:00+02:00", f"textAltaTram({r[0]['difAlta']})"),
-                         "+2 °C a la part alta")
+                         "+2")
         self.assertEqual(self.avalua("2026-10-08T13:30:00+02:00", "textAltaTram(0.4)"), "")
         # A la nit, −1 a la riera i 0,5 a dalt: glaçada només vora la riera.
         self.assertEqual([f[0] for f in r[1]["fenomens"]], ["glaçada vora la riera"])
