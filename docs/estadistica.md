@@ -471,8 +471,12 @@ y la lluvia esperada es la mediana de $`\text{mm}(h+k)`$ en esas horas:
 | 1 mm o más | 78 % (1,1 mm) | 56 % (0,3 mm) | 44 % (0,1 mm) | 38 % (0 mm) | 859 |
 | 4 mm o más | 86 % (2,0 mm) | 57 % (0,4 mm) | 43 % (0 mm) | 38 % (0 mm) | 245 |
 
-Se aplica con la lluvia de la última hora en casa a las cuatro primeras
-filas de la tabla: la primera, la hora en curso, usa $`k = 1`$.
+Se aplica a las cuatro primeras filas de la tabla con la lluvia de la última
+hora en Montflorit: la mediana de la estación de casa y de las tres vecinas
+que cuentan para la lluvia (`casa.consens_pluja`, ADR 0085); la primera fila,
+la hora en curso, usa $`k = 1`$. Con la mediana, una estación que no marca
+(el cero del pluviómetro de casa no es fiable, ADR 0017) o una que marca de
+más no deciden solas.
 
 ## 6. Cómo se calcula cada hora de la tabla
 

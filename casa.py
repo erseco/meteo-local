@@ -22,6 +22,7 @@ Uso: python3 casa.py --json web/casa.json [--anterior casa.json|URL]
 """
 import datetime as dt
 import json
+import statistics
 import sys
 import urllib.parse
 
@@ -129,6 +130,66 @@ def llueve_ahora_en(casa, veines=None):
     vecinas de Weather Underground que cuentan (config.VEINES, ADR 0060).
     Solo cuenta el sí (ADR 0017)."""
     return bool(casa and casa.get("plou")) or WU.plou_a_les_veines(veines)
+
+
+def pluja_avui_veina(v):
+    """La lluvia de hoy de una vecina, sumando lo que sube su total desde
+    medianoche: el total del día de Weather Underground no siempre vuelve a
+    cero a medianoche local."""
+    if not v.get("files"):
+        return v.get("pluja_avui")
+    hora = dt.datetime.fromisoformat(v["hora"])
+    return E.pluja_entre(v["files"], hora.replace(hour=0, minute=0, second=0, microsecond=0), hora)
+
+
+def _mediana(valors):
+    valors = [x for x in valors if x is not None]
+    return round(statistics.median(valors), 1) if valors else None
+
+
+def consens_pluja(casa, veines=None):
+    """La lluvia de Montflorit por consenso de la red del barrio (Juanjo,
+    13-10-2026: «que mi estación no sea la principal sino que los datos se
+    hagan por consenso»): la mediana de la estación de casa y de las vecinas
+    que cuentan para «plou ara», con las que se hayan podido leer, de la
+    última hora y de hoy. Sin vecinas, la de casa."""
+    estacions = ([casa] if casa else []) + [v for v in veines or [] if v.get("compta")]
+    return {"pluja_1h": _mediana([e.get("pluja_1h") for e in estacions]),
+            "pluja_avui": _mediana([casa.get("pluja_avui") if e is casa else pluja_avui_veina(e)
+                                    for e in estacions])}
+
+
+def consens(ara_casa, casa, veines=None):
+    """«Ara» con la lluvia y la humedad de la red del barrio, sin decir de qué
+    estación sale cada dato (Juanjo: «debe hacerlo silenciosamente»). La temperatura
+    sigue siendo la de casa (la zona fría del barrio, ADR 0081) y la presión
+    también: la de las vecinas no está calibrada. La humedad sale del punto de
+    rocío (el agua que hay en el aire, que es la misma en todo el barrio),
+    mediana de casa y de todas las vecinas, con la temperatura de casa. Lo que
+    marcaba la estación queda en «…_estacio»."""
+    if not ara_casa:
+        return ara_casa
+    res = dict(ara_casa)
+    pluja = consens_pluja(casa, veines)
+    for camp in ("pluja_1h", "pluja_avui"):
+        if pluja[camp] is not None and any(v.get("compta") for v in veines or []):
+            res.setdefault(f"{camp}_estacio", ara_casa.get(camp))
+            res[camp] = pluja[camp]
+    # Llueve si llueve en casa o en una vecina que cuenta (llueve_ahora_en),
+    # con la intensidad mediana de las que la marcan.
+    mullades = [e for e in ([casa] if casa else []) + [v for v in veines or [] if v.get("compta")]
+                if e.get("plou")]
+    if mullades:
+        res.setdefault("plou_estacio", ara_casa.get("plou"))
+        res.setdefault("intensitat_estacio", ara_casa.get("intensitat"))
+        res["plou"] = True
+        res["intensitat"] = _mediana([e.get("intensitat") for e in mullades])
+    rosada = _mediana([(casa or {}).get("rosada")] + [v.get("rosada") for v in veines or []])
+    if rosada is not None and res.get("temperatura") is not None and veines:
+        res.setdefault("humitat_estacio", ara_casa.get("humitat"))
+        res["rosada"] = rosada
+        res["humitat"] = round(SE.humitat(rosada, res["temperatura"]))
+    return res
 
 
 def temperatura_model_ara(h, ahora):
@@ -246,7 +307,8 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
     prob = prob_ensemble(e)
     llueve_ahora = llueve_ahora_en(casa, veines)
     prever = al_prever(desde, h, casa, riera, veines)
-    ultima_hora = prever["pluja_1h_emes"] or 0.0
+    # La persistencia, con la lluvia de la red del barrio (consens_pluja).
+    ultima_hora = consens_pluja(casa, veines)["pluja_1h"] or 0.0
 
     def valor(campo, i):
         return h.get(f"{campo}_meteofrance_seamless", [None] * (i + 1))[i]
@@ -450,6 +512,8 @@ def recoger(anterior=None):
                 salida["temperatura_mesurada"] = SE.amb_esperades(salida["temperatura_mesurada"], P.AHORA) or None
         except Exception as ex:
             print("No he pogut mirar el sol directe a l'estació:", ex, file=sys.stderr)
+    # La lluvia y la humedad de «Ara», por consenso de la red del barrio.
+    salida["ara_casa"] = consens(salida["ara_casa"], casa, veines)
     # Si llueve ahora, en casa o en una vecina que cuenta: lo que miran el
     # bot, los avisos y la web (plou_ara de la primera hora de la tabla).
     salida["plou_ara"] = llueve_ahora_en(casa, veines)

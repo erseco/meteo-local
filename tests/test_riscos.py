@@ -54,9 +54,12 @@ class Deteccio(unittest.TestCase):
         self.assertEqual({x["clau"]: x["nivell"] for x in r}, {"ara:pluja_1h": "taronja", "previsio:pluja_1h": "groc"})
         self.assertEqual(r[0]["nivell"], "taronja")   # el pitjor primer
 
-    def test_pluja_de_casa_nomes_si_en_marca(self):
-        self.assertEqual(salida(casa={"pluja_1h": 30, "plou": False, "temperatura": 15})["riscos"], [])
-        self.assertEqual(len(salida(casa={"pluja_1h": 30, "plou": True, "temperatura": 15})["riscos"]), 1)
+    def test_pluja_de_la_xarxa(self):
+        # «pluja_1h» ja és la mediana de la xarxa del barri (casa.consens):
+        # compta encara que ara mateix no plogui, i el zero no fa res.
+        self.assertEqual(len(salida(casa={"pluja_1h": 30, "plou": False, "temperatura": 15})["riscos"]), 1)
+        self.assertEqual(salida(casa={"pluja_1h": 0, "plou": True, "temperatura": 15})["riscos"], [])
+        self.assertEqual(salida(casa={"pluja_1h": None, "temperatura": 15})["riscos"], [])
         self.assertEqual(salida(casa=None)["riscos"], [])     # sense estació, només la previsió
 
     def test_fred_i_neu(self):

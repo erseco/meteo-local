@@ -63,6 +63,37 @@ class Ecowitt(unittest.TestCase):
         self.assertTrue(casa.llueve_ahora_en({"plou": True}, None))
         self.assertFalse(casa.llueve_ahora_en(None, None))
 
+    def test_consens_de_la_xarxa(self):
+        # Juanjo, 13-10-2026: la lluvia y la humedad, por consenso de la red del barrio.
+        def veina(est, pluja_1h, plou=False, rosada=15, intensitat=None, compta=True):
+            files = [lectura("00:05", 3.0, dia="2026-10-13"), lectura("05:00", 3.0, dia="2026-10-13"),
+                     lectura("06:00", 3.0 + pluja_1h, dia="2026-10-13")]
+            return {"estacio": est, "hora": files[-1]["t"].isoformat(timespec="minutes"), "files": files,
+                    "pluja_1h": pluja_1h, "pluja_avui": 99.0, "plou": plou, "compta": compta,
+                    "rosada": rosada, "intensitat": intensitat}
+        casa_ = {"pluja_1h": 0.0, "pluja_avui": 0.0, "plou": False, "intensitat": 0.0,
+                 "temperatura": 18.0, "humitat": 70, "rosada": 12.0}
+        veines = [veina("A", 4.0, True, 15, 6.0), veina("B", 2.0, True, 15, 2.0), veina("C", 3.0, False, 16),
+                  veina("D", 9.0, True, 15, 20.0, compta=False)]
+        r = casa.consens(dict(casa_), casa_, veines)
+        # La mediana de casa (0, su cero no es fiable) y de las tres que cuentan (2, 3, 4).
+        self.assertEqual(r["pluja_1h"], 2.5)
+        self.assertEqual(r["pluja_1h_estacio"], 0.0)
+        # Hoy, por incrementos desde medianoche (el total de 99 de la vecina no cuenta).
+        self.assertEqual(r["pluja_avui"], 2.5)
+        # Llueve, con la intensidad mediana de las que la marcan y cuentan (A y B).
+        self.assertTrue(r["plou"])
+        self.assertEqual(r["intensitat"], 4.0)
+        # La humedad, con el rocío mediano de todas (12, 15, 15, 16, 15 → 15) y la temperatura de casa.
+        self.assertEqual(r["rosada"], 15)
+        self.assertEqual(r["humitat"], round(casa.SE.humitat(15, 18.0)))
+        self.assertEqual(r["temperatura"], 18.0)
+        # Sin vecinas, todo como lo mide casa.
+        self.assertEqual(casa.consens(dict(casa_), casa_, []), casa_)
+        # La persistencia de las primeras horas, con la misma lluvia.
+        self.assertEqual(casa.consens_pluja(casa_, veines)["pluja_1h"], 2.5)
+        self.assertEqual(casa.consens_pluja(None, veines[:1])["pluja_1h"], 4.0)
+
     def test_sin_claves_no_esta_disponible(self):
         with mock.patch.dict(os.environ, {"HOME": tempfile.mkdtemp()}, clear=True):
             self.assertFalse(E.disponible())

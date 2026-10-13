@@ -182,7 +182,7 @@ var IDIOMA = {
     "{0}° menys que ahir": "{0}° menos que ayer",
     "{0}° més que avui": "{0}° más que hoy",
     "{0}° menys que avui": "{0}° menos que hoy",
-    "Plou en una estació veïna": "Llueve en una estación vecina",
+    "Plou": "Llueve",
     "Pluja a sobre": "Lluvia encima",
     " · pararia cap a les\u00a0{0}": " · pararía hacia las\u00a0{0}",
     " · no s\u2019acaba en 2 hores": " · no acaba en 2 horas",

@@ -88,8 +88,8 @@ function textPressio(casa) {
   return T`${p}, ${sentit}${rapid} (${signe}${coma(Math.abs(d))} en 3 h)`;
 }
 
-// Temperatura, humitat, pressió i pluja, de l'estació de casa (plou només
-// quan en marca: el seu zero no és fiable, ADR 0017); el vent, de Meteocat.
+// La temperatura i la pressió, de l'estació de casa; la pluja i la humitat, de
+// la xarxa del barri (casa.consens); el vent, de Meteocat.
 // Cada dada, amb la seva icona, perquè es llegeixi d'una ullada.
 function dada(id, text) {
   const li = element('li');
@@ -264,17 +264,16 @@ function blocAra(casa, radarDades, vent, veines, hores) {
   termometre.classList.add('vehicle');
   temp.append(termometre, `${coma(casa.temperatura)} °C`);
   sec.append(temp);
-  // Plou si el pluviòmetre ha recollit res en els últims 15 minuts
-  // (config.PLOU_ARA_MIN, ecowitt.resum_ara) o si ho ha fet alguna de les
-  // estacions veïnes de Weather Underground que compten (ADR 0060).
-  const plouCasa = !!casa.plou;
-  const plouVeines = (veines || []).some((v) => v.plou && v.compta);
-  const plou = plouCasa || plouVeines;
-  const intensitat = (plouCasa && casa.intensitat) || 0;
+  // Plou si ha plogut en els últims 15 minuts a la xarxa del barri: l'estació
+  // de casa o alguna de les veïnes que compten (ADR 0060), amb la intensitat
+  // mediana de les que en marquen (casa.consens), sense dir de quina estació
+  // surt (Juanjo, 13-10-2026). Les veïnes, per a les dades d'abans de la 3.76.0.
+  const plou = !!casa.plou || (veines || []).some((v) => v.plou && v.compta);
+  const intensitat = (casa.plou && casa.intensitat) || 0;
   const llista = element('ul', 'dades-ara');
-  llista.append(plouCasa ? dada('i-umbrella', T`Plou: ${coma(intensitat)} mm/h`)
-    : plouVeines ? dada('i-umbrella', T('Plou en una estació veïna'))
-      : dada('i-umbrella-off', T('No plou')));
+  llista.append(!plou ? dada('i-umbrella-off', T('No plou'))
+    : intensitat ? dada('i-umbrella', T`Plou: ${coma(intensitat)} mm/h`)
+      : dada('i-umbrella', T('Plou')));
   llista.append(dada('i-cloud-rain', T`${coma(casa.pluja_avui || 0)} mm avui`));
   // El vent, de l'estació de Meteocat més propera, per mitges hores (ADR
   // 0037): l'estació i l'hora, a «D'on surt» (ADR 0074). Si ve de les veïnes

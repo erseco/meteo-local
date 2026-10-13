@@ -145,14 +145,15 @@ def de_la_previsio(hores, ahora):
 
 
 def de_l_estacio(casa):
-    """Lo que mide ahora la estación de casa: la lluvia de la última hora,
-    solo si marca (su cero no es fiable, ADR 0017), y la temperatura. Ni el
-    viento (el anemómetro no va bien) ni la lluvia de 12 horas, que la
-    estación no da en cada pasada: ese riesgo sale solo de la previsión."""
+    """Lo que se mide ahora: la lluvia de la última hora de la red del barrio
+    (casa.consens: la mediana de casa y de las vecinas que cuentan), y la
+    temperatura de casa. Ni el viento (el anemómetro no va bien) ni la lluvia
+    de 12 horas, que las estaciones no dan en cada pasada: ese riesgo sale
+    solo de la previsión."""
     res = []
     if not casa:
         return res
-    if casa.get("plou") and casa.get("pluja_1h") is not None:
+    if casa.get("pluja_1h"):
         r = risc("pluja_1h", "ara", casa["pluja_1h"])
         if r:
             res.append(r)
