@@ -9,7 +9,7 @@ De noviembre a marzo de los inviernos de INVIERNOS, el historial horario
 de config.VEINES. Cada consulta es una estación y un día, y la clave de
 lectura da 1.500 al día que la web también usa (unas 400, hasta ~960 en modo
 aviso): cada pasada baja como mucho --max días y deja el resto para la
-siguiente. Lo hace el cron del NAS una vez al día, de madrugada, dentro del
+siguiente. Lo lanza un temporizador del NAS una vez al día, de madrugada, en el
 contenedor; lo ya bajado no se repite. Cuando no queda nada escribe
 «complet» en el directorio: es la señal para el análisis.
 
