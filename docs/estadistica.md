@@ -367,7 +367,7 @@ arriba:
 
 - **Ahora**: $`\Delta = \operatorname{mediana}(T_{\text{alta}}) - T`$, con
   las vecinas de arriba leídas en la última media hora (al menos dos). Sale
-  si $`|\Delta| \ge 1`$ °C.
+  si, redondeada, llega a un grado: desde 0,5 °C.
 - **En la previsión**, para cada hora del día $`h`$:
 
 ```math
@@ -379,8 +379,8 @@ arriba:
   mínimo; si no, la de partida (`calibracio/part_alta.json`, verano y otoño
   de 2026: de +0,1 a +0,4 °C de noche y de +1,4 a +1,9 °C de 12 a 18 h).
   Cada fila lleva la media de $`\Delta`$ en sus dos extremos, y el tramo dice
-  la diferencia de su máxima (de día) o de su mínima (de noche) si llega a
-  un grado. Si la mínima de la riera llega a 0 °C y la de arriba no, la
+  la diferencia de su máxima (de día) o de su mínima (de noche) si,
+  redondeada, llega a un grado; el resumen del día, la máxima de arriba. Si la mínima de la riera llega a 0 °C y la de arriba no, la
   helada es «vora la riera».
 
 Si falla la estación de casa, la temperatura de «Ara» es la de ICERDA6 o, sin

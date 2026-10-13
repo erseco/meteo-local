@@ -523,15 +523,30 @@ def text_comparacio(n, idioma, respecte):
     return f", {abs(n)} graus {'més' if n > 0 else 'menys'} que {respecte}"
 
 
+def text_alta(tram, idioma):
+    """« (fins a 26 °C a la part alta)»: la màxima a la part alta del barri,
+    si es separa un grau o més (arrodonit) de la de vora la riera (ADR 0087;
+    Juanjo, 13-10-2026: «0.9 yo lo consideraría como 1»)."""
+    files = [f for f in tram if f.get("temperatura") is not None]
+    if not files:
+        return ""
+    alta = max(f["temperatura"] + (f.get("dif_alta") or 0) for f in files)
+    d = alta - max(f["temperatura"] for f in files)
+    if math.floor(abs(d) + 0.5) < 1:
+        return ""
+    return f" (hasta {graus(alta)} en la parte alta)" if idioma == "es" else f" (fins a {graus(alta)} a la part alta)"
+
+
 def text_temperatura(tram, idioma, quan, comparacio=None, respecte="ahir"):
     temps = [f["temperatura"] for f in tram if f.get("temperatura") is not None]
     i = " y " if idioma == "es" else " i "
     if not temps:
         return None
+    alta = text_alta(tram, idioma)
     # Si la mínima i la màxima coincideixen, una xifra: «16 °C», no «entre 16 °C i 16 °C» (ADR 0074).
     if graus(min(temps)) == graus(max(temps)):
-        return f"{quan}: {graus(min(temps))}{text_comparacio(comparacio, idioma, respecte)}."
-    return f"{quan}: entre {graus(min(temps))}{i}{graus(max(temps))}{text_comparacio(comparacio, idioma, respecte)}."
+        return f"{quan}: {graus(min(temps))}{alta}{text_comparacio(comparacio, idioma, respecte)}."
+    return f"{quan}: entre {graus(min(temps))}{i}{graus(max(temps))}{alta}{text_comparacio(comparacio, idioma, respecte)}."
 
 
 # La ropa para ir a pie, con los mismos tramos que «Si surts» (web/sortir.js,

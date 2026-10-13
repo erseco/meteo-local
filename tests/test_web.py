@@ -239,8 +239,9 @@ class Web(unittest.TestCase):
         self.assertEqual(self.avalua("2026-10-08T13:30:00+02:00", "textAltaTram(0.4)"), "")
         # A la nit, −1 a la riera i 0,5 a dalt: glaçada només vora la riera.
         self.assertEqual([f[0] for f in r[1]["fenomens"]], ["glaçada vora la riera"])
-        self.assertEqual(self.avalua("2026-10-08T13:30:00+02:00", "[textAltaAra(2.4), textAltaAra(0.6), textAltaAra(-1.2)]"),
-                         ["Vora la riera. A la part alta, 2 °C més.", None, "Vora la riera. A la part alta, 1 °C menys."])
+        self.assertEqual(self.avalua("2026-10-08T13:30:00+02:00", "[textAltaAra(2.4), textAltaAra(0.9), textAltaAra(0.4), textAltaAra(-1.2)]"),
+                         ["Vora la riera. A la part alta, 2 °C més.", "Vora la riera. A la part alta, 1 °C més.", None,
+                          "Vora la riera. A la part alta, 1 °C menys."])
 
     def test_trams_oberts_de_sortida(self):
         # Juanjo, 09-10-2026: «no debería ser persistente?»: els de perill; amb «Desplega-ho tot» desat, tots.

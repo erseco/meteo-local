@@ -57,6 +57,13 @@ Versión 3.78.0.
   más.
 - **Heladas**: si la mínima de la riera llega a 0 °C y la de la parte alta
   no, «glaçada vora la riera».
+- **El resumen del día** («El temps avui» de la web, «Consultes» y el bot,
+  hoy y mañana; `bot.text_alta`): «Temperatura d'aquí a mitjanit: entre 16 °C
+  i 24 °C (fins a 26 °C a la part alta)», con la máxima de arriba (3.79.0;
+  Juanjo: «en el temps avui también hay que ponerlo»).
+- **Un grau, arrodonit**: la diferencia sale desde 0,5 °C, que se redondea a
+  1 (Juanjo, 13-10-2026: «0.9 yo lo consideraría como 1»); hasta la 3.78.1
+  hacía falta 1 °C justo.
 - **Si falla la estación de casa**, «Ara» sale de las vecinas
   (`casa.ara_sense_casa`): la temperatura, la de ICERDA6, para que siga
   siendo la de la riera; sin ella, la de la parte alta menos su diferencia

@@ -239,9 +239,11 @@ function resumTrams(hores, ara, mesurada) {
 // La part alta del barri, quan la diferència arriba a un grau (ADR 0087):
 // «(+2 a la part alta)» al costat de la temperatura del tram i, a «Ara», una
 // línia amb la mesurada ara.
+// Arrodonit: 0,9 compta com un grau (Juanjo, 13-10-2026).
 function arrodoneixAlta(n) {
-  if (n == null || Math.abs(n) < 1) return 0;
-  return Math.round(n);
+  if (n == null) return 0;
+  const r = Math.sign(n) * Math.round(Math.abs(n));
+  return Math.abs(r) >= 1 ? r : 0;
 }
 
 function textAltaTram(n) {
