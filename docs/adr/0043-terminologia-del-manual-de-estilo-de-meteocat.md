@@ -2,6 +2,8 @@
 
 Fecha: 2026-10-08 · Estado: aceptado
 
+**13-10-2026 (ADR 0088).** La nubosidad en % ya no es la de un solo modelo, sino la mezcla de cuatro y, en la hora en curso, la observada en el aeropuerto de Sabadell. Los umbrales y los nombres no cambian.
+
 ## Contexto
 
 «Poc núvol» le sonó raro a Juanjo y preguntó si era la forma estándar. No lo

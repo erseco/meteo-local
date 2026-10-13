@@ -2,6 +2,8 @@
 
 Fecha: 2026-10-13 · Estado: aceptado
 
+**13-10-2026 (ADR 0088).** ECMWF IFS entra también en el cielo, como uno de los cuatro modelos que se mezclan.
+
 ## Contexto
 
 La probabilidad de lluvia sale de una regresión logística con la lluvia de

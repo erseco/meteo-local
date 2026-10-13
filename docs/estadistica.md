@@ -51,7 +51,9 @@ Para aprender hace falta saber qué se dijo y qué pasó. Los modelos que se
 usan llegan a través de Open-Meteo: AROME (*Applications of Research to
 Operations at Mesoscale*) es el de Météo-France, a 1,5 km en su versión HD y
 a 2,5 km en la normal, e ICON-EU (*ICOsahedral Nonhydrostatic*) es el del
-servicio meteorológico alemán, a 7 km. En cada pasada, el servidor guarda:
+servicio meteorológico alemán, a 7 km. Para las nubes se suman ECMWF IFS, el
+del Centro Europeo, a 9 km, y GFS, el global de la NOAA de Estados Unidos
+(apartado 8). En cada pasada, el servidor guarda:
 
 - **Lo que midió una estación particular del barrio** («la estación de
   casa»), hora a hora: la lluvia de la hora y la temperatura, la humedad, el
@@ -70,7 +72,8 @@ servicio meteorológico alemán, a 7 km. En cada pasada, el servidor guarda:
   siguientes: la lluvia de los tres modelos finos (AROME HD, AROME e ICON-EU)
   y, desde el 13-10-2026, la de ECMWF IFS,
   la fracción de las 40 simulaciones del conjunto ICON-EU-EPS con lluvia, la
-  temperatura, las nubes, el viento, la humedad, la radiación, la antelación,
+  temperatura, las nubes (desde el 13-10-2026, las de los cuatro modelos del
+  cielo, todas y las bajas), el viento, la humedad, la radiación, la antelación,
   lo que medían las estaciones al prever y lo que mostró la página. Desde el
   08-10-2026, también lo oficial de cada hora: si había aviso de la Agencia
   Estatal de Meteorología (AEMET) por lluvia o tormentas y si el plan de
@@ -542,6 +545,9 @@ Para cada hora, en este orden (`casa.py`, `previsio`):
    menos 30 minutos de la hora. Nunca baja nada. Estas cifras llevan «†».
 6. **Lo medido manda**: si casa ha recogido lluvia en los últimos 15
    minutos, la primera hora es «Plou ara» con el 100 %.
+7. **Cielo**: la mezcla de las nubes de cuatro modelos; en la primera hora,
+   lo observado en el aeropuerto de Sabadell si ve capas de nubes (apartado 8,
+   «Qué modelos dan el cielo»).
 
 **Cuántas horas.** Desde la versión 3.40.0 (ADR 0041), la tabla llega a 24
 horas como mínimo y hasta las 21 h de mañana. Acaba siempre al final de un
@@ -1221,32 +1227,38 @@ hora), `estacio-casa-5min.csv` (la lluvia de casa cada 5 minutos),
 `meteocat-XF.csv` y `meteocat-XV.csv` (la lluvia por horas de Sabadell y
 Sant Cugat), `veina-<id>.csv` (lo que miden por horas las estaciones vecinas de
 Weather Underground), `casa-AAAA-MM.jsonl` (lo previsto),
-`radar-fonts-*.jsonl` (lo que daba cada radar), `radar-a-prop-*.jsonl` (los
+`radar-fonts-*.jsonl` (lo que daba cada radar), `nuvols-sabadell.csv` (las
+nubes observadas por horas en el aeropuerto de Sabadell), `radar-a-prop-*.jsonl` (los
 ecos de cada radar a 15 km o menos de casa, en cada pasada), `sortir.csv` (lo que dijo «Si surts» de cada medio y lo que pasó), `avisos-pluja.csv`
 (episodios del aviso de lluvia) y `riera.csv` (episodios de la riera). Los
 modelos aprendidos, en `/estat/aprenentatge/`: `model.json`, `proposat.json`,
-`fi-pluja.json` y `historial.csv`, con las muestras, las horas de lluvia y
+`fi-pluja.json`, `nuvols-pesos.json` (los pesos de los modelos del cielo y
+su última comparación) y `historial.csv`, con las muestras, las horas de lluvia y
 los errores de cada método día a día.
 
 **Cuándo se ejecuta.** A las 16:00 (`HORA_VERIFICACION` de `config.py`) el
 reloj del NAS (`nas/reloj.sh`) completa la estación de casa con
 `registre.py estacio` y ejecuta `aprenentatge.py diari`, que además compara
-los radares, juzga el final de la lluvia y apunta lo que dijo «Si surts» de cada medio.
+los radares y las mezclas de modelos del cielo, juzga el final de la lluvia y
+apunta lo que dijo «Si surts» de cada medio.
 
 **Avisos al responsable.** Llegan a Juanjo por Telegram:
 
 - cada cambio de método propuesto, con las cifras;
 - el resultado de la variante con Sant Cugat, a las 30 horas de lluvia;
 - el del final de la lluvia, a los 5 episodios, y el de «Si surts», a los 28 días;
-- cada cambio de radar o de regla del final de la lluvia.
+- cada cambio de radar o de regla del final de la lluvia;
+- cada cambio de los pesos del cielo, y si pasa más de un día sin que llegue
+  el METAR de Sabadell.
 
 **Parar un cambio.** El archivo `/estat/aprenentatge/atura` detiene la
-aplicación de una propuesta, los cambios de radar y los de regla del final de
-la lluvia.
+aplicación de una propuesta, los cambios de radar, los de pesos del cielo y
+los de regla del final de la lluvia.
 
 **Consultas.** `python3 aprenentatge.py estat` (qué se usa y las últimas
 cifras), `python3 aprenentatge.py sortir`, `python3 fi_pluja.py resum`,
-`python3 pluja_arriba.py resum` y `python3 riera.py resum`.
+`python3 pluja_arriba.py resum`, `python3 riera.py resum` y
+`python3 nuvols.py estat` (los pesos del cielo y cuánto se equivoca cada modelo).
 
 **El pluviómetro de casa** (`pluviometre.py`, ADR 0017). Su cero no es
 fiable: solo cuenta cuando marca lluvia. Tras limpiarlo, una vigilancia de una

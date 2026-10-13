@@ -122,12 +122,15 @@ Fuentes de la previsión:
    funciona bien (ADR 0037). Además se estima con las vecinas que lo siguen
    bien, llevadas a 10 m con un factor que se aprende cada día; está en
    prueba y la página no lo muestra hasta que se decida (ADR 0064). La estación de Montflorit de meteocerdanyola.com
-   se usó del 05-10-2026 al 09-10-2026 (ADR 0004 y 0058).
+   se usó del 05-10-2026 al 09-10-2026 (ADR 0004 y 0058). Las nubes, del
+   METAR del aeropuerto de Sabadell, cada media hora, para el cielo de la hora
+   en curso y para elegir qué mezcla de modelos acierta más (ADR 0088).
 2. **Radar** de Meteocat o, si su imagen va 10 minutos por detrás, de
    RainViewer; una comparación diaria decide cuál acierta más (ADR 0026).
 3. **Modelos** de Open-Meteo (AROME HD, AROME e ICON-EU, y el ensemble
    ICON-EU-EPS; ECMWF IFS a 9 km, solo para la probabilidad de lluvia, ADR
-   0086), con el índice UV del modelo por defecto. Cada tramo dice
+   0086), con el índice UV del modelo por defecto. El cielo es la mezcla de
+   las nubes de AROME, ICON-EU, ECMWF IFS y GFS (ADR 0088). Cada tramo dice
    cuántos grados más o menos que el día antes, con lo medido en la
    estación particular (ADR 0061).
 4. **Avisos de AEMET** del Prelitoral de Barcelona y **planes de Protección
@@ -241,6 +244,8 @@ de [Meteocat](https://www.meteo.cat/observacions/xema) y del
 estación particular con la [API de Ecowitt](https://doc.ecowitt.net/web/#/apiv3en?page_id=1),
 estaciones vecinas de [Weather Underground](https://www.wunderground.com/) (The
 Weather Company; uso personal y no comercial),
+nubes observadas en el aeropuerto de Sabadell (METAR) del
+[Aviation Weather Center](https://aviationweather.gov/data/api/) de la NOAA,
 radar y advección de [Meteocat](https://www.meteo.cat/observacions/radar) y,
 de reserva, de [RainViewer](https://www.rainviewer.com/), avisos de AEMET a
 través de [Meteoalarm](https://meteoalarm.org/), avisos de trenes de la

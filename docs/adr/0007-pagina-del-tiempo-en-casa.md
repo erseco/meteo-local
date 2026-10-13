@@ -2,6 +2,8 @@
 
 Fecha: 2026-10-05 · Estado: aceptado
 
+**13-10-2026 (ADR 0088).** El cielo ya no es el de `meteofrance_seamless`: es la mezcla de las nubes de AROME, ICON-EU, ECMWF IFS y GFS y, en la hora en curso, lo observado en el aeropuerto de Sabadell.
+
 ## Contexto
 
 Juanjo pidió una página paralela con el tiempo en casa (Montflorit), sobre

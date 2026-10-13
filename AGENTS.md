@@ -90,4 +90,6 @@ Al cambiar algo:
   «Si surts» de cada medio y lo que pasó, `docker exec meteo-local python3
   /proyecto/aprenentatge.py sortir` (ADR 0047 y 0068); el final de la lluvia según el
   radar, `docker exec meteo-local python3 /proyecto/fi_pluja.py resum`
-  (ADR 0049).
+  (ADR 0049); los pesos de los modelos del cielo y cuánto se equivoca cada
+  uno contra el aeropuerto de Sabadell, `docker exec meteo-local python3
+  /proyecto/nuvols.py estat` (ADR 0088).

@@ -687,6 +687,9 @@ function taula(hores, mesurada, riscos) {
   };
   // Què fer amb la xifra, amb els mateixos llindars que el cel de la taula
   // (PROB_POSSIBLE i PROB_PLUJA; Juanjo, 13-10-2026: «alguna indicación útil»).
+  // El cel, amb els llindars de celNuvols i de plujaHora (Juanjo, 13-10-2026:
+  // «no hay nada sobre el cel»; ADR 0088).
+  terme(T('Cel'), T('Quina part del cel tapen els núvols: serè, menys del 20\u00a0%; poc ennuvolat, fins al 45\u00a0%; mig ennuvolat, fins al 70\u00a0%; molt ennuvolat, fins al 85\u00a0%, i cobert, més. Si la probabilitat de pluja arriba al 20\u00a0%, hi surt «possible pluja», i del 50\u00a0% amunt, la pluja. A l’hora en curs, el cel és el que s’observa a l’aeroport de Sabadell, si hi veu núvols.'));
   terme(T('Prob.'), T('La probabilitat que plogui en aquella hora. Per sota del 20\u00a0%, no s’espera pluja; del 20 al 50\u00a0%, pot ploure: si surts, porta paraigua; del 50\u00a0% amunt, el més probable és que plogui. Per exemple, un 40\u00a0% vol dir que, de cada 10 vegades que la previsió dona un 40\u00a0% per a una hora, en 4 acaba plovent.'));
   terme(T('Pluja'), T('Els mil·límetres que caurien si plou.'));
   if (visibles.some((f) => f.segons_estacio)) terme('*', T('Hi compta la pluja que cau ara al barri.'));

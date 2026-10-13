@@ -50,6 +50,11 @@ observado.
   menos, salvo que exista `aprenentatge/atura`. Los pesos se guardan en
   `aprenentatge/nuvols-pesos.json`, se usan en la pasada siguiente y se
   avisa a Juanjo por Telegram.
+- **La página lo explica** en «D'on surt», en «Com funciona», en «Fonts i
+  crèdits» y, desde la 3.81.2, en «Com es llegeix la previsió»: qué parte del
+  cielo tapa cada nombre, cuándo sale la lluvia en su lugar y que la hora en
+  curso es lo observado en Sabadell (Juanjo, 13-10-2026: «no hay nada sobre
+  el cel»).
 - **Si deja de llegar el METAR**, la página sigue con los modelos. La
   comparación diaria avisa a Juanjo si hace más de un día que no se apunta
   ninguna hora.
