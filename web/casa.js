@@ -579,7 +579,28 @@ function obertDeSortida(t) {
 }
 
 // Una taula per tram, amb les mateixes columnes.
-function taulaTram(t, obert) {
+// La sortida i la posta del sol, a la fila de l'hora en què passen, al costat
+// del cel: discretes, en gris (Juanjo, 13-10-2026).
+function solPerHora(sol) {
+  const clau = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}-${d.getHours()}`;
+  const res = new Map();
+  for (const dia of sol || []) {
+    if (dia.sortida) res.set(clau(new Date(dia.sortida)), ['i-sunrise', T('Surt el sol a les'), dia.sortida]);
+    if (dia.posta) res.set(clau(new Date(dia.posta)), ['i-sunset', T('Es pon el sol a les'), dia.posta]);
+  }
+  return (hora) => res.get(clau(new Date(hora)));
+}
+
+function marcaSol([id, text, quan]) {
+  const m = element('span', 'sol-fila');
+  // Sense el zero de davant (8:02), com les hores de la taula (8–9): al mòbil
+  // ha de cabre al costat de la icona del cel.
+  const hora = new Date(quan).toLocaleTimeString(IDIOMA.codi, { hour: 'numeric', minute: '2-digit' });
+  m.append(icona(id), element('span', 'visualment-amagat', text + ' '), hora);
+  return m;
+}
+
+function taulaTram(t, obert, solHora) {
   const det = element('details', `tram-hores${t.perill ? ` amb-perill ${t.perill.nivell}` : ''}`);
   det.open = obert;
   det.dataset.clau = t.clau;
@@ -619,9 +640,11 @@ function taulaTram(t, obert) {
     else if (avis) tr.append(franjaAvis(avis));
     const [textCel, iconaCel] = f.plou_ara ? [T('Plou ara'), 'i-umbrella'] : cel(f);
     const celCel = element('td', 'cel');
-    const linia = element('span', 'cel-text');
+    const sol = solHora && solHora(f.hora);
+    const linia = element('span', sol ? 'cel-text amb-sol' : 'cel-text');
     if (iconaCel) linia.append(icona(iconaCel));
-    linia.append(textCel);
+    linia.append(sol ? element('span', 'cel-nom', textCel) : textCel);
+    if (sol) linia.append(marcaSol(sol));
     celCel.append(linia);
     tr.append(celCel);
     tr.append(element('td', 'num', f.temperatura == null ? '' : `${Math.round(f.temperatura)}`));
@@ -649,7 +672,7 @@ function taulaTram(t, obert) {
   return det;
 }
 
-function taula(hores, mesurada, riscos) {
+function taula(hores, mesurada, riscos, sol) {
   const ara = new Date();
   for (const f of hores) f.riscos_hora = riscosHora(f, riscos, ara);
   const trams = resumTrams(hores, ara, mesurada);
@@ -670,7 +693,8 @@ function taula(hores, mesurada, riscos) {
   });
   cap.append(element('h2', 'perque', T('Previsió')), boto);
   sec.append(cap);
-  trams.forEach((t) => sec.append(taulaTram(t, obertDeSortida(t))));
+  const solHora = solPerHora(sol);
+  trams.forEach((t) => sec.append(taulaTram(t, obertDeSortida(t), solHora)));
   // Les notes, plegades: només les que diuen alguna cosa de les hores d'ara.
   const visibles = trams.flatMap((t) => t.files);
   const notes = element('details', 'com notes-taula');
@@ -772,7 +796,7 @@ function pinta(dades) {
   if (OFERTA_AVISOS) cont.append(OFERTA_AVISOS);
   const resum = blocsResum(dades);
   cont.append(...resum);
-  const previsio = dades.hores && taula(dades.hores, dades.temperatura_mesurada, dades.riscos);
+  const previsio = dades.hores && taula(dades.hores, dades.temperatura_mesurada, dades.riscos, dades.sol);
   if (previsio) {
     cont.append(previsio);
     ajustaFranges();

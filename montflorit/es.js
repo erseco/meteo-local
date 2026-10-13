@@ -370,6 +370,8 @@ var IDIOMA = {
     "Hores de llum: de {0} a {1}": "Horas de luz: de {0} a {1}",
     "ara": "ahora",
     "Surt a les {0} i es pon a les {1}.": "Sale a las {0} y se pone a las {1}.",
+    "Surt el sol a les": "Sale el sol a las",
+    "Es pon el sol a les": "Se pone el sol a las",
     "Cap incidència a menys de 5\u00a0km de Montflorit.": "Ninguna incidencia a menos de 5\u00a0km de Montflorit.",
     "Trens de Cerdanyola": "Trenes de Cerdanyola",
     "Trànsit a menys de 5\u00a0km de Montflorit": "Tráfico a menos de 5\u00a0km de Montflorit",

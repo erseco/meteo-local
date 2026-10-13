@@ -486,6 +486,18 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 /* Nota de Protecció Civil sobre els veredictes de «Si surts». */
 .avis-pc { border-color: var(--vermell); background: var(--vermell-fons); }
 .taula-hores td.cel { white-space: normal; }
+/* La sortida i la posta del sol, al costat del cel: en gris i petita. Al
+   mòbil, on el cel ja ocupa dues línies (la icona a dalt), va a la línia de la
+   icona, que té lloc: la fila fa el mateix que les altres. */
+.sol-fila { display: inline-flex; align-items: center; gap: .2rem; margin-left: .2rem; font-size: .85em; font-weight: 400; color: var(--suau); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Si no hi cap al costat, baixa de línia: mai a sobre de la columna del costat. */
+.tram-hores .cel-text.amb-sol { flex-wrap: wrap; row-gap: .1rem; }
+@media (max-width: 480px) {
+  .tram-hores .amb-sol .sol-fila { order: 1; margin-left: -.1rem; gap: .1rem; font-size: .8em; }
+  .tram-hores .amb-sol .sol-fila svg { width: 1.05em; height: 1.05em; }
+  .tram-hores .amb-sol .cel-nom { order: 2; flex-basis: 100%; }
+}
+.sol-fila svg { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .cel-text { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; }
 .cel-text svg {
   width: 1.25em;
