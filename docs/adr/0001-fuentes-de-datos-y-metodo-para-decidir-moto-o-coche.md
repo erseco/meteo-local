@@ -52,6 +52,8 @@ molestia; una tormenta en moto, un riesgo.
 4. **Modelos finos** de Open-Meteo (AROME HD, AROME, ICON-EU), en los dos
    extremos del trayecto: máximo de 1 mm en una hora, coche; 0,2 mm, compte.
    Los globales (ECMWF, UKMO, GFS) no deciden: sus celdas incluyen mar.
+   (Desde la 3.77.0, ECMWF IFS a 9 km, con la celda tierra adentro, entra en
+   la probabilidad de lluvia de Temps a Montflorit: ADR 0086.)
 5. **Ensemble ICON-EU-EPS** (40 miembros, horario): fracción de miembros con
    0,2 mm o más en la ventana. Un 50 % o más, coche; un 20 %, compte. Con el
    umbral de coche en el 40 %, un día sin aviso y con los modelos secos daba
