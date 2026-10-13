@@ -28,9 +28,15 @@ funcionando».
 - Invierno de 2025-2026 (mínimas diarias de Weather Underground, 143
   noches): la parte alta, +0,5 °C de mediana y +0,8 °C en las 20 noches con
   casa a 2 °C o menos; fue un invierno suave (mínima de casa, −2,5 °C).
-- El 15-01-2025, ICERDA6 marcó −4 °C y la parte alta, −1 y −2 °C: en las
-  noches de helada fuerte la diferencia llega a 2 o 3 °C. Pendiente de
-  medirlo con enero y febrero de 2024 y 2025.
+- Enero y febrero de 2024 y de 2025 (mínimas diarias de las vecinas y medias
+  de 4 horas o de un día de casa, lo que guarda Ecowitt): la mínima de arriba
+  (ICERDA18 o, sin ella, ICERDA28) supera a la de ICERDA6 en **2 °C de
+  mediana y hasta 4 °C**, los dos inviernos; la media del día de arriba, a la
+  de casa, en 1,1 °C (hasta 3,7). El 14-01-2025: ICERDA6, −5 °C; ICERDA28,
+  −4; ICERDA18, −1; la media de 4 horas más baja de casa, −3,9 °C (su mínima
+  real, más baja). Lo que Juanjo ve en su calle se confirma; el invierno de
+  2025-2026 fue la excepción. Datos en `calibracio/dades/hivern/` (no se
+  suben).
 
 ## Decisión
 
