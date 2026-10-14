@@ -39,31 +39,62 @@ class PartAlta(unittest.TestCase):
             for e in PA.ALTES:
                 veines_h[e][c] = 23.0
         t = PA.per_hores(ARA, casa_h, veines_h, eps=[])
-        self.assertEqual(t[16], 3.0)                                # del registro: 12 tardes
+        self.assertEqual(t[14], 3.0)                                # del registro: 12 tardes (16 h = 14 UTC)
         self.assertEqual(t[3], PA.inicial()[3])                     # sin bastantes, la de partida
-        files = PA.a_les_hores([{"hora": "2026-10-13T15:00", "fins": "2026-10-13T16:00"}], {15: 1.0, 16: 3.0})
+        files = PA.a_les_hores([{"hora": "2026-10-13T15:00", "fins": "2026-10-13T16:00"}], {13: 1.0, 14: 3.0})
         self.assertEqual(files[0]["dif_alta"], 2.0)
+
+    def test_hora_solar_als_dos_costats_del_canvi_dhora(self):
+        # Las 15 h de verano y las 14 h de invierno son la misma hora de sol.
+        self.assertEqual(PA.hora_solar("2026-10-24T15:00"), 13)
+        self.assertEqual(PA.hora_solar("2026-10-26T14:00"), 13)
+        self.assertEqual(PA.hora_solar("2027-03-29T15:00"), 13)
+        # La hora que se repite en octubre (ADR 0089): dos horas de sol.
+        self.assertEqual(PA.hora_solar("2026-10-25T02:00+02:00"), 0)
+        self.assertEqual(PA.hora_solar("2026-10-25T02:00+01:00"), 1)
+        self.assertEqual(PA.hora_solar(ARA), 14)
+
+    def test_el_mes_del_canvi_no_barreja_hores_de_sol(self):
+        # 15 días antes y 15 después del 25-10-2026: la parte alta, 3 °C más
+        # cálida a las 13 UTC (15 h de verano, 14 h de invierno) y nada el
+        # resto. Con la hora del reloj, la de las 15 h mezclaba las dos.
+        ara = dt.datetime(2026, 11, 9, 20, 0, tzinfo=dt.timezone(dt.timedelta(hours=1)))
+        casa_h, veines_h = {}, {e: {} for e in PA.ALTES}
+        for d in range(1, 30):
+            dia = (ara - dt.timedelta(days=d)).date()
+            for h in range(24):
+                t = dt.datetime(dia.year, dia.month, dia.day, h, tzinfo=dt.timezone.utc)
+                c = PA.ZONA.fromutc(t.replace(tzinfo=PA.ZONA)).strftime("%Y-%m-%dT%H:%M")
+                casa_h[c] = 10.0
+                for e in PA.ALTES:
+                    veines_h[e][c] = 13.0 if h == 13 else 10.0
+        t = PA.per_hores(ara, casa_h, veines_h, eps=[])
+        self.assertEqual(t[13], 3.0)
+        self.assertEqual(t[12], 0.0)
+        self.assertEqual(t[14], 0.0)
+        files = PA.a_les_hores([{"hora": "2026-11-10T14:00", "fins": "2026-11-10T15:00"}], t)
+        self.assertEqual(files[0]["dif_alta"], 1.5)                 # de 14 a 15 h de invierno: 13 y 14 UTC
 
     def test_la_de_partida_te_les_24_hores(self):
         t = PA.inicial()
         self.assertEqual(sorted(t), list(range(24)))
-        self.assertGreater(t[16], 1)                                 # tarde: la parte alta, más cálida
+        self.assertGreater(t[14], 1)                                 # tarde: la parte alta, más cálida
         self.assertLess(abs(t[3]), 1)                                # de noche, casi igual
 
 
 class AraSenseCasa(unittest.TestCase):
     def test_amb_icerda6_vora_la_riera(self):
         vs = [veina("ICERDA6", 15, rosada=8), veina("ICERDA18", 17), veina("ICERDA28", 18)]
-        a = casa.ara_sense_casa(vs, {16: 1.5}, ARA)
+        a = casa.ara_sense_casa(vs, {14: 1.5}, ARA)
         self.assertEqual(a["temperatura"], 15)
         self.assertIsNone(a["pressio"])
         self.assertEqual(a["humitat"], round(casa.SE.humitat(10, 15)))   # rocío mediano 10
 
     def test_sense_icerda6_la_part_alta_menys_la_diferencia(self):
         vs = [veina("ICERDA18", 17), veina("ICERDA28", 18)]
-        self.assertEqual(casa.ara_sense_casa(vs, {16: 1.5}, ARA)["temperatura"], 16.0)
-        self.assertIsNone(casa.ara_sense_casa([veina("ICERDA28", 18)], {16: 1.5}, ARA))
-        self.assertIsNone(casa.ara_sense_casa([], {16: 1.5}, ARA))
+        self.assertEqual(casa.ara_sense_casa(vs, {14: 1.5}, ARA)["temperatura"], 16.0)
+        self.assertIsNone(casa.ara_sense_casa([veina("ICERDA28", 18)], {14: 1.5}, ARA))
+        self.assertIsNone(casa.ara_sense_casa([], {14: 1.5}, ARA))
 
 
 class Vigilancia(unittest.TestCase):

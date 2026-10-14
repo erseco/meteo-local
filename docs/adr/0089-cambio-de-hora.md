@@ -83,6 +83,8 @@ trataba. Comprobado ese día con la previsión real de Open-Meteo para el
 - Los datos públicos pueden llevar, una hora al año, `hora` y `fins` con
   desfase. Quien los lea debe usar `fromisoformat` (o `new Date`), no
   comparar fechas sin zona con fechas con zona.
-- Lo que se agrupa por hora del reloj (la parte alta por hora, ADR 0087; la
-  hora en el modelo aprendido, ADR 0012) mezcla, el mes siguiente a cada
-  cambio, horas de sol distintas. No lo resuelve este ADR.
+- Lo que se agrupa por hora del reloj mezcla, el mes siguiente a cada
+  cambio, horas de sol distintas. Resuelto el 14-10-2026 (3.82.1): la parte
+  alta va por hora solar (ADR 0087). El modelo aprendido sigue con la del
+  reloj porque la solar no lo mejora de forma apreciable: un 0,2 % en la
+  temperatura y nada en la lluvia (ADR 0012, `calibracio/hora_solar.py`).

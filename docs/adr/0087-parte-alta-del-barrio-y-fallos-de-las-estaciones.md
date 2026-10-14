@@ -49,7 +49,8 @@ Versión 3.78.0.
   hora (al menos dos) se separa un grado o más (`part_alta.ara`). Es una
   medida.
 - **Previsión**: cada fila lleva `dif_alta`, la diferencia habitual a esa hora
-  en los últimos 30 días del registro (al menos 10 casos por hora, sin las
+  solar (en tiempo universal, `part_alta.hora_solar`; desde la 3.82.1) en los
+  últimos 30 días del registro (al menos 10 casos por hora, sin las
   horas con sol directo); si no hay bastantes, la de partida
   (`calibracio/part_alta.json`). La recalcula el NAS en cada pasada, así que
   sigue la época del año. Junto a la temperatura del tramo, «(+2 a la part
@@ -113,6 +114,14 @@ Versión 3.78.0.
   Chromium, Firefox y WebKit a 320, 360, 375 y 412 px, en catalán y
   castellano.
 
+- **La hora, la solar** (3.82.1, 14-10-2026; Juanjo, tras el ADR 0089:
+  «lo haremos mañana»). La tabla se agrupaba por la hora del reloj: el mes
+  siguiente a cada cambio de hora mezclaba dos horas de sol distintas, y la
+  tarde con el sol más alto quedaba repartida entre dos filas. Ahora se
+  agrupa y se consulta por la hora del tiempo universal, también en «Ara»
+  sin la estación de casa. La tabla de partida es la misma, con las horas
+  pasadas a tiempo universal (los datos eran todos de horario de verano).
+
 ## Alternativas descartadas
 
 - **Un conmutador «carrer Canaletes»** o dos temperaturas: más trabajo para
@@ -147,6 +156,12 @@ Versión 3.78.0.
   avisos (a los 30 minutos, una sola vez, al volver, sin repetir cuando falla
   todo Weather Underground). `tests/test_web.py`,
   `test_part_alta_al_costat_de_la_temperatura`. 423 pruebas en verde.
+- La hora solar (3.82.1): `test_hora_solar_als_dos_costats_del_canvi_dhora`
+  (las 15 h de verano y las 14 h de invierno, la misma hora; las dos horas de
+  2 a 3 del 25-10, distintas) y `test_el_mes_del_canvi_no_barreja_hores_de_sol`
+  (15 días a cada lado del cambio: con la hora del reloj fallaba).
+  `calibracio/part_alta.py` vuelto a ejecutar: la misma tabla desplazada dos
+  horas, sin otra diferencia.
 - En el NAS (13-10-2026, con una copia del registro): diferencia de ahora
   0,9 °C (no sale la línea); en la previsión, de +1,6 a +1,8 °C por la
   tarde. Sin la estación de casa, con las vecinas reales: 18 °C con ICERDA6

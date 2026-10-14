@@ -43,6 +43,10 @@ aprendizaje automático también para casa.
   avisa por Telegram y se aplica al día siguiente, salvo que exista
   `/estat/aprenentatge/atura`. Los pesos del mismo método se ponen al día sin
   avisar.
+- **La hora del día, la del reloj** (comprobado el 14-10-2026, ADR 0089):
+  con la hora solar el error baja un 0,2 % en la temperatura y nada en la
+  lluvia (`calibracio/hora_solar.py`), muy por debajo del 5 % que exige un
+  cambio de método.
 - **Lo medido sigue mandando**: «Plou ara» y la persistencia de las primeras
   horas sustituyen a la probabilidad calculada si dan más.
 - La página dice de dónde sale la probabilidad y, si se corrige, la

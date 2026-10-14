@@ -238,7 +238,7 @@ def ara_sense_casa(veines, taula, ahora):
         temperatura = _mediana(baixa)
     else:
         alta = PA.mediana_alta([v.get("temperatura") for v in fresques if v["estacio"] in PA.ALTES])
-        dif = taula.get(ahora.hour)
+        dif = taula.get(PA.hora_solar(ahora))
         if alta is None or dif is None:
             return None
         temperatura = round(alta - dif, 1)

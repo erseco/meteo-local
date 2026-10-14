@@ -364,6 +364,15 @@ se previó de verdad y lo que midió casa, con la antelación real de cada hora,
 y se compara con el primero (apartado 8). Las horas con sol en el termómetro
 de casa no cuentan (apartado 17).
 
+La hora del día entra con la del reloj. Se comprobó el 14-10-2026 si
+acertaba más con la hora solar (`calibracio/hora_solar.py`, ADR 0089): con
+las mismas muestras y semanas no vistas, el error de la temperatura baja
+0,002 °C (de 1,031 a 1,029 °C; intervalo del 95 % por bootstrap de días,
+de 0,0002 a 0,004 °C), un 0,2 %, y el de la lluvia no cambia. Muy lejos del
+5 % que se exige para cambiar de método (apartado 8): se queda la del reloj.
+Con un solo armónico diario y el resto de señales (la radiación ya sigue al
+sol), la hora apenas pesa.
+
 ### La parte alta del barrio (ADR 0087)
 
 La estación de casa está junto a la riera, en la zona más fría del barrio,
@@ -374,7 +383,9 @@ arriba:
 - **Ahora**: $`\Delta = \operatorname{mediana}(T_{\text{alta}}) - T`$, con
   las vecinas de arriba leídas en la última media hora (al menos dos). Sale
   si, redondeada, llega a un grado: desde 0,5 °C.
-- **En la previsión**, para cada hora del día $`h`$:
+- **En la previsión**, para cada hora solar $`h`$ (la hora del tiempo
+  universal, que no cambia con el reloj: la diferencia la marcan el sol y el
+  aire que se calienta; desde el 14-10-2026, ADR 0087):
 
 ```math
 \Delta_h = \operatorname{mediana}_{d \in \text{últimos 30 días}}
@@ -383,7 +394,8 @@ arriba:
 
   sin las horas con sol directo sobre el termómetro y con 10 casos como
   mínimo; si no, la de partida (`calibracio/part_alta.json`, verano y otoño
-  de 2026: de +0,1 a +0,4 °C de noche y de +1,4 a +1,9 °C de 12 a 18 h).
+  de 2026: de +0,1 a +0,4 °C de noche y de +1,4 a +1,9 °C de 12 a 18 h en
+  horario de verano, de 10 a 16 h en tiempo universal).
   Cada fila lleva la media de $`\Delta`$ en sus dos extremos, y el tramo dice
   la diferencia de su máxima (de día) o de su mínima (de noche) si,
   redondeada, llega a un grado; el resumen del día, la máxima de arriba. Si la mínima de la riera llega a 0 °C y la de arriba no, la
