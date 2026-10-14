@@ -1,6 +1,6 @@
 # 82. App de Android para Google Play
 
-Fecha: 2026-10-12 · Estado: aceptado (en revisión en Google Play)
+Fecha: 2026-10-12 · Estado: aceptado (en revisión en Google Play; rechazada el 13 y el 14-10-2026)
 
 ## Contexto
 
@@ -141,3 +141,41 @@ desde las versiones 3.77-3.81: las observaciones del aeropuerto de Sabadell
 3.000 caracteres de los 4.000. Cambiado en Play Console y enviado otra vez a
 revisión el mismo día, con los mismos once cambios del primer envío.
 
+
+## Cambio del 14-10-2026: rechazada otra vez; fuentes oficiales con enlace directo y aviso dentro de la app
+
+Google volvió a rechazarla el 14-10-2026 por el mismo motivo, aunque la
+descripción ya llevaba el aviso y los enlaces. Google no dice qué falta. Lo
+que se vio al revisarlo:
+
+- La descripción no citaba todos los organismos públicos cuyos datos usa la
+  app: faltaban los datos abiertos de la Generalitat (planes de Protecció
+  Civil), los avisos de peligro de Meteocat, el Parc Natural de Collserola y
+  Meteoalarm, por donde llegan los avisos de AEMET.
+- Casi todos los enlaces llevaban a la portada del organismo, no a la página
+  donde publica el dato.
+- El aviso de que no es oficial estaba solo en la descripción. Google pide
+  también «aclarar o añadir la información en la app», y a otros
+  desarrolladores les rechazaron varias veces con el aviso solo en la ficha
+  (caso gema-app, septiembre de 2026).
+
+Juanjo aprobó los tres cambios («sí, hazlo»):
+
+1. En la descripción (`android/fitxa/llarga-ca.txt` y `llarga-es.txt`),
+   «D'on surt» pasa a ser «Fonts oficials (organismes públics)», con cada
+   organismo y el enlace a la página concreta del dato (todos comprobados ese
+   día, en el idioma del texto cuando existe), y «Altres fonts» para las que
+   no son públicas, también con enlace. Al final se repite el aviso de que no
+   es oficial. Unos 3.650 y 3.760 caracteres de los 4.000.
+2. En la web (y por tanto en la app), una línea nueva en el pie de todas las
+   páginas, «No és una web oficial ni representa cap organisme públic.»,
+   junto al enlace a «Fonts i crèdits», y un párrafo al principio de esa
+   página con el mismo aviso (3.83.1).
+3. Al reenviar, una nota en inglés en el campo «¿Qué has hecho para
+   solucionar este problema?» de Play Console, que dice dónde están el aviso y
+   las fuentes.
+
+Validación: pruebas, `probar-web` (tres navegadores, escritorio, móvil y
+tableta, tema claro y oscuro, sin desbordamiento) y axe-core sin infracciones
+en `index.html` y `fonts.html`, en catalán y en castellano. Si la rechazan
+también así, el siguiente paso es la apelación.

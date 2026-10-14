@@ -21,23 +21,28 @@ CONSULTES
 AVISOS AL MÒBIL
 • Tries què reps: perill, riera, pluja uns 15 minuts abans que arribi, talls de llum i la previsió del dia.
 
-D'ON SURT
-• Estacions meteorològiques del barri i radar de RainViewer: https://www.rainviewer.com
-• Servei Meteorològic de Catalunya (estacions, radar i avisos): https://www.meteo.cat
-• AEMET (avisos): https://www.aemet.es/ca/
-• Observacions de l'aeroport de Sabadell (Aviation Weather Center, NOAA): https://aviationweather.gov
+FONTS OFICIALS (organismes públics)
+• Avisos de l'AEMET, a través de Meteoalarm: https://www.aemet.es/ca/eltiempo/prediccion/avisos
+• Estacions i radar del Servei Meteorològic de Catalunya: https://www.meteo.cat/observacions/xema i https://www.meteo.cat/observacions/radar
+• Avisos de perill de Meteocat: https://www.meteo.cat/prediccio/general
+• Plans de Protecció Civil, de les dades obertes de la Generalitat: https://analisi.transparenciacatalunya.cat/d/wj9c-j6vf
+• Incendis en curs, de Bombers de la Generalitat: https://interior.gencat.cat/ca/arees_dactuacio/bombers/actuacions-de-bombers/
+• Pla Alfa, dels Agents Rurals: https://interior.gencat.cat/ca/arees_dactuacio/agents-rurals/pla-alfa/
+• Límit del Parc Natural de Collserola: https://parcnaturalcollserola.cat/
+• Trànsit, del Servei Català de Trànsit: https://transit.gencat.cat/ca/informacio-viaria/estat-transit/
+• Avisos de Rodalies de Catalunya: https://rodalies.gencat.cat/ca/inici/
+• Trens en temps real, de Renfe: https://data.renfe.com/ i d'FGC: https://dadesobertes.fgc.cat/
+• Qualitat de l'aire, de les estacions de la Generalitat: https://mediambient.gencat.cat/ca/05_ambits_dactuacio/atmosfera/qualitat_de_laire/vols-saber-que-respires/ i del programa europeu Copernicus: https://atmosphere.copernicus.eu
+• Observacions de l'aeroport de Sabadell, de l'Aviation Weather Center (NOAA): https://aviationweather.gov
+• Pol·len, del Punt d'Informació Aerobiològica de la UAB: https://aerobiologia.cat/pia/ca/forecast/bellaterra
+
+ALTRES FONTS
+• Estació pròpia del barri i estacions particulars de Weather Underground: https://www.wunderground.com
+• Radar de reserva de RainViewer: https://www.rainviewer.com
 • Models de Météo-France, del servei meteorològic alemany, del Centre Europeu (ECMWF) i dels Estats Units (NOAA), a través d'Open-Meteo: https://open-meteo.com
-• Protecció Civil de la Generalitat: https://interior.gencat.cat/ca/arees_dactuacio/proteccio_civil/
-• Agents Rurals (Pla Alfa): https://interior.gencat.cat/ca/arees_dactuacio/agents-rurals/
-• Bombers de la Generalitat (incendis): https://interior.gencat.cat/ca/arees_dactuacio/bombers/
-• Rodalies de Catalunya: https://rodalies.gencat.cat/ca/inici/
-• Renfe: https://www.renfe.com
-• FGC: https://www.fgc.cat
-• Servei Català de Trànsit: https://transit.gencat.cat/ca/
-• Qualitat de l'aire, de Copernicus: https://atmosphere.copernicus.eu i de les estacions de la Generalitat: https://mediambient.gencat.cat/ca/05_ambits_dactuacio/atmosfera/qualitat_de_laire/
-• Pol·len, del Punt d'Informació Aerobiològica de la UAB: https://aerobiologia.cat/pia/ca/
-• Talls de llum, d'e-distribución: https://www.edistribucion.com
-La llista completa i com es calcula cada cosa, a la mateixa app.
+• Talls de llum, d'e-distribució: https://www.edistribucion.com/ca/averias.html
+
+Montflorit al dia no és una app oficial ni està vinculada a cap d'aquests organismes. La llista completa i com es calcula cada cosa, a la mateixa app (Fonts i crèdits).
 
 És una previsió calculada automàticament, no una previsió oficial. Gratuïta, sense anuncis, galetes ni estadístiques: només es desa el mínim per enviar-te els avisos que actives. Programari lliure (AGPL v3).
 
