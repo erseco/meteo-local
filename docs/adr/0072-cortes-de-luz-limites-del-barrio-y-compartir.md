@@ -206,6 +206,17 @@ habría que poner las fuentes».
 - **Un radio de 1 km alrededor de casa** (primera versión): llegaba al parque
   tecnológico y a la Ginesta, que no son el barrio.
 
+## Cambio del 14-10-2026: límites ajustados sobre la ortofoto
+
+Juanjo vio en la ortofoto que había viviendas partidas por el límite y lo
+corrigió a mano con `eines/limits.py`, que ahora abre con la ortofoto actual
+del ICGC de fondo (la de Montflorit es del 18-06-2025), zoom hasta 21 y el
+callejero del ICGC y OpenStreetMap como alternativa. El contorno pasa de 81 a
+99 puntos y de unos 533.000 a unos 536.000 m². Se rehicieron el mapa del
+barrio, el fondo de los mapas de cada corte y las calles
+(`eines/mapa_barri.py`), y «Fonts i crèdits» lo dice. Los límites se copian
+también a la web Montflorit (`montflorit/montflorit.github.io`).
+
 ## Riesgos
 
 - La capa de Enel es la de un visor, no un servicio documentado: lo vigila la

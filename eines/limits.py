@@ -18,7 +18,8 @@ a montflorit-limits.geojson, el que usan «Llum» y lo que venga (Juanjo,
                                        oculta con una casilla. La imagen no se
                                        copia al repositorio: puede ser ajena.
 
-El mapa de fondo es de OpenStreetMap y el editor usa Leaflet y Leaflet-Geoman
+El mapa de fondo es, por defecto, la ortofoto actual del ICGC (también el callejero del
+ICGC y OpenStreetMap) y el editor usa Leaflet y Leaflet-Geoman
 desde unpkg.com: hace falta conexión.
 """
 import http.server
@@ -47,8 +48,17 @@ margin-top:6px;border:0;border-radius:999px;background:#1d4ed8;color:#fff;cursor
 const DADES = __DADES__;
 const FONS = __FONS__;
 const COLORS = ['#c00', '#7c3aed', '#0a7d2c', '#b45309'];
-const m = L.map('m').setView([41.4815, 2.1330], 16);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '© OpenStreetMap', maxZoom: 19}).addTo(m);
+const m = L.map('m', {maxZoom: 21, zoomSnap: 0.1, zoomDelta: 0.5, wheelPxPerZoomLevel: 180}).setView([41.4815, 2.1330], 17);
+// Fons: l'ortofoto actual de l'ICGC per defecte, per veure on queda cada casa
+// (Juanjo, 14-10-2026), i el carrerer de l'ICGC i OpenStreetMap per orientar-se.
+const fonsBase = {
+  'Ortofoto actual (ICGC)': L.tileLayer.wms('https://geoserveis.icgc.cat/servei/catalunya/orto-territorial/wms',
+    {layers: 'ortofoto_color_vigent', format: 'image/jpeg', maxZoom: 21, attribution: 'Ortofoto: ICGC'}).addTo(m),
+  'Carrers (ICGC)': L.tileLayer('https://geoserveis.icgc.cat/servei/catalunya/mapa-base/wmts/estandard/MON3857NW/{z}/{x}/{y}.png',
+    {maxZoom: 21, maxNativeZoom: 19, attribution: 'ICGC'}),
+  'OpenStreetMap': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '© OpenStreetMap', maxZoom: 21, maxNativeZoom: 19}),
+};
+L.control.layers(fonsBase, {}, {position: 'topleft'}).addTo(m);
 const capes = DADES.features.map((f, i) => {
   const c = L.polygon(f.geometry.coordinates[0].slice(0, -1).map(([x, y]) => [y, x]),
     {color: COLORS[i % COLORS.length], weight: 3, fillOpacity: .1}).addTo(m);
