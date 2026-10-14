@@ -48,6 +48,17 @@ class Rasgos(unittest.TestCase):
         self.assertEqual(av[-2:], [1.0, 0.0])
         self.assertIsNone(A.rasgos(d, A.RASGOS_PROPIS_AVIS))
 
+    def test_la_hora_es_la_del_sol(self):
+        # ADR 0090: las 15 h de verano y las 14 h de invierno, la misma hora
+        # de sol; las dos horas de 2 a 3 del 25-10, distintas.
+        noms = ["hora_sin", "hora_cos"]
+        estiu = A.rasgos({"fins": "2026-10-24T15:00"}, noms)
+        hivern = A.rasgos({"fins": "2026-10-26T14:00"}, noms)
+        self.assertEqual(estiu, hivern)
+        self.assertAlmostEqual(estiu[0], math.sin(2 * math.pi * 13 / 24))
+        self.assertNotEqual(A.rasgos({"fins": "2026-10-25T02:00+02:00"}, noms),
+                            A.rasgos({"fins": "2026-10-25T02:00+01:00"}, noms))
+
     def test_modelos_que_dan_lluvia_y_coinciden(self):
         # ADR 0021: que un modelo dé algo de lluvia cuenta por sí mismo, y
         # también cuántos coinciden.

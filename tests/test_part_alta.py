@@ -64,7 +64,7 @@ class PartAlta(unittest.TestCase):
             dia = (ara - dt.timedelta(days=d)).date()
             for h in range(24):
                 t = dt.datetime(dia.year, dia.month, dia.day, h, tzinfo=dt.timezone.utc)
-                c = PA.ZONA.fromutc(t.replace(tzinfo=PA.ZONA)).strftime("%Y-%m-%dT%H:%M")
+                c = PA.P.ZONA.fromutc(t.replace(tzinfo=PA.P.ZONA)).strftime("%Y-%m-%dT%H:%M")
                 casa_h[c] = 10.0
                 for e in PA.ALTES:
                     veines_h[e][c] = 13.0 if h == 13 else 10.0

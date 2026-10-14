@@ -49,7 +49,7 @@ Versión 3.78.0.
   hora (al menos dos) se separa un grado o más (`part_alta.ara`). Es una
   medida.
 - **Previsión**: cada fila lleva `dif_alta`, la diferencia habitual a esa hora
-  solar (en tiempo universal, `part_alta.hora_solar`; desde la 3.82.1) en los
+  solar (en tiempo universal, `prevision.hora_solar`, ADR 0090; desde la 3.82.1) en los
   últimos 30 días del registro (al menos 10 casos por hora, sin las
   horas con sol directo); si no hay bastantes, la de partida
   (`calibracio/part_alta.json`). La recalcula el NAS en cada pasada, así que

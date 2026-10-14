@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """¿Acierta más el modelo aprendido (ADR 0012) con la hora solar (tiempo
-universal) que con la del reloj? (ADR 0089, 14-10-2026)
+universal) que con la del reloj? (ADR 0089 y 0090, 14-10-2026)
 
 Con los datos de los dos primeros modelos (un año de la estación de casa,
 estacio_casa.py, y el archivo de lluvia de 2024-2026, pluja_casa.py): las
 mismas muestras y los mismos grupos de semanas no vistas; solo cambia la hora
-de hora_sin y hora_cos. La diferencia de error, emparejada, con su intervalo
+de hora_sin y hora_cos (el día del año, en los dos, el del tiempo
+universal, como en aprenentatge.rasgos). La diferencia de error, emparejada, con su intervalo
 de confianza del 95 % por bootstrap de días (cada día, un bloque). Necesita
 los datos de calibracio/dades/.
 
@@ -27,14 +28,17 @@ from calibracio import estacio_casa as EC, pluja_casa as PC  # noqa: E402
 UTC = dt.timezone.utc
 rng = np.random.default_rng(1)
 
-def hora_utc(fins):
+def hora(fins, solar):
     t = dt.datetime.fromisoformat(fins)
     if t.tzinfo is None:
         t = t.replace(tzinfo=EC.LOCAL)
-    return t.astimezone(UTC).hour
+    return (t.astimezone(UTC) if solar else t.astimezone(EC.LOCAL)).hour
 
-def amb_utc(x, noms, fins):
-    x = list(x); h = 2 * math.pi * hora_utc(fins) / 24
+
+def amb_hora(x, noms, fins, solar):
+    """El vector de rasgos con la hora solar o con la del reloj."""
+    x = list(x)
+    h = 2 * math.pi * hora(fins, solar) / 24
     x[noms.index("hora_sin")] = math.sin(h); x[noms.index("hora_cos")] = math.cos(h)
     return x
 
@@ -68,8 +72,8 @@ def main():
     ms = EC.muestras_temperatura(lect, prev)
     for noms, nom in ((A.RASGOS_TEMPERATURA, "temperatura"), (A.RASGOS_TEMPERATURA_SENSE_ESTACIO, "temperatura_sense_estacio")):
         sel = [m for m in ms if A.rasgos(m, noms) is not None]
-        xl = np.array([A.rasgos(m, noms) for m in sel])
-        xu = np.array([amb_utc(A.rasgos(m, noms), noms, m["fins"]) for m in sel])
+        xl = np.array([amb_hora(A.rasgos(m, noms), noms, m["fins"], False) for m in sel])
+        xu = np.array([amb_hora(A.rasgos(m, noms), noms, m["fins"], True) for m in sel])
         err = np.array([m["temperature_2m"] - m["obs"] for m in sel])
         g = np.array([EC.grupo(m["t"]) for m in sel])
         dies = [m["fins"][:10] for m in sel]
@@ -84,8 +88,9 @@ def main():
     # Lluvia (pluja_casa.json: 2024-2026, Sabadell y Sant Cugat)
     mp = PC.muestras()
     noms = A.RASGOS_ARXIU
-    xl = np.array([m[2] for m in mp])
-    xu = np.array([amb_utc(m[2], noms, m[0].astimezone(EC.LOCAL).strftime("%Y-%m-%dT%H:%M")) for m in mp])
+    fins = [m[0].astimezone(EC.LOCAL).strftime("%Y-%m-%dT%H:%M") for m in mp]
+    xl = np.array([amb_hora(m[2], noms, f, False) for m, f in zip(mp, fins)])
+    xu = np.array([amb_hora(m[2], noms, f, True) for m, f in zip(mp, fins)])
     y = np.array([m[3] for m in mp])
     g = np.array([EC.grupo(m[0]) for m in mp])
     dies = [m[0].astimezone(EC.LOCAL).date().isoformat() for m in mp]

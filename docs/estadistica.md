@@ -124,9 +124,9 @@ moja en moto (`UMBRAL_MM` de `config.py`).
 | Si cada modelo da lluvia | 1 si da 0,1 mm o más; si no, 0. Una por modelo | Que un modelo ponga algo de lluvia ya dice mucho, aunque sea poca: con solo ICON-EU dando 0,2 mm llovió una de cada diez horas |
 | Cuántos modelos coinciden | 1 si dan lluvia dos o más; otra, 1 si la dan los tres | La coincidencia no suma sin más: con un modelo solo llovió el 21-23 % de las horas; con los tres, el 66 % |
 | Lo anterior según la antelación | La cantidad de cada modelo, «alguno da lluvia» y «la dan los tres», multiplicados por la antelación | La lluvia prevista para dentro de un día se cumple menos que la de las próximas horas |
-| Lluvia de ECMWF‡ | $`\ln(1 + \text{mm})`$, si la da (0,1 mm o más), su cantidad por la antelación, 1 si la dan los cuatro modelos y 1 si solo la da ECMWF | El modelo europeo de referencia (ECMWF IFS, a 9 km) acierta más a un día vista: con el archivo, el error baja un 5,5 % un día antes y un 2,5 % a corto plazo (ADR 0086) |
+| Lluvia de ECMWF‡ | $`\ln(1 + \text{mm})`$, si la da (0,1 mm o más), su cantidad por la antelación, 1 si la dan los cuatro modelos y 1 si solo la da ECMWF | El modelo europeo de referencia (ECMWF IFS, a 9 km) acierta más a un día vista: con el archivo, el error baja un 5,5 % un día antes y un 2,6 % a corto plazo (ADR 0086 y 0090) |
 | Antelación | $`\min(t / 24, 1)`$, con $`t`$ en horas | Una previsión a 24 horas es menos segura que una a 2 |
-| Hora del día | $`\sin(2\pi h / 24)`$ y $`\cos(2\pi h / 24)`$, con $`h`$ la hora en que acaba el tramo | Las tormentas de tarde no se reparten igual que la lluvia de frente |
+| Hora del día | $`\sin(2\pi h / 24)`$ y $`\cos(2\pi h / 24)`$, con $`h`$ la hora solar (la del tiempo universal, ADR 0090) en que acaba el tramo | Las tormentas de tarde no se reparten igual que la lluvia de frente |
 | Día del año | $`\sin(2\pi d / 365\text{,}25)`$ y $`\cos(2\pi d / 365\text{,}25)`$ | La lluvia de otoño no es la de verano |
 | Fracción del conjunto* | de 0 a 1 | Cuántas de las 40 simulaciones de ICON-EU-EPS ven lluvia |
 | Lluvia medida al prever* | $`\ln(1 + \text{mm de la última hora})`$ en casa si $`t \le 4`$; si no, 0 | Si ya llueve, es probable que siga |
@@ -301,7 +301,7 @@ estación de casa, a partir de unas señales $`\mathbf{z}`$:
 | Temperatura prevista | en °C | El error no es el mismo con frío que con calor |
 | Nubes y humedad previstas | de 0 a 1 | Las noches despejadas y secas enfrían más en casa que en la celda |
 | Radiación prevista | en kW/m² | Con sol fuerte, el error de día cambia |
-| Hora del día y día del año | seno y coseno | El error tiene ciclo diario y estacional |
+| Hora solar y día del año | seno y coseno, en tiempo universal (ADR 0090) | El error tiene ciclo diario y estacional, que marca el sol |
 | Antelación | $`\min(t / 24, 1)`$ | Cuanto más lejos, más incierto |
 | Error al prever* | $`e_0 \, e^{-t/3}`$ y $`e_0 \, e^{-t/24}`$ | Si el modelo se equivoca ahora, en las horas siguientes suele equivocarse igual |
 
@@ -347,7 +347,7 @@ se ajusta el primer modelo (`calibracio/estacio_casa.py`, pesos en
 
 | Antelación | Modelo sin corregir | Corregida | Corregida sin el error al prever |
 |---|---|---|---|
-| 1 h | 1,44 °C | **0,77 °C** | 1,13 °C |
+| 1 h | 1,44 °C | **0,76 °C** | 1,13 °C |
 | 3 h | 1,45 °C | **1,04 °C** | 1,13 °C |
 | 6 h | 1,45 °C | 1,14 °C | 1,13 °C |
 | 24 h | 1,54 °C | **1,26 °C** | 1,29 °C |
@@ -364,14 +364,16 @@ se previó de verdad y lo que midió casa, con la antelación real de cada hora,
 y se compara con el primero (apartado 8). Las horas con sol en el termómetro
 de casa no cuentan (apartado 17).
 
-La hora del día entra con la del reloj. Se comprobó el 14-10-2026 si
-acertaba más con la hora solar (`calibracio/hora_solar.py`, ADR 0089): con
-las mismas muestras y semanas no vistas, el error de la temperatura baja
-0,002 °C (de 1,031 a 1,029 °C; intervalo del 95 % por bootstrap de días,
-de 0,0002 a 0,004 °C), un 0,2 %, y el de la lluvia no cambia. Muy lejos del
-5 % que se exige para cambiar de método (apartado 8): se queda la del reloj.
-Con un solo armónico diario y el resto de señales (la radiación ya sigue al
-sol), la hora apenas pesa.
+La hora y el día del año, en la lluvia y en la temperatura, son los del
+sol: los del tiempo universal, que no cambian con el reloj (desde el
+14-10-2026, ADR 0090). Antes eran los del reloj, y el mes siguiente a cada
+cambio de hora iban desplazados una hora respecto al sol. Con las mismas
+muestras y semanas no vistas (`calibracio/hora_solar.py`), el error de la
+temperatura baja 0,002 °C (de 1,031 a 1,029 °C; intervalo del 95 % por
+bootstrap de días, de 0,0002 a 0,004 °C) y el de la lluvia no cambia: con
+un solo armónico diario y la radiación, que ya sigue al sol, la hora apenas
+pesa. Se cambió por coherencia, y los tres modelos de partida se volvieron
+a ajustar con ella sin empeorar.
 
 ### La parte alta del barrio (ADR 0087)
 

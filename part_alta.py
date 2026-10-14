@@ -16,8 +16,8 @@ del momento y del frío, porque a veces no habrá diferencias, pero otras sí».
   MIN_MOSTRES, la de partida, calculada con el verano y el otoño de 2026
   (calibracio/part_alta.json). Así sigue la época del año sola.
 
-Las horas del día son las del tiempo universal (`hora_solar`), no las del
-reloj: la diferencia la marcan el sol y el aire que se calienta, que no
+Las horas del día son las solares (`prevision.hora_solar`, ADR 0090), no las
+del reloj: la diferencia la marcan el sol y el aire que se calienta, que no
 cambian con la hora oficial. Con las del reloj, el mes siguiente a cada
 cambio de hora (ADR 0089) se mezclaban dos horas de sol distintas.
 """
@@ -25,9 +25,9 @@ import datetime as dt
 import json
 import os
 import statistics
-from zoneinfo import ZoneInfo
 
 import config as C
+import prevision as P
 import sol_estacio as SE
 
 DIR = os.environ.get("REGISTRE_DIR", "/estat/registre")
@@ -37,18 +37,7 @@ DIES = 30
 MIN_MOSTRES = 10
 ALTES_MIN = 2           # vecinas de arriba con dato para dar la diferencia
 FRESCA_MIN = 30
-ZONA = ZoneInfo("Europe/Madrid")
-
-
-def hora_solar(t):
-    """La hora en tiempo universal (0-23) de una clave de hora del programa
-    («…T15:00», hora de Madrid, o «…T02:00+01:00» la que se repite en
-    octubre) o de un datetime con zona."""
-    if isinstance(t, str):
-        t = dt.datetime.fromisoformat(t)
-    if t.tzinfo is None:
-        t = t.replace(tzinfo=ZONA)
-    return t.astimezone(dt.timezone.utc).hour
+hora_solar = P.hora_solar
 
 
 def mediana_alta(temperatures):

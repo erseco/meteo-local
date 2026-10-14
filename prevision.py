@@ -42,6 +42,26 @@ def clau_hora(t):
     return t.strftime("%Y-%m-%dT%H:%M")
 
 
+def hora_universal(t):
+    """Una clave de hora del programa («…T15:00», hora de Madrid, o
+    «…T02:00+01:00» la que se repite en octubre) o un datetime, en tiempo
+    universal."""
+    if isinstance(t, str):
+        t = dt.datetime.fromisoformat(t)
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=ZONA)
+    return t.astimezone(dt.timezone.utc)
+
+
+def hora_solar(t):
+    """La hora (0-23) para lo que depende del sol (ADR 0090): la del tiempo
+    universal, que no cambia con el reloj. En Montflorit el sol pasa por el
+    punto más alto hacia las 12 de esta hora todo el año; con la hora oficial,
+    a las 13 en invierno y a las 14 en verano. Lo que depende de las personas
+    (las horas de salir, los textos) va en hora local."""
+    return hora_universal(t).hour
+
+
 def ordre_hora(clau):
     """Para ordenar claves de clau_hora por el momento real: como texto,
     «…T02:00+01:00» iría antes que «…T02:00+02:00»."""

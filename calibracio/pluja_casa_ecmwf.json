@@ -30,30 +30,30 @@
   "nomes_ecmwf"
  ],
  "w": [
-  -5.80223,
-  0.48974,
-  0.37716,
-  1.11481,
-  0.50511,
-  -0.04526,
-  0.18571,
-  0.25527,
-  0.57898,
-  2.5298,
-  2.76375,
-  2.88616,
-  -2.09889,
-  -2.11362,
-  0.13363,
-  -0.256,
-  -0.14261,
-  -0.19872,
-  -0.53511,
-  0.54056,
-  0.64444,
-  0.0278,
-  -0.18789,
-  2.17447
+  -5.80268,
+  0.48762,
+  0.37667,
+  1.11369,
+  0.5058,
+  -0.13155,
+  0.15085,
+  0.25346,
+  0.57727,
+  2.53166,
+  2.7645,
+  2.88418,
+  -2.10069,
+  -2.10857,
+  0.13382,
+  -0.25706,
+  -0.14294,
+  -0.19949,
+  -0.53589,
+  0.54159,
+  0.64652,
+  0.02919,
+  -0.19084,
+  2.1722
  ],
  "mostres": 65388,
  "hores_pluja": 2517,
@@ -64,13 +64,13 @@
    "mostres": 47676,
    "hores_pluja": 1825,
    "error_sense_ecmwf": 0.02252,
-   "error": 0.02195,
-   "millora_pct": 2.5,
+   "error": 0.02194,
+   "millora_pct": 2.6,
    "fiabilitat": [
     {
      "de": 0,
      "a": 0.05,
-     "hores": 41687,
+     "hores": 41675,
      "donada": 0.005,
      "va_ploure": 0.005,
      "part_pluja": 0.107
@@ -78,50 +78,50 @@
     {
      "de": 0.05,
      "a": 0.1,
-     "hores": 1971,
+     "hores": 1985,
      "donada": 0.073,
-     "va_ploure": 0.075,
-     "part_pluja": 0.081
+     "va_ploure": 0.076,
+     "part_pluja": 0.082
     },
     {
      "de": 0.1,
      "a": 0.2,
-     "hores": 1418,
+     "hores": 1416,
      "donada": 0.14,
-     "va_ploure": 0.15,
-     "part_pluja": 0.117
+     "va_ploure": 0.148,
+     "part_pluja": 0.115
     },
     {
      "de": 0.2,
      "a": 0.3,
-     "hores": 657,
+     "hores": 655,
      "donada": 0.246,
-     "va_ploure": 0.272,
-     "part_pluja": 0.098
+     "va_ploure": 0.276,
+     "part_pluja": 0.099
     },
     {
      "de": 0.3,
      "a": 0.5,
      "hores": 825,
-     "donada": 0.395,
-     "va_ploure": 0.396,
-     "part_pluja": 0.179
+     "donada": 0.394,
+     "va_ploure": 0.392,
+     "part_pluja": 0.177
     },
     {
      "de": 0.5,
      "a": 0.7,
-     "hores": 593,
-     "donada": 0.591,
-     "va_ploure": 0.577,
-     "part_pluja": 0.187
+     "hores": 603,
+     "donada": 0.593,
+     "va_ploure": 0.582,
+     "part_pluja": 0.192
     },
     {
      "de": 0.7,
      "a": 1,
-     "hores": 525,
-     "donada": 0.825,
-     "va_ploure": 0.804,
-     "part_pluja": 0.231
+     "hores": 517,
+     "donada": 0.827,
+     "va_ploure": 0.805,
+     "part_pluja": 0.228
     }
    ],
    "millora_per_grup_pct": [
@@ -135,8 +135,8 @@
    "des_de": "2025-10-01",
    "mostres": 17712,
    "hores_pluja": 692,
-   "error_sense_ecmwf": 0.02726,
-   "error": 0.02575,
+   "error_sense_ecmwf": 0.02724,
+   "error": 0.02574,
    "millora_pct": 5.5,
    "fiabilitat": [
     {
@@ -150,57 +150,57 @@
     {
      "de": 0.05,
      "a": 0.1,
-     "hores": 504,
+     "hores": 508,
      "donada": 0.074,
-     "va_ploure": 0.062,
-     "part_pluja": 0.045
+     "va_ploure": 0.063,
+     "part_pluja": 0.046
     },
     {
      "de": 0.1,
      "a": 0.2,
-     "hores": 794,
+     "hores": 782,
      "donada": 0.143,
-     "va_ploure": 0.161,
-     "part_pluja": 0.185
+     "va_ploure": 0.162,
+     "part_pluja": 0.184
     },
     {
      "de": 0.2,
      "a": 0.3,
-     "hores": 336,
-     "donada": 0.243,
-     "va_ploure": 0.324,
-     "part_pluja": 0.158
+     "hores": 352,
+     "donada": 0.244,
+     "va_ploure": 0.315,
+     "part_pluja": 0.16
     },
     {
      "de": 0.3,
      "a": 0.5,
-     "hores": 418,
+     "hores": 408,
      "donada": 0.387,
-     "va_ploure": 0.414,
-     "part_pluja": 0.25
+     "va_ploure": 0.412,
+     "part_pluja": 0.243
     },
     {
      "de": 0.5,
      "a": 0.7,
-     "hores": 222,
-     "donada": 0.588,
-     "va_ploure": 0.491,
-     "part_pluja": 0.158
+     "hores": 220,
+     "donada": 0.585,
+     "va_ploure": 0.5,
+     "part_pluja": 0.159
     },
     {
      "de": 0.7,
      "a": 1,
-     "hores": 84,
-     "donada": 0.823,
-     "va_ploure": 0.798,
-     "part_pluja": 0.097
+     "hores": 88,
+     "donada": 0.818,
+     "va_ploure": 0.784,
+     "part_pluja": 0.1
     }
    ],
    "millora_per_grup_pct": [
     5.0,
     7.4,
     4.2,
-    4.1
+    4.2
    ]
   }
  }

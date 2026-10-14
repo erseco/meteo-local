@@ -24,25 +24,25 @@
   "tres_antelacio"
  ],
  "w": [
-  -5.16375,
-  0.39224,
-  0.46038,
-  1.50392,
-  0.55031,
-  -0.02332,
-  0.1161,
-  0.21439,
-  0.45654,
-  2.42504,
-  2.48175,
-  2.7214,
-  -1.76709,
-  -2.01922,
-  0.07801,
-  -0.33918,
-  -0.21274,
-  -0.24817,
-  -0.26172
+  -5.16394,
+  0.39004,
+  0.4602,
+  1.5037,
+  0.55026,
+  -0.08628,
+  0.09411,
+  0.21312,
+  0.45575,
+  2.42806,
+  2.48283,
+  2.71984,
+  -1.7699,
+  -2.01699,
+  0.07765,
+  -0.3385,
+  -0.21228,
+  -0.24831,
+  -0.26155
  ],
  "mostres": 94380,
  "hores_pluja": 3622,
@@ -66,108 +66,108 @@
     {
      "de": 0.05,
      "a": 0.1,
-     "hores": 1049,
+     "hores": 1059,
      "donada": 0.077,
-     "va_ploure": 0.082,
-     "part_pluja": 0.047
+     "va_ploure": 0.085,
+     "part_pluja": 0.049
     },
     {
      "de": 0.1,
      "a": 0.2,
-     "hores": 1736,
+     "hores": 1734,
      "donada": 0.142,
-     "va_ploure": 0.153,
-     "part_pluja": 0.146
+     "va_ploure": 0.151,
+     "part_pluja": 0.143
     },
     {
      "de": 0.2,
      "a": 0.3,
-     "hores": 713,
-     "donada": 0.244,
-     "va_ploure": 0.266,
+     "hores": 715,
+     "donada": 0.245,
+     "va_ploure": 0.264,
      "part_pluja": 0.104
     },
     {
      "de": 0.3,
      "a": 0.5,
-     "hores": 817,
+     "hores": 801,
      "donada": 0.399,
-     "va_ploure": 0.382,
-     "part_pluja": 0.171
+     "va_ploure": 0.387,
+     "part_pluja": 0.17
     },
     {
      "de": 0.5,
      "a": 0.7,
-     "hores": 538,
-     "donada": 0.593,
-     "va_ploure": 0.619,
-     "part_pluja": 0.182
+     "hores": 544,
+     "donada": 0.592,
+     "va_ploure": 0.623,
+     "part_pluja": 0.186
     },
     {
      "de": 0.7,
      "a": 1,
      "hores": 496,
      "donada": 0.816,
-     "va_ploure": 0.792,
-     "part_pluja": 0.215
+     "va_ploure": 0.788,
+     "part_pluja": 0.214
     }
    ],
    "fiabilitat_abans": [
     {
      "de": 0,
      "a": 0.05,
-     "hores": 44688,
+     "hores": 44692,
      "donada": 0.017,
      "va_ploure": 0.011,
-     "part_pluja": 0.273
+     "part_pluja": 0.275
     },
     {
      "de": 0.05,
      "a": 0.1,
-     "hores": 847,
+     "hores": 841,
      "donada": 0.07,
-     "va_ploure": 0.247,
-     "part_pluja": 0.115
+     "va_ploure": 0.246,
+     "part_pluja": 0.113
     },
     {
      "de": 0.1,
      "a": 0.2,
-     "hores": 628,
+     "hores": 634,
      "donada": 0.145,
-     "va_ploure": 0.33,
+     "va_ploure": 0.326,
      "part_pluja": 0.113
     },
     {
      "de": 0.2,
      "a": 0.3,
-     "hores": 343,
-     "donada": 0.243,
+     "hores": 339,
+     "donada": 0.244,
      "va_ploure": 0.44,
-     "part_pluja": 0.083
+     "part_pluja": 0.082
     },
     {
      "de": 0.3,
      "a": 0.5,
      "hores": 345,
      "donada": 0.392,
-     "va_ploure": 0.501,
-     "part_pluja": 0.095
+     "va_ploure": 0.496,
+     "part_pluja": 0.094
     },
     {
      "de": 0.5,
      "a": 0.7,
-     "hores": 234,
-     "donada": 0.587,
-     "va_ploure": 0.56,
-     "part_pluja": 0.072
+     "hores": 236,
+     "donada": 0.588,
+     "va_ploure": 0.581,
+     "part_pluja": 0.075
     },
     {
      "de": 0.7,
      "a": 1,
-     "hores": 591,
+     "hores": 589,
      "donada": 0.891,
-     "va_ploure": 0.77,
-     "part_pluja": 0.249
+     "va_ploure": 0.769,
+     "part_pluja": 0.248
     }
    ]
   },
@@ -189,57 +189,57 @@
     {
      "de": 0.05,
      "a": 0.1,
-     "hores": 642,
+     "hores": 654,
      "donada": 0.082,
      "va_ploure": 0.093,
-     "part_pluja": 0.033
+     "part_pluja": 0.034
     },
     {
      "de": 0.1,
      "a": 0.2,
-     "hores": 1983,
-     "donada": 0.148,
-     "va_ploure": 0.145,
+     "hores": 1973,
+     "donada": 0.149,
+     "va_ploure": 0.146,
      "part_pluja": 0.16
     },
     {
      "de": 0.2,
      "a": 0.3,
-     "hores": 1012,
-     "donada": 0.245,
-     "va_ploure": 0.268,
-     "part_pluja": 0.151
+     "hores": 1026,
+     "donada": 0.246,
+     "va_ploure": 0.269,
+     "part_pluja": 0.154
     },
     {
      "de": 0.3,
      "a": 0.5,
-     "hores": 879,
-     "donada": 0.388,
-     "va_ploure": 0.374,
-     "part_pluja": 0.183
+     "hores": 859,
+     "donada": 0.389,
+     "va_ploure": 0.375,
+     "part_pluja": 0.179
     },
     {
      "de": 0.5,
      "a": 0.7,
      "hores": 456,
-     "donada": 0.588,
-     "va_ploure": 0.579,
-     "part_pluja": 0.147
+     "donada": 0.586,
+     "va_ploure": 0.575,
+     "part_pluja": 0.146
     },
     {
      "de": 0.7,
      "a": 1,
-     "hores": 194,
-     "donada": 0.794,
-     "va_ploure": 0.814,
-     "part_pluja": 0.088
+     "hores": 198,
+     "donada": 0.792,
+     "va_ploure": 0.813,
+     "part_pluja": 0.09
     }
    ],
    "fiabilitat_abans": [
     {
      "de": 0,
      "a": 0.05,
-     "hores": 43820,
+     "hores": 43824,
      "donada": 0.02,
      "va_ploure": 0.016,
      "part_pluja": 0.399
@@ -247,50 +247,50 @@
     {
      "de": 0.05,
      "a": 0.1,
-     "hores": 953,
+     "hores": 947,
      "donada": 0.07,
-     "va_ploure": 0.232,
+     "va_ploure": 0.233,
      "part_pluja": 0.123
     },
     {
      "de": 0.1,
      "a": 0.2,
      "hores": 603,
-     "donada": 0.144,
-     "va_ploure": 0.345,
-     "part_pluja": 0.116
+     "donada": 0.143,
+     "va_ploure": 0.342,
+     "part_pluja": 0.115
     },
     {
      "de": 0.2,
      "a": 0.3,
-     "hores": 251,
-     "donada": 0.24,
-     "va_ploure": 0.311,
-     "part_pluja": 0.043
+     "hores": 257,
+     "donada": 0.241,
+     "va_ploure": 0.327,
+     "part_pluja": 0.047
     },
     {
      "de": 0.3,
      "a": 0.5,
-     "hores": 341,
-     "donada": 0.394,
-     "va_ploure": 0.387,
-     "part_pluja": 0.073
+     "hores": 339,
+     "donada": 0.395,
+     "va_ploure": 0.383,
+     "part_pluja": 0.072
     },
     {
      "de": 0.5,
      "a": 0.7,
      "hores": 282,
-     "donada": 0.59,
-     "va_ploure": 0.482,
-     "part_pluja": 0.076
+     "donada": 0.591,
+     "va_ploure": 0.479,
+     "part_pluja": 0.075
     },
     {
      "de": 0.7,
      "a": 1,
-     "hores": 454,
-     "donada": 0.884,
-     "va_ploure": 0.672,
-     "part_pluja": 0.17
+     "hores": 452,
+     "donada": 0.885,
+     "va_ploure": 0.673,
+     "part_pluja": 0.169
     }
    ]
   }

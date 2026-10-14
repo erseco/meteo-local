@@ -40,6 +40,7 @@ import sys
 import numpy as np
 
 import config as C
+import prevision as P
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 ARXIU = os.path.join(AQUI, "calibracio", "pluja_casa.json")
@@ -104,8 +105,10 @@ def rasgos(d, noms):
     la lluvia de cada modelo (pluja_<modelo>), «fins» (hora local en que acaba
     el tramo), antelacio_h, prob_ens, temperature_2m… y lo que medía la
     estación al prever: pluja_1h_emes, error_temp_ara (temperatura del modelo
-    menos la medida) y deficit_rosada_ara (temperatura menos punto de rocío)."""
-    fin = dt.datetime.fromisoformat(d["fins"])
+    menos la medida) y deficit_rosada_ara (temperatura menos punto de rocío).
+    La hora y el día del año, los del sol (tiempo universal, ADR 0090): con la
+    del reloj, el mes siguiente a cada cambio de hora iban desplazados."""
+    fin = P.hora_universal(d["fins"])
     h = 2 * math.pi * fin.hour / 24
     dia = 2 * math.pi * fin.timetuple().tm_yday / 365.25
     pluja = {m: d.get(f"pluja_{m}") for m in C.MODELOS_FINOS}

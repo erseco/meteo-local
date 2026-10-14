@@ -24,6 +24,11 @@ Al cambiar algo:
   `RESTAURAR.md` al revés (`tar czf - … | gpg --symmetric --cipher-algo AES256`).
   La contraseña la escribe Juanjo en la ventana de gpg; avísale antes. Nada
   lo hace solo (ADR 0044 y 0045). Los suscriptores del bot no se copian.
+- **La hora del día** (ADR 0090): lo que depende del sol (calentamiento,
+  parte alta, señales de los modelos aprendidos) va en hora solar
+  (`prevision.hora_solar`, tiempo universal); lo que depende de las personas
+  (lo que se muestra, las horas de salir, la ropa, los horarios), en hora
+  local. Lo que se guarda, en hora local.
 - Si cambia un umbral, actualiza `config.py`, el texto «Com es decideix» de
   `web/sortir.html` (o «D'on surt» de `web/casa.html`), el README, las pruebas
   y el ADR.
