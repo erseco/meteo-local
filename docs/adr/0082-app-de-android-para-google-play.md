@@ -171,11 +171,15 @@ Juanjo aprobó los tres cambios («sí, hazlo»):
    páginas, «No és una web oficial ni representa cap organisme públic.»,
    junto al enlace a «Fonts i crèdits», y un párrafo al principio de esa
    página con el mismo aviso (3.83.1).
-3. Al reenviar, una nota en inglés en el campo «¿Qué has hecho para
-   solucionar este problema?» de Play Console, que dice dónde están el aviso y
-   las fuentes.
+3. Se propuso añadir al reenvío una nota en inglés en el campo «¿Qué has
+   hecho para solucionar este problema?», pero ese campo envía una apelación
+   y Play Console dice que, si los cambios enviados resuelven el problema, lo
+   detecta solo. No se usó: queda para el caso de otro rechazo.
 
 Validación: pruebas, `probar-web` (tres navegadores, escritorio, móvil y
 tableta, tema claro y oscuro, sin desbordamiento) y axe-core sin infracciones
-en `index.html` y `fonts.html`, en catalán y en castellano. Si la rechazan
-también así, el siguiente paso es la apelación.
+en `index.html` y `fonts.html`, en catalán y en castellano. Publicada la 3.83.1 (la web lo mostraba a las
+19:04, tras cancelar un despliegue de GitHub Pages que se había quedado
+colgado por un error 500 de GitHub), los once cambios se reenviaron a
+revisión el 14-10-2026 a las 19:08. Si la rechazan también así, el siguiente
+paso es la apelación.
