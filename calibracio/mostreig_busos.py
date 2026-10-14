@@ -94,6 +94,9 @@ def mostra() -> int:
         fila["error"] = f"{type(error).__name__}: {error}"[:200]
     with open(DIR / f"{datetime.fromtimestamp(ara):%Y-%m-%d}.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps(fila, separators=(",", ":")) + "\n")
+    # Una línia al registre: és el rastre que mira el panell del NAS.
+    print(f"{datetime.fromtimestamp(ara):%Y-%m-%d %H:%M} "
+          + (fila["error"] if "error" in fila else f"{fila['total']} viatges, {len(fila['cv'])} de les CV"))
     return 0
 
 
