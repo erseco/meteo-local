@@ -68,3 +68,21 @@ a la ficha, que ya tiene el PDF.
 Validado: prueba `test_el_pla_porta_el_comunicat_mes_recent`; en local, con
 los datos de esa tarde, la ficha enlaza el PDF en catalán y castellano, en
 Chromium, Firefox y WebKit, en ordenador y móvil.
+
+## Cambio del 15-10-2026: aviso de cada comunicado nuevo
+
+Juanjo propuso que quien recibió la alerta reciba también el comunicado
+cuando cambie («no digo enviar ahora, digo cuando cambie»; «exacto,
+publicalo»). Desde la 3.86.0, con un plan en alerta o emergencia, cada
+comunicado distinto del último avisado (también el primero, si la alerta salió
+sin él) es un aviso de peligro, por Telegram y en el navegador:
+«Protecció Civil: comunicat nou del pla … (…), en fase d'…», una línea, el
+enlace «Comunicat (PDF)» y el de la ficha. Lleva a la ficha del episodio sin
+cambiarla (`nomes_avis`). No avisa si en la misma pasada cambia la fase (ese
+aviso ya lleva el PDF), ni en prealerta, ni si la fuente deja de traer el
+comunicado una pasada y vuelve el mismo: el estado guarda el último avisado.
+Un estado anterior a este cambio, sin esa clave, da por avisado el comunicado
+vigente, para que al publicarlo no salga el del INUNCAT de las 19:43.
+
+Validado: `test_un_comunicat_nou_s_avisa_una_vegada` y
+`test_el_comunicat_nou_porta_a_la_fitxa_sense_canviar_la`.

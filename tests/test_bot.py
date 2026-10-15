@@ -612,6 +612,33 @@ class Consultes(unittest.TestCase):
         fi = perill({"avisos": [], "plans": [dict(pla, fase="prealerta")]}, 30)
         self.assertEqual(fi[0]["ca"].splitlines()[0], "🟢 <b>Protecció Civil: el pla d'inundacions (INUNCAT) ja no està en alerta</b>")
 
+    def test_un_comunicat_nou_s_avisa_una_vegada(self):
+        # L'INUNCAT del 15-10-2026: alerta a les 19:09 sense comunicat, el PDF a les
+        # 19:43. Cada PDF diferent de l'últim avisat, un avís que porta a la fitxa
+        # sense canviar-la; no si la font no el porta una pasada, ni en prealerta.
+        pla = {"pla": "INUNCAT", "nom": "d'inundacions", "fase": "prealerta", "comunicat": None}
+        pdf = "https://documents.dadesobertes.gencat.cat/cecat/docs/I-1.pdf"
+        estat = {}
+        perill = lambda p, m: [a for a in AB.decideix(estat, {"avisos": [], "plans": [p]}, ARA + dt.timedelta(minutes=m))
+                               if a["tipus"] == "perill"]
+        self.assertEqual(perill(pla, 0), [])
+        self.assertEqual(perill(dict(pla, comunicat=pdf), 6), [])                       # prealerta: res
+        alerta = dict(pla, fase="alerta")
+        self.assertEqual(len(perill(alerta, 12)), 1)                                   # l'alerta
+        nous = perill(dict(alerta, comunicat=pdf), 18)
+        self.assertEqual(nous[0]["ca"].splitlines()[0],
+                         "🟠 <b>Protecció Civil: comunicat nou del pla d'inundacions (INUNCAT), en fase d'alerta</b>")
+        self.assertIn(f'<a href="{pdf}">Comunicat (PDF)</a>', nous[0]["ca"])
+        self.assertIn(f'<a href="{pdf}">Comunicado (PDF)</a>', nous[0]["es"])
+        self.assertTrue(nous[0]["nomes_avis"])
+        self.assertEqual(perill(dict(alerta, comunicat=pdf), 24), [])                  # el mateix: res
+        self.assertEqual(perill(alerta, 30), [])                                       # sense: res
+        self.assertEqual(perill(dict(alerta, comunicat=pdf), 36), [])                  # torna el mateix: res
+        self.assertEqual(len(perill(dict(alerta, comunicat=pdf.replace("1", "2")), 42)), 1)
+        # Un estat d'abans, sense la clau, el dona per avisat.
+        del estat["oficials"]["plans"]["INUNCAT"]["comunicat"]
+        self.assertEqual(perill(dict(alerta, comunicat=pdf.replace("1", "3")), 48), [])
+
     def test_un_pla_ocult_no_s_acaba_ni_torna_a_comencar(self):
         # ADR 0062: amagar-lo per falta de motiu meteorològic no és un final; si torna a
         # sortir en la mateixa fase no és nou; si es desactiva mentre és amagat, no es diu.

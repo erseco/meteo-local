@@ -460,6 +460,19 @@ def text_pla(p, acabat=False, smp=None):
                   + "\n" + SENTIT_FASE["es"][p["fase"]] + text_smp(smp, "es") + enllac_es}
 
 
+def text_comunicat(p):
+    """Un comunicado nuevo de Protección Civil para un plan que ya estaba en
+    alerta o emergencia (Juanjo, 15-10-2026: «cuando cambie»; ADR 0091)."""
+    nom_ca, nom_es = p["nom"], NOM_PLA_ES.get(p["nom"], p["nom"])
+    de = "d'" if p["fase"][:1] in "aeiouàèéíòóú" else "de "
+    fase_es = {"emergència": "emergencia"}.get(p["fase"], p["fase"])
+    url = html.escape(p["comunicat"])
+    return {"ca": negreta(f"Protecció Civil: comunicat nou del pla {nom_ca} ({p['pla']}), en fase {de}{p['fase']}", p["fase"])
+                  + f"\nProtecció Civil ha publicat un comunicat nou sobre aquest pla.\n<a href=\"{url}\">Comunicat (PDF)</a>",
+            "es": negreta(f"Protección Civil: comunicado nuevo del plan {nom_es} ({p['pla']}), en fase de {fase_es}", p["fase"])
+                  + f"\nProtección Civil ha publicado un comunicado nuevo sobre este plan.\n<a href=\"{url}\">Comunicado (PDF)</a>"}
+
+
 # --- Decidir -----------------------------------------------------------------
 
 def decideix(estat, salida, ahora):
@@ -468,11 +481,13 @@ def decideix(estat, salida, ahora):
     nous = []
     hora = ahora.isoformat(timespec="minutes")
 
-    def afegeix(tipus, clau, text, nivell=None, episodi=None, enllac=None, fins=None):
+    def afegeix(tipus, clau, text, nivell=None, episodi=None, enllac=None, fins=None, nomes_avis=False):
         # episodi: de qué suceso es parte, para el historial (ADR 0071); enllac,
         # más información si el texto no la enlaza; fins, cuándo acaba un
-        # aviso que no tiene mensaje de final (los de AEMET).
-        extra = {k: v for k, v in (("episodi", episodi), ("enllac", enllac), ("fins", fins)) if v}
+        # aviso que no tiene mensaje de final (los de AEMET); nomes_avis, que
+        # lleva a la ficha del episodio sin cambiarla (el comunicado nuevo).
+        extra = {k: v for k, v in (("episodi", episodi), ("enllac", enllac), ("fins", fins),
+                                   ("nomes_avis", nomes_avis)) if v}
         nous.append({"id": f"{tipus}:{clau}", "tipus": tipus, "nivell": nivell, "hora": hora, **text, **extra})
 
     # Lluvia en unos minutos: la lógica del aviso de Juanjo, con estado propio.
@@ -579,11 +594,20 @@ def decideix(estat, salida, ahora):
                 if abans is None or FASES_PLA.index(p["fase"]) > FASES_PLA.index(abans):
                     afegeix("perill", f"pla:{k}:{p['fase']}:{hora}", text_pla(p, smp=salida.get("smp")), "pc",
                             episodi=f"pla:{k}", enllac=None if p.get("comunicat") else PROTECCIO_CIVIL)
+                elif p.get("comunicat") and p["comunicat"] != (of["plans"].get(k) or {}).get("comunicat", p["comunicat"]):
+                    # Un comunicado distinto del último avisado, también el
+                    # primero si la alerta salió sin él (ADR 0091). Un estado
+                    # de antes de esto, sin la clave, lo da por avisado.
+                    afegeix("perill", f"pla:{k}:comunicat:{hora}", text_comunicat(p), "pc",
+                            episodi=f"pla:{k}", nomes_avis=True)
             for k, p in of["plans"].items():
                 if k not in plans and k not in ocults and not p.get("ocult"):
                     afegeix("perill", f"pla:{k}:fi:{hora}", text_pla({**p, "pla": k}, acabat=True), "fi",
                             episodi=f"pla:{k}")
-        nou_of["plans"] = {k: {"fase": p["fase"], "nom": p["nom"], **({"ocult": True} if k in ocults else {})}
+        # El último comunicado avisado; si la fuente no lo trae en una pasada,
+        # se queda el de antes, para no volver a avisar del mismo.
+        nou_of["plans"] = {k: {"fase": p["fase"], "nom": p["nom"], **({"ocult": True} if k in ocults else {}),
+                               "comunicat": p.get("comunicat") or ((of or {}).get("plans", {}).get(k) or {}).get("comunicat")}
                            for k, p in {**ocults, **plans}.items()}
     estat["oficials"] = nou_of
     # Riera: atención y peligro, una vez cada nivel por episodio.
@@ -642,6 +666,8 @@ def historial(estat, nous, ahora, anterior=None):
         if not ep:
             continue
         obert = next((e for e in reversed(h) if e["clau"] == ep and not e.get("fi")), None)
+        if a.get("nomes_avis"):
+            continue
         if a.get("nivell") == "fi":
             for e in h:
                 if e["clau"] == ep and not e.get("fi"):

@@ -77,6 +77,14 @@ class Historial(unittest.TestCase):
                           [{"pla": "INUNFOC", "fase": "alerta", "comunicat": pdf}])
         self.assertEqual(h[0]["ca"], "🟠 <b>Pla</b>\nActivat.")
 
+    def test_el_comunicat_nou_porta_a_la_fitxa_sense_canviar_la(self):
+        estat = {}
+        AB.historial(estat, [avis(0, "pla:INUNCAT", "pc", "alerta")], ARA)
+        nou = avis(30, "pla:INUNCAT", "pc", "comunicat nou", nomes_avis=True)
+        h = AB.historial(estat, [nou], ARA)
+        self.assertEqual((len(h), h[0]["ca"], h[0].get("darrer")), (1, "alerta", None))
+        self.assertEqual(AB.pagina(nou, h), "perill.html#" + AB.id_fitxa("pla:INUNCAT", h[0]["inici"]))
+
     def test_es_guarda_un_any(self):
         estat = {}
         AB.historial(estat, [avis(0, "aemet:pluja:x", "groc", fins=ARA.isoformat())], ARA)
