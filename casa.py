@@ -594,7 +594,8 @@ def recoger(anterior=None):
     # En el NAS, si dura un fallo de las estaciones, se le dice a Juanjo.
     if R.hay_registro():
         try:
-            ES.vigila(casa is not None, [v["estacio"] for v in veines], P.AHORA)
+            ES.vigila(casa is not None if E.disponible() else None,
+                      [v["estacio"] for v in veines] if WU.lectura_disponible() else None, P.AHORA)
         except Exception as ex:
             print("No he pogut vigilar les estacions:", ex, file=sys.stderr)
     # Si llueve ahora, en casa o en una vecina que cuenta: lo que miran el

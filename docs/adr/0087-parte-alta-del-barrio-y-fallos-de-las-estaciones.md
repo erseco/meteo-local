@@ -79,7 +79,12 @@ Versión 3.78.0.
   vuelve; la estación de casa a los 30 minutos, la parte alta (menos de dos
   de arriba) y Weather Underground entero a la hora, y cada vecina sola al
   día. Sin Weather Underground no se avisa de la parte alta ni de cada
-  vecina. Estado en `/estat/estacions-falla.json`.
+  vecina. Estado en `/estat/estacions-falla.json`. Solo se vigila lo que
+  tiene claves para leerse (3.83.2): la reserva de IONOS no tiene las de
+  Ecowitt ni las de Weather Underground, y su prueba diaria de las 04:30
+  tomaba eso por un fallo; el 15-10-2026 avisó a Juanjo de que no respondían
+  ni la estación de casa ni Weather Underground, cuando en el NAS se leían
+  bien.
 - La web no dice el nombre de la calle; «D'on surt» explica la riera y la
   parte alta, y «Com es llegeix la previsió» (antes «… la taula», Juanjo:
   «cambia taula por previsió») lo que quiere decir «+2 a la part alta», solo
@@ -154,7 +159,8 @@ Versión 3.78.0.
 - `tests/test_part_alta.py`: la diferencia de ahora, la tabla con el registro
   y la de partida, «Ara» con ICERDA6, con la parte alta y sin vecinas, y los
   avisos (a los 30 minutos, una sola vez, al volver, sin repetir cuando falla
-  todo Weather Underground). `tests/test_web.py`,
+  todo Weather Underground; sin claves, nada, y lo que deja de vigilarse se
+  olvida sin avisar de que vuelve). `tests/test_web.py`,
   `test_part_alta_al_costat_de_la_temperatura`. 423 pruebas en verde.
 - La hora solar (3.82.1): `test_hora_solar_als_dos_costats_del_canvi_dhora`
   (las 15 h de verano y las 14 h de invierno, la misma hora; las dos horas de

@@ -15,6 +15,11 @@ en cada pasada del NAS qué falla y, si dura, se le dice una vez a Juanjo
 - Weather Underground entero (ninguna vecina), a la hora; mientras dura, no
   se avisa de cada vecina ni de la parte alta;
 - una vecina sola, al día.
+
+Solo se vigila lo que se puede leer: sin claves de Ecowitt o de Weather
+Underground (la reserva de IONOS no las tiene), no hay nada que vigilar, no un
+fallo. Hasta la 3.83.1 la prueba diaria de la reserva lo tomaba por un fallo y
+avisaba a Juanjo cada día.
 """
 import datetime as dt
 import json
@@ -53,16 +58,23 @@ def _llegeix(ruta):
 
 def vigila(casa_ok, veines_ok, ahora, envia=None, ruta=None):
     """casa_ok: si se ha leído la estación de casa; veines_ok: las vecinas
-    leídas. Devuelve los mensajes enviados."""
+    leídas. None en cualquiera de los dos: no hay claves para leerla y no se
+    vigila. Devuelve los mensajes enviados."""
     if envia is None:
         import avis_privat
         envia = avis_privat.envia
     ruta = ruta or ESTAT
-    veines_ok = set(veines_ok or [])
-    falles = {"casa": not casa_ok, "xarxa": not veines_ok,
-              "alta": len(veines_ok & set(PA.ALTES)) < PA.ALTES_MIN}
-    falles.update({e: e not in veines_ok for e in C.VEINES})
+    falles = {}
+    if casa_ok is not None:
+        falles["casa"] = not casa_ok
+    if veines_ok is not None:
+        veines_ok = set(veines_ok)
+        falles.update({"xarxa": not veines_ok, "alta": len(veines_ok & set(PA.ALTES)) < PA.ALTES_MIN})
+        falles.update({e: e not in veines_ok for e in C.VEINES})
     estat, missatges = _llegeix(ruta), []
+    # Lo que ya no se vigila se olvida, sin avisar de que vuelve.
+    for clau in [c for c in estat if c not in falles]:
+        estat.pop(clau)
     for clau, falla in falles.items():
         s = estat.get(clau)
         if not falla:
@@ -76,7 +88,7 @@ def vigila(casa_ok, veines_ok, ahora, envia=None, ruta=None):
         if s["avisat"]:
             continue
         # Sin Weather Underground, ni la parte alta ni cada vecina: ya lo dice «xarxa».
-        if clau != "xarxa" and clau != "casa" and falles["xarxa"]:
+        if clau != "xarxa" and clau != "casa" and falles.get("xarxa"):
             continue
         des_de = dt.datetime.fromisoformat(s["des_de"])
         llindar = LLINDAR_MIN.get(clau, LLINDAR_VEINA_MIN)

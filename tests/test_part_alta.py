@@ -134,6 +134,17 @@ class Vigilancia(unittest.TestCase):
         m = self.pas(24 * 60, True, ["ICERDA6", "ICERDA18"])
         self.assertEqual(sorted(x.split()[5] for x in m), ["ICERDA28", "ICERDA48"])
 
+    def test_sense_claus_no_es_vigila(self):
+        # La reserva de IONOS no té les claus d'Ecowitt ni de Weather Underground.
+        self.assertEqual(self.pas(0, None, None), [])
+        self.assertEqual(self.pas(48 * 60, None, None), [])
+        self.assertEqual(ES._llegeix(self.ruta), {})
+
+    def test_el_que_ja_no_es_vigila_s_oblida(self):
+        self.pas(0, False, [])
+        self.assertEqual(self.pas(60, None, None), [])
+        self.assertEqual(ES._llegeix(self.ruta), {})
+
 
 if __name__ == "__main__":
     unittest.main()
