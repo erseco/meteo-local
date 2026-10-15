@@ -1,6 +1,6 @@
 # 82. App de Android para Google Play
 
-Fecha: 2026-10-12 · Estado: aceptado (en revisión en Google Play; rechazada el 13 y el 14-10-2026)
+Fecha: 2026-10-12 · Estado: aceptado (aprobada en Google Play el 15-10-2026, tras dos rechazos el 13 y el 14-10-2026)
 
 ## Contexto
 
@@ -120,7 +120,7 @@ Versión 3.73.0 de la web; la app empieza en la 1.0.0.
 - Versión de producción 1 (1.0.0), solo España, enviada a revisión por Juanjo
   el 12-10-2026, con la publicación gestionada desactivada: si Google la
   aprueba, sale sola en la tienda.
-- Pendiente: el resultado de la revisión. Después, añadir al manifiesto de la
+- Pendiente: añadir al manifiesto de la
   web `related_applications` con la app de Play, para que Chrome en Android
   ofrezca la app en lugar de instalar la web (propuesto, sin decidir).
 
@@ -183,3 +183,14 @@ en `index.html` y `fonts.html`, en catalán y en castellano. Publicada la 3.83.1
 colgado por un error 500 de GitHub), los once cambios se reenviaron a
 revisión el 14-10-2026 a las 19:08. Si la rechazan también así, el siguiente
 paso es la apelación.
+
+## Cambio del 15-10-2026: aprobada
+
+Google aprobó el tercer envío (el del 14-10-2026, con un enlace directo a cada
+fuente oficial en la descripción y el aviso de que no es una web oficial en el
+pie de todas las páginas). Juanjo lo comunicó el 15-10-2026, y la ficha ya es
+pública: https://play.google.com/store/apps/details?id=io.github.meteo_montflorit
+(«Montflorit al dia - Aplicacions a Google Play»). No hizo falta la apelación.
+Lo aprendido de los dos rechazos queda como lista para cualquier otra app en
+la memoria de los agentes («Publicar en Google Play»).
+
