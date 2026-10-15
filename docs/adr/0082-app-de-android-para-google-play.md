@@ -237,3 +237,10 @@ se presenta como un Mac, y se reconoce porque es táctil:
 `navigator.maxTouchPoints` mayor que 1), y, como antes, dentro de la app y en
 la web instalada. El texto no cambia. Lo comprueba la prueba
 `test_app_android_on_s_ofereix`.
+
+En la 3.85.1 (15-10-2026), a petición de Juanjo («esto ocupa mucho espacio, en
+movil quizás está justificado, pero no en web»), el pie va en tres líneas en
+pantallas de 900 px o más: el aviso de web no oficial y la app; la versión,
+las páginas y las licencias; la nota de la IA. En el móvil, una cosa por línea,
+como antes. Solo CSS (`estil.css`), para las nueve páginas; axe-core sin
+incidencias en el pie, en claro y oscuro.

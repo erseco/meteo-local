@@ -247,6 +247,16 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
   font-size: .85rem;
 }
 .peu p { margin: .2rem 0; }
+/* A l'ordinador, el peu en tres línies i no en cinc: l'avís i l'app; la
+   versió, les pàgines i les llicències; la nota de la IA. Al mòbil, una per
+   línia. [hidden] s'ha de repetir perquè display: inline el desfaria. */
+@media (min-width: 900px) {
+  .peu { line-height: 1.75; }
+  .peu p { display: inline; margin: 0; }
+  .peu p[hidden] { display: none; }
+  .peu p + p::before { content: " · "; }
+  .peu p:has(#versio)::before, .peu p:last-child::before { content: "\A"; white-space: pre; }
+}
 
 .visualment-amagat {
   position: absolute;
