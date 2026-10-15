@@ -632,6 +632,8 @@ class Consultes(unittest.TestCase):
         self.assertIn(f'<a href="{pdf}">Comunicado (PDF)</a>', nous[0]["es"])
         self.assertEqual(len(nous[0]["ca"].splitlines()), 2)                            # breu
         self.assertTrue(nous[0]["nomes_avis"])
+        # A la notificació, en tocar-la, el PDF.
+        self.assertEqual((nous[0]["url"], nous[0]["push"]["ca"].splitlines()[1]), (pdf, "Toca per veure el comunicat."))
         self.assertEqual(perill(dict(alerta, comunicat=pdf), 24), [])                  # el mateix: res
         self.assertEqual(perill(alerta, 30), [])                                       # sense: res
         self.assertEqual(perill(dict(alerta, comunicat=pdf), 36), [])                  # torna el mateix: res

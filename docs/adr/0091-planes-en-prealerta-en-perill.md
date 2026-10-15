@@ -78,7 +78,10 @@ comunicado distinto del último avisado (también el primero, si la alerta sali�
 sin él) es un aviso de peligro, por Telegram y en el navegador:
 «Protecció Civil: actualització del pla … (…)», el enlace «Comunicat (PDF)»
 y el de la ficha; breve, porque el plan ya se avisó (Juanjo, 3.86.1: «yo
-hablaria de actualizacion, texto breve porque ya se ha publicado antes»). Lleva a la ficha del episodio sin
+hablaria de actualizacion, texto breve porque ya se ha publicado antes»). En
+la notificación de la app de Android y de la web, que no admite enlaces en el
+texto, «Toca per veure el comunicat.», y al tocarla se abre el PDF, como el
+radar en el aviso de lluvia. Lleva a la ficha del episodio sin
 cambiarla (`nomes_avis`). No avisa si en la misma pasada cambia la fase (ese
 aviso ya lleva el PDF), ni en prealerta, ni si la fuente deja de traer el
 comunicado una pasada y vuelve el mismo: el estado guarda el último avisado.

@@ -466,10 +466,14 @@ def text_comunicat(p):
     porque el plan ya se avisó: «yo hablaría de actualización, texto breve»."""
     nom_ca, nom_es = p["nom"], NOM_PLA_ES.get(p["nom"], p["nom"])
     url = html.escape(p["comunicat"])
-    return {"ca": negreta(f"Protecció Civil: actualització del pla {nom_ca} ({p['pla']})", p["fase"])
-                  + f"\n<a href=\"{url}\">Comunicat (PDF)</a>",
-            "es": negreta(f"Protección Civil: actualización del plan {nom_es} ({p['pla']})", p["fase"])
-                  + f"\n<a href=\"{url}\">Comunicado (PDF)</a>"}
+    ca = negreta(f"Protecció Civil: actualització del pla {nom_ca} ({p['pla']})", p["fase"])
+    es = negreta(f"Protección Civil: actualización del plan {nom_es} ({p['pla']})", p["fase"])
+    # La notificació de l'app i de la web no admet enllaços al text: en tocar-la
+    # obre el comunicat, com el radar a l'avís de pluja (bot/push.py).
+    return {"ca": f"{ca}\n<a href=\"{url}\">Comunicat (PDF)</a>",
+            "es": f"{es}\n<a href=\"{url}\">Comunicado (PDF)</a>",
+            "url": p["comunicat"],
+            "push": {"ca": f"{ca}\nToca per veure el comunicat.", "es": f"{es}\nToca para ver el comunicado."}}
 
 
 # --- Decidir -----------------------------------------------------------------
