@@ -56,6 +56,10 @@ var IDIOMA = {
     "Pla Alfa de Cerdanyola: {0}": "Plan Alfa de Cerdanyola: {0}",
     "Agents Rurals: espais naturals tancats": "Agents Rurals: espacios naturales cerrados",
     "El fixen cada dia els Agents Rurals; no arriba com a avís.": "Lo fijan cada día los Agents Rurals; no llega como aviso.",
+    // Els plans en prealerta, a «Ara» de «Perill» (ADR 0091).
+    "Motiu, segons Protecció Civil: {0}.": "Motivo, según Protección Civil: {0}.",
+    "La prealerta no arriba com a avís.": "La prealerta no llega como aviso.",
+    "Comunicat de Protecció Civil (PDF)": "Comunicado de Protección Civil (PDF)",
     "Accés restringit als espais forestals.": "Acceso restringido a los espacios forestales.",
     "Tancat: {0}.": "Cerrado: {0}.",
     "De {0} a {1}": "De {0} a {1}",

@@ -535,6 +535,18 @@ function liniesSmp(smp) {
   return smp.linies.map((l) => element('span', 'smp-linia', es ? l.es : l.ca));
 }
 
+// L'adreça de la fitxa d'un pla a «Perill»: en prealerta, una de fixa per
+// pla (perill.js); si ha avisat, la del seu episodi a l'historial.
+function idPla(p) {
+  return `pla-${p.pla}`.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+}
+
+function fitxaDelPla(p) {
+  const e = p.fase !== 'prealerta' && (HISTORIAL_PERILL || [])
+    .find((h) => h.clau && h.clau.startsWith(`pla:${p.pla}`) && !h.fi);
+  return e ? idFitxa(e) : idPla(p);
+}
+
 // Els plans de Protecció Civil, un element per pla, del color de la fase.
 function blocPlans(plans, smp) {
   return (plans || []).map((p) => {
@@ -546,8 +558,11 @@ function blocPlans(plans, smp) {
     if (p.fase === 'emergència') {
       item.append(T(' Evita els desplaçaments que no siguin necessaris.'));
     }
-    // El comunicat en PDF, a la fitxa de «Perill», on porta la línia (ADR 0075).
+    // El comunicat en PDF, a la fitxa de «Perill», on porta la línia (ADR 0075):
+    // la de l'historial si el pla ha avisat (alerta o emergència) o, en
+    // prealerta, la que «Perill» fa a «Ara» (ADR 0091).
     item.append(...liniesSmp(smp));
+    item.dataset.detall = `perill.html#${fitxaDelPla(p)}`;
     return item;
   });
 }

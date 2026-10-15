@@ -170,6 +170,48 @@ function fitxaAlfa(alfa) {
   return art;
 }
 
+// Els plans de Protecció Civil en prealerta (ADR 0091): no avisen (ADR 0051)
+// i no tenen fitxa a l'historial; aquí, a «Ara», com el Pla Alfa, amb el que
+// en diu Protecció Civil i el seu comunicat. El motiu, en l'idioma en què el
+// publica Protecció Civil.
+const PROTECCIO_CIVIL = {
+  ca: 'https://interior.gencat.cat/ca/arees_dactuacio/proteccio_civil/',
+  es: 'https://interior.gencat.cat/es/arees_dactuacio/proteccio_civil/',
+};
+
+// «15/10/2026 10:33», l'hora local de les dades de Protecció Civil.
+function dataPla(text) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/.exec(text || '');
+  return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]) : null;
+}
+
+function fitxaPla(p) {
+  const art = element('article', 'avis-item episodi prealerta');
+  art.id = idPla(p);
+  const text = T`Protecció Civil: pla ${TD(p.nom)} (${p.pla}) en fase ${deFase(TD(NOM_FASE[p.fase] || p.fase))}.`;
+  const titol = element('p', 'episodi-titol');
+  titol.append(element('strong', null, `🟡 ${text}`));
+  const sentit = SENTIT_FASE[p.fase] ? SENTIT_FASE[p.fase]() : '';
+  const motiu = p.descripcio ? T`Motiu, segons Protecció Civil: ${p.descripcio}.` : '';
+  const cap = element('div', 'episodi-cap');
+  cap.append(titol, botoCompartir(art.id, text.replace(/\.$/, ''), [text, sentit, motiu].filter(Boolean).join('\n')));
+  const estat = element('p', 'episodi-quan');
+  const des = dataPla(p.des_de);
+  estat.append(element('span', 'episodi-actiu', T('Actiu ara')), ' · ',
+    des ? T`Des de ${moment(des)}` : '', des ? '. ' : '', T('La prealerta no arriba com a avís.'));
+  art.append(cap, estat);
+  if (sentit) art.append(element('p', null, sentit));
+  if (motiu) art.append(element('p', null, motiu));
+  const enllac = element('p');
+  const a = element('a', null, p.comunicat ? T('Comunicat de Protecció Civil (PDF)') : T('Més informació'));
+  a.href = p.comunicat || PROTECCIO_CIVIL[idiomaText()];
+  a.target = '_blank';
+  a.rel = 'noopener';
+  enllac.append(a);
+  art.append(enllac);
+  return art;
+}
+
 function nomMes(iso) {
   const t = new Date(iso);
   return `${MESOS[idiomaText()][t.getMonth()]} de ${t.getFullYear()}`;
@@ -186,7 +228,9 @@ function pinta(dades, ara = new Date()) {
   const alfa = fitxaAlfa(dades.pla_alfa);
   if (actius.length) peces.push(...actius.map((e) => fitxa(e, ara)));
   if (alfa) peces.push(alfa);
-  if (!actius.length && !alfa) peces.push(element('p', 'nota', T('Ara no hi ha cap situació de perill.')));
+  const prealerta = (dades.plans_prealerta || []).map(fitxaPla);
+  peces.push(...prealerta);
+  if (!actius.length && !alfa && !prealerta.length) peces.push(element('p', 'nota', T('Ara no hi ha cap situació de perill.')));
   peces.push(element('h2', 'seccio', T`Últims ${DIES_RECENTS} dies`));
   if (recents.length) peces.push(...recents.map((e) => fitxa(e, ara)));
   else peces.push(element('p', 'nota', T`Cap situació de perill acabada en els últims ${DIES_RECENTS} dies.`));

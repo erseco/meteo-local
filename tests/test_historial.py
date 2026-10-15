@@ -119,5 +119,40 @@ class Historial(unittest.TestCase):
         self.assertEqual(r, [AB.id_fitxa(c, i) for c, i in casos])
 
 
+    def test_els_plans_en_prealerta_van_a_avisos_json(self):
+        # «Perill» els ensenya a «Ara»: no avisen i no tenen fitxa a l'historial (ADR 0091).
+        import tempfile
+        from unittest import mock
+        prealerta = {"pla": "INUNCAT", "nom": "d'inundacions", "fase": "prealerta", "des_de": "15/10/2026 10:33",
+                     "descripcio": "Avís-Intensitat de pluja", "comunicat": "https://example.org/c.pdf", "altre": 1}
+        alerta = {"pla": "VENTCAT", "nom": "de vent", "fase": "alerta", "des_de": "15/10/2026 10:00"}
+        with tempfile.TemporaryDirectory() as d:
+            casa, sortida = os.path.join(d, "casa.json"), os.path.join(d, "avisos.json")
+            with open(casa, "w", encoding="utf-8") as f:
+                json.dump({"plans": [prealerta, alerta]}, f)
+            with mock.patch.object(AB, "ESTAT", os.path.join(d, "estat.json")):
+                AB.actualitza(casa, sortida, ahora=ARA)
+            with open(sortida, encoding="utf-8") as f:
+                plans = json.load(f)["plans_prealerta"]
+        self.assertEqual(plans, [{k: v for k, v in prealerta.items() if k != "altre"}])
+
+    def test_la_portada_porta_a_la_fitxa_del_pla(self):
+        import shutil
+        import subprocess
+        if not shutil.which("node"):
+            self.skipTest("cal Node")
+        with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web", "comu.js"),
+                  encoding="utf-8") as f:
+            js = f.read()
+        funcions = "".join("function " + nom + js.split("function " + nom, 1)[1].split("\n}\n", 1)[0] + "\n}\n"
+                           for nom in ("idFitxa", "idPla", "fitxaDelPla"))
+        historial = [{"clau": "pla:VENTCAT", "inici": "2026-10-15T10:00+02:00"}]
+        codi = ("let HISTORIAL_PERILL = " + json.dumps(historial) + ";\n" + funcions
+                + "console.log(JSON.stringify([fitxaDelPla({pla: 'INUNCAT', fase: 'prealerta'}),"
+                  " fitxaDelPla({pla: 'VENTCAT', fase: 'alerta'}), fitxaDelPla({pla: 'NEUCAT', fase: 'alerta'})]));")
+        r = json.loads(subprocess.run(["node", "-e", codi], capture_output=True, text=True, check=True).stdout)
+        self.assertEqual(r, ["pla-inuncat", AB.id_fitxa("pla:VENTCAT", "2026-10-15T10:00+02:00"), "pla-neucat"])
+
+
 if __name__ == "__main__":
     unittest.main()

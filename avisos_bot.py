@@ -748,8 +748,13 @@ def actualitza(casa_json, sortida, ahora=None, anterior=None):
         # El Pla Alfa de hoy y mañana, para «Ara» de «Perill», sin avisar ni
         # guardar historial: cambia cada día (ADR 0046 y 0071).
         alfa = (salida.get("entorn") or {}).get("pla_alfa")
+        # Los planes en prealerta que muestra la web, también para «Ara»: no
+        # avisan (ADR 0051) y no tienen ficha en el historial, y la portada
+        # llevaba a una «Perill» vacía (Juanjo, 15-10-2026; ADR 0091).
+        prealerta = [{k: p.get(k) for k in ("pla", "nom", "fase", "des_de", "descripcio", "comunicat")}
+                     for p in salida.get("plans") or [] if p.get("fase") == "prealerta"]
         json.dump({"generat": ahora.isoformat(timespec="minutes"), "versio": C.VERSION, "avisos": llista,
-                   "historial": hist, "pla_alfa": alfa}, f, ensure_ascii=False)
+                   "historial": hist, "pla_alfa": alfa, "plans_prealerta": prealerta}, f, ensure_ascii=False)
     return nous
 
 
