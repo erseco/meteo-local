@@ -223,3 +223,17 @@ Validado con `probar-web` (3.84.0, en local): visible en Chromium y Firefox con
 el Pixel 7; oculto en el iPhone 15 (WebKit) y en el ordenador en los tres
 navegadores. Que no sale dentro de la app se comprueba en el móvil de Juanjo.
 
+## Cambio del 15-10-2026: el enlace a la app, también en el ordenador
+
+Juanjo pidió que el enlace del pie saliera también en el ordenador, para quien
+mira la web allí y quiere la app en el móvil («lo que dije era ponerlo también
+en ordenador, no solo en movil o tablet»; «sí, hazlo»). La ficha de Google Play
+en el navegador del ordenador, con la cuenta de Google abierta, deja instalar
+la app en el móvil Android vinculado a esa cuenta.
+
+Desde la 3.85.0, `ofereixApp` de `comu.js` enseña el enlace en Android y en el
+ordenador, y lo oculta en iPhone e iPad, donde no se puede instalar (el iPad
+se presenta como un Mac, y se reconoce porque es táctil:
+`navigator.maxTouchPoints` mayor que 1), y, como antes, dentro de la app y en
+la web instalada. El texto no cambia. Lo comprueba la prueba
+`test_app_android_on_s_ofereix`.

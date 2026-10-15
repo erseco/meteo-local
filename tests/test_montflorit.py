@@ -98,6 +98,23 @@ class Web(unittest.TestCase):
             self.assertIn(f'<p id="app-android" hidden><a href="{M.PLAY}"', self.llegeix(nom), nom)
             self.assertIn("Descarga la app para Android (Google Play)", self.llegeix("es/" + nom), nom)
 
+    def test_app_android_on_s_ofereix(self):
+        # A Android i a l'ordinador sí; a l'iPhone i a l'iPad (que es presenta
+        # com un Mac tàctil) no, ni dins de l'app o de la web instal·lada.
+        casos = {
+            "Mozilla/5.0 (Linux; Android 14; Pixel 7) Chrome/130.0 Mobile": (5, True),
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/131.0": (0, True),
+            "Mozilla/5.0 (X11; Linux x86_64) Chrome/130.0": (0, True),
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) Safari/605.1.15": (0, True),
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Safari/604.1": (5, False),
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Version/18.0 Safari/605.1.15": (5, False),
+        }
+        for ua, (tactil, esperat) in casos.items():
+            self.assertEqual(js(f"ofereixApp({json.dumps(ua)}, {tactil}, false, false)"), esperat, ua)
+        android = json.dumps(next(iter(casos)))
+        self.assertFalse(js(f"ofereixApp({android}, 5, true, false)"))
+        self.assertFalse(js(f"ofereixApp({android}, 5, false, true)"))
+
     def test_no_parla_del_trajecte_ni_de_casa(self):
         index = self.llegeix("index.html")
         self.assertIn("<h1>Temps a Montflorit</h1>", index)

@@ -440,8 +440,8 @@ def escriu_fitxer(ruta, text):
 
 
 # L'app d'Android (ADR 0082), al peu de totes les pàgines públiques, sota
-# l'avís de web no oficial. Surt amagat: comu.js l'ensenya només a Android i
-# fora de l'app o de la web instal·lada. No es fa amb prefer_related_applications
+# l'avís de web no oficial. Surt amagat: comu.js l'ensenya a Android i a
+# l'ordinador, no a l'iPhone ni a l'iPad, i fora de l'app o de la web instal·lada. No es fa amb prefer_related_applications
 # al manifest, que deixaria la web sense poder-se instal·lar a cap Chrome i no
 # oferiria l'app sense un botó propi (Juanjo, 15-10-2026: «hazlo»).
 PLAY = "https://play.google.com/store/apps/details?id=io.github.meteo_montflorit"

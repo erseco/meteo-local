@@ -1418,9 +1418,16 @@ async function subscriuAvisos(registre) {
 }
 
 // L'enllaç a l'app d'Android (ADR 0082), només a la web pública (montflorit.py
-// el posa al peu) i només a Android, fora de l'app o de la web ja instal·lada:
-// a qui ja la té no se li ofereix. L'app obre la web amb un referrer
+// el posa al peu): a Android i a l'ordinador, des d'on Google Play la pot
+// instal·lar al mòbil. No a l'iPhone ni a l'iPad, on no s'hi pot instal·lar
+// (l'iPad es presenta com un Mac, però tàctil), ni a qui ja la té: dins de
+// l'app o de la web instal·lada. L'app obre la web amb un referrer
 // android-app://, que es recorda la resta de la sessió.
+function ofereixApp(ua, tactil, dinsApp, instal) {
+  const ios = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && tactil > 1);
+  return !ios && !dinsApp && !instal;
+}
+
 (function () {
   const p = $('app-android');
   if (!p) return;
@@ -1430,7 +1437,7 @@ async function subscriuAvisos(registre) {
     dinsApp = sessionStorage.getItem('meteo.app') === '1';
   } catch (_) {}
   const instal = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
-  p.hidden = !/Android/i.test(navigator.userAgent) || dinsApp || instal;
+  p.hidden = !ofereixApp(navigator.userAgent || '', navigator.maxTouchPoints || 0, dinsApp, instal);
 })();
 
 // Per poder instal·lar la web com a aplicació (sw.js).
