@@ -76,8 +76,9 @@ cuando cambie («no digo enviar ahora, digo cuando cambie»; «exacto,
 publicalo»). Desde la 3.86.0, con un plan en alerta o emergencia, cada
 comunicado distinto del último avisado (también el primero, si la alerta salió
 sin él) es un aviso de peligro, por Telegram y en el navegador:
-«Protecció Civil: comunicat nou del pla … (…), en fase d'…», una línea, el
-enlace «Comunicat (PDF)» y el de la ficha. Lleva a la ficha del episodio sin
+«Protecció Civil: actualització del pla … (…)», el enlace «Comunicat (PDF)»
+y el de la ficha; breve, porque el plan ya se avisó (Juanjo, 3.86.1: «yo
+hablaria de actualizacion, texto breve porque ya se ha publicado antes»). Lleva a la ficha del episodio sin
 cambiarla (`nomes_avis`). No avisa si en la misma pasada cambia la fase (ese
 aviso ya lleva el PDF), ni en prealerta, ni si la fuente deja de traer el
 comunicado una pasada y vuelve el mismo: el estado guarda el último avisado.

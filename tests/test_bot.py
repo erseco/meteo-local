@@ -627,9 +627,10 @@ class Consultes(unittest.TestCase):
         self.assertEqual(len(perill(alerta, 12)), 1)                                   # l'alerta
         nous = perill(dict(alerta, comunicat=pdf), 18)
         self.assertEqual(nous[0]["ca"].splitlines()[0],
-                         "🟠 <b>Protecció Civil: comunicat nou del pla d'inundacions (INUNCAT), en fase d'alerta</b>")
+                         "🟠 <b>Protecció Civil: actualització del pla d'inundacions (INUNCAT)</b>")
         self.assertIn(f'<a href="{pdf}">Comunicat (PDF)</a>', nous[0]["ca"])
         self.assertIn(f'<a href="{pdf}">Comunicado (PDF)</a>', nous[0]["es"])
+        self.assertEqual(len(nous[0]["ca"].splitlines()), 2)                            # breu
         self.assertTrue(nous[0]["nomes_avis"])
         self.assertEqual(perill(dict(alerta, comunicat=pdf), 24), [])                  # el mateix: res
         self.assertEqual(perill(alerta, 30), [])                                       # sense: res

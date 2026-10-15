@@ -462,15 +462,14 @@ def text_pla(p, acabat=False, smp=None):
 
 def text_comunicat(p):
     """Un comunicado nuevo de Protección Civil para un plan que ya estaba en
-    alerta o emergencia (Juanjo, 15-10-2026: «cuando cambie»; ADR 0091)."""
+    alerta o emergencia (Juanjo, 15-10-2026: «cuando cambie»; ADR 0091). Breve,
+    porque el plan ya se avisó: «yo hablaría de actualización, texto breve»."""
     nom_ca, nom_es = p["nom"], NOM_PLA_ES.get(p["nom"], p["nom"])
-    de = "d'" if p["fase"][:1] in "aeiouàèéíòóú" else "de "
-    fase_es = {"emergència": "emergencia"}.get(p["fase"], p["fase"])
     url = html.escape(p["comunicat"])
-    return {"ca": negreta(f"Protecció Civil: comunicat nou del pla {nom_ca} ({p['pla']}), en fase {de}{p['fase']}", p["fase"])
-                  + f"\nProtecció Civil ha publicat un comunicat nou sobre aquest pla.\n<a href=\"{url}\">Comunicat (PDF)</a>",
-            "es": negreta(f"Protección Civil: comunicado nuevo del plan {nom_es} ({p['pla']}), en fase de {fase_es}", p["fase"])
-                  + f"\nProtección Civil ha publicado un comunicado nuevo sobre este plan.\n<a href=\"{url}\">Comunicado (PDF)</a>"}
+    return {"ca": negreta(f"Protecció Civil: actualització del pla {nom_ca} ({p['pla']})", p["fase"])
+                  + f"\n<a href=\"{url}\">Comunicat (PDF)</a>",
+            "es": negreta(f"Protección Civil: actualización del plan {nom_es} ({p['pla']})", p["fase"])
+                  + f"\n<a href=\"{url}\">Comunicado (PDF)</a>"}
 
 
 # --- Decidir -----------------------------------------------------------------
