@@ -48,3 +48,23 @@ alerta o emergencia.
   y castellano, en Chromium (móvil) y Firefox (ordenador), sin errores de
   JavaScript; el enlace abre el comunicado del día. axe-core sin infracciones
   en «Perill» y en la portada.
+
+## Cambio del 15-10-2026: el comunicado más reciente, también en alerta
+
+El INUNCAT pasó a alerta el 15-10-2026 a las 19:09, sin comunicado todavía; el
+PDF salió a las 19:43. La ficha del episodio, que sale del historial, se quedó
+con el enlace a la página general de Protección Civil que llevaba el aviso, y
+Juanjo preguntó: «el enlace no lleva a un pdf como es habitual por que?».
+
+Desde la 3.85.2, `comunicats` de `avisos_bot.py` pone en cada pasada, en la
+ficha de cada plan activo, el comunicado más reciente (`comunicat`); si
+Protección Civil publica una actualización, la ficha pasa a la nueva, y al
+acabar el episodio se queda con la última. El texto pierde el enlace al
+comunicado que llevaba, si lo tenía, para que no haya dos. «Perill» lo
+muestra como «Comunicat de Protecció Civil (PDF)», como la prealerta. El
+mensaje ya enviado por Telegram o al navegador no cambia, pero su enlace lleva
+a la ficha, que ya tiene el PDF.
+
+Validado: prueba `test_el_pla_porta_el_comunicat_mes_recent`; en local, con
+los datos de esa tarde, la ficha enlaza el PDF en catalán y castellano, en
+Chromium, Firefox y WebKit, en ordenador y móvil.

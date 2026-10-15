@@ -670,6 +670,27 @@ def historial(estat, nous, ahora, anterior=None):
     return estat["historial"]
 
 
+# El enlace al comunicado que llevaba el texto del aviso, si ya había uno al
+# empezar (text_pla).
+ENLLAC_COMUNICAT = re.compile(r'\n<a href="[^"]*">Comunica(?:t|do) \(PDF\)</a>')
+
+
+def comunicats(hist, plans):
+    """El comunicado más reciente de cada plan activo, en su ficha de «Perill».
+    Protección Civil puede publicarlo después de cambiar la fase (el INUNCAT
+    del 15-10-2026 pasó a alerta a las 19:09 y el comunicado salió a las
+    19:43), y lo actualiza mientras dura: la ficha lo toma en cada pasada y,
+    al acabar, se queda con el último (Juanjo, 15-10-2026; ADR 0091). El texto
+    pierde el enlace que llevaba, para que no haya dos."""
+    actius = {p["pla"]: p.get("comunicat") for p in plans or [] if p.get("pla")}
+    for e in hist:
+        if e["clau"].startswith("pla:") and not e.get("fi") and actius.get(e["clau"][4:]):
+            e["comunicat"] = actius[e["clau"][4:]]
+            for idioma in ("ca", "es"):
+                e[idioma] = ENLLAC_COMUNICAT.sub("", e[idioma])
+    return hist
+
+
 def anterior_publicat(font):
     """El historial del último avisos.json publicado: una ruta (la reserva, en
     IONOS) o una dirección (el NAS). [] si no se puede leer."""
@@ -737,7 +758,7 @@ def actualitza(casa_json, sortida, ahora=None, anterior=None):
     limit = ahora - dt.timedelta(hours=CONSERVA_H)
     llista = [a for a in estat.get("llista", []) if dt.datetime.fromisoformat(a["hora"]) > limit] + nous
     estat["llista"] = llista
-    hist = historial(estat, nous, ahora, anterior_publicat(anterior))
+    hist = comunicats(historial(estat, nous, ahora, anterior_publicat(anterior)), salida.get("plans"))
     # El enlace va en el aviso, no en el historial: la ficha ya está en la web.
     for a in nous:
         amb_enllac(a, hist)

@@ -55,6 +55,28 @@ class Historial(unittest.TestCase):
         h = AB.historial(estat, [], ARA + dt.timedelta(hours=2))
         self.assertEqual(h[0]["fi"][11:16], "14:00")
 
+    def test_el_pla_porta_el_comunicat_mes_recent(self):
+        # L'INUNCAT del 15-10-2026: alerta a les 19:09 sense comunicat; el PDF surt
+        # a les 19:43 i la fitxa l'ha de portar; si n'hi ha un de nou, el nou, i
+        # quan acaba es queda amb l'últim.
+        estat = {}
+        pdf = "https://documents.dadesobertes.gencat.cat/cecat/docs/I-1.pdf"
+        text = "🟠 <b>Pla</b>\nActivat." + '\n<a href="' + pdf + '">Comunicat (PDF)</a>'
+        h = AB.comunicats(AB.historial(estat, [avis(0, "pla:INUNCAT", "pc", "🟠 <b>Pla</b>",
+                                                    enllac=AB.PROTECCIO_CIVIL)], ARA), [])
+        self.assertNotIn("comunicat", h[0])
+        h = AB.comunicats(h, [{"pla": "INUNCAT", "fase": "alerta", "comunicat": pdf}])
+        self.assertEqual(h[0]["comunicat"], pdf)
+        h = AB.comunicats(h, [{"pla": "INUNCAT", "fase": "alerta", "comunicat": pdf.replace("1", "2")}])
+        self.assertTrue(h[0]["comunicat"].endswith("I-2.pdf"))
+        h[0]["fi"] = ARA.isoformat()
+        h = AB.comunicats(h, [{"pla": "INUNCAT", "fase": "alerta", "comunicat": pdf.replace("1", "3")}])
+        self.assertTrue(h[0]["comunicat"].endswith("I-2.pdf"))
+        # Si el text ja portava el comunicat, el perd: només un enllaç.
+        h = AB.comunicats(AB.historial({}, [avis(0, "pla:INUNFOC", "pc", text)], ARA),
+                          [{"pla": "INUNFOC", "fase": "alerta", "comunicat": pdf}])
+        self.assertEqual(h[0]["ca"], "🟠 <b>Pla</b>\nActivat.")
+
     def test_es_guarda_un_any(self):
         estat = {}
         AB.historial(estat, [avis(0, "aemet:pluja:x", "groc", fins=ARA.isoformat())], ARA)

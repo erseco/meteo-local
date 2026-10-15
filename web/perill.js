@@ -107,11 +107,13 @@ function fitxa(e, ara) {
     p.append(a);
     cos.push(p);
   }
+  // El comunicat més recent d'un pla de Protecció Civil (ADR 0091) o, si no,
   // Més informació, si el text no porta ja un enllaç (ADR 0071).
-  const enllac = !explicacio && e.enllac && (e.enllac[idiomaText()] || e.enllac.ca);
-  if (enllac && !/<a href=/.test(text)) {
+  const comunicat = !explicacio && e.comunicat;
+  const enllac = comunicat || (!explicacio && e.enllac && (e.enllac[idiomaText()] || e.enllac.ca));
+  if (enllac && (comunicat || !/<a href=/.test(text))) {
     const p = element('p');
-    const a = element('a', null, T('Més informació'));
+    const a = element('a', null, comunicat ? T('Comunicat de Protecció Civil (PDF)') : T('Més informació'));
     a.href = enllac;
     a.target = '_blank';
     a.rel = 'noopener';
