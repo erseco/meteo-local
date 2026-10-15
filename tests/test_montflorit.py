@@ -88,6 +88,15 @@ class Web(unittest.TestCase):
         monocrom = [i["src"] for i in icones if i["purpose"] == "monochrome"]
         self.assertEqual(monocrom, ["icones/icona-monocrom-192.png"])
         self.assertTrue(os.path.exists(os.path.join(self.tmp.name, monocrom[0])))
+        # L'enllaç a Play, amagat al peu de totes les pàgines, en les dues llengües;
+        # el manifest no prefereix l'app, perquè la web es pugui seguir instal·lant.
+        manifest = json.loads(self.llegeix("manifest.webmanifest"))
+        self.assertNotIn("prefer_related_applications", manifest)
+        for nom in (
+                "index.html", "sortir.html", "perill.html", "consultes.html", "avisos.html",
+                "telegram.html", "fonts.html", "com-funciona.html", "privacitat.html"):
+            self.assertIn(f'<p id="app-android" hidden><a href="{M.PLAY}"', self.llegeix(nom), nom)
+            self.assertIn("Descarga la app para Android (Google Play)", self.llegeix("es/" + nom), nom)
 
     def test_no_parla_del_trajecte_ni_de_casa(self):
         index = self.llegeix("index.html")

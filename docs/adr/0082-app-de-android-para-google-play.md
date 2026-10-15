@@ -120,9 +120,7 @@ Versión 3.73.0 de la web; la app empieza en la 1.0.0.
 - Versión de producción 1 (1.0.0), solo España, enviada a revisión por Juanjo
   el 12-10-2026, con la publicación gestionada desactivada: si Google la
   aprueba, sale sola en la tienda.
-- Pendiente: añadir al manifiesto de la
-  web `related_applications` con la app de Play, para que Chrome en Android
-  ofrezca la app en lugar de instalar la web (propuesto, sin decidir).
+- Lo de ofrecer la app desde la web se decidió el 15-10-2026: ver el cambio de esa fecha.
 
 ## Cambio del 13-10-2026: rechazada por la política de afirmaciones engañosas
 
@@ -193,4 +191,35 @@ pública: https://play.google.com/store/apps/details?id=io.github.meteo_montflor
 («Montflorit al dia - Aplicacions a Google Play»). No hizo falta la apelación.
 Lo aprendido de los dos rechazos queda como lista para cualquier otra app en
 la memoria de los agentes («Publicar en Google Play»).
+
+## Cambio del 15-10-2026: enlace a la app al pie, no `prefer_related_applications`
+
+Juanjo pidió el 15-10-2026 hacer lo del manifiesto («haz lo del manifiesto»).
+Antes de aplicarlo se comprobó y se descartó:
+
+- `prefer_related_applications: true` hace que Chrome considere la web no
+  instalable en cualquier plataforma, también en el ordenador
+  ([MDN](https://developer.mozilla.org/docs/Web/Manifest/prefer_related_applications);
+  Chromium da el error «Manifest specifies prefer_related_applications: true»).
+- Chrome no ofrece la app de Play por su cuenta: la página tiene que escuchar
+  `beforeinstallprompt` y poner un botón que la pida
+  ([guía de Chrome](https://developer.chrome.com/blog/app-install-banners-native)).
+  Sin botón, quien llegara con Android perdería la instalación de la web y no
+  vería ninguna oferta de la app.
+- `related_applications` sin preferirla no cambia nada de lo que ve el
+  visitante: no se puso.
+
+Lo decidido (Juanjo: «hazlo»): un enlace al pie de todas las páginas públicas,
+debajo del aviso de web no oficial, «📱 Descarrega l'app per a Android (Google
+Play)» («Descarga la app para Android (Google Play)» en castellano), que abre la
+ficha de la tienda en otra pestaña. Lo pone `montflorit.py` (la web de casa no
+lo lleva) y sale oculto; `comu.js` lo enseña solo si el navegador es de Android
+y no está dentro de la app ni de la web instalada. Dentro de la app se reconoce
+porque la abre con un `referrer` `android-app://`, que se recuerda en
+`sessionStorage` para el resto de la visita; la web instalada, por
+`display-mode: standalone`.
+
+Validado con `probar-web` (3.84.0, en local): visible en Chromium y Firefox con
+el Pixel 7; oculto en el iPhone 15 (WebKit) y en el ordenador en los tres
+navegadores. Que no sale dentro de la app se comprueba en el móvil de Juanjo.
 

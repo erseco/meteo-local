@@ -439,6 +439,21 @@ def escriu_fitxer(ruta, text):
         f.write(text)
 
 
+# L'app d'Android (ADR 0082), al peu de totes les pàgines públiques, sota
+# l'avís de web no oficial. Surt amagat: comu.js l'ensenya només a Android i
+# fora de l'app o de la web instal·lada. No es fa amb prefer_related_applications
+# al manifest, que deixaria la web sense poder-se instal·lar a cap Chrome i no
+# oferiria l'app sense un botó propi (Juanjo, 15-10-2026: «hazlo»).
+PLAY = "https://play.google.com/store/apps/details?id=io.github.meteo_montflorit"
+AVIS_PEU = "<p>No és una web oficial ni representa cap organisme públic.</p>"
+APP_ANDROID = (f'{AVIS_PEU}\n    <p id="app-android" hidden><a href="{PLAY}" target="_blank" rel="noopener">'
+               "📱 Descarrega l'app per a Android (Google Play)</a></p>")
+
+
+def app_android(html, nom):
+    return canvia(html, [(AVIS_PEU, APP_ANDROID)], nom)
+
+
 def construeix(desti, web=None):
     """Deja en desti la web pública completa (sin los datos)."""
     web = web or os.path.join(ARREL, "web")
@@ -453,7 +468,7 @@ def construeix(desti, web=None):
                "fonts.html": fonts(llegeix("fonts.html")),
                "com-funciona.html": com_funciona(llegeix("com-funciona.html")),
                "privacitat.html": privacitat(llegeix("privacitat.html"))}
-    pagines = {nom: alternes(idioma(html, nom), nom) for nom, html in pagines.items()}
+    pagines = {nom: app_android(alternes(idioma(html, nom), nom), nom) for nom, html in pagines.items()}
     os.makedirs(os.path.join(desti, "es"), exist_ok=True)
     for nom, html in pagines.items():
         escriu(nom, html)

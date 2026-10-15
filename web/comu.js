@@ -1402,6 +1402,22 @@ async function subscriuAvisos(registre) {
   }
 }
 
+// L'enllaç a l'app d'Android (ADR 0082), només a la web pública (montflorit.py
+// el posa al peu) i només a Android, fora de l'app o de la web ja instal·lada:
+// a qui ja la té no se li ofereix. L'app obre la web amb un referrer
+// android-app://, que es recorda la resta de la sessió.
+(function () {
+  const p = $('app-android');
+  if (!p) return;
+  let dinsApp = false;
+  try {
+    if (document.referrer.startsWith('android-app://')) sessionStorage.setItem('meteo.app', '1');
+    dinsApp = sessionStorage.getItem('meteo.app') === '1';
+  } catch (_) {}
+  const instal = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
+  p.hidden = !/Android/i.test(navigator.userAgent) || dinsApp || instal;
+})();
+
 // Per poder instal·lar la web com a aplicació (sw.js).
 if ('serviceWorker' in navigator) navigator.serviceWorker.register(ARREL + 'sw.js').catch(() => {});
 
