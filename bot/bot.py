@@ -761,8 +761,8 @@ def resum(dades, idioma, moment, dema=False, avui=False):
         nom_dia = DIES[idioma][moment.weekday()]
         if not tram:    # sense hores d'avui, no hi ha previsió, i es diu (auditoria del 08-10-2026)
             return "\n".join(x for x in (text_ara(dades, idioma, moment=moment), t["sense_previsio"].format(generat.strftime("%H:%M")), WEB) if x)
-        linies = [f"<b>El tiempo hoy, {nom_dia}, en Montflorit</b>" if idioma == "es"
-                  else f"<b>El temps avui, {nom_dia}, a Montflorit</b>",
+        linies = [f"<b>Hoy, {nom_dia}, en Montflorit</b>" if idioma == "es"
+                  else f"<b>Avui, {nom_dia}, a Montflorit</b>",
                   text_ara(dades, idioma, moment=moment),
                   text_temperatura(tram, idioma, "Temperatura de aquí a medianoche" if idioma == "es"
                                    else "Temperatura d'aquí a mitjanit", compara_temp(dades, tram), "ahir"),

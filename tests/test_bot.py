@@ -407,8 +407,8 @@ class Repartiment(unittest.TestCase):
         self.assertEqual(sorted(map(str, destins)), sorted(["1", B.CANAL]))
         canal = [p["text"] for _, p in api.enviats if p["chat_id"] == B.CANAL][0]
         self.assertEqual(canal.count(B.WEB), 1)
-        self.assertTrue(canal.startswith("<b>El temps avui"))
-        self.assertNotIn("El tiempo hoy", canal)              # el canal, solo en catalán
+        self.assertTrue(canal.startswith("<b>Avui, "))
+        self.assertNotIn("<b>Hoy, ", canal)              # el canal, solo en catalán
         api.enviats.clear()
         B.reparteix(api, subs, estat, ARA + dt.timedelta(minutes=20))
         self.assertEqual(api.enviats, [])
@@ -446,7 +446,7 @@ class Repartiment(unittest.TestCase):
         api = Api(al_canal=["1"], canal_falla=True)
         B.reparteix(api, subs, {}, ARA)
         self.assertEqual([(str(p["chat_id"]), p["text"][:4]) for _, p in api.enviats],
-                         [("1", "R ca"), ("1", "<b>E")])
+                         [("1", "R ca"), ("1", "<b>A")])
 
     def test_la_benvinguda_diu_que_ja_hi_ha_marcat(self):
         subs, api = {}, Api()
@@ -516,7 +516,7 @@ class Consultes(unittest.TestCase):
             json.dump(d, open(os.path.join(self.dir.name, "montflorit.json"), "w"))
             api = Api()
             B.atén(api, subs, {"message": {"chat": {"id": 7, "type": "private"}, "from": {}, "text": "/resum"}})
-        self.assertTrue(api.enviats[-1][1]["text"].startswith("<b>El temps avui"))
+        self.assertTrue(api.enviats[-1][1]["text"].startswith("<b>Avui, "))
         self.assertTrue(B.resum(d, "ca", ARA.replace(hour=20)).startswith("<b>Previsió per a demà"))
         subs["7"]["idioma"] = "es"
         self.assertIn("en fase de emergencia", self.ordre("/avisos_actius", subs))
