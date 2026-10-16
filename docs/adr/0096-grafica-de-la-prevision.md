@@ -30,7 +30,10 @@ siempre en la hora en curso.
 - **Temperatura y lluvia en la misma zona**, las barras detrás de la línea,
   como en los meteogramas habituales (Juanjo: «mezclando ambas, con las barras
   por detrás, será lo mejor y más natural»). La línea lleva un borde del
-  color del fondo para verse sobre las barras.
+  color del fondo para verse sobre las barras. Desde la 3.96.1 la línea es
+  una curva suave (cúbica monótona, la «monotoneX» de d3: pasa por cada hora
+  y no sube ni baja más que los datos) con un relleno rojo muy tenue debajo,
+  detrás de las barras (Juanjo: «tiene picos… que parezca más profesional»).
 - **La temperatura**: la cifra, debajo de cada icono del cielo, la de la
   hora del medio de su bloque (Juanjo: «no quedaría bien la temperatura bajo
   el cielo?»): cielo y temperatura se leen juntos. La línea, sin cifras, dice

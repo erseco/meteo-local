@@ -1013,6 +1013,9 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .grafica .g-avis text.fora { fill: var(--text); }
 .grafica .g-cel { fill: none; stroke: var(--text); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .grafica .g-temp-vora { fill: none; stroke: var(--superficie); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+.grafica .g-temp-area { stroke: none; }
+.grafica .g-grad-dalt { stop-color: var(--c-maxima); stop-opacity: .16; }
+.grafica .g-grad-baix { stop-color: var(--c-maxima); stop-opacity: 0; }
 .grafica .g-temp { fill: none; stroke: var(--c-maxima); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
 .grafica .g-mm { paint-order: stroke; stroke: var(--superficie); stroke-width: 3px; stroke-linejoin: round; }
 .grafica .g-xifra { fill: var(--text); font-size: 12px; font-weight: 600; }

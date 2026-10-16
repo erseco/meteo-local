@@ -840,6 +840,35 @@ function celBloc(files) {
   return amb[Math.floor(amb.length / 2)][1];
 }
 
+// La línia de temperatura, suau (Juanjo, 16-10-2026: «tiene picos… que
+// parezca más profesional»): corba cúbica monòtona (Fritsch i Carlson, la
+// «monotoneX» de d3), que passa per cada hora i no fa pujades ni baixades
+// que no siguin a les dades.
+function corbaSuau(p) {
+  const n = p.length;
+  const f = (v) => v.toFixed(1);
+  if (n < 3) return 'M' + p.map(([a, b]) => `${f(a)},${f(b)}`).join(' L');
+  const h = [], s = [];
+  for (let i = 0; i < n - 1; i++) {
+    h.push(p[i + 1][0] - p[i][0]);
+    s.push((p[i + 1][1] - p[i][1]) / h[i]);
+  }
+  const m = new Array(n);
+  for (let i = 1; i < n - 1; i++) {
+    if (s[i - 1] * s[i] <= 0) { m[i] = 0; continue; }
+    const q = (s[i - 1] * h[i] + s[i] * h[i - 1]) / (h[i - 1] + h[i]);
+    m[i] = (Math.sign(s[i - 1]) + Math.sign(s[i])) * Math.min(Math.abs(s[i - 1]), Math.abs(s[i]), 0.5 * Math.abs(q));
+  }
+  m[0] = (3 * s[0] - m[1]) / 2;
+  m[n - 1] = (3 * s[n - 2] - m[n - 2]) / 2;
+  let d = `M${f(p[0][0])},${f(p[0][1])}`;
+  for (let i = 0; i < n - 1; i++) {
+    const t = h[i] / 3;
+    d += ` C${f(p[i][0] + t)},${f(p[i][1] + m[i] * t)} ${f(p[i + 1][0] - t)},${f(p[i + 1][1] - m[i + 1] * t)} ${f(p[i + 1][0])},${f(p[i + 1][1])}`;
+  }
+  return d;
+}
+
 function grafica(hores) {
   const ara = new Date();
   const files = (hores || []).filter((f) => new Date(f.fins) > ara && f.temperatura != null);
@@ -952,10 +981,28 @@ function dibuixaGrafica(fig) {
     i = j;
   }
 
+  // La temperatura, primer el farciment (darrere de les barres) i després la
+  // línia (davant), sense xifres: són sota el cel.
+  const temps = files.map((f) => f.temperatura);
+  const tMin = Math.floor(Math.min(...temps)) - 1;
+  const tMax = Math.ceil(Math.max(...temps)) + 1;
+  const yT = (t) => yTemp + hTemp - ((t - tMin) / (tMax - tMin)) * hTemp;
+  const punts = files.map((f, i) => [x(i) + col / 2, yT(f.temperatura)]);
+  const corba = corbaSuau(punts);
+  const base = yPluja + hPluja;
+  const idGrad = 'g-temp-grad';
+  const defs = svg('defs');
+  const grad = svg('linearGradient', { id: idGrad, x1: 0, y1: 0, x2: 0, y2: 1 });
+  grad.append(svg('stop', { offset: 0, class: 'g-grad-dalt' }), svg('stop', { offset: 1, class: 'g-grad-baix' }));
+  defs.append(grad);
+  g.append(defs);
+  g.append(svg('path', { class: 'g-temp-area', fill: `url(#${idGrad})`,
+    d: `${corba} L${punts[n - 1][0].toFixed(1)},${base} L${punts[0][0].toFixed(1)},${base} Z` }));
+
   // La pluja: una barra per hora, tan alta com els mil·límetres; plena si és
   // probable (del 50 % amunt) i clara si només és possible (del 20 %), els
   // mateixos llindars que el cel de la taula. Per sota, cap barra.
-  g.append(svg('line', { class: 'g-base', x1: 0, x2: W, y1: yPluja + hPluja, y2: yPluja + hPluja }));
+  g.append(svg('line', { class: 'g-base', x1: 0, x2: W, y1: base, y2: base }));
   // Dalt de tot queda lloc per a la xifra dels mm.
   const dalt = (f) => yPluja + hPluja - Math.max(3, alcadaPluja(f.pluja_mm || 0) * (hPluja - 14));
   files.forEach((f, i) => {
@@ -964,19 +1011,11 @@ function dibuixaGrafica(fig) {
     const y = dalt(f);
     const intensa = intensitatPluja(f.pluja_mm || 0);
     g.append(svg('rect', { class: `g-pluja ${pluja === 'pluja' ? 'segura' : 'possible'}${intensa ? ' ' + intensa : ''}`,
-      x: x(i) + col * 0.15, y, width: col * 0.7, height: yPluja + hPluja - y }));
+      x: x(i) + col * 0.15, y, width: col * 0.7, height: base - y }));
   });
-  // La temperatura: la línia, sense xifres (són sota el cel), per veure si
-  // puja o baixa.
-  const temps = files.map((f) => f.temperatura);
-  const tMin = Math.floor(Math.min(...temps)) - 1;
-  const tMax = Math.ceil(Math.max(...temps)) + 1;
-  const yT = (t) => yTemp + hTemp - ((t - tMin) / (tMax - tMin)) * hTemp;
-  const punts = files.map((f, i) => [x(i) + col / 2, yT(f.temperatura)]);
-  const traç = punts.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ');
   // Una vora del color del fons, perquè la línia es vegi damunt de les barres.
-  g.append(svg('polyline', { class: 'g-temp-vora', points: traç }));
-  g.append(svg('polyline', { class: 'g-temp', points: traç }));
+  g.append(svg('path', { class: 'g-temp-vora', d: corba }));
+  g.append(svg('path', { class: 'g-temp', d: corba }));
 
   // Els mil·límetres, només on la pluja és més forta de cada episodi, a sobre
   // de la barra; si hi ha una xifra de temperatura, a dins de la barra o al
