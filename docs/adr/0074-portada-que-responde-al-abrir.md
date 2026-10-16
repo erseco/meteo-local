@@ -163,3 +163,19 @@ ocupaba unos 30 px en la botonera del móvil. Fuera el icono (`montflorit.py`,
 (`margin-right`). El grupo sigue llamándose «Idioma» para los lectores de
 pantalla.
 
+
+## Corrección del 16-10-2026 (3.86.3): el punto rojo, también al volver atrás
+
+Juanjo vio que, tras abrir «Perill» y volver atrás, el punto rojo seguía en
+la pestaña y solo se iba al recargar, en la web y en la app. Causa: el
+navegador guarda la página anterior tal como estaba (caché de atrás y
+adelante) y, al volver, la restaura sin volver a ejecutar nada, así que no se
+miraba que «Perill» ya se había visto. Pasaba lo mismo con el «Nou!».
+
+`comu.js` escucha `pageshow` y, cuando la página viene de esa caché
+(`persisted`), vuelve a pintar el punto con el último historial leído y el
+«Nou!» con lo que hay apuntado; `marcaNovetats` quita el «Nou!» de lo ya visto
+y no lo repite. Validación: reproducido en Chrome con la versión anterior
+(página restaurada, punto presente) y corregido con la nueva (punto y «Nou!»
+fuera). El Chromium y el Firefox de Playwright no lo reproducen porque no usan
+esa caché; la prueba de `marcaNovetats` cubre el repintado.

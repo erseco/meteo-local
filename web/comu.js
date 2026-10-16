@@ -1164,10 +1164,15 @@ function marcaNovetats(ara = new Date()) {
         p.querySelector('.nou')?.remove();
       });
     }
-    if (vist || ara >= n.fins) continue;
     for (const a of document.querySelectorAll(n.boto)) {
-      a.classList.add('amb-nou');
-      a.append(element('span', 'xip-nou', T('Nou!')));
+      const xip = a.querySelector('.xip-nou');
+      if (vist || ara >= n.fins) {
+        a.classList.remove('amb-nou');
+        xip?.remove();
+      } else if (!xip) {
+        a.classList.add('amb-nou');
+        a.append(element('span', 'xip-nou', T('Nou!')));
+      }
     }
   }
 }
@@ -1218,6 +1223,16 @@ if (!/(^|\/)perill\.html$/.test(location.pathname) && document.querySelectorAll(
   setInterval(miraPerill, 5 * 60000);
   enArribarUnAvis(miraPerill);
 }
+
+// En tornar enrere, el navegador pot restaurar la pàgina tal com era (memòria
+// cau d'enrere i endavant), sense tornar a executar res: el punt vermell i el
+// «Nou!» seguien allà després d'haver obert «Perill» (Juanjo, 16-10-2026). Es
+// tornen a mirar amb el que ara hi ha apuntat.
+addEventListener('pageshow', (e) => {
+  if (!e.persisted) return;
+  marcaNovetats();
+  if (HISTORIAL_PERILL && !/(^|\/)perill\.html$/.test(location.pathname)) senyalaPerill(HISTORIAL_PERILL);
+});
 
 // Compartir (Juanjo, 11-10-2026: «cualquier pagina o consulta … quiero que se
 // pueda compartir»; ADR 0072): l'adreça del que es mira, amb l'opció triada

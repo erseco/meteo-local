@@ -542,22 +542,31 @@ class Web(unittest.TestCase):
     def test_nou_al_costat_dels_avisos_i_de_perill(self):
         # «Nou!» fins que s'entra a la pàgina i, per a tothom, una setmana
         # després de publicar-la: «Avisos» (ADR 0048) i «Perill» (ADR 0071).
-        def nou(ara, vistos=(), pagina="/"):
-            expr = ("posats = []; boto = (nom) => ({ classList: { add: () => {} },"
-                    " append: (e) => posats.push(nom + ':' + e.textContent) });"
+        def nou(ara, vistos=(), pagina="/", despres=""):
+            expr = ("posats = []; botons = {};"
+                    "boto = (nom) => botons[nom] ||= { classList: { add() {}, remove() {} }, querySelector: () => botons[nom].xip,"
+                    " append: (e) => { e.remove = () => { posats = posats.filter((x) => x !== nom + ':' + e.textContent);"
+                    " botons[nom].xip = null; }; botons[nom].xip = e; posats.push(nom + ':' + e.textContent); } };"
                     "document.querySelectorAll = (s) => s === '.boto-avisos' ? [boto('avisos')]"
                     " : s.includes('perill.html') ? [boto('perill')] : [];"
                     f"location.pathname = {json.dumps(pagina)};"
                     f"desats = Object.fromEntries({json.dumps(list(vistos))}.map((k) => [k, '1']));"
                     "localStorage.getItem = (k) => desats[k] || null;"
                     "localStorage.setItem = (k, v) => { desats[k] = v; };"
-                    "element = (e, c, t) => ({ textContent: t }); marcaNovetats(new Date()); posats")
+                    f"element = (e, c, t) => ({{ textContent: t }}); marcaNovetats(new Date()); {despres} posats")
             return self.avalua(ara, expr)
         self.assertEqual(nou("2026-10-12T10:00:00+02:00"), ["avisos:Nou!", "perill:Nou!"])
         self.assertEqual(nou("2026-10-12T10:00:00+02:00", ["meteo.avisos-vist"]), ["perill:Nou!"])
         self.assertEqual(nou("2026-10-12T10:00:00+02:00", pagina="/es/perill.html"), ["avisos:Nou!"])
         self.assertEqual(nou("2026-10-16T00:00:00+02:00"), ["perill:Nou!"])
         self.assertEqual(nou("2026-10-19T00:00:00+02:00"), [])
+        # Tornant enrere, la pàgina es pot restaurar tal com era: es torna a
+        # mirar, sense repetir el «Nou!» i traient el de la pàgina ja vista.
+        self.assertEqual(nou("2026-10-12T10:00:00+02:00", despres="marcaNovetats(new Date());"),
+                         ["avisos:Nou!", "perill:Nou!"])
+        self.assertEqual(nou("2026-10-12T10:00:00+02:00",
+                             despres="desats['meteo.perill-vist'] = '1'; marcaNovetats(new Date());"),
+                         ["avisos:Nou!"])
 
     def test_compartir(self):
         # ADR 0072 i 0076: compartir obre el menú del sistema; sense, es copia sol (primer de la manera
