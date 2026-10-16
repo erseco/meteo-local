@@ -1,0 +1,136 @@
+# 92. Meteocat avisa por fenómeno y AEMET queda de reserva
+
+Fecha: 2026-10-16 · Estado: aceptado
+
+## Contexto
+
+El 16-10-2026 Juanjo vio en la página del radar de meteo.cat el mapa de
+avisos de peligro del sábado 17: el Vallès Occidental en peligro alto por
+intensidad de lluvia. La app no lo mostraba. Dos causas:
+
+- **La lectura fallaba** (`smp: 'list' object has no attribute 'get'`, en
+  `errors` de cada pasada). Con avisos, la página entrega la lista agrupada en
+  bloques que repiten los mismos episodios (`[[…], […]]`); el ADR 0067 se probó
+  con la lista vacía y con el ejemplo de la API, que es plana. La prueba diaria
+  solo miraba que la lista estuviera, no que se pudiera leer, y no avisó. Como
+  decidió el ADR 0067, sin lectura no se decía nada: la app callaba un peligro
+  alto en el barrio.
+- **Los avisos de observación no se leían**: «Avís Vigilància» y «Avís
+  Vigilància per Temps Violent», los que Meteocat emite cuando el fenómeno ya
+  ocurre, vienen en los mismos datos con otra forma (hora de inicio y de fin y
+  las comarcas en el propio aviso, sin franjas).
+
+Al arreglarlo surgió lo que preocupaba a Juanjo: «lo que no quiero son avisos
+repetidos que molesten a la gente». AEMET (Prelitoral de Barcelona) y
+Meteocat (comarca) avisan del mismo episodio con zonas, umbrales y escalas
+distintos: para el sábado, AEMET daba amarillo por lluvia y por tormentas, y
+Meteocat alto por lluvia en 30 minutos y moderado en 3 horas. El bot avisaba
+por cada aviso y cada fuente: cinco notificaciones del mismo episodio. Una
+notificación al día no sirve («en situación de peligro no podemos dar un aviso
+al día, … a media mañana el aviso puede cambiar y subir de nivel»). Juanjo
+propuso quedarse con Meteocat, «que es el local de aquí», y aprobó dejar AEMET
+de reserva («sí, hazlo así y publícalo hoy»).
+
+## Decisión
+
+### Lectura (`smp.py`, 3.87.0)
+
+- La lista de la página se aplana y cada episodio va una vez; cada aviso
+  (meteoro, tipo y emisión), también.
+- Cuentan los avisos vigentes que no son preavisos: los de previsión, por
+  franjas, y los de observación y de temps violent, con su hora de inicio y de
+  fin pasadas a franjas de hora local. En el texto, «avís d'observació de
+  perill …» / «aviso de observación de peligro …».
+- La prueba diaria lee los avisos de verdad (`de_la_comarca`), no solo la
+  lista.
+
+### Quién avisa (`avisos_bot.py`)
+
+- **Meteocat avisa**, agrupado por fenómeno (lluvia, nieve, viento, calor,
+  frío, mar, temps violent; la lluvia en 30 minutos y en 3 horas son la misma
+  lluvia). Se notifica en el momento, a cualquier hora:
+  1. el primer aviso del episodio;
+  2. una subida de nivel (moderado, alto, muy alto) de un fenómeno ya avisado:
+     «Actualització: Meteocat puja a perill molt alt per pluja…»;
+  3. un fenómeno nuevo: «… avisa també de perill moderat per vent…»;
+  4. horas que el aviso no cubría: «… amplia l'avís…»;
+  5. un aviso de observación, aparte de los de previsión del mismo fenómeno:
+     dice que ya está ocurriendo («Meteocat: s'observa perill alt per pluja…»);
+  6. el final, cuando ya no queda ningún aviso: «Meteocat ja no té cap avís de
+     perill per al Vallès Occidental».
+- No se notifica una nueva emisión igual, una bajada de nivel ni un aviso menor
+  del mismo fenómeno: se ven en «Perill» y en «Avisos actius». El grado de
+  Meteocat cuenta por nivel: pasar de 3 a 4 sigue siendo «alto».
+- Un fenómeno que deja de constar se da por acabado a los `SMP_FI_MIN` (30)
+  minutos, para que el relevo entre dos emisiones no avise dos veces.
+- Cada notificación lleva, debajo de lo que ha cambiado, todos los avisos
+  vigentes de la comarca, uno por línea con su círculo. Todo el episodio es una
+  sola ficha en «Perill» (`meteocat:<hora del primero>`), que se queda con el
+  último texto y el peor nivel.
+- **AEMET, de reserva**: sus avisos se siguen apuntando en cada pasada, pero
+  solo notifican si en esa pasada no se ha podido leer Meteocat. En «Perill» y
+  en «Avisos actius» siguen a la vista.
+- **Si la lectura falla, a Juanjo en el momento**: cada pasada del NAS lo mira
+  y se lo dice una vez por Telegram (`avis_privat`, con reintento), y otra
+  cuando vuelve a leerse. Usa la misma marca que la prueba diaria
+  (`aprenentatge/smp-falla`), para no decírselo dos veces.
+- El estado de antes (`{clave: grado}`, vacío porque la lectura fallaba) se
+  toma como vacío: lo vigente al publicar se avisa una vez.
+
+## Alternativas descartadas
+
+- **Una notificación al día por fenómeno**: se descartó por lo dicho; el aviso
+  puede subir a media mañana.
+- **Solo Meteocat, sin AEMET**: la página de Meteocat no es una API y puede
+  cambiar sin aviso, como acaba de pasar; sin reserva, el vecino no recibiría
+  nada.
+- **Avisar también si AEMET da más nivel que Meteocat**: se planteó a Juanjo y
+  no lo pidió. Para la comarca afina más el servicio de aquí.
+- **Avisar de las bajadas**: no se pidió; añaden mensajes sin cambiar lo que
+  hay que hacer.
+
+## Consecuencias
+
+- Menos notificaciones y ninguna repetida entre fuentes. El sábado 17, tras
+  los dos amarillos de AEMET que ya habían salido, llega una sola: el alto de
+  Meteocat.
+- El final puede llegar de noche, cuando Meteocat retira el aviso.
+- Los planes de Protección Civil, el riesgo propio (ADR 0018), la riera y los
+  incendios no cambian.
+
+## Evidencia
+
+- Página <https://www.meteo.cat/prediccio/general> del 16-10-2026: la llamada
+  `Meteocat.avisosSMP` trae `avisos: [[…], […]]`, dos bloques iguales; cada
+  aviso, una versión «Ampliat» (la anterior) y una «Vigent». Para la comarca
+  40, el sábado de 12 a 24 h: «Intensitat de pluja en 30 minuts», grado 3, e
+  «Intensitat de pluja en 3 hores», grado 2.
+- `montflorit.json` publicado ese día: `"smp": null` y el error de arriba.
+- `script.min.js` de meteo.cat: `TIPUS_OBSERVACIO="Avís Vigilància"`,
+  `TIPUS_TEMPS_VIOLENT="Avís Vigilància per Temps Violent"`; para esos tipos,
+  `_calcularAfectacionsDelDiaAvis` usa `dataInici`, `dataFi` y
+  `a.afectacions`.
+- Estado del bot en el NAS: los dos amarillos de AEMET del sábado ya avisados
+  y `"smp": {}`.
+
+## Riesgos y limitaciones
+
+- **Hipótesis sin comprobar con datos reales**: la forma de los avisos de
+  observación y de temps violent sale de cómo los usa la web de Meteocat; no
+  había ninguno vigente el 16-10-2026. Si llegan con otra forma, la prueba
+  diaria y la de cada pasada lo dicen.
+- La agrupación por fenómeno depende del nombre del meteoro; uno que no encaje
+  en la lista es un fenómeno propio.
+- Si Meteocat falla a mitad de un episodio, AEMET solo avisa de lo que no
+  estuviera ya apuntado; al volver Meteocat, lo vigente se avisa de nuevo si
+  el estado se perdió.
+
+## Validación
+
+`tests/test_smp.py`: la lista agrupada, un recorte de la página real del
+16-10-2026, los avisos de observación y de temps violent, las reglas de
+notificación paso a paso (primero, nueva emisión, 3 a 4, bajada, subida,
+horas nuevas, fenómeno nuevo, observación, final y episodio nuevo), el estado
+de antes, AEMET de reserva y el aviso a Juanjo al fallar y al volver. Con la
+página real y el estado real del NAS, la primera pasada da una notificación
+(el alto de Meteocat) y la siguiente, ninguna. Las 470 pruebas del proyecto.

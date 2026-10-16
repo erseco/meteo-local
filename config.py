@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.86.3"
+VERSION = "3.87.0"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -107,6 +107,9 @@ PROCICAT_PC = {"ONADA_CALOR": "per onada de calor", "ONADA_FRED": "per onada de 
 # Meteocat (IDComarca del mapa de comarcas de meteo.cat, comarquesAmbMar.json).
 SMP_COMARCA = 40
 SMP_COMARCA_NOM = "Vallès Occidental"
+# Minutos sin ver un fenómeno de Meteocat para darlo por acabado (ADR 0092):
+# entre dos emisiones del mismo aviso, el relevo no avisa dos veces.
+SMP_FI_MIN = 30
 # Si la descripción del plan nombra solo otras zonas, no afecta al barrio.
 ZONAS_PROPIAS_PC = ["Vallès", "Barcelona", "Catalunya"]
 ZONAS_AJENAS_PC = ["Ebre", "Pirineu", "Aran", "Lleida", "Girona", "Tarragona", "Empordà"]

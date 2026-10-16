@@ -33,6 +33,10 @@ DIES = {"ca": ("dilluns", "dimarts", "dimecres", "dijous", "divendres", "dissabt
         "es": ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")}
 GRAU = {"ca": {"mig": "moderat", "alt": "alt", "maxim": "molt alt"},
         "es": {"mig": "moderado", "alt": "alto", "maxim": "muy alto"}}
+# «avís de perill», «avís d'observació de perill»: el de observación dice que
+# el fenómeno ya ocurre.
+NOM_TIPUS = {"ca": {"previsio": "avís", "observacio": "avís d'observació", "temps_violent": "avís d'observació"},
+             "es": {"previsio": "aviso", "observacio": "aviso de observación", "temps_violent": "aviso de observación"}}
 
 
 def nivell(perill):
@@ -41,7 +45,10 @@ def nivell(perill):
 
 
 def episodis(pagina):
-    """La lista «avisos» de la llamada Meteocat.avisosSMP de una página de meteo.cat."""
+    """Los episodios de la lista «avisos» de la llamada Meteocat.avisosSMP de una
+    página de meteo.cat. Con avisos, la lista llega agrupada en bloques que
+    repiten los mismos episodios (visto el 16-10-2026: [[…], […]], y la
+    lectura falló hasta la 3.87.0); se aplana y cada episodio va una vez."""
     i = pagina.find("Meteocat.avisosSMP(")
     if i < 0:
         raise ValueError("la pàgina de Meteocat no porta els avisos")
@@ -49,7 +56,16 @@ def episodis(pagina):
     if not m:
         raise ValueError("la pàgina de Meteocat no porta la llista d'avisos")
     llista, _ = json.JSONDecoder().raw_decode(pagina, m.start(1))
-    return llista
+    res, vistos = [], set()
+    for ep in llista:
+        for e in (ep if isinstance(ep, list) else [ep]):
+            if not isinstance(e, dict):
+                raise ValueError("la llista d'avisos de Meteocat té una forma desconeguda")
+            clau = json.dumps(e, sort_keys=True)
+            if clau not in vistos:
+                vistos.add(clau)
+                res.append(e)
+    return res
 
 
 def franja(nom):
@@ -59,28 +75,69 @@ def franja(nom):
 
 
 def de_la_comarca(llista, comarca=None):
-    """Los avisos que afectan a la comarca: [{meteor, llindar, perill, emissio,
-    dies: {AAAA-MM-DD: [(inici, fi), …]}}], uno por aviso."""
+    """Los avisos que afectan a la comarca: [{meteor, tipus, llindar, perill,
+    emissio, dies: {AAAA-MM-DD: [(inici, fi), …]}}], uno por aviso.
+
+    tipus: «previsio» (el aviso de siempre, por franjas de seis horas),
+    «observacio» o «temps_violent» (los que Meteocat emite cuando el fenómeno
+    ya ocurre: «Avís Vigilància» y «Avís Vigilància per Temps Violent» en sus
+    datos, con su hora de inicio y de fin y las comarcas en el propio aviso;
+    script.min.js de meteo.cat, _calcularAfectacionsDelDiaAvis)."""
     comarca = comarca or C.SMP_COMARCA
-    res = []
+    res, vistos = [], set()
     for ep in llista or []:
         meteor = ((ep.get("meteor") or {}).get("nom") or "").strip()
         for av in ep.get("avisos") or []:
-            if (av.get("estat") or "").lower() != "vigent" or (av.get("tipus") or "").lower().startswith("preav"):
+            tipus_mc = (av.get("tipus") or "").strip()
+            if (av.get("estat") or "").lower() != "vigent" or tipus_mc.lower().startswith("preav"):
                 continue
+            tipus = TIPUS.get(tipus_mc.lower(), "previsio")
             dies, perill, llindar = {}, 0, None
-            for ev in av.get("evolucions") or []:
-                for per in ev.get("periodes") or []:
-                    for af in per.get("afectacions") or []:
-                        if af.get("idComarca") != comarca:
-                            continue
-                        dia = (af.get("dia") or ev.get("dia") or "")[:10]
-                        dies.setdefault(dia, set()).add(franja(per["nom"]))
-                        perill = max(perill, af.get("perill") or 0)
-                        llindar = llindar or af.get("llindar") or ev.get("llindar1")
-            if dies and perill:
-                res.append({"meteor": meteor, "llindar": llindar, "perill": perill, "emissio": av.get("dataEmisio"),
-                            "dies": {d: junta(sorted(f)) for d, f in sorted(dies.items())}})
+            if tipus == "previsio":
+                for ev in av.get("evolucions") or []:
+                    for per in ev.get("periodes") or []:
+                        for af in per.get("afectacions") or []:
+                            if int(af.get("idComarca") or 0) != comarca:
+                                continue
+                            dia = (af.get("dia") or ev.get("dia") or "")[:10]
+                            dies.setdefault(dia, set()).add(franja(per["nom"]))
+                            perill = max(perill, int(af.get("perill") or 0))
+                            llindar = llindar or af.get("llindar") or ev.get("llindar1")
+                dies = {d: junta(sorted(f)) for d, f in sorted(dies.items())}
+            else:
+                afs = [af for af in av.get("afectacions") or [] if int(af.get("idComarca") or 0) == comarca]
+                if afs and av.get("dataInici") and av.get("dataFi"):
+                    perill = max(int(af.get("perill") or 0) for af in afs)
+                    llindar = next((af.get("llindar") for af in afs if af.get("llindar")), None)
+                    dies = hores(av["dataInici"], av["dataFi"])
+            clau = (meteor, tipus, av.get("dataEmisio"))
+            if dies and perill and clau not in vistos:
+                vistos.add(clau)
+                res.append({"meteor": meteor or "Temps violent", "tipus": tipus, "llindar": llindar,
+                            "perill": perill, "emissio": av.get("dataEmisio"), "dies": dies})
+    return res
+
+
+# Los tipos de aviso de Meteocat (script.min.js: TIPUS_OBSERVACIO y
+# TIPUS_TEMPS_VIOLENT; «Avís d'Observació» y «Avís temps violent», los nombres
+# que también acepta su lista).
+TIPUS = {"avís vigilància": "observacio", "avís d'observació": "observacio",
+         "avís vigilància per temps violent": "temps_violent", "avís temps violent": "temps_violent"}
+
+
+def hores(inici, fi):
+    """Un aviso de observación, de «2026-10-17T13:20Z» a «…T15:00Z», en
+    franjas de hora local: {"2026-10-17": [(15, 17)]} (la hora de inicio, por
+    abajo; la de fin, por arriba)."""
+    t0 = dt.datetime.fromisoformat(inici.replace("Z", "+00:00")).astimezone()
+    t1 = dt.datetime.fromisoformat(fi.replace("Z", "+00:00")).astimezone()
+    res = {}
+    t = t0.replace(minute=0, second=0, microsecond=0)
+    while t < t1:
+        f = min(t1, (t + dt.timedelta(days=1)).replace(hour=0))
+        fi_h = 24 if f.date() > t.date() else f.hour + (1 if f.minute or f.second else 0)
+        res.setdefault(t.date().isoformat(), []).append((t.hour, fi_h))
+        t = (t + dt.timedelta(days=1)).replace(hour=0)
     return res
 
 
@@ -128,10 +185,11 @@ def textos(avisos, hora):
         n = nivell(a["perill"])
         llindar = f"{a['llindar']}; " if a.get("llindar") else ""
         emes = hora_local(a.get("emissio"))
+        tipus = a.get("tipus", "previsio")
         res.append({"nivell": n,
-                    "ca": (f"Meteocat: avís de perill {GRAU['ca'][n]} per «{a['meteor']}» al {nom}, "
+                    "ca": (f"Meteocat: {NOM_TIPUS['ca'][tipus]} de perill {GRAU['ca'][n]} per «{a['meteor']}» al {nom}, "
                            f"{quan(a['dies'], 'ca')} ({llindar}emès a les {emes})."),
-                    "es": (f"Meteocat: aviso de peligro {GRAU['es'][n]} por «{a['meteor']}» en el {nom}, "
+                    "es": (f"Meteocat: {NOM_TIPUS['es'][tipus]} de peligro {GRAU['es'][n]} por «{a['meteor']}» en el {nom}, "
                            f"{quan(a['dies'], 'es')} ({llindar}emitido a las {emes}).")})
     return res
 
@@ -145,26 +203,35 @@ def llegeix(get, ahora):
 
 def comprova(get, marca, avisa=True):
     """La prueba diaria (aprenentatge.diari): como la página no es una API, si
-    deja de traer los avisos se le dice una vez a Juanjo, y otra cuando vuelve.
-    Mientras falla, no se avisa de los de Meteocat ni salen junto a los planes
-    ni en «Perill» (casa.py, ADR 0071)."""
-    import os
-    import subprocess
+    deja de traer los avisos, o trae algo que no se sabe leer, se le dice una
+    vez a Juanjo, y otra cuando vuelve. Desde la 3.87.0 lo mismo se mira en
+    cada pasada (avisos_bot.py), con la misma marca, y se le dice en el momento."""
     try:
-        episodis(get(URL))
+        de_la_comarca(episodis(get(URL)))
         error = None
     except Exception as ex:
-        error = str(ex)
+        error = str(ex) or type(ex).__name__
+    marca_falla(marca, error, avisa)
+    return error
+
+
+def marca_falla(marca, error, avisa=True):
+    """Apunta si la lectura falla y se lo dice a Juanjo al empezar y al acabar
+    el fallo, una sola vez cada cosa. Mientras falla, avisan los de AEMET
+    (ADR 0092). Devuelve el texto enviado, o None."""
+    import os
     text = None
     if error and not os.path.exists(marca):
+        os.makedirs(os.path.dirname(marca) or ".", exist_ok=True)
         open(marca, "w").close()
-        text = (f"Temps a Montflorit: la pàgina de Meteocat ja no porta els avisos de perill ({error}). "
-                "No se n'avisa ni surten al costat dels plans ni a «Perill» fins que es torni a llegir: mira smp.py.")
+        text = (f"Temps a Montflorit: no es poden llegir els avisos de perill de Meteocat ({error}). "
+                "Mentrestant, els veïns reben els avisos de l'AEMET. Mira smp.py.")
     elif not error and os.path.exists(marca):
         os.remove(marca)
         text = "Temps a Montflorit: els avisos de perill de Meteocat es tornen a llegir."
     if text:
         print(text)
         if avisa:
-            subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", text], check=False)
-    return error
+            import avis_privat
+            avis_privat.envia(text)
+    return text

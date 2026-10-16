@@ -100,7 +100,7 @@ class Smp(unittest.TestCase):
         self.assertNotIn("Meteocat", AB.text_pla(pla)["ca"])
         self.assertNotIn("Meteocat", B.text_avisos_actius({**d, "smp": None}, "ca", AHORA))
 
-    def test_sense_pla_surt_sol_i_avisa_com_l_aemet(self):
+    def test_sense_pla_surt_sol(self):
         # ADR 0071: sense pla, als avisos actius amb el nom de Meteocat; el
         # «no hi ha cap avís», no.
         s = smp.llegeix(lambda url: pagina(EPISODIS), AHORA)
@@ -108,22 +108,152 @@ class Smp(unittest.TestCase):
         self.assertIn("<b>Meteocat</b>\n🟠 Meteocat: avís de perill alt", r)
         buit = smp.llegeix(lambda url: pagina([]), AHORA)
         self.assertNotIn("Meteocat", B.text_avisos_actius({"generat": AHORA.isoformat(), "smp": buit}, "ca", AHORA))
-        # Avisa a la segona passada (la primera només apunta), una sola vegada, i torna si puja de grau.
+
+    def test_la_llista_agrupada_de_meteo_cat(self):
+        # El 16-10-2026 la pàgina portava els episodis en dos blocs repetits
+        # ([[…], […]]) i la lectura fallava: ara s'aplana i cada un va una vegada.
+        self.assertEqual(smp.episodis(pagina([EPISODIS, EPISODIS])), EPISODIS)
+        self.assertEqual(len(smp.de_la_comarca(smp.episodis(pagina([EPISODIS, EPISODIS])), 40)), 1)
+        with self.assertRaises(ValueError):
+            smp.episodis(pagina([["no és un episodi"]]))
+
+    def test_avisos_d_observacio_i_temps_violent(self):
+        # «Avís Vigilància» i «… per Temps Violent»: hora d'inici i de fi i les
+        # comarques a l'avís mateix (script.min.js de meteo.cat).
+        obs = [{"meteor": {"nom": "Intensitat de pluja"}, "avisos": [{
+                    "tipus": "Avís Vigilància", "estat": "Vigent", "dataEmisio": "2026-10-17T13:10Z",
+                    "dataInici": "2026-10-17T13:20Z", "dataFi": "2026-10-17T15:00Z",
+                    "afectacions": [afectacio(40, 3), afectacio(41, 4)]}]},
+               {"meteor": {"nom": "Temps violent"}, "avisos": [{
+                    "tipus": "Avís Vigilància per Temps Violent", "estat": "Vigent", "dataEmisio": "2026-10-17T13:30Z",
+                    "dataInici": "2026-10-17T13:30Z", "dataFi": "2026-10-17T14:30Z",
+                    "afectacions": [afectacio(41, 5)]}]}]
+        a = smp.de_la_comarca(obs, 40)
+        self.assertEqual(len(a), 1)                                  # el de temps violent és d'una altra comarca
+        self.assertEqual((a[0]["tipus"], a[0]["perill"]), ("observacio", 3))
+        inici = dt.datetime.fromisoformat("2026-10-17T13:20+00:00").astimezone()
+        self.assertEqual(a[0]["dies"], {inici.date().isoformat(): [(inici.hour, inici.hour + 2)]})
+        self.assertTrue(smp.textos(a, "15:30")[0]["ca"].startswith(
+            "Meteocat: avís d'observació de perill alt per «Intensitat de pluja» al Vallès Occidental"))
+        self.assertEqual(smp.de_la_comarca(obs, 41)[1]["tipus"], "temps_violent")
+
+    def test_la_pagina_real_del_16_d_octubre(self):
+        # Retallada de la pàgina real: dos blocs repetits, cada avís amb la
+        # versió «Ampliat» (l'anterior) i la «Vigent».
+        def av(estat, emissio, perill):
+            return {"tipus": "Avís", "estat": estat, "dataEmisio": emissio, "evolucions": [{
+                "dia": "2026-10-17T00:00Z", "llindar1": "Intensitat > 20 mm / 30 minuts", "periodes": [
+                    {"nom": "06-12", "afectacions": None},
+                    {"nom": "12-18", "afectacions": [afectacio(40.0, perill, "2026-10-17T00:00Z")]},
+                    {"nom": "18-00", "afectacions": [afectacio(40.0, perill, "2026-10-17T00:00Z")]}]}]}
+        ep = {"id": None, "estat": {"nom": "Obert", "data": None},
+              "meteor": {"idMeteor": None, "nom": "Intensitat de pluja en 30 minuts"},
+              "avisos": [av("Ampliat", "2026-10-15T07:28Z", 2.0), av("Vigent", "2026-10-15T16:20Z", 3.0)]}
+        a = smp.de_la_comarca(smp.episodis(pagina([[ep], [ep]])))
+        self.assertEqual([(x["perill"], x["dies"]) for x in a], [(3, {"2026-10-17": [(12, 24)]})])
+
+    def test_meteocat_avisa_per_fenomen(self):
+        # ADR 0092: el primer, si puja de nivell, un fenomen nou i hores noves;
+        # no una nova emissió igual, una baixada ni un avís menor del mateix fenomen.
         estat = {}
-        salida = {"smp": s}
-        self.assertEqual(AB.decideix(estat, salida, AHORA), [])
-        self.assertEqual(AB.decideix(estat, salida, AHORA), [])
-        estat["oficials"]["smp"] = {}
-        nous = AB.decideix(estat, salida, AHORA)
-        self.assertEqual(len(nous), 1)
-        self.assertTrue(nous[0]["ca"].startswith("🟠 <b>Avís de perill alt de Meteocat per «Intensitat de pluja»"))
-        self.assertTrue(nous[0]["episodi"].startswith("meteocat:Intensitat de pluja:"))
-        self.assertEqual(AB.decideix(estat, salida, AHORA), [])
-        pujat = {"smp": {**s, "avisos": [{**a, "perill": 5} for a in s["avisos"]]}}
-        self.assertTrue(AB.decideix(estat, pujat, AHORA)[0]["ca"].startswith("🔴"))
-        # Si Meteocat no respon, no es toca res.
-        self.assertEqual(AB.decideix(estat, {"smp": None}, AHORA), [])
-        self.assertIn("smp", estat["oficials"])
+
+        def passa(avisos, minuts):
+            s = {"avisos": avisos, "linies": []}
+            return [a for a in AB.decideix(estat, {"smp": s}, AHORA + dt.timedelta(minutes=minuts))
+                    if a["tipus"] == "perill"]
+
+        def av(meteor, perill, dies, tipus="previsio"):
+            return {"meteor": meteor, "tipus": tipus, "llindar": "Intensitat > 20 mm / 30 minuts",
+                    "perill": perill, "emissio": "2026-10-16T16:20Z", "dies": dies}
+        dissabte = {"2026-10-17": [(12, 24)]}
+        p30 = av("Intensitat de pluja en 30 minuts", 3, dissabte)
+        p3h = av("Intensitat de pluja en 3 hores", 2, dissabte)
+        self.assertEqual(passa([], 0), [])                                   # la primera vegada, s'apunta
+        nous = passa([p30, p3h], 6)
+        self.assertEqual(len(nous), 1)                                       # els dos de pluja, un sol avís
+        self.assertEqual(nous[0]["ca"].splitlines()[0],
+                         "🟠 <b>Avís de perill alt de Meteocat per pluja al Vallès Occidental</b>")
+        self.assertIn("\n🟠 «Intensitat de pluja en 30 minuts»: perill alt, dissabte 17 de 12 a 24 h "
+                      "(Intensitat > 20 mm / 30 minuts).", nous[0]["ca"])
+        self.assertIn("\n🟡 «Intensitat de pluja en 3 hores»: perill moderat", nous[0]["ca"])
+        self.assertEqual(nous[0]["nivell"], "alt")
+        episodi = nous[0]["episodi"]
+        self.assertEqual(passa([dict(p30, emissio="2026-10-17T07:00Z"), p3h], 12), [])   # nova emissió igual
+        self.assertEqual(passa([dict(p30, perill=4), p3h], 18), [])           # 4 és «alt», com el 3
+        self.assertEqual(passa([dict(p30, perill=2), p3h], 24), [])           # baixa: res
+        puja = passa([dict(p30, perill=5), p3h], 30)
+        self.assertEqual(puja[0]["ca"].splitlines()[0],
+                         "🔴 <b>Actualització: Meteocat puja a perill molt alt per pluja al Vallès Occidental</b>")
+        self.assertEqual(puja[0]["episodi"], episodi)                         # la mateixa fitxa a «Perill»
+        amplia = passa([dict(p30, perill=5, dies={**dissabte, "2026-10-18": [(0, 6)]})], 36)
+        self.assertIn("Actualització: Meteocat amplia l'avís de perill molt alt per pluja", amplia[0]["ca"])
+        vent = passa([dict(p30, perill=5, dies={**dissabte, "2026-10-18": [(0, 6)]}),
+                      av("Ratxa màxima de vent", 1, dissabte)], 42)
+        self.assertIn("Actualització: Meteocat avisa també de perill moderat per vent", vent[0]["ca"])
+        self.assertEqual(vent[0]["nivell"], "maxim")                          # el color, el pitjor dels vigents
+        obs = passa([dict(p30, perill=5, dies={**dissabte, "2026-10-18": [(0, 6)]}), av("Ratxa màxima de vent", 1, dissabte),
+                     av("Intensitat de pluja", 3, {"2026-10-17": [(15, 17)]}, "observacio")], 48)
+        self.assertIn("Meteocat: s'observa perill alt per pluja al Vallès Occidental", obs[0]["ca"])
+        self.assertIn("«Intensitat de pluja»: observat ara, perill alt", obs[0]["ca"])
+        # Si no hi ha lectura, res; quan ja no en queda cap (passada la mitja hora), el final.
+        self.assertEqual(AB.decideix(estat, {"smp": None}, AHORA + dt.timedelta(minutes=54)), [])
+        self.assertEqual(passa([], 60), [])
+        fi = passa([], 90)
+        self.assertEqual(fi[0]["ca"], "🟢 <b>Meteocat ja no té cap avís de perill per al Vallès Occidental</b>")
+        self.assertEqual((fi[0]["nivell"], fi[0]["episodi"]), ("fi", episodi))
+        self.assertEqual(passa([], 96), [])
+        # Un de nou després, un episodi nou.
+        torna = passa([p3h], 102)
+        self.assertTrue(torna[0]["ca"].startswith("🟡 <b>Avís de perill moderat de Meteocat per pluja"))
+        self.assertNotEqual(torna[0]["episodi"], episodi)
+
+    def test_l_estat_d_abans_avisa_el_que_hi_ha(self):
+        # Fins a la 3.86.3 l'estat era {clau: grau} i, com que la lectura fallava,
+        # buit: el que hi ha ara s'avisa una vegada.
+        estat = {"oficials": {"aemet": {}, "plans": {}, "smp": {}}}
+        s = smp.llegeix(lambda url: pagina(EPISODIS), AHORA)
+        self.assertEqual(len(AB.decideix(estat, {"smp": s}, AHORA)), 1)
+        self.assertEqual(AB.decideix(estat, {"smp": s}, AHORA + dt.timedelta(minutes=6)), [])
+
+    def test_l_aemet_nomes_de_reserva(self):
+        # ADR 0092: amb Meteocat llegit, l'AEMET no avisa (però s'apunta); si
+        # Meteocat falla, avisa el que no s'havia avisat.
+        aemet = {"zona": "Prelitoral de Barcelona", "tipo": "pluja", "nivel": "groc",
+                 "inicio": "2026-10-17T12:00:00+02:00", "fin": "2026-10-17T23:59:59+02:00"}
+        buit = {"avisos": [], "linies": []}
+        estat = {}
+        perill = lambda sal, m: [a for a in AB.decideix(estat, sal, AHORA + dt.timedelta(minutes=m)) if a["tipus"] == "perill"]
+        self.assertEqual(perill({"avisos": [], "smp": buit}, 0), [])
+        self.assertEqual(perill({"avisos": [aemet], "smp": buit}, 6), [])
+        self.assertEqual(perill({"avisos": [aemet], "smp": None}, 12), [])                      # ja apuntat
+        nous = perill({"avisos": [dict(aemet, nivel="taronja")], "smp": None}, 18)
+        self.assertEqual(nous[0]["ca"].splitlines()[0], "🟠 <b>Avís taronja de l'AEMET per pluja al Vallès</b>")
+        self.assertEqual(perill({"avisos": [dict(aemet, nivel="vermell")], "smp": buit}, 24), [])
+
+    def test_avis_a_juanjo_en_el_moment(self):
+        # Si la passada no ha pogut llegir Meteocat, una vegada; i quan torna.
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as dir:
+            casa, sortida = os.path.join(dir, "casa.json"), os.path.join(dir, "avisos.json")
+            marca = os.path.join(dir, "aprenentatge", "smp-falla")
+
+            def passa(salida):
+                with open(casa, "w", encoding="utf-8") as f:
+                    json.dump(salida, f)
+                with mock.patch.object(AB, "ESTAT", os.path.join(dir, "estat.json")), \
+                        mock.patch.object(AB, "MARCA_SMP", marca), \
+                        mock.patch("avis_privat.envia") as envia:
+                    AB.actualitza(casa, sortida, ahora=AHORA)
+                return [c.args[0] for c in envia.call_args_list]
+            falla = passa({"smp": None, "errors": ["smp: 'list' object has no attribute 'get'"]})
+            self.assertEqual(len(falla), 1)
+            self.assertIn("no es poden llegir els avisos de perill de Meteocat ('list' object", falla[0])
+            self.assertIn("els veïns reben els avisos de l'AEMET", falla[0])
+            self.assertEqual(passa({"smp": None, "errors": []}), [])
+            self.assertEqual(passa({"smp": {"avisos": [], "linies": []}}),
+                             ["Temps a Montflorit: els avisos de perill de Meteocat es tornen a llegir."])
+            self.assertEqual(passa({"smp": {"avisos": [], "linies": []}}), [])
+            self.assertEqual(passa({}), [])                                    # sense la clau, res
 
     def test_prova_diaria(self):
         with tempfile.TemporaryDirectory() as dir:
@@ -132,6 +262,10 @@ class Smp(unittest.TestCase):
             self.assertTrue(os.path.exists(marca))
             self.assertIsNone(smp.comprova(lambda url: pagina([]), marca, avisa=False))
             self.assertFalse(os.path.exists(marca))
+            # Una forma que no se sap llegir també és una fallada (el 16-10-2026
+            # la prova diària només mirava que hi hagués la llista).
+            self.assertIsNotNone(smp.comprova(lambda url: pagina([[{"avisos": [{"estat": "Vigent", "evolucions": [
+                {"periodes": [{"nom": "x", "afectacions": [afectacio(40, 3)]}]}]}]}]]), marca, avisa=False))
 
 
 if __name__ == "__main__":

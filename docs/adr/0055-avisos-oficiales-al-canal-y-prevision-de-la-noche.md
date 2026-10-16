@@ -2,6 +2,8 @@
 
 Fecha: 2026-10-09 · Estado: aceptado
 
+**16-10-2026 (ADR 0092):** los avisos de AEMET ya no notifican si se ha podido leer Meteocat, que avisa por fenómeno.
+
 ## Contexto
 
 Juanjo preguntó qué manda el canal. Un día normal, solo la previsión de las 7

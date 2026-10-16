@@ -20,9 +20,11 @@ Tipos:
 - riera: riesgo de desbordamiento de la riera de Sant Cugat (la de riera.py,
   ADR 0027), atención y peligro, siempre con el aviso de que es orientativo.
 - perill, también, desde el 09-10-2026: los avisos oficiales nuevos (ADR 0055).
-  Un aviso de AEMET para el Prelitoral de Barcelona al aparecer o subir de
-  nivel, y un plan de Protección Civil al pasar a alerta o a emergencia y
-  cuando sale de ellas. La prealerta no avisa (ADR 0051).
+  Desde la 3.87.0 (ADR 0092), los de Meteocat para el Vallès Occidental, por
+  fenómeno: el primero, si sube de nivel, un fenómeno nuevo, horas nuevas y el
+  final; los de AEMET para el Prelitoral de Barcelona, solo si no se ha podido
+  leer Meteocat. Un plan de Protección Civil al pasar a alerta o a emergencia
+  y cuando sale de ellas. La prealerta no avisa (ADR 0051).
 
 - llum, desde el 11-10-2026: un corte de luz de e-distribución en el barrio
   (llum.py, ADR 0072), al aparecer y al dejar de constar, con la calle
@@ -408,33 +410,139 @@ def text_aemet(a, ahora):
     return {"ca": ca, "es": es}
 
 
-def clau_smp(a):
-    """Un aviso de Meteocat: el meteoro y su primer día (cada nueva emisión
-    del mismo aviso no es un aviso nuevo)."""
-    return f"{a['meteor']}:{min(a['dies'])}"
+# --- Meteocat avisa; AEMET, de reserva (ADR 0092) -----------------------------
+# Meteocat es el servicio de aquí: avisa por comarca y es la referencia de
+# Protecció Civil de Catalunya. Sus avisos se agrupan por fenómeno (la lluvia
+# en 30 minutos y en 3 horas son la misma lluvia) y se notifica el primero,
+# una subida de nivel, un fenómeno nuevo, unas horas que el aviso no cubría y
+# el final, cuando ya no queda ninguno. Una nueva emisión sin cambios, una
+# bajada o un aviso menor del mismo fenómeno no avisan: se ven en «Perill»
+# (Juanjo, 16-10-2026: «lo que no quiero son avisos repetidos que molesten a
+# la gente» y «en situación de peligro no podemos dar un aviso al día»).
+
+FENOMENS = (("violent", "temps_violent"), ("pluja", "pluja"), ("neu", "neu"), ("vent", "vent"),
+            ("calor", "calor"), ("fred", "fred"), ("mar", "mar"))
+NOM_FENOMEN = {"ca": {"pluja": "pluja", "neu": "neu", "vent": "vent", "calor": "calor", "fred": "fred",
+                      "mar": "l'estat de la mar", "temps_violent": "temps violent"},
+               "es": {"pluja": "lluvia", "neu": "nieve", "vent": "viento", "calor": "calor", "fred": "frío",
+                      "mar": "el estado del mar", "temps_violent": "tiempo violento"}}
+RANG_SMP = {"mig": 1, "alt": 2, "maxim": 3}
 
 
-def fins_smp(a):
-    """Hasta cuándo vale: el final de su última franja, en hora local."""
-    dia = max(a["dies"])
-    fi = a["dies"][dia][-1][1]
-    t = dt.datetime.fromisoformat(dia) + dt.timedelta(hours=fi)
-    return t.astimezone().isoformat(timespec="minutes")
+def fenomen(a):
+    """El fenómeno de un aviso de Meteocat; los de observación van aparte: dicen
+    que ya está pasando, y eso es una novedad aunque el nivel no suba."""
+    m = a["meteor"].lower()
+    f = next((f for clau, f in FENOMENS if clau in m), m)
+    return f if a.get("tipus", "previsio") == "previsio" else f"obs:{f}"
 
 
-def text_meteocat(a):
-    """Un aviso de peligro de Meteocat para la comarca, sin plan de Protecció
-    Civil (ADR 0071). El meteoro y el umbral, como los publica Meteocat (ADR 0067)."""
+def nom_fenomen(f, idioma):
+    f = f.removeprefix("obs:")
+    return NOM_FENOMEN[idioma].get(f, f)
+
+
+def hores_smp(a):
+    """Las horas que cubre un aviso: {"AAAA-MM-DD:H", …}."""
+    return {f"{d}:{h}" for d, franges in a["dies"].items() for i, fi in franges for h in range(i, fi)}
+
+
+def fins_smp(avisos):
+    """Hasta cuándo valen: el final de la última franja, en hora local."""
+    def fi(a):
+        dia = max(a["dies"])
+        return dt.datetime.fromisoformat(dia) + dt.timedelta(hours=a["dies"][dia][-1][1])
+    return max(fi(a) for a in avisos).astimezone().isoformat(timespec="minutes")
+
+
+def linia_smp(a, idioma):
+    """«🟠 «Intensitat de pluja en 30 minuts»: perill alt, dissabte 17 de 12 a 24 h
+    (Intensitat > 20 mm / 30 minuts).» El meteoro y el umbral, como los publica
+    Meteocat (ADR 0067)."""
     n = SMP.nivell(a["perill"])
+    obs = a.get("tipus", "previsio") != "previsio"
+    if idioma == "es":
+        tipus = "observado ahora, peligro" if obs else "peligro"
+    else:
+        tipus = "observat ara, perill" if obs else "perill"
+    llindar = f" ({a['llindar']})" if a.get("llindar") else ""
+    return f"{CERCLE.get(n, '')} «{a['meteor']}»: {tipus} {SMP.GRAU[idioma][n]}, {SMP.quan(a['dies'], idioma)}{llindar}."
+
+
+def text_meteocat(canvi, f, avisos):
+    """El aviso de Meteocat para la comarca: en la primera línea, qué pasa (el
+    primero, «Actualització: …» si ya se había avisado); debajo, todos los
+    avisos vigentes, para que la ficha de «Perill» los tenga todos."""
     nom = C.SMP_COMARCA_NOM
-    llindar_ca = f" ({a['llindar']})" if a.get("llindar") else ""
-    ca = (negreta(f"Avís de perill {SMP.GRAU['ca'][n]} de Meteocat per «{a['meteor']}» al {nom}", n)
-          + f"\n{SMP.quan(a['dies'], 'ca').capitalize()}{llindar_ca}."
-          + "\nÉs un avís oficial: segueix les indicacions de Protecció Civil.")
-    es = (negreta(f"Aviso de peligro {SMP.GRAU['es'][n]} de Meteocat por «{a['meteor']}» en el {nom}", n)
-          + f"\n{SMP.quan(a['dies'], 'es').capitalize()}{llindar_ca}."
-          + "\nEs un aviso oficial: sigue las indicaciones de Protección Civil.")
-    return {"ca": ca, "es": es}
+    n = SMP.nivell(max(a["perill"] for a in avisos if fenomen(a) == f))
+    fca, fes = nom_fenomen(f, "ca"), nom_fenomen(f, "es")
+    gca, ges = SMP.GRAU["ca"][n], SMP.GRAU["es"][n]
+    if f.startswith("obs:"):
+        ca = f"Meteocat: s'observa perill {gca} per {fca} al {nom}"
+        es = f"Meteocat: se observa peligro {ges} por {fes} en el {nom}"
+    elif canvi == "nou":
+        ca = f"Avís de perill {gca} de Meteocat per {fca} al {nom}"
+        es = f"Aviso de peligro {ges} de Meteocat por {fes} en el {nom}"
+    elif canvi == "puja":
+        ca = f"Actualització: Meteocat puja a perill {gca} per {fca} al {nom}"
+        es = f"Actualización: Meteocat sube a peligro {ges} por {fes} en el {nom}"
+    elif canvi == "fenomen":
+        ca = f"Actualització: Meteocat avisa també de perill {gca} per {fca} al {nom}"
+        es = f"Actualización: Meteocat avisa también de peligro {ges} por {fes} en el {nom}"
+    else:
+        ca = f"Actualització: Meteocat amplia l'avís de perill {gca} per {fca} al {nom}"
+        es = f"Actualización: Meteocat amplía el aviso de peligro {ges} por {fes} en el {nom}"
+    ordre = sorted(avisos, key=lambda a: (fenomen(a) != f, -a["perill"]))
+    return {"ca": negreta(ca, n) + "".join("\n" + linia_smp(a, "ca") for a in ordre)
+                  + "\nÉs un avís oficial: segueix les indicacions de Protecció Civil.",
+            "es": negreta(es, n) + "".join("\n" + linia_smp(a, "es") for a in ordre)
+                  + "\nEs un aviso oficial: sigue las indicaciones de Protección Civil."}
+
+
+def text_meteocat_fi():
+    nom = C.SMP_COMARCA_NOM
+    return {"ca": negreta(f"Meteocat ja no té cap avís de perill per al {nom}", "fi"),
+            "es": negreta(f"Meteocat ya no tiene ningún aviso de peligro para el {nom}", "fi")}
+
+
+PRIORITAT = ("nou", "obs", "puja", "fenomen", "amplia")
+
+
+def decideix_smp(abans, avisos, ahora):
+    """Compara los avisos de Meteocat de esta pasada con lo ya avisado.
+    abans: {"episodi", "fenomens": {f: {"rang", "hores", "vist"}}} o None.
+    Devuelve (estado nuevo, [(canvi, fenomen)], acabat). Un fenómeno que deja
+    de constar se da por acabado a los SMP_FI_MIN minutos, para que el relevo
+    entre dos emisiones no avise dos veces."""
+    hora = ahora.isoformat(timespec="minutes")
+    e = {"episodi": (abans or {}).get("episodi"), "fenomens": dict((abans or {}).get("fenomens") or {})}
+    nou_episodi = not e["fenomens"]
+    canvis = []
+    per_f = {}
+    for a in avisos:
+        per_f.setdefault(fenomen(a), []).append(a)
+    for f, llista in per_f.items():
+        rang_ara = max(RANG_SMP[SMP.nivell(a["perill"])] for a in llista)
+        hores = set().union(*(hores_smp(a) for a in llista))
+        vell = e["fenomens"].get(f)
+        if vell is None:
+            canvi = "nou" if nou_episodi else "obs" if f.startswith("obs:") else "fenomen"
+            canvis.append((canvi, f))
+            vell = {"rang": rang_ara, "hores": []}
+        elif rang_ara > vell["rang"]:
+            canvis.append(("puja", f))
+        elif not hores <= set(vell["hores"]):
+            canvis.append(("amplia", f))
+        e["fenomens"][f] = {"rang": max(rang_ara, vell["rang"]), "hores": sorted(hores | set(vell["hores"])),
+                            "vist": hora}
+    for f, v in list(e["fenomens"].items()):
+        if f not in per_f and ahora - dt.datetime.fromisoformat(v["vist"]) >= dt.timedelta(minutes=C.SMP_FI_MIN):
+            del e["fenomens"][f]
+    acabat = bool(abans and abans.get("fenomens")) and not e["fenomens"]
+    if nou_episodi and canvis:
+        e["episodi"] = f"meteocat:{hora}"
+    canvis.sort(key=lambda c: PRIORITAT.index(c[0]))
+    return e, canvis, acabat
 
 
 def text_smp(smp, idioma):
@@ -563,24 +671,32 @@ def decideix(estat, salida, ahora):
     if salida.get("avisos") is not None:
         aemet = {f"{a['tipo']}:{a['inicio']}": a for a in salida["avisos"]
                  if a.get("zona", C.ZONA_AVISOS) == C.ZONA_AVISOS and a["nivel"] in RS.NIVELLS}
-        if of is not None:
+        # De reserva (ADR 0092): solo avisan si no se ha podido leer Meteocat.
+        # Se apuntan siempre, para no repetir al fallar Meteocat lo que ya había.
+        if of is not None and salida.get("smp") is None:
             for k, a in aemet.items():
                 abans = of["aemet"].get(k)
                 if abans is None or RS.NIVELLS.index(a["nivel"]) > RS.NIVELLS.index(abans):
                     afegeix("perill", f"aemet:{k}:{a['nivel']}", text_aemet(a, ahora), a["nivel"],
                             episodi=f"aemet:{k}", enllac=AEMET, fins=a.get("fin"))
         nou_of["aemet"] = {k: a["nivel"] for k, a in aemet.items()}
-    # Los avisos de peligro de Meteocat para la comarca, como los de AEMET: al
-    # aparecer o subir de grado (ADR 0071). La primera vez, solo se apuntan.
+    # Los avisos de peligro de Meteocat para la comarca (ADR 0092). La primera
+    # vez, solo se apuntan; un estado de antes de la 3.87.0 ({clave: grado},
+    # sin «fenomens») se toma como vacío: lo vigente se avisa una vez.
     if salida.get("smp") is not None:
-        smp = {clau_smp(a): a for a in salida["smp"].get("avisos") or []}
+        avisos_smp = salida["smp"].get("avisos") or []
+        abans = (of or {}).get("smp")
+        abans = abans if isinstance(abans, dict) and "fenomens" in abans else None
+        e_smp, canvis, acabat = decideix_smp(abans, avisos_smp, ahora)
         if of is not None and "smp" in of:
-            for k, a in smp.items():
-                abans = of["smp"].get(k)
-                if abans is None or a["perill"] > abans:
-                    afegeix("perill", f"meteocat:{k}:{a['perill']}", text_meteocat(a), SMP.nivell(a["perill"]),
-                            episodi=f"meteocat:{k}", enllac=METEOCAT, fins=fins_smp(a))
-        nou_of["smp"] = {k: a["perill"] for k, a in smp.items()}
+            if canvis:
+                canvi, f = canvis[0]
+                rang_max = max(a["perill"] for a in avisos_smp)
+                afegeix("perill", f"meteocat:{hora}:{canvi}:{f}", text_meteocat(canvi, f, avisos_smp),
+                        SMP.nivell(rang_max), episodi=e_smp["episodi"], enllac=METEOCAT, fins=fins_smp(avisos_smp))
+            elif acabat:
+                afegeix("perill", f"meteocat:{hora}:fi", text_meteocat_fi(), "fi", episodi=abans["episodi"])
+        nou_of["smp"] = e_smp
     elif of is not None and "smp" in of:
         nou_of["smp"] = of["smp"]
     if salida.get("plans") is not None:
@@ -772,10 +888,23 @@ def amb_enllac(a, hist):
     return a
 
 
-def actualitza(casa_json, sortida, ahora=None, anterior=None):
+MARCA_SMP = os.path.join(os.environ.get("APRENENTATGE_DIR", "/estat/aprenentatge"), "smp-falla")
+
+
+def actualitza(casa_json, sortida, ahora=None, anterior=None, avisa=True):
     ahora = ahora or dt.datetime.now().astimezone()
     with open(casa_json, encoding="utf-8") as f:
         salida = json.load(f)
+    # Si no se ha podido leer Meteocat, a Juanjo en el momento, no al día
+    # siguiente (ADR 0092): mientras tanto avisan los de AEMET.
+    if "smp" in salida:
+        error = None
+        if salida["smp"] is None:
+            error = next((e[5:] for e in salida.get("errors") or [] if e.startswith("smp: ")), "sense dades")
+        try:
+            SMP.marca_falla(MARCA_SMP, error, avisa)
+        except OSError:
+            pass
     try:
         with open(ESTAT, encoding="utf-8") as f:
             estat = json.load(f)
