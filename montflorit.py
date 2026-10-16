@@ -220,6 +220,8 @@ CANVIS_ES_PERILL = [
     (f'data-dades="{DADES}"', f'data-dades="{DADES}" data-arrel="../"'),
     ('<script src="comu.js"></script>', '<script src="../es.js"></script>\n  <script src="../comu.js"></script>'),
     ('<script src="perill.js"></script>', '<script src="../perill.js"></script>'),
+    ('href="img/incendis.webp"', 'href="../img/incendis.webp"'),
+    ('src="img/incendis.webp"', 'src="../img/incendis.webp"'),
 ]
 CANVIS_ES_PRIVACITAT = [
     (f'data-dades="{DADES}"', f'data-dades="{DADES}" data-arrel="../"'),

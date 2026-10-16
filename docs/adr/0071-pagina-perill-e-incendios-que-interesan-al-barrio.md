@@ -23,7 +23,23 @@ actiu» por el canal y en el navegador, y el punto rojo de «Perill» se apagó.
 Ahora `entorn.calcula` da también los que siguen en curso fuera de la zona
 (`incendis_fora`); de esos no se dice el final, su ficha se cierra con
 «Segons Bombers continua actiu, però és fora de la zona que vigila aquesta
-web» y, si vuelven a la zona, no se anuncian otra vez.
+web» y, si vuelven a la zona, no se anuncian otra vez. En «Perill», esa ficha
+dice «Fora de la zona», no «Acabat» (`fora_zona`, desde la 3.99.0).
+
+**16-10-2026 (3.99.0): el mapa de la zona.** «Perill» lleva al final «Quins
+incendis s'avisen», con un mapa de la zona (el contorno exterior del parque
+unido al círculo de 2 km, en un solo color, y la marca de Montflorit) que se
+amplía al pulsarlo. Es una imagen fija (`web/img/incendis.webp`, 1000 × 820,
+unos 180 KB) hecha con Leaflet sobre el fondo de OpenStreetMap, con su
+crédito en el pie y en «Fonts i crèdits»: un mapa interactivo pediría el fondo
+a servidores de terceros en cada visita y rompería la privacidad de la web.
+Sin el rectángulo que se pide a Bombers ni texto dentro de la imagen, para que
+valga en los dos idiomas. Juanjo pidió primero los dos colores (parque en
+verde y círculo en rojo) y luego uno solo: «el círculo no debe incluir
+collserola… usa el mismo color». Se descartó ampliar a 1 km el margen
+alrededor del parque para los incendios que empiezan fuera y pueden entrar
+(Bombers da un solo punto por actuación, el del inicio): «no, no lo amplíes».
+Si cambia la zona, hay que rehacer la imagen.
 ## Contexto
 
 La noche del 10 al 11-10-2026 llegó por Telegram y al móvil el aviso de un

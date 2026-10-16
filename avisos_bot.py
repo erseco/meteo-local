@@ -786,7 +786,7 @@ def fusiona(propi, altre):
         if igual is None:
             res.append(dict(e))
         elif e.get("fi") and not igual.get("fi"):
-            igual.update({k: e[k] for k in ("fi", "fi_ca", "fi_es", "substituit_per") if k in e})
+            igual.update({k: e[k] for k in ("fi", "fi_ca", "fi_es", "substituit_per", "fora_zona") if k in e})
     return sorted(res, key=lambda e: e["inici"])
 
 
@@ -841,7 +841,8 @@ def historial(estat, nous, ahora, anterior=None):
     for e in h:
         if e["clau"].startswith("incendi:") and e["clau"][8:] in en_curs_fora and (
                 not e.get("fi") or "ja no consta" in (e.get("fi_ca") or "")):
-            e.update(fi=e.get("fi") or ahora.isoformat(timespec="minutes"), fi_ca=FORA_ZONA["ca"], fi_es=FORA_ZONA["es"])
+            e.update(fi=e.get("fi") or ahora.isoformat(timespec="minutes"), fi_ca=FORA_ZONA["ca"], fi_es=FORA_ZONA["es"],
+                     fora_zona=True)
     # Un plan que ya no se muestra (desactivado sin aviso, u oculto por no
     # tener motivo meteorológico: ADR 0062) ya no está activo en la página.
     plans = (estat.get("oficials") or {}).get("plans")

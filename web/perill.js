@@ -96,6 +96,9 @@ function fitxa(e, ara) {
     const a = element('a', null, T('l’avís de Meteocat'));
     a.href = `#${idFitxa(e.substituit_per)}`;
     estat.append(element('span', 'episodi-substituit', T('Substituït per ')), a, ' · ');
+  } else if (fi && e.fora_zona) {
+    // No s'ha apagat: ha sortit de la zona que vigila la web (ADR 0071).
+    estat.append(element('span', 'episodi-substituit', T('Fora de la zona')), ' · ');
   } else if (fi) estat.append(element('span', 'episodi-acabat', `🟢 ${T('Acabat')}`), ' · ');
   else estat.append(element('span', 'episodi-actiu', T('Actiu ara')), ' · ');
   estat.append(quan(e, fi));

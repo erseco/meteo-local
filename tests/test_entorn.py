@@ -127,6 +127,7 @@ class Avisos(unittest.TestCase):
         self.assertEqual(estat["entorn"]["fora"], ["x"])
         h = AB.historial(estat, [], ARA + dt.timedelta(minutes=12))
         self.assertTrue(h[-1]["fi"] and h[-1]["fi_ca"].startswith("Segons Bombers continua actiu"))
+        self.assertTrue(h[-1]["fora_zona"])
         self.assertEqual(passada(foc, [], 18), [])                   # torna a la zona: no és nou
         self.assertEqual(passada([], [], 24)[0]["nivell"], "fi")      # ara sí que s'acaba
         self.assertEqual(passada([], [], 30), [])
