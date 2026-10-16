@@ -133,8 +133,8 @@ function avalua(mitja, tram, trens, futur, transit) {
       const moto = mitja === 'moto';
       if (viatge.filter(mullaRodes).every(nomesAvisRodes)) {
         puja('compte', moto
-          ? T`Avís de l’AEMET per pluja ${quan(anada, tornada, mullaRodes)}: ni el radar, ni les estacions, ni els models hi veuen pluja. Per si de cas, porta l’impermeable.`
-          : T`Avís de l’AEMET per pluja ${quan(anada, tornada, mullaRodes)}: ni el radar, ni les estacions, ni els models hi veuen pluja.`);
+          ? T`Avís oficial per pluja ${quan(anada, tornada, mullaRodes)}: ni el radar, ni les estacions, ni els models hi veuen pluja. Per si de cas, porta l’impermeable.`
+          : T`Avís oficial per pluja ${quan(anada, tornada, mullaRodes)}: ni el radar, ni les estacions, ni els models hi veuen pluja.`);
       } else {
         puja('compte', moto ? T`Pot ploure ${quan(anada, tornada, mullaRodes)}: porta l’impermeable.`
           : T`Pot ploure ${quan(anada, tornada, mullaRodes)}.`);
@@ -156,7 +156,7 @@ function avalua(mitja, tram, trens, futur, transit) {
       if (viatge.some(plouRodes)) puja('compte', T`Pluja probable ${quan(anada, tornada, plouRodes)}: condueix amb compte.`);
       else if (viatge.some(dades)) puja('compte', T`Pot ploure ${quan(anada, tornada, dades)}: condueix amb compte.`);
       else if (viatge.some(avisPluja)) {
-        puja('compte', T`Avís de l’AEMET per pluja ${quan(anada, tornada, avisPluja)}: ni el radar, ni les estacions, ni els models hi veuen pluja. Condueix amb compte.`);
+        puja('compte', T`Avís oficial per pluja ${quan(anada, tornada, avisPluja)}: ni el radar, ni les estacions, ni els models hi veuen pluja. Condueix amb compte.`);
       } else puja('compte', T`Pot ploure ${quan(anada, tornada, plouClar)}: condueix amb compte.`);
     } else if (viatge.some(mullaRodes)) res.motius.push(T`Pot ploure ${quan(anada, tornada, mullaRodes)}.`);
   }
@@ -166,7 +166,7 @@ function avalua(mitja, tram, trens, futur, transit) {
   else if (tMin != null && ll.fred[0] != null && tMin <= ll.fred[0]) puja('compte', T`${graus(tMin)}: compte amb el gel a primera hora.`);
   if (mitja === 'peu' && tram.some(mulla)) {
     puja('compte', tram.filter(mulla).every(senseDades)
-      ? T('Avís de l’AEMET per pluja mentre ets fora: ni el radar, ni les estacions, ni els models hi veuen pluja. Per si de cas, porta paraigua.')
+      ? T('Avís oficial per pluja mentre ets fora: ni el radar, ni les estacions, ni els models hi veuen pluja. Per si de cas, porta paraigua.')
       : T('Pot ploure mentre ets fora: porta paraigua.'));
   }
   if (mitja === 'public') return avaluaPublic(trens, futur);
@@ -278,11 +278,11 @@ function consells(tram, ara) {
   const avis = tram.filter(mulla).every(senseDades);
   if (!mullat[0] && mullat.some(Boolean)) {
     const f = tram[mullat.indexOf(true)];
-    res.push(avis ? T`A partir de les ${hora(f)} h, avís de l’AEMET per pluja.`
+    res.push(avis ? T`A partir de les ${hora(f)} h, avís oficial per pluja.`
       : T`A partir de les ${hora(f)} h, risc de pluja.`);
   } else if (mullat[0] && !mullat.every(Boolean)) {
     const h = hora(tram[mullat.indexOf(false)]);
-    res.push(avis ? T`Cap a les ${h} h s’acaba l’avís de l’AEMET.` : T`Cap a les ${h} h s’acaba el risc de pluja.`);
+    res.push(avis ? T`Cap a les ${h} h s’acaba l’avís oficial.` : T`Cap a les ${h} h s’acaba el risc de pluja.`);
   }
   const amb = tram.filter((f) => f.temperatura != null);
   if (amb.length) {

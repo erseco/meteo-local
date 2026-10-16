@@ -2,6 +2,8 @@
 
 Fecha: 2026-10-10 · Estado: aceptado
 
+**16-10-2026 (ADR 0093):** el motivo es un aviso del fenómeno del plan (lluvia para el INUNCAT, viento para el VENTCAT…), de AEMET o de Meteocat; un plan sin fenómeno meteorológico se muestra siempre.
+
 ## Contexto
 
 El 10-10-2026 la web seguía mostrando arriba del todo «Protecció Civil: pla

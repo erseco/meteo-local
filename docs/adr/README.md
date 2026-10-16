@@ -93,6 +93,7 @@
 | [0089](0089-cambio-de-hora.md) | El cambio de hora | aceptado |
 | [0090](0090-hora-solar-y-hora-local.md) | Hora solar para lo que depende del sol, hora local para lo que depende de las personas | aceptado |
 | [0091](0091-planes-en-prealerta-en-perill.md) | Los planes de Protección Civil en prealerta, con ficha en «Perill» | aceptado |
-| [0092](0092-meteocat-avisa-y-aemet-de-reserva.md) | Meteocat avisa por fenómeno y AEMET queda de reserva | aceptado |
+| [0092](0092-meteocat-avisa-y-aemet-de-reserva.md) | Meteocat avisa por fenómeno y AEMET queda de reserva | aceptado (AEMET, cambiado por el 0093) |
+| [0093](0093-todas-las-alertas-juntas-y-aemet-para-lo-que-meteocat-no-cubre.md) | Todas las alertas de peligro juntas, y AEMET para lo que Meteocat no cubre | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

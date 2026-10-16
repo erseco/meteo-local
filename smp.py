@@ -194,11 +194,110 @@ def textos(avisos, hora):
     return res
 
 
+# --- Meteocat o AEMET, per fenomen (ADR 0093) ---------------------------------
+# Meteocat, el servei d'aquí, mana; l'AEMET surt per a tot el que Meteocat no
+# cobreix: un fenomen o unes hores sense avís de Meteocat, o si no es pot
+# llegir (Juanjo, 16-10-2026: «si meteocat no tiene aviso y aemet sí, debe
+# salir aemet, prima la información y seguridad de los usuarios»).
+
+FENOMENS = (("violent", "temps_violent"), ("pluja", "pluja"), ("neu", "neu"), ("vent", "vent"),
+            ("calor", "calor"), ("fred", "fred"), ("mar", "mar"))
+NOM_FENOMEN = {"ca": {"pluja": "pluja", "neu": "neu", "vent": "vent", "calor": "calor", "fred": "fred",
+                      "mar": "l'estat de la mar", "temps_violent": "temps violent"},
+               "es": {"pluja": "lluvia", "neu": "nieve", "vent": "viento", "calor": "calor", "fred": "frío",
+                      "mar": "el estado del mar", "temps_violent": "tiempo violento"}}
+# Els tipus de l'AEMET que Meteocat també avisa; les tempestes, la boira o la
+# pols no tenen avís propi a Meteocat i surten sempre de l'AEMET.
+FENOMEN_AEMET = {"pluja": "pluja", "vent": "vent", "calor": "calor", "fred": "fred", "neu": "neu"}
+COLOR = {"mig": "groc", "alt": "taronja", "maxim": "vermell"}
+
+
+def fenomen(meteor):
+    """«Intensitat de pluja en 30 minuts» → «pluja»."""
+    m = (meteor or "").lower()
+    return next((f for clau, f in FENOMENS if clau in m), m)
+
+
+def hores_avis(a):
+    """Les hores que cobreix un avís de Meteocat: {"AAAA-MM-DD:H", …}, hora local."""
+    return {f"{d}:{h}" for d, franges in a["dies"].items() for i, fi in franges for h in range(i, fi)}
+
+
+def hores_aemet(a):
+    """Les hores que cobreix un avís de l'AEMET, en hora local."""
+    t = dt.datetime.fromisoformat(a["inicio"]).astimezone().replace(minute=0, second=0, microsecond=0)
+    fi = dt.datetime.fromisoformat(a["fin"]).astimezone()
+    res = set()
+    while t < fi:
+        res.add(f"{t.date().isoformat()}:{t.hour}")
+        t += dt.timedelta(hours=1)
+    return res
+
+
+def cobreix(avisos_smp, a):
+    """Si Meteocat té avís del mateix fenomen en alguna hora de l'avís de
+    l'AEMET a: llavors mana el de Meteocat."""
+    f = FENOMEN_AEMET.get(a.get("tipo"))
+    if not f:
+        return False
+    hores = hores_aemet(a)
+    return any(fenomen(m["meteor"]) == f and hores & hores_avis(m) for m in avisos_smp or [])
+
+
+def marca_coberts(avisos, smp):
+    """Marca «cobert» els avisos de l'AEMET que cobreix Meteocat. Sense lectura
+    de Meteocat (smp None), cap: surten tots."""
+    for a in avisos or []:
+        a.pop("cobert", None)
+        if smp is not None and cobreix(smp.get("avisos"), a):
+            a["cobert"] = "meteocat"
+    return avisos
+
+
+def per_hora(ini, fin, smp):
+    """Els avisos de Meteocat d'un tram, com els de l'AEMET a la taula:
+    [{nivell (groc, taronja, vermell), tipus: [fenomen], font}]."""
+    res = {}
+    hores = set()
+    t = ini.astimezone().replace(minute=0, second=0, microsecond=0)
+    while t < fin:
+        hores.add(f"{t.date().isoformat()}:{t.hour}")
+        t += dt.timedelta(hours=1)
+    for a in (smp or {}).get("avisos") or []:
+        if hores & hores_avis(a):
+            c = COLOR[nivell(a["perill"])]
+            res.setdefault(c, set()).add(fenomen(a["meteor"]))
+    return [{"nivell": n, "tipus": sorted(t), "font": "meteocat"} for n, t in res.items()]
+
+
+def per_fenomen(avisos):
+    """Un element per fenomen, el resum que surt a la previsió del dia (ADR
+    0093): {fenomen, nivell (el més alt), dies (totes les franges), ca, es}."""
+    grups = {}
+    for a in avisos:
+        g = grups.setdefault(fenomen(a["meteor"]), {"perill": 0, "dies": {}})
+        g["perill"] = max(g["perill"], a["perill"])
+        for d, franges in a["dies"].items():
+            g["dies"].setdefault(d, set()).update(tuple(f) for f in franges)
+    nom = C.SMP_COMARCA_NOM
+    res = []
+    for f, g in sorted(grups.items(), key=lambda x: -x[1]["perill"]):
+        n = nivell(g["perill"])
+        nca, nes = NOM_FENOMEN["ca"].get(f, f), NOM_FENOMEN["es"].get(f, f)
+        res.append({"fenomen": f, "nivell": n,
+                    "dies": {d: [list(x) for x in junta(sorted(fr))] for d, fr in sorted(g["dies"].items())},
+                    "ca": f"Avís de perill {GRAU['ca'][n]} de Meteocat per {nca} al {nom}",
+                    "es": f"Aviso de peligro {GRAU['es'][n]} de Meteocat por {nes} en el {nom}"})
+    return res
+
+
 def llegeix(get, ahora):
-    """Lo que se publica: {hora, avisos (los de la comarca), linies (los textos)}."""
+    """Lo que se publica: {hora, avisos (los de la comarca), linies (los textos),
+    fenomens (el resumen por fenómeno)}."""
     avisos = de_la_comarca(episodis(get(URL)))
     hora = ahora.strftime("%H:%M")
-    return {"hora": ahora.isoformat(timespec="minutes"), "avisos": avisos, "linies": textos(avisos, hora)}
+    return {"hora": ahora.isoformat(timespec="minutes"), "avisos": avisos, "linies": textos(avisos, hora),
+            "fenomens": per_fenomen(avisos)}
 
 
 def comprova(get, marca, avisa=True):

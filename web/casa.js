@@ -451,30 +451,9 @@ function blocRadar(r, plou, hores) {
   return caixa;
 }
 
-// Situacions de perill segons el que mesuren les estacions i el que preveu
-// la pàgina (riscos.py, ADR 0018), amb el color del nivell de l'AEMET.
-function blocRiscos(riscos) {
-  if (!riscos || !riscos.length) return null;
-  const pitjor = riscos[0].nivell;
-  const caixa = element('section', `avis risc-previst ${pitjor}`);
-  caixa.setAttribute('aria-label', T('Risc previst'));
-  const titol = element('p', 'titol-risc');
-  titol.append(icona('i-triangle-alert'), T`Risc ${TD(pitjor)}`);
-  caixa.append(titol);
-  const llista = element('ul');
-  for (const r of riscos) {
-    // El text ve fet en català a les dades; en un altre idioma es torna a fer.
-    const li = element('li', null, IDIOMA.risc ? IDIOMA.risc(r) : r.text);
-    const llindar = coma(r.llindar, 0).replace('-', '\u2212');
-    li.append(' ', element('span', 'detall', T`(llindar ${TD(r.nivell)} de l\u2019AEMET: ${llindar} ${r.unitat})`));
-    llista.append(li);
-  }
-  caixa.append(llista);
-  return caixa;
-}
 
-// Avisos de l'AEMET en trams d'hores seguides del mateix tram del dia amb el
-// mateix avís: per a cada hora, el tram que hi comença ({nivell, tipus, hores}),
+// Avisos de Meteocat i de l'AEMET (el que Meteocat no cobreix, ADR 0093) en
+// trams d'hores seguides del mateix tram del dia amb el mateix avís: per a cada hora, el tram que hi comença ({nivell, tipus, hores}),
 // undefined si la cobreix un tram que ha començat abans, o null si no n'hi ha.
 const ORDRE_NIVELL = ['groc', 'taronja', 'vermell'];
 
@@ -496,7 +475,7 @@ function riscosHora(f, riscos, ara = new Date()) {
 // Es diu el nivell més alt i només el que el dona: amb un avís groc de
 // l'AEMET per pluja i un de taronja de la web, «taronja: pluja molt forta».
 function elementsPerill(f) {
-  return [...(f.avisos || []).flatMap((a) => a.tipus.map((t) => ({ nivell: a.nivell, nom: TD(t), font: 'aemet' }))),
+  return [...(f.avisos || []).flatMap((a) => a.tipus.map((t) => ({ nivell: a.nivell, nom: TD(t), font: a.font || 'aemet' }))),
     ...(f.riscos_hora || []).map((r) => ({ nivell: r.nivell, nom: NOM_RISC()[r.tipus] || r.tipus, font: 'web' }))];
 }
 
@@ -505,8 +484,11 @@ function delNivellMesAlt(elements) {
   const nivell = elements.map((a) => a.nivell).sort((a, b) => ORDRE_NIVELL.indexOf(b) - ORDRE_NIVELL.indexOf(a))[0];
   const daquest = elements.filter((a) => a.nivell === nivell);
   const noms = [...new Set(daquest.map((a) => a.nom))].sort();
-  const fonts = ['aemet', 'web'].filter((x) => daquest.some((a) => a.font === x)).join('');
-  return { nivell, noms, fonts };
+  const fonts = ['meteocat', 'aemet', 'web'].filter((x) => daquest.some((a) => a.font === x)).join('');
+  // Cada font amb els seus fenòmens, per al text complet.
+  const perFont = ['meteocat', 'aemet', 'web'].map((x) => [x, [...new Set(daquest.filter((a) => a.font === x).map((a) => a.nom))].sort()])
+    .filter(([, n]) => n.length);
+  return { nivell, noms, fonts, perFont };
 }
 
 function avisHora(f) {
@@ -537,9 +519,14 @@ function franjaAvis(tram) {
   td.rowSpan = tram.hores;
   const nivell = TD(tram.nivell);
   const tipus = tram.noms.join(T(' i '));
-  const complet = tram.fonts === 'aemet' ? T`Avís ${nivell} de l\u2019AEMET per ${tipus}`
-    : tram.fonts === 'web' ? T`Avís ${nivell} d\u2019aquesta web: ${tipus}`
-      : T`Avís ${nivell} de l\u2019AEMET i d\u2019aquesta web: ${tipus}`;
+  // Meteocat parla de grau de perill (moderat, alt, molt alt), no de colors (ADR 0093).
+  const GRAU = { groc: T('moderat'), taronja: T('alt'), vermell: T('molt alt') };
+  const complet = (tram.perFont || [[tram.fonts, tram.noms]]).map(([font, noms]) => {
+    const que = noms.join(T(' i '));
+    if (font === 'meteocat') return T`Perill ${GRAU[tram.nivell]} de Meteocat per ${que}`;
+    if (font === 'web') return T`Avís ${nivell} d\u2019aquesta web: ${que}`;
+    return T`Avís ${nivell} de l\u2019AEMET per ${que}`;
+  }).join('; ');
   td.title = complet;
   const barra = element('span', 'barra-avis');
   barra.append(element('span', 'text-avis'));
@@ -780,7 +767,7 @@ let DADES_AVISOS = null;
 function pintaAvisos(dades) {
   const avisos = $('avisos');
   avisos.querySelector('.avisos-actius')?.remove();
-  const actius = blocAvisos(dades, [blocRiscos(dades.riscos)]);
+  const actius = blocAvisos(dades);
   if (actius) avisos.prepend(actius);
 }
 function repintaAvisos() {

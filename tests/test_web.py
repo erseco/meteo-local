@@ -498,22 +498,22 @@ class Web(unittest.TestCase):
         # En bici i en moto, l'avís tot sol és «compte», no «no» (08-10-2026, ADR 0047).
         bici = avalua("bici", 0.01)
         self.assertEqual(bici["nivell"], "compte")
-        self.assertEqual(bici["motius"], ["Avís de l’AEMET per pluja a l’anada (18\u00a0h): ni el radar, "
+        self.assertEqual(bici["motius"], ["Avís oficial per pluja a l’anada (18\u00a0h): ni el radar, "
                                           "ni les estacions, ni els models hi veuen pluja."])
         moto = avalua("moto", 0.01)
         self.assertEqual(moto["nivell"], "compte")
         self.assertTrue(moto["motius"][0].endswith("Per si de cas, porta l’impermeable."))
         cotxe = avalua("cotxe", 0.01)
         self.assertEqual(cotxe["nivell"], "compte")
-        self.assertTrue(cotxe["motius"][0].startswith("Avís de l’AEMET per pluja a l’anada (18\u00a0h)"))
+        self.assertTrue(cotxe["motius"][0].startswith("Avís oficial per pluja a l’anada (18\u00a0h)"))
         # El cas del 08-10-2026 a les 17 h: avís i un 10 %. Com la moto, «pot ploure».
         self.assertEqual(avalua("cotxe", 0.1)["motius"], ["Pot ploure a l’anada i a la tornada: condueix amb compte."])
-        self.assertTrue(avalua("peu", 0.01)["motius"][0].startswith("Avís de l’AEMET per pluja mentre ets fora"))
+        self.assertTrue(avalua("peu", 0.01)["motius"][0].startswith("Avís oficial per pluja mentre ets fora"))
         # Si els models també hi veuen pluja, com sempre.
         self.assertEqual(avalua("bici", 0.6)["motius"], ["Pluja probable a l’anada i a la tornada."])
         consells = self.avalua("2026-10-07T18:10:00+02:00",
                                f"consells({json.dumps(tram(0.01))}, new Date())", "sortir.js")
-        self.assertIn("Cap a les 20\u00a0h s’acaba l’avís de l’AEMET.", consells)
+        self.assertIn("Cap a les 20\u00a0h s’acaba l’avís oficial.", consells)
 
     def test_pluja_en_moto_per_la_probabilitat(self):
         # El cas del 08-10-2026: avís groc des de les 10 h, cap dada hi veia pluja

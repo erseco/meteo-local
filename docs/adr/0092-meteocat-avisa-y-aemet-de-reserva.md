@@ -1,6 +1,6 @@
 # 92. Meteocat avisa por fenómeno y AEMET queda de reserva
 
-Fecha: 2026-10-16 · Estado: aceptado
+Fecha: 2026-10-16 · Estado: aceptado; AEMET de reserva, sustituido el mismo día por el ADR 0093 (AEMET avisa de lo que Meteocat no cubre)
 
 ## Contexto
 

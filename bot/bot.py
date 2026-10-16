@@ -620,8 +620,9 @@ def text_avisos_aemet(dades, idioma, dia, moment):
     """Los avisos de AEMET de un día: hoy, «fins a les 20:00»; mañana, «de 10:00 a 20:00»."""
     # Els que toquen el dia (també els que van començar abans: auditoria del 08-10-2026).
     inici_dia = dt.datetime.combine(dia, dt.time.min, tzinfo=moment.tzinfo)
+    # Sense els que cobreix Meteocat: llavors surt el seu (ADR 0093).
     avisos = [a for a in dades.get("avisos") or [] if dt.datetime.fromisoformat(a["fin"]) > max(moment, inici_dia)
-              and dt.datetime.fromisoformat(a["inicio"]) < inici_dia + dt.timedelta(days=1)]
+              and dt.datetime.fromisoformat(a["inicio"]) < inici_dia + dt.timedelta(days=1) and not a.get("cobert")]
     res = []
     for nivell in ("vermell", "taronja", "groc"):
         dels = [a for a in avisos if a["nivel"] == nivell]
@@ -632,12 +633,88 @@ def text_avisos_aemet(dades, idioma, dia, moment):
         fi = (max(dt.datetime.fromisoformat(a["fin"]) for a in dels) + dt.timedelta(seconds=1)).strftime("%H:%M")
         if idioma == "es":
             nom = {"vermell": "rojo", "taronja": "naranja", "groc": "amarillo"}[nivell]
-            que = " y ".join({"pluja": "lluvia", "tempestes": "tormentas"}.get(x, x) for x in tipus)
+            que = " y ".join(TIPUS_AEMET_ES.get(x, x) for x in tipus)
             quan = f"hasta las {fi}" if dia == moment.date() else f"de {ini} a {fi}"
             res.append(f"{CERCLE_AVIS[nivell]} Aviso {nom} de la AEMET por {que} en el Vallès {quan}.")
         else:
             quan = f"fins a les {fi}" if dia == moment.date() else f"de {ini} a {fi}"
-            res.append(f"{CERCLE_AVIS[nivell]} Avís {nivell} de l'AEMET per {' i '.join(tipus)} al Vallès {quan}.")
+            que = " i ".join(TIPUS_AEMET_CA.get(x, x) for x in tipus)
+            res.append(f"{CERCLE_AVIS[nivell]} Avís {nivell} de l'AEMET per {que} al Vallès {quan}.")
+    return res
+
+
+# Els tipus de l'AEMET (prevision.TIPUS_METEOALARM; els mateixos noms que
+# avisos_bot.TIPUS_AEMET: el bot no carrega els mòduls del repositori).
+TIPUS_AEMET_CA = {"incendis": "risc d'incendis", "costaners": "fenòmens costaners", "altres": "altres fenòmens"}
+TIPUS_AEMET_ES = {"pluja": "lluvia", "tempestes": "tormentas", "inundacions": "inundaciones", "vent": "viento",
+                  "calor": "calor", "fred": "frío", "neu": "nieve", "boira": "niebla", "incendis": "riesgo de incendios",
+                  "costaners": "fenómenos costeros", "allaus": "aludes", "pols": "polvo", "altres": "otros fenómenos"}
+
+# --- Totes les alertes de perill, juntes (ADR 0093) -------------------------------
+# Cada lloc que diu les alertes (/avisos_actius, el resum del dia al bot i a
+# «Consultes», la portada, «Si surts» i «Perill») les ha de dir totes. Els
+# tipus són aquests, en aquest ordre; tests/test_perills.py comprova que cada
+# lloc en diu un de cada i que tot avís de perill de avisos_bot.py en té un.
+TIPUS_PERILL = ("pla", "meteocat", "aemet", "riera", "incendi", "alfa", "propi")
+
+
+def hores_dia(franges, dia, moment, idioma):
+    """[[12, 24]] → «de 12:00 a 00:00»; avui, si ja ha començat, «fins a les 00:00»."""
+    es = idioma == "es"
+    parts = []
+    for a, b in franges:
+        fi = f"{b % 24:02d}:00"
+        if dia == moment.date() and a <= moment.hour:
+            parts.append(f"hasta las {fi}" if es else f"fins a les {fi}")
+        else:
+            parts.append(f"de {a:02d}:00 a {fi}")
+    return (" y " if es else " i ").join(parts)
+
+
+def linies_perill_dia(dades, idioma, dia, moment):
+    """Totes les alertes de perill d'un dia, una línia cadascuna, per al resum
+    (Juanjo, 16-10-2026: «las alertas de peligro deben ir siempre juntas»).
+    Les que no tenen hora (els plans) surten avui i demà; les que diuen el que
+    passa ara (riera, incendis), només avui."""
+    es = idioma == "es"
+    avui = dia == moment.date()
+    res = []
+    for p in dades.get("plans") or []:
+        if es:
+            frase = (f"Protección Civil: plan {PLA_ES.get(p['nom'], p['nom'])} ({p['pla']}) en fase de "
+                     f"{FASE_ES.get(p['fase'], p['fase'])}.")
+        else:
+            de = "d'" if p["fase"][:1] in "aeiouàèéíòóú" else "de "
+            frase = f"Protecció Civil: pla {p['nom']} ({p['pla']}) en fase {de}{p['fase']}."
+        res.append(amb_icona(CERCLE_FASE.get(p["fase"]), html.escape(frase, quote=False)))
+    for f in (dades.get("smp") or {}).get("fenomens") or []:
+        franges = f["dies"].get(dia.isoformat())
+        if franges:
+            res.append(amb_icona(CERCLE.get(f["nivell"]),
+                                 html.escape(f"{f[idioma]} {hores_dia(franges, dia, moment, idioma)}.", quote=False)))
+    res += [html.escape(x, quote=False) for x in text_avisos_aemet(dades, idioma, dia, moment)]
+    if avui:
+        res += [amb_icona(CERCLE.get(r.get("nivell")), html.escape(r[idioma].rstrip(".") + ".", quote=False))
+                for r in dades.get("perill_riera") or []]
+        for _, linies in blocs_entorn({**(dades.get("entorn") or {}), "pla_alfa": None}, idioma):
+            res += [l for l in linies if not l.startswith("<a ")]
+    alfa = (dades.get("entorn") or {}).get("pla_alfa") or {}
+    n = alfa.get("avui" if avui else "dema") if dia in (moment.date(), moment.date() + dt.timedelta(days=1)) else None
+    if n is not None and n >= ALFA_NIVELL_MOSTRAR:
+        quan = ("hoy" if es else "avui") if avui else ("mañana" if es else "demà")
+        res.append(amb_icona(CERCLE["maxim"] if n >= 4 else CERCLE["alt"],
+                             html.escape(("Plan Alfa: " if es else "Pla Alfa: ")
+                                         + ALFA[idioma].format(n=n, quan=quan)[0].lower() + ALFA[idioma].format(n=n, quan=quan)[1:],
+                                         quote=False)))
+    riscos = [r for r in dades.get("riscos") or []
+              if (r.get("origen") != "previsio" and avui)
+              or (r.get("des_de") and dt.datetime.fromisoformat(r["des_de"]).date() <= dia
+                  <= dt.datetime.fromisoformat(r["fins"]).date())]
+    propis = linies_riscos(riscos, idioma, moment)
+    if propis:
+        nota = (" (lo calcula Temps a Montflorit: no es oficial)" if es else
+                " (ho calcula Temps a Montflorit: no és oficial)")
+        res += [x[:-1] + nota + "." if x.endswith(".") else x + nota for x in propis]
     return res
 
 
@@ -677,7 +754,7 @@ def resum(dades, idioma, moment, dema=False, avui=False):
         linies.append(text_temperatura(dia, idioma, "Temperatura", compara_temp(dades, dia), "avui"))
         linies.append(text_pluja(dia, idioma))
         roba = text_roba(dia, idioma)
-        linies += text_avisos_aemet(dades, idioma, dema, moment)
+        linies += linies_perill_dia(dades, idioma, dema, moment)
     else:
         fi_dia = ara_n.replace(hour=23, minute=59)
         tram = [f for f in hores if hora(f) < fi_dia]
@@ -698,7 +775,7 @@ def resum(dades, idioma, moment, dema=False, avui=False):
             if franges(nit):
                 linies.append(amb_icona(emoji_pluja(nit), ("Esta noche: " if idioma == "es" else "Aquesta nit: ")
                                         + text_franges(franges(nit), idioma) + "."))
-        linies += text_avisos_aemet(dades, idioma, moment.date(), moment)
+        linies += linies_perill_dia(dades, idioma, moment.date(), moment)
         linies.append(text_trens_resum(dades, idioma))
     # La ropa, al final y aparte (Juanjo, 08-10-2026: «muy desordenado»).
     text = "\n".join(x for x in linies if x)
@@ -1182,6 +1259,11 @@ def text_avisos_actius(dades, idioma, moment):
         # «Avís groc de l'AEMET per pluja…» → «Avís groc per pluja…»: l'AEMET ja és el títol.
         net = [x.replace(" de l'AEMET", "").replace(" de la AEMET", "") for x in aemet]
         blocs.append(("AEMET", [html.escape(x, quote=False) for x in net]))
+    # La riera, si hi ha avís obert (ADR 0093: faltava aquí).
+    riera = [amb_icona(CERCLE.get(r.get("nivell")), html.escape(r[idioma], quote=False))
+             for r in dades.get("perill_riera") or []]
+    if riera:
+        blocs.append(("Riera de Sant Cugat", riera))
     # Incendis a prop i Pla Alfa des del nivell 3 (ADR 0046).
     blocs += blocs_entorn(dades.get("entorn") or {}, idioma)
     # El temps excepcional que calcula la pàgina amb els llindars de l'AEMET

@@ -148,8 +148,9 @@ def calcula(carpeta):
     publica = os.path.join(carpeta, "montflorit.json")
     subprocess.run([PYTHON, "casa.py", "--json", casa, "--anterior", anterior], cwd=REPO, env=ENTORN,
                    check=True, timeout=900, stdout=subprocess.DEVNULL)
-    subprocess.run([PYTHON, "montflorit.py", "dades", casa, publica], cwd=REPO, env=ENTORN,
-                   check=True, timeout=120)
+    # La riera abierta, del último avisos.json publicado (ADR 0093).
+    subprocess.run([PYTHON, "montflorit.py", "dades", casa, publica, DADES.replace("montflorit.json", "avisos.json")],
+                   cwd=REPO, env=ENTORN, check=True, timeout=120)
     with open(publica, encoding="utf-8") as f:
         dades = json.load(f)
     if not dades.get("hores"):

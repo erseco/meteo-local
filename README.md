@@ -60,7 +60,7 @@ y al que se puede preguntar por los trenes (/trens) y el tráfico (/transit)
 (ADR 0053), y el «Canal Temps a Montflorit»
 ([@TempsMontflorit](https://t.me/TempsMontflorit)), informativo, con la
 riera, el peligro, los avisos oficiales nuevos de Meteocat y Protección Civil (los de
-AEMET, solo si no se puede leer Meteocat: ADR 0092) y la
+AEMET, para lo que Meteocat no avisa: ADR 0093) y la
 previsión de las 7 y la de mañana a las 21 (ADR 0055). La web tiene una página de ayuda
 con capturas, «Avisos a Telegram». El bot y el envío de las notificaciones
 viven en IONOS (ADR 0034 y 0048).

@@ -308,15 +308,27 @@ def persistencia(mm_ultima_hora, k):
     return None
 
 
-def avisos_del_tramo(ini, fin, avisos):
+def avisos_del_tramo(ini, fin, avisos, tots=True):
     """Avisos de AEMET que cubren el tramo. Los planes de Protección Civil no
-    tienen hora de fin: van en un aviso aparte, encima de la tabla."""
+    tienen hora de fin: van en un aviso aparte, encima de la tabla. tots=False:
+    sin los que cubre Meteocat (lo que se muestra, ADR 0093)."""
     res = {}
     for a in avisos or []:
         a_ini, a_fin = (dt.datetime.fromisoformat(a[k]) for k in ("inicio", "fin"))
-        if a["zona"] == C.ZONA_AVISOS and a_ini < fin and a_fin > ini:
+        if a["zona"] == C.ZONA_AVISOS and a_ini < fin and a_fin > ini and (tots or not a.get("cobert")):
             res.setdefault(a["nivel"], set()).add(a["tipo"])
     return [{"nivell": n, "tipus": sorted(t)} for n, t in res.items()]
+
+
+# Los avisos de Meteocat de esta pasada, para la tabla (casa.py los lee antes
+# de calcular las horas).
+SMP_ACTUAL = None
+
+
+def avisos_mostrats(ini, fin, avisos):
+    """Lo que la tabla pinta en el tramo: los de Meteocat y los de AEMET que
+    Meteocat no cubre (ADR 0093)."""
+    return SMP.per_hora(ini, fin, SMP_ACTUAL) + avisos_del_tramo(ini, fin, avisos, tots=False)
 
 
 def senyals_avis(ini, fin, avisos, planes):
@@ -436,7 +448,7 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
             "plou_ara": plou_ara, "segons_estacio": segun_estacion,
             "segons_radar": segun_radar and not plou_ara and not segun_estacion,
             "radar": radar,
-            "avisos": avisos_del_tramo(ini, fin, avisos),
+            "avisos": avisos_mostrats(ini, fin, avisos),
             "nuvols": nuvols_ara if n == 0 and nuvols_ara is not None else NV.mescla(NV.valors_hora(h, i)),
             "codi": valor("weather_code", i),
             "vent": valor("wind_speed_10m", i), "ratxa": valor("wind_gusts_10m", i),
@@ -496,7 +508,7 @@ def previsio_anterior(origen, avisos, casa=None, veines=None, nuvols_ara=None):
     llueve_ahora = llueve_ahora_en(casa, veines)
     for n, f in enumerate(hores):
         fin = dt.datetime.fromisoformat(f["fins"]).astimezone()
-        f["avisos"] = avisos_del_tramo(fin - dt.timedelta(hours=1), fin, avisos)
+        f["avisos"] = avisos_mostrats(fin - dt.timedelta(hours=1), fin, avisos)
         f["plou_ara"] = n == 0 and llueve_ahora
         if f["plou_ara"]:
             f["probabilitat"], f["segons_estacio"] = 1.0, True
@@ -626,20 +638,6 @@ def recoger(anterior=None):
         planes = P.planes_proteccion_civil()
     except Exception as ex:
         salida["errors"].append(f"plans: {ex}")
-    # Los planes sin motivo meteorológico a la vista (la recuperación tras un
-    # temporal) no se muestran ni ponen la página en modo aviso; van aparte,
-    # para que los avisos del canal no anuncien un final que no ha habido
-    # (ADR 0062).
-    salida["plans_ocults"] = None
-    if planes is not None:
-        salida["plans_ocults"] = [p for p in planes if not P.pla_per_temps(p, avisos, P.AHORA)]
-        planes = [p for p in planes if P.pla_per_temps(p, avisos, P.AHORA)]
-    salida["avisos"], salida["plans"] = avisos, planes
-    # Los umbrales de lluvia de «Si surts», los aprendidos (ADR 0069).
-    try:
-        salida["sortir_llindars"] = A.llindars_sortir()
-    except Exception as ex:
-        salida["errors"].append(f"llindars: {ex}")
     # Si Meteocat tiene aviso de peligro para la comarca: junto a los planes,
     # que no dicen qué zona abarcan (ADR 0067), y, desde el 11-10-2026, en
     # cada pasada, para avisar como los de AEMET (ADR 0071). Si falla, no se
@@ -649,6 +647,24 @@ def recoger(anterior=None):
         salida["smp"] = SMP.llegeix(P.get, P.AHORA)
     except Exception as ex:
         salida["errors"].append(f"smp: {ex}")
+    # Per fenomen, mana Meteocat; l'AEMET, per al que no cobreix (ADR 0093).
+    SMP.marca_coberts(avisos, salida["smp"])
+    global SMP_ACTUAL
+    SMP_ACTUAL = salida["smp"]
+    # Los planes sin motivo meteorológico a la vista (la recuperación tras un
+    # temporal) no se muestran ni ponen la página en modo aviso; van aparte,
+    # para que los avisos del canal no anuncien un final que no ha habido
+    # (ADR 0062).
+    salida["plans_ocults"] = None
+    if planes is not None:
+        salida["plans_ocults"] = [p for p in planes if not P.pla_per_temps(p, avisos, P.AHORA, salida["smp"])]
+        planes = [p for p in planes if P.pla_per_temps(p, avisos, P.AHORA, salida["smp"])]
+    salida["avisos"], salida["plans"] = avisos, planes
+    # Los umbrales de lluvia de «Si surts», los aprendidos (ADR 0069).
+    try:
+        salida["sortir_llindars"] = A.llindars_sortir()
+    except Exception as ex:
+        salida["errors"].append(f"llindars: {ex}")
     radar = None
     try:
         radar = P.radar()

@@ -343,8 +343,20 @@ def descripcion_aviso(url):
     return textos.get("es-ES") or next(iter(textos.values()), None)
 
 
+# Els tipus d'avís de Meteoalarm («Moderate wind warning»): el primer que
+# encaixa. Un de desconegut surt igualment, com «altres».
+TIPUS_METEOALARM = (("thunderstorm", "tempestes"), ("flood", "inundacions"), ("rain", "pluja"), ("wind", "vent"),
+                    ("high-temperature", "calor"), ("low-temperature", "fred"), ("snow", "neu"), ("fog", "boira"),
+                    ("forest-fire", "incendis"), ("coastal", "costaners"), ("avalanche", "allaus"), ("dust", "pols"))
+
+
+def tipus_aemet(evento):
+    e = evento.lower()
+    return next((t for clau, t in TIPUS_METEOALARM if clau in e), "altres")
+
+
 def avisos():
-    """Avisos de lluvia y tormenta de AEMET, del feed de Meteoalarm."""
+    """Avisos de AEMET, del feed de Meteoalarm: todos los tipos desde la 3.88.0."""
     s = get("https://feeds.meteoalarm.org/feeds/meteoalarm-legacy-atom-spain")
     res = []
     for ent in re.findall(r"<entry>.*?</entry>", s, re.S):
@@ -354,9 +366,8 @@ def avisos():
         zona, evento = campo("areaDesc"), campo("event")
         if zona not in (C.ZONA_AVISOS, C.ZONA_CERCANA):
             continue
-        tipo = "tempestes" if "thunderstorm" in evento else "pluja" if "rain" in evento else None
-        if not tipo:
-            continue
+        # Tots els tipus, no només pluja i tempestes (fins a la 3.87.0; ADR 0093).
+        tipo = tipus_aemet(evento)
         nivel = {"Moderate": "groc", "Severe": "taronja", "Extreme": "vermell"}.get(
             evento.split()[0], evento)
         aviso = {"zona": zona, "tipo": tipo, "nivel": nivel,
@@ -429,8 +440,9 @@ def planes_proteccion_civil():
 # 10-10-2026: «el plan no está abierto por motivos meteorológicos sino de
 # recuperación… confunde mucho»; ADR 0062). Se muestra si está en
 # emergencia, si su último comunicado tiene menos de PLA_COMUNICAT_H horas o
-# si hay aviso de AEMET por lluvia o tormentas en la zona, vigente o para las
-# próximas PLA_AVIS_H horas. Si no se han podido leer los avisos, se muestra.
+# si hay aviso de AEMET o de Meteocat de su fenómeno en la zona (desde la 3.88.0;
+# antes, solo AEMET por lluvia o tormentas), vigente o para las próximas
+# PLA_AVIS_H horas. Si no se han podido leer los avisos, se muestra.
 PLA_COMUNICAT_H = 24
 PLA_AVIS_H = 24
 
@@ -443,19 +455,47 @@ def data_fase(text):
         return None
 
 
-def pla_per_temps(p, avisos_, ahora=None):
+# El fenómeno de cada plan, por su nombre (ADR 0093): un plan de viento se
+# mantiene con un aviso de viento, no con uno de lluvia. Un plan sin fenómeno
+# meteorológico (contaminación) se muestra siempre.
+MOTIU_PLA = (("inundacions", {"pluja", "tempestes", "inundacions"}), ("vent", {"vent"}), ("neu", {"neu", "fred"}),
+             ("calor", {"calor"}), ("fred", {"fred", "neu"}))
+
+
+CODI_PLA = {"INUNCAT": "inundacions", "VENTCAT": "vent", "NEUCAT": "neu"}
+
+
+def motiu_pla(p):
+    nom = f"{(p.get('nom') or '').lower()} {CODI_PLA.get(p.get('pla'), '')}"
+    return next((m for clau, m in MOTIU_PLA if clau in nom), None)
+
+
+def pla_per_temps(p, avisos_, ahora=None, smp=None):
+    """Si el plan tiene motivo meteorológico a la vista: un aviso de AEMET o de
+    Meteocat (smp, ADR 0093) de su fenómeno en la zona, vigente o para las
+    próximas PLA_AVIS_H horas."""
+    import smp as SMP
     ahora = ahora or AHORA
     if p.get("fase") == "emergència":
         return True
     t = data_fase(p.get("des_de"))
     if t is None or ahora - t < dt.timedelta(hours=PLA_COMUNICAT_H):
         return True
-    if avisos_ is None:
+    motiu = motiu_pla(p)
+    if motiu is None or (avisos_ is None and smp is None):
         return True
     limit = ahora + dt.timedelta(hours=PLA_AVIS_H)
-    return any(a.get("zona", C.ZONA_AVISOS) == C.ZONA_AVISOS and a.get("tipo") in ("pluja", "tempestes")
-               and dt.datetime.fromisoformat(a["inicio"]) <= limit and dt.datetime.fromisoformat(a["fin"]) > ahora
-               for a in avisos_)
+    if any(a.get("zona", C.ZONA_AVISOS) == C.ZONA_AVISOS and a.get("tipo") in motiu
+           and dt.datetime.fromisoformat(a["inicio"]) <= limit and dt.datetime.fromisoformat(a["fin"]) > ahora
+           for a in avisos_ or []):
+        return True
+    hores = set()
+    h = ahora.astimezone().replace(minute=0, second=0, microsecond=0)
+    while h < limit:
+        hores.add(f"{h.date().isoformat()}:{h.hour}")
+        h += dt.timedelta(hours=1)
+    return any(SMP.fenomen(m["meteor"]) in motiu and hores & SMP.hores_avis(m)
+               for m in (smp or {}).get("avisos") or [])
 
 
 # --- Horario y modo aviso -------------------------------------------------------

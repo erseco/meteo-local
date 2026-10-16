@@ -29,6 +29,11 @@ Al cambiar algo:
   (`prevision.hora_solar`, tiempo universal); lo que depende de las personas
   (lo que se muestra, las horas de salir, la ropa, los horarios), en hora
   local. Lo que se guarda, en hora local.
+- **Las alertas de peligro van todas juntas en todas partes** (ADR 0093): la
+  portada, «Si surts», «Perill», /avisos_actius y el resumen del día (bot y
+  «Consultes»). Un tipo de alerta nuevo se añade a `bot.TIPUS_PERILL` y a
+  `tests/test_perills.py`, que falla si algún sitio se lo deja. Por fenómeno
+  manda Meteocat; AEMET, para lo que Meteocat no cubre (`smp.marca_coberts`).
 - Si cambia un umbral, actualiza `config.py`, el texto «Com es decideix» de
   `web/sortir.html` (o «D'on surt» de `web/casa.html`), el README, las pruebas
   y el ADR.

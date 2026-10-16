@@ -690,10 +690,42 @@ function enllacAvisos(davant) {
   return p;
 }
 
-function blocAvisos(dades, extres = [], ara = new Date()) {
+// El temps extrem que calcula la pàgina: situacions de perill segons el que mesuren les estacions i el que preveu
+// la pàgina (riscos.py, ADR 0018), amb el color del nivell de l'AEMET.
+function blocRiscos(riscos) {
+  if (!riscos || !riscos.length) return null;
+  const pitjor = riscos[0].nivell;
+  const caixa = element('section', `avis risc-previst ${pitjor}`);
+  caixa.setAttribute('aria-label', T('Risc previst'));
+  const titol = element('p', 'titol-risc');
+  titol.append(icona('i-triangle-alert'), T`Risc ${TD(pitjor)}`);
+  caixa.append(titol);
+  const llista = element('ul');
+  for (const r of riscos) {
+    // El text ve fet en català a les dades; en un altre idioma es torna a fer.
+    const li = element('li', null, IDIOMA.risc ? IDIOMA.risc(r) : r.text);
+    const llindar = coma(r.llindar, 0).replace('-', '\u2212');
+    li.append(' ', element('span', 'detall', T`(llindar ${TD(r.nivell)} de l\u2019AEMET: ${llindar} ${r.unitat})`));
+    llista.append(li);
+  }
+  caixa.append(llista);
+  return caixa;
+}
+
+// Totes les alertes de perill, juntes i en el mateix ordre a cada pàgina
+// (Juanjo, 16-10-2026: «las alertas de peligro deben ir siempre juntas»; ADR
+// 0093): Protecció Civil (amb Meteocat al costat), Meteocat, l'AEMET del que
+// Meteocat no cobreix, la riera, els incendis i el Pla Alfa i el temps extrem
+// d'aquesta web. tests/test_perills.py comprova que no en falta cap.
+function avisosAemet(dades) {
+  return (dades.avisos || []).filter((a) => !a.cobert);
+}
+
+function blocAvisos(dades, ara = new Date()) {
+  const aemet = avisosAemet(dades);
   const perills = [...blocPlans(dades.plans, dades.smp), ...blocSmp(dades.smp, dades.plans),
-    ...blocRiera(HISTORIAL_PERILL, ara), ...blocEntorn(dades.entorn), ...extres.filter(Boolean),
-    ...(dades.avisos && dades.avisos.length ? blocAvisosAemet(dades.avisos, ara) : [])];
+    ...(aemet.length ? blocAvisosAemet(aemet, ara) : []),
+    ...blocRiera(HISTORIAL_PERILL, ara), ...blocEntorn(dades.entorn), blocRiscos(dades.riscos)].filter(Boolean);
   const talls = blocLlum(dades.llum, ara);
   if (!perills.length && !talls.length) return null;
   const sec = element('section', 'avisos-actius');
@@ -705,9 +737,11 @@ function blocAvisos(dades, extres = [], ara = new Date()) {
 }
 
 // Les línies del resum del dia (a «El temps» i a «Consultes») amb un detall
-// al darrere (ADR 0075): els trens, a «Consultes › Trens»; els avisos de
-// l'AEMET, a «Perill».
-const DETALL_LINIA = [[/^(Trens|Trenes) /, 'consultes.html#trens'], [/^(Avís|Aviso) .*AEMET/, 'perill.html']];
+// al darrere (ADR 0075): els trens, a «Consultes › Trens»; totes les alertes
+// de perill (ADR 0093), a «Perill».
+const DETALL_LINIA = [[/^(Trens|Trenes) /, 'consultes.html#trens'],
+  [/^(\S+ )?(Avís|Aviso|Protecció Civil|Protección Civil|Perill de|Peligro de|Incendi|Incendio|Pla Alfa|Plan Alfa)[ :]|no (é|e)s oficial\)/,
+    'perill.html']];
 
 function detallLinia(text) {
   return (DETALL_LINIA.find(([re]) => re.test(text.trim())) || [])[1] || null;

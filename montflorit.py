@@ -24,6 +24,7 @@ Uso:
   python3 montflorit.py dades CASA SALIDA  los datos públicos a partir de casa.json
 """
 import datetime as dt
+import html
 import json
 import os
 import re
@@ -490,10 +491,33 @@ def construeix(desti, web=None):
         raise ValueError(f"sw.js: falten peces: {falten}")
 
 
-def dades_publiques(casa):
+# La riera, en la escala de los círculos del bot (avisos_bot.CERCLE).
+NIVELL_RIERA = {"perill": "maxim", "atencio": "alt"}
+
+
+def perill_riera(avisos):
+    """Los avisos de la riera abiertos en el historial de «Perill» (avisos.json),
+    en una línea: los datos de la riera son privados, pero su aviso no, y el
+    resumen del día y /avisos_actius tienen que decirlo (ADR 0093)."""
+    res = []
+    for e in (avisos or {}).get("historial") or []:
+        if not e["clau"].startswith("riera:") or e.get("fi") or e.get("nivell") not in NIVELL_RIERA:
+            continue
+        linia = {}
+        for idioma in ("ca", "es"):
+            primera = re.sub(r"<[^>]+>", "", (e.get(idioma) or e.get("ca") or "").split("\n")[0])
+            linia[idioma] = re.sub(r"^[^\w«(]+", "", html.unescape(primera)).strip()
+        res.append({"nivell": NIVELL_RIERA[e["nivell"]], **linia})
+    return res
+
+
+def dades_publiques(casa, avisos=None):
     """Los datos de casa sin lo que es del trayecto, con los textos de las
-    consultas del bot (consultes)."""
+    consultas del bot (consultes). avisos: el avisos.json de esta pasada, para
+    la riera (perill_riera)."""
     publiques = {k: v for k, v in casa.items() if k not in PRIVADES}
+    if avisos is not None:
+        publiques["perill_riera"] = perill_riera(avisos)
     # Els talls de llum porten el seu punt (ADR 0077): sense la distància a casa,
     # que amb dos o tres punts diria on és. Només serveix per ordenar-los.
     if isinstance(publiques.get("llum"), dict):
@@ -547,9 +571,16 @@ def consultes(dades):
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "web":
         construeix(sys.argv[2])
-    elif len(sys.argv) == 4 and sys.argv[1] == "dades":
+    elif len(sys.argv) in (4, 5) and sys.argv[1] == "dades":
+        avisos = None
+        if len(sys.argv) == 5:
+            try:
+                with open(sys.argv[4], encoding="utf-8") as f:
+                    avisos = json.load(f)
+            except (OSError, ValueError):
+                pass
         with open(sys.argv[2], encoding="utf-8") as f:
-            publiques = dades_publiques(json.load(f))
+            publiques = dades_publiques(json.load(f), avisos)
         with open(sys.argv[3], "w", encoding="utf-8") as f:
             json.dump(publiques, f, ensure_ascii=False, separators=(",", ":"))
     else:

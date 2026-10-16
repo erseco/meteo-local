@@ -42,14 +42,15 @@ fi
 python3 casa.py --json "$dades/casa.json" --anterior "$CASA_ANTERIOR" >/dev/null
 # Una copia para los avisos por Telegram (riscos.py, pluja_arriba.py, riera.py).
 [ -z "$ESTAT_DIR" ] || cp "$dades/casa.json" "$ESTAT_DIR/casa.json"
-# Los datos de la web pública: los de casa sin lo privado.
-python3 montflorit.py dades "$dades/casa.json" "$publica/montflorit.json"
 # Los avisos para el bot y el canal de Telegram, que los reparte desde IONOS
-# (ADR 0034). Llevan estado: solo en el NAS.
+# (ADR 0034). Llevan estado: solo en el NAS. Van antes que los datos públicos:
+# la riera abierta en avisos.json sale en el resumen del día (ADR 0093).
 if [ -n "$ESTAT_DIR" ]; then
   python3 avisos_bot.py "$dades/casa.json" "$dades/avisos.json" https://bilateria.org/app/meteo-local/avisos.json >/dev/null \
     || echo "$(date '+%F %T')  han fallat els avisos del bot" >&2
 fi
+# Los datos de la web pública: los de casa sin lo privado.
+python3 montflorit.py dades "$dades/casa.json" "$publica/montflorit.json" "$dades/avisos.json"
 
 # Los datos, a IONOS: una conexión con una clave que solo puede ejecutar
 # reserva/rep-dades.sh (la orden la fija IONOS en authorized_keys), que acepta

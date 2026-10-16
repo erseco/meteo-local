@@ -22,8 +22,8 @@ Tipos:
 - perill, también, desde el 09-10-2026: los avisos oficiales nuevos (ADR 0055).
   Desde la 3.87.0 (ADR 0092), los de Meteocat para el Vallès Occidental, por
   fenómeno: el primero, si sube de nivel, un fenómeno nuevo, horas nuevas y el
-  final; los de AEMET para el Prelitoral de Barcelona, solo si no se ha podido
-  leer Meteocat. Un plan de Protección Civil al pasar a alerta o a emergencia
+  final; desde la 3.88.0 (ADR 0093), los de AEMET para el Prelitoral de
+  Barcelona, de cualquier tipo, para lo que Meteocat no cubre. Un plan de Protección Civil al pasar a alerta o a emergencia
   y cuando sale de ellas. La prealerta no avisa (ADR 0051).
 
 - llum, desde el 11-10-2026: un corte de luz de e-distribución en el barrio
@@ -348,7 +348,13 @@ def text_llum(t, ahora, acabat=False):
 FASES_PLA = ("prealerta", "alerta", "emergència")
 DIES = {"ca": ("dilluns", "dimarts", "dimecres", "dijous", "divendres", "dissabte", "diumenge"),
         "es": ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")}
-TIPUS_AEMET = {"ca": {"pluja": "pluja", "tempestes": "tempestes"}, "es": {"pluja": "lluvia", "tempestes": "tormentas"}}
+# Els tipus de l'AEMET (prevision.TIPUS_METEOALARM), en cada idioma.
+TIPUS_AEMET = {"ca": {"pluja": "pluja", "tempestes": "tempestes", "inundacions": "inundacions", "vent": "vent",
+                      "calor": "calor", "fred": "fred", "neu": "neu", "boira": "boira", "incendis": "risc d'incendis",
+                      "costaners": "fenòmens costaners", "allaus": "allaus", "pols": "pols", "altres": "altres fenòmens"},
+               "es": {"pluja": "lluvia", "tempestes": "tormentas", "inundacions": "inundaciones", "vent": "viento",
+                      "calor": "calor", "fred": "frío", "neu": "nieve", "boira": "niebla", "incendis": "riesgo de incendios",
+                      "costaners": "fenómenos costeros", "allaus": "aludes", "pols": "polvo", "altres": "otros fenómenos"}}
 NOM_PLA_ES = {"d'inundacions": "de inundaciones", "de vent": "de viento", "de neu": "de nieve",
               "per onada de calor": "por ola de calor", "per onada de fred": "por ola de frío",
               "per contaminació": "por contaminación", "per vent": "por viento"}
@@ -420,31 +426,22 @@ def text_aemet(a, ahora):
 # (Juanjo, 16-10-2026: «lo que no quiero son avisos repetidos que molesten a
 # la gente» y «en situación de peligro no podemos dar un aviso al día»).
 
-FENOMENS = (("violent", "temps_violent"), ("pluja", "pluja"), ("neu", "neu"), ("vent", "vent"),
-            ("calor", "calor"), ("fred", "fred"), ("mar", "mar"))
-NOM_FENOMEN = {"ca": {"pluja": "pluja", "neu": "neu", "vent": "vent", "calor": "calor", "fred": "fred",
-                      "mar": "l'estat de la mar", "temps_violent": "temps violent"},
-               "es": {"pluja": "lluvia", "neu": "nieve", "vent": "viento", "calor": "calor", "fred": "frío",
-                      "mar": "el estado del mar", "temps_violent": "tiempo violento"}}
 RANG_SMP = {"mig": 1, "alt": 2, "maxim": 3}
 
 
 def fenomen(a):
     """El fenómeno de un aviso de Meteocat; los de observación van aparte: dicen
     que ya está pasando, y eso es una novedad aunque el nivel no suba."""
-    m = a["meteor"].lower()
-    f = next((f for clau, f in FENOMENS if clau in m), m)
+    f = SMP.fenomen(a["meteor"])
     return f if a.get("tipus", "previsio") == "previsio" else f"obs:{f}"
 
 
 def nom_fenomen(f, idioma):
     f = f.removeprefix("obs:")
-    return NOM_FENOMEN[idioma].get(f, f)
+    return SMP.NOM_FENOMEN[idioma].get(f, f)
 
 
-def hores_smp(a):
-    """Las horas que cubre un aviso: {"AAAA-MM-DD:H", …}."""
-    return {f"{d}:{h}" for d, franges in a["dies"].items() for i, fi in franges for h in range(i, fi)}
+hores_smp = SMP.hores_avis
 
 
 def fins_smp(avisos):
@@ -671,15 +668,21 @@ def decideix(estat, salida, ahora):
     if salida.get("avisos") is not None:
         aemet = {f"{a['tipo']}:{a['inicio']}": a for a in salida["avisos"]
                  if a.get("zona", C.ZONA_AVISOS) == C.ZONA_AVISOS and a["nivel"] in RS.NIVELLS}
-        # De reserva (ADR 0092): solo avisan si no se ha podido leer Meteocat.
-        # Se apuntan siempre, para no repetir al fallar Meteocat lo que ya había.
-        if of is not None and salida.get("smp") is None:
+        # Avisan los que Meteocat no cubre (ADR 0093): un fenómeno o unas horas
+        # sin aviso de Meteocat, o todos si no se ha podido leer. Uno cubierto
+        # no se apunta: si deja de estarlo, se avisa.
+        if of is not None:
             for k, a in aemet.items():
+                if a.get("cobert"):
+                    continue
                 abans = of["aemet"].get(k)
                 if abans is None or RS.NIVELLS.index(a["nivel"]) > RS.NIVELLS.index(abans):
                     afegeix("perill", f"aemet:{k}:{a['nivel']}", text_aemet(a, ahora), a["nivel"],
                             episodi=f"aemet:{k}", enllac=AEMET, fins=a.get("fin"))
-        nou_of["aemet"] = {k: a["nivel"] for k, a in aemet.items()}
+        anterior_aemet = (of or {}).get("aemet") or {}
+        nou_of["aemet"] = {k: (anterior_aemet.get(k) if a.get("cobert") else a["nivel"]) for k, a in aemet.items()}
+        nou_of["aemet"] = {k: v for k, v in nou_of["aemet"].items() if v}
+        estat["aemet_coberts"] = [f"aemet:{k}" for k, a in aemet.items() if a.get("cobert")]
     # Los avisos de peligro de Meteocat para la comarca (ADR 0092). La primera
     # vez, solo se apuntan; un estado de antes de la 3.87.0 ({clave: grado},
     # sin «fenomens») se toma como vacío: lo vigente se avisa una vez.
@@ -801,6 +804,13 @@ def historial(estat, nous, ahora, anterior=None):
         else:
             h.append({"clau": ep, "tipus": a["tipus"], "inici": a["hora"], "nivell": a.get("nivell"),
                       "ca": a["ca"], "es": a["es"], **{k: a[k] for k in ("enllac", "fins") if a.get(k)}})
+    # Un aviso de AEMET que ahora cubre Meteocat ya no se muestra en ningún
+    # sitio (ADR 0093): su ficha se cierra diciéndolo.
+    for e in h:
+        if e["clau"] in (estat.get("aemet_coberts") or []) and not e.get("fi"):
+            e.update(fi=ahora.isoformat(timespec="minutes"),
+                     fi_ca="Meteocat en té avís per al Vallès Occidental: ara es mostra el seu.",
+                     fi_es="Meteocat tiene aviso para el Vallès Occidental: ahora se muestra el suyo.")
     # Un plan que ya no se muestra (desactivado sin aviso, u oculto por no
     # tener motivo meteorológico: ADR 0062) ya no está activo en la página.
     plans = (estat.get("oficials") or {}).get("plans")

@@ -215,20 +215,42 @@ class Smp(unittest.TestCase):
         self.assertEqual(len(AB.decideix(estat, {"smp": s}, AHORA)), 1)
         self.assertEqual(AB.decideix(estat, {"smp": s}, AHORA + dt.timedelta(minutes=6)), [])
 
-    def test_l_aemet_nomes_de_reserva(self):
-        # ADR 0092: amb Meteocat llegit, l'AEMET no avisa (però s'apunta); si
-        # Meteocat falla, avisa el que no s'havia avisat.
-        aemet = {"zona": "Prelitoral de Barcelona", "tipo": "pluja", "nivel": "groc",
+    def test_l_aemet_per_al_que_meteocat_no_cobreix(self):
+        # ADR 0093: per fenomen i hores, mana Meteocat; l'AEMET avisa del que
+        # Meteocat no cobreix (Juanjo, 16-10-2026: «si meteocat no tiene aviso
+        # y aemet sí, debe salir aemet»). Les tempestes, sempre de l'AEMET.
+        pluja = {"zona": "Prelitoral de Barcelona", "tipo": "pluja", "nivel": "groc",
                  "inicio": "2026-10-17T12:00:00+02:00", "fin": "2026-10-17T23:59:59+02:00"}
-        buit = {"avisos": [], "linies": []}
+        tempestes = dict(pluja, tipo="tempestes")
+        mc = {"meteor": "Intensitat de pluja en 30 minuts", "tipus": "previsio", "llindar": None, "perill": 3,
+              "emissio": "2026-10-16T16:20Z", "dies": {"2026-10-17": [(12, 24)]}}
+        amb = {"avisos": [mc], "linies": []}
+        self.assertTrue(smp.cobreix([mc], pluja))
+        self.assertFalse(smp.cobreix([mc], tempestes))
+        self.assertFalse(smp.cobreix([mc], dict(pluja, inicio="2026-10-18T12:00:00+02:00",
+                                                 fin="2026-10-18T23:59:59+02:00")))      # un altre dia
+        self.assertFalse(smp.cobreix([dict(mc, meteor="Ratxa màxima de vent")], pluja))   # un altre fenomen
         estat = {}
-        perill = lambda sal, m: [a for a in AB.decideix(estat, sal, AHORA + dt.timedelta(minutes=m)) if a["tipus"] == "perill"]
-        self.assertEqual(perill({"avisos": [], "smp": buit}, 0), [])
-        self.assertEqual(perill({"avisos": [aemet], "smp": buit}, 6), [])
-        self.assertEqual(perill({"avisos": [aemet], "smp": None}, 12), [])                      # ja apuntat
-        nous = perill({"avisos": [dict(aemet, nivel="taronja")], "smp": None}, 18)
-        self.assertEqual(nous[0]["ca"].splitlines()[0], "🟠 <b>Avís taronja de l'AEMET per pluja al Vallès</b>")
-        self.assertEqual(perill({"avisos": [dict(aemet, nivel="vermell")], "smp": buit}, 24), [])
+
+        def perill(sal, m):
+            sal = {**sal, "avisos": [dict(a) for a in sal["avisos"]]}
+            smp.marca_coberts(sal["avisos"], sal["smp"])
+            return [a for a in AB.decideix(estat, sal, AHORA + dt.timedelta(minutes=m)) if a["tipus"] == "perill"]
+        self.assertEqual(perill({"avisos": [], "smp": amb}, 0), [])                     # s'apunta
+        nous = perill({"avisos": [pluja, tempestes], "smp": amb}, 6)
+        self.assertEqual([a["id"].split(":")[2] for a in nous], ["tempestes"])          # la pluja la cobreix Meteocat
+        self.assertEqual(estat["aemet_coberts"], ["aemet:pluja:2026-10-17T12:00:00+02:00"])
+        # Si Meteocat la deixa de cobrir (o no es pot llegir), surt la de l'AEMET.
+        nous = perill({"avisos": [pluja, tempestes], "smp": None}, 12)
+        self.assertEqual([a["id"].split(":")[2] for a in nous], ["pluja"])
+        self.assertEqual(perill({"avisos": [pluja, tempestes], "smp": None}, 18), [])
+
+    def test_la_fitxa_de_l_aemet_es_tanca_si_la_cobreix_meteocat(self):
+        estat = {"aemet_coberts": ["aemet:pluja:x"]}
+        h = AB.historial(estat, [{"id": "perill:aemet:pluja:x:groc", "tipus": "perill", "nivell": "groc",
+                                  "hora": AHORA.isoformat(timespec="minutes"), "ca": "a", "es": "a",
+                                  "episodi": "aemet:pluja:x"}], AHORA)
+        self.assertEqual(h[0]["fi_ca"], "Meteocat en té avís per al Vallès Occidental: ara es mostra el seu.")
 
     def test_avis_a_juanjo_en_el_moment(self):
         # Si la passada no ha pogut llegir Meteocat, una vegada; i quan torna.

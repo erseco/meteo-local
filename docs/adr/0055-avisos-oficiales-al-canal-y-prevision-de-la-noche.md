@@ -2,7 +2,7 @@
 
 Fecha: 2026-10-09 · Estado: aceptado
 
-**16-10-2026 (ADR 0092):** los avisos de AEMET ya no notifican si se ha podido leer Meteocat, que avisa por fenómeno.
+**16-10-2026 (ADR 0092 y 0093):** Meteocat avisa por fenómeno; AEMET, de cualquier tipo, para lo que Meteocat no cubre.
 
 ## Contexto
 
