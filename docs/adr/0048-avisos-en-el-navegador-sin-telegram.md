@@ -27,7 +27,9 @@ hace, el envoltorio irá en `android/` de este repositorio.
   y un interruptor (o la hora, en la previsión de la mañana) a la derecha; dos
   grupos, «Què vols rebre» y «Previsió»; lo que estaba entre paréntesis, como
   una etiqueta («en proves») o una segunda línea («15 min abans»), y los
-  botones debajo, tras una línea. «Activa els avisos» pide permiso al navegador y se
+  botones debajo, tras una línea. Desde la 3.93.0 la previsión de la mañana
+  lleva también interruptor: apagado es «Cap», que sale de la lista; al
+  encenderlo aparece la hora (6, 7 u 8 h; de entrada, las 7 h, como el canal). «Activa els avisos» pide permiso al navegador y se
   suscribe; los cambios se guardan solos, de uno en uno y con lo último
   marcado; «Envia'm una prova» y «Desactiva», que borra la suscripción.
 - **Que no se confunda con Telegram** (Juanjo, 08-10-2026): el enlace de

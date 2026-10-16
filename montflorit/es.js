@@ -334,7 +334,7 @@ var IDIOMA = {
     "Demà": "Mañana",
     "Trens": "Trenes",
     "Trànsit": "Tráfico",
-    "Cap": "Ninguna",
+    "Hora de la previsió del dia": "Hora de la previsión del día",
     "Del dia, al matí": "Del día, por la mañana",
     "De demà, a les 21 h": "De mañana, a las 21 h",
     "Sol": "Sol",

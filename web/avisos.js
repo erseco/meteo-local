@@ -16,7 +16,9 @@ const TIPUS_PUSH = [
 // Per començar, com al bot: la riera i el perill (AVISOS_PER_DEFECTE, a comu.js).
 const PER_DEFECTE_PUSH = AVISOS_PER_DEFECTE;
 // Com al bot (ADR 0055): una hora al matí, o cap, i, a part, la de demà a les 21 h.
-const HORES_PUSH = [['', T('Cap')], ['6', T('6 h')], ['7', T('7 h')], ['8', T('8 h')]];
+// «Cap» és l'interruptor apagat; en encendre'l, les 7 h, com al canal.
+const HORES_PUSH = [['6', T('6 h')], ['7', T('7 h')], ['8', T('8 h')]];
+const HORA_PER_DEFECTE_PUSH = '7';
 const IDIOMA_PUSH = document.documentElement.lang === 'es' ? 'es' : 'ca';
 
 let registrePush = null;
@@ -35,7 +37,7 @@ function triat() {
   const form = $('push');
   return {
     avisos: [...form.querySelectorAll('input[name="tipus"]:checked')].map((c) => c.value),
-    resum: form.elements.resum.value,
+    resum: form.elements.mati.checked ? form.elements.resum.value : '',
     nit: form.elements.nit.checked,
   };
 }
@@ -115,13 +117,17 @@ function boto(text, classe, accio) {
 
 // Una fila de la llista: icona i nom a l'esquerra, el control a la dreta,
 // com als ajustos del mòbil. Tota la fila es pot tocar.
-function fila(icon, nom, control, etiqueta, detall) {
+function fila(icon, nom, control, etiqueta, detall, costat) {
   const f = element('label', 'push-fila');
   const text = element('span', 'push-nom');
   text.append(element('span', null, nom));
   if (etiqueta) text.append(' ', element('span', 'push-etiqueta', etiqueta));
   if (detall) text.append(element('small', 'push-detall', detall));
-  f.append(icona(icon), text, control);
+  f.append(icona(icon), text);
+  // El control que s'activa en tocar la fila ha d'anar primer (és el que
+  // l'etiqueta encén); el que va al costat, a l'esquerra amb «order».
+  f.append(control);
+  if (costat) f.append(costat);
   return f;
 }
 
@@ -151,8 +157,14 @@ function pinta(opcions) {
     o.value = valor;
     select.append(o);
   }
-  select.value = opcions.resum || '';
-  previsio.append(fila('i-sun', T('Del dia, al matí'), select),
+  select.value = opcions.resum || HORA_PER_DEFECTE_PUSH;
+  select.setAttribute('aria-label', T('Hora de la previsió del dia'));
+  // Primer s'encén; l'hora només surt quan està encès (Juanjo, 16-10-2026).
+  const mati = interruptor('mati', null, Boolean(opcions.resum));
+  select.hidden = !mati.checked;
+  mati.addEventListener('change', () => { select.hidden = !mati.checked; });
+  const filaMati = fila('i-sun', T('Del dia, al matí'), mati, null, null, select);
+  previsio.append(filaMati,
     fila('i-moon', T('De demà, a les 21 h'), interruptor('nit', null, Boolean(opcions.nit))));
   const botons = element('p', 'push-botons');
   if (subscripcioPush) {
