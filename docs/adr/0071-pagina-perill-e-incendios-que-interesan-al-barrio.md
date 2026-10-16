@@ -39,7 +39,7 @@ verde y círculo en rojo) y luego uno solo: «el círculo no debe incluir
 collserola… usa el mismo color». Se descartó ampliar a 1 km el margen
 alrededor del parque para los incendios que empiezan fuera y pueden entrar
 (Bombers da un solo punto por actuación, el del inicio): «no, no lo amplíes».
-Si cambia la zona, hay que rehacer la imagen.
+Si cambia la zona, hay que rehacer la imagen con `eines/mapa_incendis.html`.
 ## Contexto
 
 La noche del 10 al 11-10-2026 llegó por Telegram y al móvil el aviso de un

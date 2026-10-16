@@ -1,0 +1,29 @@
+<!doctype html><html lang="ca"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zona dels incendis</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+<style>html,body,#m{height:100%;margin:0}body{font-family:system-ui,sans-serif}
+.llegenda{background:#fff;padding:8px 10px;border-radius:6px;box-shadow:0 1px 4px #0004;font-size:14px;line-height:1.5;max-width:260px}
+.llegenda i{display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:-2px;border-radius:2px}.etiqueta{font:700 15px system-ui,sans-serif;background:#fff;border:1px solid #111;color:#111;padding:2px 6px;box-shadow:none}</style></head>
+<body><div id="m"></div><script>
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// La imatge de «Quins incendis s'avisen» (web/img/incendis.webp, ADR 0071): el
+// contorn exterior del parc de Collserola (capa del Consorci, sense els
+// enclavaments) unit al cercle d'ENTORN_RADI_KM al voltant de C.CASA. Per
+// refer-la: python3 -m http.server a eines/, obrir mapa_incendis.html amb una
+// finestra de 1000 × 820, fer-ne una captura i passar-la a WebP (qualitat 78).
+const CAPA = 'https://services7.arcgis.com/z50OW9s1n52Z8H2C/arcgis/rest/services/L%C3%ADmit_Parc_de_Collserola/FeatureServer/0/query?where=1%3D1&outSR=4326&f=geojson';
+fetch(CAPA).then((r) => r.json()).then((parc) => {
+const casa = [41.482, 2.135];
+const m = L.map('m', {zoomControl: false, attributionControl: false}).fitBounds([[41.378, 1.995], [41.505, 2.205]]);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18, attribution: '&copy; OpenStreetMap'}).addTo(m);
+// Una sola zona: el parc i els 2 km al voltant del barri, units.
+let zona = turf.circle([casa[1], casa[0]], 2, {units: 'kilometers', steps: 128});
+for (const f of parc.features) zona = turf.union(zona, turf.polygon([f.geometry.coordinates[0]]));
+L.geoJSON(zona, {style: {color: '#b91c1c', weight: 2.5, fillColor: '#ef4444', fillOpacity: .28}})
+  .bindTooltip('Qualsevol incendi forestal dins d’aquesta zona').addTo(m);
+L.circleMarker(casa, {radius: 5, color: '#fff', weight: 2, fillColor: '#111', fillOpacity: 1}).addTo(m)
+  .bindTooltip('Montflorit', {permanent: true, direction: 'left', offset: [-6, 0], className: 'etiqueta'});
+window.llest = false; m.whenReady(() => setTimeout(() => { window.llest = true; }, 4000));
+});</script></body></html>
