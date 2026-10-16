@@ -128,9 +128,9 @@ class Perills(unittest.TestCase):
         # Cada alerta porta a la seva fitxa de «Perill», perquè s'hi destaqui
         # (Juanjo, 16-10-2026: «con este enlace no me sale el resalte»): a
         # «Avisos actius» i a les línies del resum.
-        # Amb un pla, les línies de Meteocat van dins del del pla (ADR 0067) i hi porten; sense, a la seva.
-        meteocat = next(f for f in FITXES if "meteocat" in f)
-        self.assertEqual(set(r["detalls"]), set(FITXES) - {meteocat}, "«Avisos actius»: cada alerta, a la seva fitxa")
+        # Amb un pla, les línies senceres de Meteocat van dins del del pla (ADR 0067) i hi porten;
+        # la línia curta de Meteocat, sempre a la seva fitxa (ADR 0094).
+        self.assertEqual(set(r["detalls"]), set(FITXES), "«Avisos actius»: cada alerta, a la seva fitxa")
         self.assertEqual(set(r["sensePla"]), set(FITXES) - {FITXES[0]}, "«Avisos actius» sense pla")
         self.assertEqual(sorted(r["linies"]), sorted(FITXES), "el resum: cada alerta, a la seva fitxa")
 

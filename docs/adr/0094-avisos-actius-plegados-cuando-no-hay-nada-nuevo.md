@@ -35,9 +35,11 @@ Versión 3.91.0.
 - **«Avisos actius» es un plegable** (`details`), en «El temps» y en «Si
   surts», con el título «Avisos actius (3)»: el número cuenta cada aviso,
   también los cortes de luz.
-- **Plegado, una línea por aviso**, con la franja de su nivel y «›» a la misma
-  ficha de «Perill» que la línea completa: quién, qué y cuándo
-  (`curtsAvisos`). Protecció Civil: «pla d'inundacions (INUNCAT) en alerta».
+- **Plegado, una línea por aviso**, con la franja de su nivel y «›» a su
+  ficha de «Perill»: quién, qué y cuándo (`curtsAvisos`). La de Meteocat va a
+  la ficha de Meteocat también cuando hay un plan, aunque desplegado su texto
+  vaya dentro del del plan (3.91.1; Juanjo: «si pulso sobre meteocat me lleva
+  a protección civil»). Protecció Civil: «pla d'inundacions (INUNCAT) en alerta».
   Meteocat: una línea por fenómeno con el nivel más alto y las horas
   (`smp.per_fenomen`, que ya llevaban los datos desde el ADR 0093); con datos
   anteriores sin `fenomens`, las líneas enteras, para que no falte ninguna.

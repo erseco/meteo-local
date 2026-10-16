@@ -879,16 +879,16 @@ function nivellDe(item) {
 }
 
 // Les línies curtes, en el mateix ordre que les senceres: els plans, Meteocat
-// per fenomen (amb pla, porta a la fitxa del pla, com les línies de dins; ADR
-// 0067), i la resta amb el text curt que cada bloc ha deixat a «curt».
+// per fenomen (sempre a la seva fitxa de «Perill», encara que desplegat vagi
+// dins del pla; Juanjo, 16-10-2026: «si pulso sobre meteocat me lleva a
+// protección civil»), i la resta amb el text curt que cada bloc ha deixat a «curt».
 function curtsAvisos(perills, talls, smp, hrefDe, ara) {
   const curts = [];
   let smpFet = false;
-  const plans = perills.filter((i) => i.dataset.tipus === 'pla');
   const posaSmp = () => {
     if (smpFet) return;
     smpFet = true;
-    curts.push(...curtsSmp(smp, plans.length ? hrefDe(plans[0]) : fitxaPerill((h) => h.clau.startsWith('meteocat:')), ara));
+    curts.push(...curtsSmp(smp, fitxaPerill((h) => h.clau.startsWith('meteocat:')), ara));
   };
   for (const i of perills) {
     if (i.dataset.tipus === 'smp') { posaSmp(); continue; }
