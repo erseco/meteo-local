@@ -48,6 +48,18 @@ DADES = {
                 "llindar": 70, "unitat": "km/h", "des_de": "2026-10-17T22:00+02:00", "fins": "2026-10-18T02:00+02:00",
                 "text": "Vent molt fort previst: ratxes de fins a 75 km/h, avui de 22 a 2 h."}],
 }
+# L'historial de «Perill» amb una fitxa oberta per a cada tipus que avisa.
+def episodi(clau, nivell="groc"):
+    return {"clau": clau, "tipus": "riera" if clau.startswith("riera:") else "perill", "inici": "2026-10-17T09:30+02:00",
+            "nivell": nivell, "ca": "x", "es": "x"}
+
+
+HISTORIAL = [RIERA, episodi("pla:INUNCAT", "pc"), episodi("meteocat:2026-10-16T07:55+02:00", "alt"),
+             episodi("aemet:tempestes:2026-10-17T12:00:00+02:00"), episodi("incendi:1", "incendi"), episodi("propi")]
+FITXES = ["perill.html#a-pla-inuncat-2026-10-17t09-30-02-00", "perill.html#a-meteocat-2026-10-16t07-55-02-00-2026-10-17t09-30-02-00",
+          "perill.html#a-aemet-tempestes-2026-10-17t12-00-00-02-00-2026-10-17t09-30-02-00",
+          "perill.html#a-riera-2026-10-17t09-30-02-00-2026-10-17t09-30-02-00", "perill.html#a-incendi-1-2026-10-17t09-30-02-00",
+          "perill.html#pla-alfa", "perill.html#a-propi-2026-10-17t09-30-02-00"]
 # Com es reconeix cada tipus al text, en català i en castellà.
 MARQUES = {"pla": ("INUNCAT", "INUNCAT"), "meteocat": ("Meteocat", "Meteocat"), "aemet": ("AEMET", "AEMET"),
            "riera": ("riera", "riera"), "incendi": ("ncendi", "ncendio"), "alfa": ("Alfa", "Alfa"),
@@ -102,10 +114,21 @@ class Perills(unittest.TestCase):
         for pagina, crida in (("casa.js", "blocAvisos(dades)"), ("sortir.js", "blocAvisos(DADES)")):
             with open(os.path.join(ARREL, "web", pagina), encoding="utf-8") as f:
                 self.assertIn(crida, f.read(), pagina)
-        codi = ARNES_DOM % (json.dumps(os.path.join(ARREL, "web", "comu.js")), json.dumps([RIERA]),
-                            json.dumps(dades()), json.dumps(ARA.isoformat()))
-        text = json.loads(subprocess.run(["node", "-e", codi], capture_output=True, text=True, check=True).stdout)
-        self.assertTots(text, "ca", B.TIPUS_PERILL, "«Avisos actius» de la web")
+        # Les línies d'alerta del resum del dia (bot i «Consultes»), sense la marca del nivell.
+        linies = [re.sub(r"^\S+ ", "", l) for l in B.resum(dades(), "ca", ARA, avui=True).split("\n")
+                  if any(m[0] in l for m in MARQUES.values())]
+        codi = ARNES_DOM % tuple(json.dumps(x) for x in (os.path.join(ARREL, "web", "comu.js"), HISTORIAL, dades(),
+                                                         ARA.isoformat(), linies))
+        r = json.loads(subprocess.run(["node", "-e", codi], capture_output=True, text=True, check=True).stdout)
+        self.assertTots(r["text"], "ca", B.TIPUS_PERILL, "«Avisos actius» de la web")
+        # Cada alerta porta a la seva fitxa de «Perill», perquè s'hi destaqui
+        # (Juanjo, 16-10-2026: «con este enlace no me sale el resalte»): a
+        # «Avisos actius» i a les línies del resum.
+        # Amb un pla, les línies de Meteocat van dins del del pla (ADR 0067) i hi porten; sense, a la seva.
+        meteocat = next(f for f in FITXES if "meteocat" in f)
+        self.assertEqual(set(r["detalls"]), set(FITXES) - {meteocat}, "«Avisos actius»: cada alerta, a la seva fitxa")
+        self.assertEqual(set(r["sensePla"]), set(FITXES) - {FITXES[0]}, "«Avisos actius» sense pla")
+        self.assertEqual(sorted(r["linies"]), sorted(FITXES), "el resum: cada alerta, a la seva fitxa")
 
     def test_perill_te_cada_tipus(self):
         # «Perill» és l'historial dels avisos: cada tipus que avisa hi té fitxa
@@ -127,7 +150,7 @@ class Perills(unittest.TestCase):
 ARNES_DOM = r"""
 const vm = require('vm');
 const fs = require('fs');
-const [comu, historial, dades, ara] = [%s, %s, %s, %s];
+const [comu, historial, dades, ara, linies] = [%s, %s, %s, %s, %s];
 class Node_ {
   constructor(tag) { this.tag = tag; this.fills = []; this.dataset = {}; this.style = { setProperty() {} };
     this.classList = { add() {}, remove() {}, toggle() {} }; this.attrs = {}; }
@@ -156,7 +179,13 @@ const ctx = vm.createContext({
 vm.runInContext(fs.readFileSync(comu, 'utf8'), ctx);
 vm.runInContext(`HISTORIAL_PERILL = ${JSON.stringify(historial)};`, ctx);
 ctx.__dades = dades;
-console.log(JSON.stringify(vm.runInContext('blocAvisos(__dades).textContent', ctx)));
+const detalls = (n) => (typeof n === 'string' ? [] : [...(n.tag === 'a' && n.className === 'detall' ? [n.href] : []), ...n.fills.flatMap(detalls)]);
+const bloc = vm.runInContext('blocAvisos(__dades)', ctx);
+ctx.__linies = linies;
+ctx.__sensePla = { ...dades, plans: [] };
+console.log(JSON.stringify({ text: bloc.textContent, detalls: detalls(bloc),
+  sensePla: detalls(vm.runInContext('blocAvisos(__sensePla)', ctx)),
+  linies: vm.runInContext('__linies.map(detallLinia)', ctx) }));
 """
 
 

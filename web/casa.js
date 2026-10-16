@@ -360,12 +360,14 @@ function blocAra(casa, radarDades, vent, veines, hores) {
 // un poco frivolo?»), ni els avisos de l'AEMET, que ja surten a dalt, a
 // «Avisos actius» (ADR 0076).
 const HORA_DEMA = 18;   // la de bot.HORA_DEMA
-const LINIA_FORA = /^(⟦[a-z-]+⟧ ?)?(Ara mateix|Ahora mismo|Roba |Ropa |Avís \S+ de l'AEMET|Aviso \S+ de la AEMET)/;
+// Les alertes tampoc: totes ja surten a «Avisos actius» (ADR 0093).
+const LINIA_FORA = /^(⟦[a-z-]+⟧ ?)?(Ara mateix|Ahora mismo|Roba |Ropa )/;
+const liniaFora = (l) => LINIA_FORA.test(l) || LINIA_PERILL.test(l);
 
 function textosResum(dades) {
   const textos = (dades.consultes || {})[IDIOMA.codi === 'es' ? 'es' : 'ca'] || {};
   const claus = new Date(dades.generat).getHours() >= HORA_DEMA ? ['avui', 'dema'] : ['avui'];
-  return claus.filter((c) => textos[c]).map((c) => textos[c].split('\n').filter((l) => !LINIA_FORA.test(l)).join('\n'));
+  return claus.filter((c) => textos[c]).map((c) => textos[c].split('\n').filter((l) => !liniaFora(l)).join('\n'));
 }
 
 function blocsResum(dades) {

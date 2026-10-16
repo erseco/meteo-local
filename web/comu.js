@@ -404,6 +404,7 @@ function textFranja(inici, fi, ara) {
 function blocAvisosAemet(avisos, ara = new Date()) {
   return frasesAvisos(avisos, ara).map((f) => {
     const item = element('p', `avis-item ${f.nivell}`);
+    item.dataset.detall = fitxaPerill((h) => h.clau.startsWith('aemet:') && f.tipus.has(h.clau.split(':')[1]));
     item.append(element('strong', null, f.titol), `: ${f.quan}.`);
     const perDia = [];
     for (const a of [...avisos].sort((x, y) => new Date(x.inicio) - new Date(y.inicio))) {
@@ -547,6 +548,40 @@ function fitxaDelPla(p) {
   return e ? idFitxa(e) : idPla(p);
 }
 
+// La fitxa a «Perill» de cada alerta, perquè l'enllaç hi porti i la destaqui
+// (Juanjo, 16-10-2026: «con este enlace no me sale el resalte»): la de
+// l'historial que és activa i passa la prova; si no n'hi ha, «Perill».
+function actiuPerill(e, ara = new Date()) {
+  return !e.fi && !(e.fins && new Date(e.fins) <= ara);
+}
+
+function fitxaPerill(prova) {
+  const e = (HISTORIAL_PERILL || []).find((h) => h.clau && actiuPerill(h) && prova(h));
+  return e ? `perill.html#${idFitxa(e)}` : 'perill.html';
+}
+
+const FITXA_ALFA = 'perill.html#pla-alfa';
+
+// Les línies d'alerta del resum del dia (bot.linies_perill_dia), amb la
+// marca del nivell o la icona al davant.
+const LINIA_PERILL = /^(⟦[^⟧]+⟧ ?|\S+ )?(Avís|Aviso|Protecció Civil|Protección Civil|Perill de|Peligro de|Incendi|Incendio|Pla Alfa|Plan Alfa)[ :]|no (é|e)s oficial\)/;
+
+function fitxaDeLinia(text) {
+  const pla = /Protecci(ó|ón) Civil/.test(text) && text.match(/\(([A-Z]+)\)/);
+  if (pla) return `perill.html#${fitxaDelPla({ pla: pla[1], fase: 'alerta' })}`;
+  if (/Meteocat/.test(text)) return fitxaPerill((h) => h.clau.startsWith('meteocat:'));
+  if (/AEMET/.test(text)) {
+    const t = text.toLowerCase();
+    return fitxaPerill((h) => h.clau.startsWith('aemet:')
+      && [h.clau.split(':')[1], TD(h.clau.split(':')[1])].some((x) => t.includes(x.toLowerCase())));
+  }
+  if (/riera/i.test(text)) return fitxaPerill((h) => h.clau.startsWith('riera:'));
+  if (/ncendi/.test(text)) return fitxaPerill((h) => h.clau.startsWith('incendi:'));
+  if (/Alfa/.test(text)) return FITXA_ALFA;
+  if (/oficial\)/.test(text)) return fitxaPerill((h) => h.clau === 'propi');
+  return 'perill.html';
+}
+
 // Els plans de Protecció Civil, un element per pla, del color de la fase.
 function blocPlans(plans, smp) {
   return (plans || []).map((p) => {
@@ -586,20 +621,26 @@ function blocEntorn(entorn) {
   for (const i of (entorn && entorn.incendis) || []) {
     const km = i.km != null ? T`, a ${coma(i.km)}\u00a0km de Montflorit` : '';
     // Dins del parc, dit clarament (Juanjo, 11-10-2026; ADR 0071).
-    items.push(nouItem('vermell', i.collserola ? T`Bombers: incendi forestal dins del Parc de Collserola (${i.municipi})`
+    const item = nouItem('vermell', i.collserola ? T`Bombers: incendi forestal dins del Parc de Collserola (${i.municipi})`
       : T`Bombers: incendi forestal a ${i.municipi}`,
-      T`${km}, des de les ${horaCurta(i.inici)}.`));
+      T`${km}, des de les ${horaCurta(i.inici)}.`);
+    item.dataset.detall = fitxaPerill((h) => h.clau === `incendi:${i.id}`);
+    items.push(item);
   }
   const alfa = (entorn && entorn.pla_alfa) || {};
   for (const [dia, nom] of [['avui', () => T('avui')], ['dema', () => T('demà')]]) {
     const n = alfa[dia];
     if (n != null && n >= ALFA_NIVELL_MOSTRAR) {
-      items.push(nouItem(n >= 4 ? 'vermell' : 'taronja', T`Pla Alfa de Cerdanyola: nivell ${n} ${nom()}`,
-        T(': accés restringit als espais forestals.')));
+      const item = nouItem(n >= 4 ? 'vermell' : 'taronja', T`Pla Alfa de Cerdanyola: nivell ${n} ${nom()}`,
+        T(': accés restringit als espais forestals.'));
+      item.dataset.detall = FITXA_ALFA;
+      items.push(item);
     }
   }
   for (const t of alfa.tancaments || []) {
-    items.push(nouItem('vermell', T`Agents Rurals: tancat ${t.espai}`, '.'));
+    const item = nouItem('vermell', T`Agents Rurals: tancat ${t.espai}`, '.');
+    item.dataset.detall = FITXA_ALFA;
+    items.push(item);
   }
   return items;
 }
@@ -613,6 +654,7 @@ function blocSmp(smp, plans) {
   const es = IDIOMA.codi.startsWith('es');
   return (smp.linies || []).filter((l) => COLOR_SMP[l.nivell]).map((l) => {
     const item = element('p', `avis-item ${COLOR_SMP[l.nivell]}`);
+    item.dataset.detall = fitxaPerill((h) => h.clau.startsWith('meteocat:'));
     item.append(es ? l.es : l.ca);
     return item;
   });
@@ -697,6 +739,7 @@ function blocRiscos(riscos) {
   const pitjor = riscos[0].nivell;
   const caixa = element('section', `avis risc-previst ${pitjor}`);
   caixa.setAttribute('aria-label', T('Risc previst'));
+  caixa.dataset.detall = fitxaPerill((h) => h.clau === 'propi');
   const titol = element('p', 'titol-risc');
   titol.append(icona('i-triangle-alert'), T`Risc ${TD(pitjor)}`);
   caixa.append(titol);
@@ -739,12 +782,11 @@ function blocAvisos(dades, ara = new Date()) {
 // Les línies del resum del dia (a «El temps» i a «Consultes») amb un detall
 // al darrere (ADR 0075): els trens, a «Consultes › Trens»; totes les alertes
 // de perill (ADR 0093), a «Perill».
-const DETALL_LINIA = [[/^(Trens|Trenes) /, 'consultes.html#trens'],
-  [/^(\S+ )?(Avís|Aviso|Protecció Civil|Protección Civil|Perill de|Peligro de|Incendi|Incendio|Pla Alfa|Plan Alfa)[ :]|no (é|e)s oficial\)/,
-    'perill.html']];
-
+// Les alertes, a la seva fitxa (fitxaDeLinia).
 function detallLinia(text) {
-  return (DETALL_LINIA.find(([re]) => re.test(text.trim())) || [])[1] || null;
+  const t = text.trim();
+  if (/^(Trens|Trenes) /.test(t)) return 'consultes.html#trens';
+  return LINIA_PERILL.test(t) ? fitxaDeLinia(t) : null;
 }
 
 function ambDetalls(files) {

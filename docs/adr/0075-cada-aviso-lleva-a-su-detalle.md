@@ -111,3 +111,15 @@ El fondo claro (`#edf3ff`) deja todos los textos de las fichas por encima de
 4,5:1 de contraste; con el primero probado (`#dbe7ff`) el título naranja
 quedaba en 4,16 (axe-core). Comprobado sin infracciones en tema claro y oscuro.
 
+## Cambio del 16-10-2026 (3.89.1): cada alerta, a su ficha
+
+Juanjo, con el aviso de AEMET de «Avisos actius»: «con este enlace no me sale
+el resalte». Solo los planes y la riera llevaban a su ficha; AEMET, Meteocat
+sin plan, los incendios, el Pla Alfa y el tiempo extremo llevaban a «Perill»
+sin ficha, y las líneas de alerta del resumen de «Consultes», también. Ahora
+cada una lleva a la ficha abierta de su historial (`fitxaPerill`,
+`fitxaDeLinia`; el Pla Alfa, a `#pla-alfa`) y `tests/test_perills.py` lo
+comprueba. Con un plan, las líneas de Meteocat siguen dentro del suyo (ADR
+0067) y llevan a la ficha del plan. El resumen de la portada ya no repite las
+alertas, que salen arriba en «Avisos actius» (antes solo quitaba las de AEMET).
+

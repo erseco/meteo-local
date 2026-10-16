@@ -522,6 +522,12 @@ function pinta(dades) {
   }
 }
 
+// Quan arriba l'historial de «Perill» (comu.js), les alertes del resum ja
+// poden portar a la seva fitxa.
+function repintaAvisos() {
+  if (DADES && !dadesVelles(DADES) && (triada === 'avui' || triada === 'dema')) pintaConsulta();
+}
+
 pintaOpcions();
 window.addEventListener('hashchange', () => {
   const clau = location.hash.slice(1);
