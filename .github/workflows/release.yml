@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Amb cada etiqueta de versió (v3.91.0), la release de GitHub, amb el títol
+# de l'etiqueta i el missatge del commit etiquetat: és on porta l'enllaç
+# «versió» del peu de la web (montflorit.NOTES). Fins a la 3.63.0 es creaven
+# a mà i van deixar de crear-se durant 63 versions (ADR 0095).
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
+          gh release view "$TAG" >/dev/null 2>&1 && exit 0
+          gh release create "$TAG" --title "$TAG" --notes "$(git log -1 --format=%s "$TAG")"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}

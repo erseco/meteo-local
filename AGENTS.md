@@ -38,7 +38,9 @@ Al cambiar algo:
   `web/sortir.html` (o «D'on surt» de `web/casa.html`), el README, las pruebas
   y el ADR.
 - Pasa las pruebas y `probar-web` antes de publicar; sube `VERSION` en
-  `config.py` y etiqueta la versión. Pasa también axe-core si cambia el HTML,
+  `config.py` y etiqueta la versión (la release de GitHub, adonde lleva el
+  «versió» del pie, la crea sola `.github/workflows/release.yml`; ADR 0095).
+  Pasa también axe-core si cambia el HTML,
   el CSS o el JavaScript que crea o modifica elementos de la página; no hace
   falta si el cambio es solo de cálculo, de datos, del bot o de textos dentro
   de elementos que ya existen.
