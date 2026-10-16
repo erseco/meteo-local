@@ -95,5 +95,6 @@
 | [0091](0091-planes-en-prealerta-en-perill.md) | Los planes de Protección Civil en prealerta, con ficha en «Perill» | aceptado |
 | [0092](0092-meteocat-avisa-y-aemet-de-reserva.md) | Meteocat avisa por fenómeno y AEMET queda de reserva | aceptado (AEMET, cambiado por el 0093) |
 | [0093](0093-todas-las-alertas-juntas-y-aemet-para-lo-que-meteocat-no-cubre.md) | Todas las alertas de peligro juntas, y AEMET para lo que Meteocat no cubre | aceptado |
+| [0094](0094-avisos-actius-plegados-cuando-no-hay-nada-nuevo.md) | «Avisos actius» plegado cuando no hay nada nuevo, y una sola hora en la portada | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

@@ -210,6 +210,8 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .horari .hores { display: block; }
 .horari .ajuda-fase { margin-left: .4rem; }
 .horari .sense-tall { white-space: nowrap; }
+/* Al peu de la targeta «Ara» (ADR 0094). */
+.ara .horari { margin: .5rem 0 0; }
 .horari:empty { display: none; }
 
 .perque {
@@ -477,6 +479,14 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
   border-radius: .6rem;
 }
 .avisos-actius .seccio { margin: 0 0 .4rem; }
+/* Plegat quan no hi ha res de nou (ADR 0094): el títol amb el nombre d'avisos
+   és el plec; plegat, les línies curtes; obert, les senceres. */
+.avisos-plec > summary { cursor: pointer; }
+.avisos-plec > summary > .seccio { display: inline; margin: 0; }
+.avisos-plec[open] > summary { margin-bottom: .4rem; }
+.avisos-plec[open] + .avisos-curts { display: none; }
+.avisos-curts { margin-top: .4rem; }
+.avisos-curts .avis-item + .avis-item { margin-top: .35rem; }
 .avisos-actius .avisos-mes { margin: .6rem 0 0; font-size: .92rem; }
 .avis-item { margin: 0; padding: .15rem 0 .15rem .7rem; border-left: .3rem solid var(--nivell, var(--compte)); }
 .avis-item + .avis-item, .avis-item + .risc-previst, .risc-previst + .avis-item { margin-top: .5rem; }

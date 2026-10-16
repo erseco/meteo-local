@@ -1,0 +1,99 @@
+# 94. «Avisos actius» plegado cuando no hay nada nuevo
+
+Fecha: 2026-10-16 · Estado: aceptado
+
+## Contexto
+
+Juanjo, sobre la portada de la 3.90.0: «la pantalla inicial se ha ido
+complicando con información. ¿Se te ocurre alguna mejora que, sin perder
+información, permita una lectura más clara? Sobre todo al entrar en la página
+inicial, la primera impresión».
+
+Medido en un Pixel 7 con los avisos del día (INUNCAT en alerta con dos avisos
+de Meteocat dentro y uno amarillo de AEMET): la cabecera ocupaba un 15 % de la
+primera pantalla, «Avisos actius» un 55 % (ocho líneas, con los textos
+íntegros de Meteocat: umbrales y hora de emisión), la temperatura asomaba
+abajo y «El temps avui», lo que se quiere saber al abrir, quedaba fuera. El
+bloque usaba a la vez franja de color, texto en naranja, negrita, cursiva, «?»
+y «›». Arriba había dos horas distintas: «Actualitzat a les 09:21» y «Ara a
+Montflorit (09:20)».
+
+Propuesta de Juanjo: «la primera vez que se entra la tarjeta Avisos actius
+aparece desplegada, pero, si no hay cambios, las veces sucesivas aparecería
+plegada, indicando entre paréntesis el número de avisos». Objeción del agente:
+plegado del todo, «(3)» no dice cuáles son; el sábado a las 11, con el aviso de
+lluvia intensa a las 12, se vería solo el número porque nada habría cambiado
+desde ayer, contra el criterio de que lo esencial se vea al abrir y de
+«seguridad e información ante todo» (ADR 0093). Acordado (Juanjo: «sí, hazlo
+en local»; tras probarlo en el móvil: «correcto, publica»): el mecanismo de
+Juanjo con dos estados.
+
+## Decisión
+
+Versión 3.91.0.
+
+- **«Avisos actius» es un plegable** (`details`), en «El temps» y en «Si
+  surts», con el título «Avisos actius (3)»: el número cuenta cada aviso,
+  también los cortes de luz.
+- **Plegado, una línea por aviso**, con la franja de su nivel y «›» a la misma
+  ficha de «Perill» que la línea completa: quién, qué y cuándo
+  (`curtsAvisos`). Protecció Civil: «pla d'inundacions (INUNCAT) en alerta».
+  Meteocat: una línea por fenómeno con el nivel más alto y las horas
+  (`smp.per_fenomen`, que ya llevaban los datos desde el ADR 0093); con datos
+  anteriores sin `fenomens`, las líneas enteras, para que no falte ninguna.
+  AEMET: «avís groc per tempestes, demà de 12:00 a mitjanit». La riera, los
+  incendios, el Pla Alfa y los cierres, su título. El tiempo extremo propio:
+  «Risc groc calculat per aquesta web: vent molt fort (75 km/h)». Los cortes
+  de luz: el título y si es avería o trabajos. Las formas de las horas son las
+  de cada fuente (Meteocat «de 12 a 24 h», AEMET «de 12:00 a mitjanit»).
+- **Desplegado, los textos completos de antes**, sin cambiar nada (el oficial
+  de Meteocat tal cual, ADR 0067; la cita de AEMET en castellano).
+- **Se despliega solo la primera vez y cuando cambia el conjunto**: un aviso
+  nuevo, un nivel que sube, uno que acaba, unas horas distintas. Lo que cuenta
+  como cambio es la huella de las líneas cortas (`dataset.clau` de cada una:
+  fuente, fenómeno, nivel y horas), independiente del idioma; la hora de
+  emisión de un texto no cuenta. **Un aviso rojo no se pliega nunca** al
+  cargar.
+- **Lo visto se recuerda en el dispositivo** (`localStorage`,
+  `meteo.avisos-vistos`), común a «El temps» y «Si surts»: se marca al pintar
+  el bloque desplegado y al plegarlo o desplegarlo a mano. Sin memoria
+  (navegación privada), cada vez desplegado.
+- **Dentro de una misma página manda la persona**: la web repinta el bloque
+  cada pocos minutos; si los avisos no han cambiado, se queda como lo dejó
+  (`PLEC_AVISOS`); si cambian, se despliega en ese momento.
+- **Una sola hora en la portada**: la línea «Actualitzat a les … · propera: …
+  ?» pasa al pie de la tarjeta «Ara», y el título de la tarjeta deja de llevar
+  la hora de la medida (difería un minuto de la otra y parecía un error). En
+  «Si surts» sigue arriba, que no tiene tarjeta «Ara». Los avisos de datos
+  (actualización que no llega, fuentes que fallan) siguen arriba.
+- `NOM_RISC` pasa de `casa.js` a `comu.js`, porque la línea corta del tiempo
+  extremo lo necesita también en «Si surts».
+
+Resultado en el Pixel 7, segunda visita: la primera pantalla enseña los tres
+avisos en tres líneas, la tarjeta «Ara» entera con la hora de actualización y
+el resumen del día.
+
+## Alternativas descartadas
+
+- **Solo el número al plegar** (la propuesta literal): no dice cuáles son los
+  avisos sin tocar nada; se descartó por seguridad e información.
+- **Líneas cortas siempre, sin plegable** (la propuesta inicial del agente):
+  obligaba a un toque para leer el texto oficial completo; la de Juanjo lo
+  conserva a la vista la primera vez y cuando hay novedad.
+- **Recordar cómo lo deja cada persona** (como «Desplega-ho tot», ADR 0074):
+  Juanjo pidió plegado siempre que no haya cambios; así, lo que una persona
+  despliega para leer no se le queda desplegado para siempre.
+- Las demás propuestas (una sola tarjeta «Ara» + «Avui», dos columnas en el
+  ordenador, no repetir la frase de peligro en cada tramo) quedaron para otro
+  momento: con el plegable ya cabe la primera pantalla.
+
+## Consecuencias
+
+- `tests/test_perills.py` comprueba también el bloque plegado: cada tipo de
+  alerta tiene su línea corta, y se despliega la primera vez, no la segunda,
+  otra vez al cambiar el conjunto y siempre con un rojo.
+- Un tipo de aviso nuevo tiene que dejar `dataset.clau` y `dataset.curt` en su
+  elemento; sin ellos sale el texto entero, y la prueba de arriba lo detecta
+  si falta.
+- axe-core, sin incidencias en la portada (catalán y castellano) y «Si surts»,
+  desplegado y plegado.

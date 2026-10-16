@@ -405,6 +405,10 @@ function blocAvisosAemet(avisos, ara = new Date()) {
   return frasesAvisos(avisos, ara).map((f) => {
     const item = element('p', `avis-item ${f.nivell}`);
     item.dataset.detall = fitxaPerill((h) => h.clau.startsWith('aemet:') && f.tipus.has(h.clau.split(':')[1]));
+    const tipus = [...f.tipus].sort();
+    item.dataset.curt = T`AEMET: avís ${TD(f.nivell)} per ${tipus.map((x) => TD(x)).join(T(' i '))}, ${f.quan}`;
+    item.dataset.clau = `aemet:${f.nivell}:${tipus.join(',')}:` + avisos
+      .filter((a) => a.nivel === f.nivell && f.tipus.has(a.tipo)).map((a) => `${a.inicio}/${a.fin}`).sort().join(',');
     item.append(element('strong', null, f.titol), `: ${f.quan}.`);
     const perDia = [];
     for (const a of [...avisos].sort((x, y) => new Date(x.inicio) - new Date(y.inicio))) {
@@ -587,6 +591,9 @@ function blocPlans(plans, smp) {
   return (plans || []).map((p) => {
     const item = element('p', `avis-item ${COLOR_FASE[p.fase] || 'vermell'}`);
     item.setAttribute('aria-label', T('Avís de Protecció Civil'));
+    item.dataset.tipus = 'pla';
+    item.dataset.clau = `pla:${p.pla}:${p.fase}`;
+    item.dataset.curt = T`Protecció Civil: pla ${TD(p.nom)} (${p.pla}) en ${TD(NOM_FASE[p.fase] || p.fase)}`;
     item.append(element('strong', null,
       T`Protecció Civil: pla ${TD(p.nom)} (${p.pla}) en fase ${deFase(TD(NOM_FASE[p.fase] || p.fase))}.`),
     ...ajudaFase(p.fase));
@@ -613,9 +620,11 @@ const ALFA_NIVELL_MOSTRAR = 3;
 function blocEntorn(entorn) {
   const items = [];
   // Els mapes de Bombers i dels Agents Rurals, a «Perill» (ADR 0075).
-  const nouItem = (nivell, titol, resta) => {
+  const nouItem = (nivell, titol, resta, clau) => {
     const item = element('p', `avis-item ${nivell}`);
     item.append(element('strong', null, titol), resta);
+    item.dataset.clau = clau;
+    item.dataset.curt = titol;
     return item;
   };
   for (const i of (entorn && entorn.incendis) || []) {
@@ -623,7 +632,7 @@ function blocEntorn(entorn) {
     // Dins del parc, dit clarament (Juanjo, 11-10-2026; ADR 0071).
     const item = nouItem('vermell', i.collserola ? T`Bombers: incendi forestal dins del Parc de Collserola (${i.municipi})`
       : T`Bombers: incendi forestal a ${i.municipi}`,
-      T`${km}, des de les ${horaCurta(i.inici)}.`);
+      T`${km}, des de les ${horaCurta(i.inici)}.`, `incendi:${i.id}`);
     item.dataset.detall = fitxaPerill((h) => h.clau === `incendi:${i.id}`);
     items.push(item);
   }
@@ -632,13 +641,13 @@ function blocEntorn(entorn) {
     const n = alfa[dia];
     if (n != null && n >= ALFA_NIVELL_MOSTRAR) {
       const item = nouItem(n >= 4 ? 'vermell' : 'taronja', T`Pla Alfa de Cerdanyola: nivell ${n} ${nom()}`,
-        T(': accés restringit als espais forestals.'));
+        T(': accés restringit als espais forestals.'), `alfa:${dia}:${n}`);
       item.dataset.detall = FITXA_ALFA;
       items.push(item);
     }
   }
   for (const t of alfa.tancaments || []) {
-    const item = nouItem('vermell', T`Agents Rurals: tancat ${t.espai}`, '.');
+    const item = nouItem('vermell', T`Agents Rurals: tancat ${t.espai}`, '.', `tancat:${t.espai}`);
     item.dataset.detall = FITXA_ALFA;
     items.push(item);
   }
@@ -654,9 +663,42 @@ function blocSmp(smp, plans) {
   const es = IDIOMA.codi.startsWith('es');
   return (smp.linies || []).filter((l) => COLOR_SMP[l.nivell]).map((l) => {
     const item = element('p', `avis-item ${COLOR_SMP[l.nivell]}`);
+    item.dataset.tipus = 'smp';
     item.dataset.detall = fitxaPerill((h) => h.clau.startsWith('meteocat:'));
     item.append(es ? l.es : l.ca);
     return item;
+  });
+}
+
+// Els avisos de Meteocat per al bloc plegat (ADR 0094): una línia per fenomen,
+// amb el nivell més alt i les hores (smp.per_fenomen). Amb dades d'abans de la
+// 3.90.0, sense «fenomens», les línies senceres: que no en falti cap.
+const GRAU_SMP = { mig: () => T('moderat'), alt: () => T('alt'), maxim: () => T('molt alt') };
+
+function quanDies(dies, ara) {
+  return Object.entries(dies || {}).sort().map(([dia, franges]) => {
+    const [a, m, d] = dia.split('-').map(Number);
+    const hores = franges.map(([i, f]) => T`de ${i} a ${f} h`).join(T(' i '));
+    return `${nomDiaCurt(new Date(a, m - 1, d), ara)} ${hores}`;
+  }).join('; ');
+}
+
+function curtsSmp(smp, href, ara) {
+  if (!smp) return [];
+  const es = IDIOMA.codi.startsWith('es');
+  const fenomens = (smp.fenomens || []).filter((f) => COLOR_SMP[f.nivell]);
+  if (!fenomens.length) {
+    return (smp.linies || []).filter((l) => COLOR_SMP[l.nivell]).map((l, n) => {
+      const p = element('p', `avis-item curt ${COLOR_SMP[l.nivell]}`, es ? l.es : l.ca);
+      p.dataset.clau = `smp:${n}:${l.nivell}:${l.ca}`;
+      return ambDetall(p, href);
+    });
+  }
+  return fenomens.map((f) => {
+    const p = element('p', `avis-item curt ${COLOR_SMP[f.nivell]}`);
+    p.append(T`Meteocat: perill ${GRAU_SMP[f.nivell]()} per ${TD(f.fenomen)}, ${quanDies(f.dies, ara)}`);
+    p.dataset.clau = `smp:${f.fenomen}:${f.nivell}:${JSON.stringify(f.dies)}`;
+    return ambDetall(p, href);
   });
 }
 
@@ -706,6 +748,8 @@ function blocRiera(historial, ara = new Date()) {
       const titol = trossos(text)[0].map((t) => t.t).join('').replace(/^\S+\s/, '').trim();
       const item = element('p', `avis-item ${NIVELL_RIERA[e.nivell] || 'vermell'}`);
       item.append(element('strong', null, titol), '. ', T('No t’acostis a la riera.'));
+      item.dataset.clau = `riera:${e.clau}:${e.nivell}`;
+      item.dataset.curt = `${titol}. ${T('No t’acostis a la riera.')}`;
       item.dataset.detall = `perill.html#${idFitxa(e)}`;
       return item;
     });
@@ -716,6 +760,8 @@ function blocLlum(llum, ara = new Date()) {
     const [titol, frase] = textTall(t, ara);
     const item = element('p', 'avis-item compte');
     item.append(element('strong', null, titol), `: ${frase}`);
+    item.dataset.clau = `llum:${t.id || t.inici}:${t.on}`;
+    item.dataset.curt = `${titol}: ${t.programat ? T('treballs programats') : T('avaria')}.`;
     return item;
   });
 }
@@ -732,6 +778,11 @@ function enllacAvisos(davant) {
   return p;
 }
 
+// Els noms curts de cada risc que calcula la pàgina (riscos.py), per a la
+// taula per hores de «El temps» i per al bloc «Avisos actius» plegat.
+const NOM_RISC = () => ({ pluja_1h: T('pluja molt forta'), pluja_12h: T('molta pluja'), ratxa: T('vent molt fort'),
+  calor: T('calor extrema'), fred: T('fred intens'), neu_24h: T('neu') });
+
 // El temps extrem que calcula la pàgina: situacions de perill segons el que mesuren les estacions i el que preveu
 // la pàgina (riscos.py, ADR 0018), amb el color del nivell de l'AEMET.
 function blocRiscos(riscos) {
@@ -740,6 +791,9 @@ function blocRiscos(riscos) {
   const caixa = element('section', `avis risc-previst ${pitjor}`);
   caixa.setAttribute('aria-label', T('Risc previst'));
   caixa.dataset.detall = fitxaPerill((h) => h.clau === 'propi');
+  caixa.dataset.clau = 'risc:' + riscos.map((r) => `${r.clau}:${r.nivell}`).join(',');
+  caixa.dataset.curt = T`Risc ${TD(pitjor)} calculat per aquesta web` + ': '
+    + riscos.map((r) => `${NOM_RISC()[r.tipus] || r.tipus} (${String(r.valor).replace('.', ',')} ${r.unitat})`).join(', ') + '.';
   const titol = element('p', 'titol-risc');
   titol.append(icona('i-triangle-alert'), T`Risc ${TD(pitjor)}`);
   caixa.append(titol);
@@ -771,12 +825,85 @@ function blocAvisos(dades, ara = new Date()) {
     ...blocRiera(HISTORIAL_PERILL, ara), ...blocEntorn(dades.entorn), blocRiscos(dades.riscos)].filter(Boolean);
   const talls = blocLlum(dades.llum, ara);
   if (!perills.length && !talls.length) return null;
+  const hrefDe = (i) => (i.dataset && i.dataset.detall) || 'perill.html';
+  const curts = curtsAvisos(perills, talls, dades.smp, hrefDe, ara);
+  const empremta = curts.map((c) => c.dataset.clau).sort().join('\n');
   const sec = element('section', 'avisos-actius');
   sec.setAttribute('aria-label', T('Avisos actius'));
-  sec.append(element('h2', 'seccio', T('Avisos actius')),
-    ...perills.map((i) => ambDetall(i, (i.dataset && i.dataset.detall) || 'perill.html')),
+  const plec = element('details', 'avisos-plec');
+  const resum = element('summary');
+  resum.append(element('h2', 'seccio', T`Avisos actius (${curts.length})`));
+  plec.append(resum, ...perills.map((i) => ambDetall(i, hrefDe(i))),
     ...talls.map((i) => ambDetall(i, 'consultes.html#llum')));
+  plec.open = obertAvisos(empremta, curts.some((c) => nivellDe(c) === 'vermell'));
+  if (plec.open) marcaAvisosVistos(empremta);
+  plec.addEventListener('toggle', () => {
+    PLEC_AVISOS = { empremta, obert: plec.open };
+    marcaAvisosVistos(empremta);
+  });
+  const llista = element('div', 'avisos-curts');
+  llista.append(...curts);
+  sec.append(plec, llista);
   return sec;
+}
+
+// «Avisos actius» plegat quan no hi ha res de nou (Juanjo, 16-10-2026: «la
+// primera vez que se entra la tarjeta Avisos actius aparece desplegada, pero,
+// si no hay cambios, las veces sucesivas aparecería plegada, indicando entre
+// paréntesis el número de avisos»; ADR 0094). Plegat, una línia per avís amb
+// la franja del seu nivell, perquè es vegi quins són sense tocar res; obert,
+// els textos sencers. Es desplega sol la primera vegada i quan canvia el
+// conjunt (un avís nou, un nivell que puja, un que acaba); un avís vermell
+// no es plega mai. El que s'ha vist es recorda al dispositiu, per a «El
+// temps» i «Si surts» alhora; dins d'una mateixa pàgina, mana com l'ha deixat
+// la persona mentre els avisos no canviïn.
+const CLAU_AVISOS_VISTOS = 'meteo.avisos-vistos';
+let PLEC_AVISOS = null;   // {empremta, obert}: com l'ha deixat la persona en aquesta pàgina
+
+function avisosVistos() {
+  try { return localStorage.getItem(CLAU_AVISOS_VISTOS); } catch (e) { return null; }
+}
+
+function marcaAvisosVistos(empremta) {
+  try { localStorage.setItem(CLAU_AVISOS_VISTOS, empremta); } catch (e) { /* sense memòria, cada vegada desplegat */ }
+}
+
+function obertAvisos(empremta, vermell) {
+  if (PLEC_AVISOS && PLEC_AVISOS.empremta === empremta) return PLEC_AVISOS.obert;
+  return vermell || avisosVistos() !== empremta;
+}
+
+const NIVELLS_AVIS = ['vermell', 'taronja', 'groc', 'prealerta', 'compte'];
+function nivellDe(item) {
+  return (item.className || '').split(' ').find((c) => NIVELLS_AVIS.includes(c)) || '';
+}
+
+// Les línies curtes, en el mateix ordre que les senceres: els plans, Meteocat
+// per fenomen (amb pla, porta a la fitxa del pla, com les línies de dins; ADR
+// 0067), i la resta amb el text curt que cada bloc ha deixat a «curt».
+function curtsAvisos(perills, talls, smp, hrefDe, ara) {
+  const curts = [];
+  let smpFet = false;
+  const plans = perills.filter((i) => i.dataset.tipus === 'pla');
+  const posaSmp = () => {
+    if (smpFet) return;
+    smpFet = true;
+    curts.push(...curtsSmp(smp, plans.length ? hrefDe(plans[0]) : fitxaPerill((h) => h.clau.startsWith('meteocat:')), ara));
+  };
+  for (const i of perills) {
+    if (i.dataset.tipus === 'smp') { posaSmp(); continue; }
+    if (i.dataset.tipus !== 'pla') posaSmp();
+    const p = element('p', `avis-item curt ${nivellDe(i)}`, i.dataset.curt || i.textContent);
+    p.dataset.clau = i.dataset.clau || i.textContent;
+    curts.push(ambDetall(p, hrefDe(i)));
+  }
+  posaSmp();
+  for (const i of talls) {
+    const p = element('p', 'avis-item curt compte', i.dataset.curt || i.textContent);
+    p.dataset.clau = i.dataset.clau || i.textContent;
+    curts.push(ambDetall(p, 'consultes.html#llum'));
+  }
+  return curts;
 }
 
 // Les línies del resum del dia (a «El temps» i a «Consultes») amb un detall

@@ -321,7 +321,9 @@ function resumTram(t) {
 function blocAra(casa, radarDades, vent, veines, hores) {
   const sec = element('section', 'decisio targeta ara');
   sec.setAttribute('aria-label', T`El temps ara a ${LLOC}`);
-  sec.append(element('h2', 'data', T`Ara a ${LLOC} (${horaCurta(casa.hora)})`));
+  // Sense l'hora de la mesura: la línia «Actualitzat a les…» va al peu de la
+  // targeta, i dues hores juntes semblaven un error (Juanjo, 16-10-2026; ADR 0094).
+  sec.append(element('h2', 'data', T`Ara a ${LLOC}`));
   const temp = element('p', 'veredicte');
   const termometre = icona('i-thermometer');
   termometre.classList.add('vehicle');
@@ -476,8 +478,7 @@ const ORDRE_NIVELL = ['groc', 'taronja', 'vermell'];
 // (riscos.py, ADR 0018) per a aquella hora, amb el nivell més alt (Juanjo,
 // 12-10-2026: «la franja de peligro … tiene que estar destacada también …
 // pluja forta en sí no indica ningún peligro especial»; ADR 0076).
-const NOM_RISC = () => ({ pluja_1h: T('pluja molt forta'), pluja_12h: T('molta pluja'), ratxa: T('vent molt fort'),
-  calor: T('calor extrema'), fred: T('fred intens'), neu_24h: T('neu') });
+// NOM_RISC, a comu.js: també el fa servir el bloc «Avisos actius» plegat (ADR 0094).
 
 function riscosHora(f, riscos, ara = new Date()) {
   const ini = new Date(f.hora);
@@ -835,14 +836,20 @@ function repintaAvisos() {
   if (DADES_AVISOS && !dadesVelles(DADES_AVISOS)) pintaAvisos(DADES_AVISOS);
 }
 
+// La línia «Actualitzat a les… · propera: …», al peu de la targeta «Ara» (ADR
+// 0094): la pàgina en té una sola hora. El node és el de casa.html; com que
+// #casa es buida a cada pintada, es torna a col·locar cada vegada.
+let HORARI = null;
+
 function pinta(dades) {
   const cont = $('casa');
+  HORARI = HORARI || $('horari');
   cont.replaceChildren();
   // Dades de fa massa: només l'avís i on mirar (ADR 0031).
   if (dadesVelles(dades)) {
     $('avisos').replaceChildren();
     DADES_AVISOS = dades;
-    cont.append(blocDadesVelles(dades));
+    cont.append(blocDadesVelles(dades), HORARI);
     pintaHorari(dades);
     posaVersio(dades.versio);
     return;
@@ -857,7 +864,12 @@ function pinta(dades) {
     avisos.append(element('p', 'avis', T`Avui els models no veuen aquesta pluja: en les darreres ${m.hores} hores han caigut ${coma(m.mesurada_mm)}\u00a0mm a Montflorit i en preveien ${coma(m.prevista_mm)}. Les primeres hores de la taula parteixen del que mesura l\u2019estació; per a la resta, fes més cas dels avisos.`));
   }
   const ara = dades.ara_casa && blocAra(dades.ara_casa, dades.radar, dades.vent, dades.veines, dades.hores);
-  if (ara) cont.append(ara);
+  if (ara) {
+    ara.append(HORARI);
+    cont.append(ara);
+  } else {
+    cont.append(HORARI);
+  }
   if (OFERTA_AVISOS) cont.append(OFERTA_AVISOS);
   const resum = blocsResum(dades);
   cont.append(...resum);

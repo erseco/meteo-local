@@ -121,6 +121,10 @@ class Perills(unittest.TestCase):
                                                          ARA.isoformat(), linies))
         r = json.loads(subprocess.run(["node", "-e", codi], capture_output=True, text=True, check=True).stdout)
         self.assertTots(r["text"], "ca", B.TIPUS_PERILL, "«Avisos actius» de la web")
+        # Plegat, una línia per avís: tampoc no se'n pot deixar cap (ADR 0094).
+        self.assertTots(r["curts"], "ca", B.TIPUS_PERILL, "«Avisos actius» plegat")
+        # Es desplega la primera vegada i quan canvia el conjunt; si no, plegat; vermell, sempre obert.
+        self.assertEqual(r["plec"], [True, False, True, True], "quan es desplega «Avisos actius»")
         # Cada alerta porta a la seva fitxa de «Perill», perquè s'hi destaqui
         # (Juanjo, 16-10-2026: «con este enlace no me sale el resalte»): a
         # «Avisos actius» i a les línies del resum.
@@ -172,7 +176,8 @@ const ctx = vm.createContext({
   document: { querySelectorAll: () => [], getElementById: () => new Node_('div'), createElement: (t) => new Node_(t),
     createElementNS: (n, t) => new Node_(t), addEventListener() {}, documentElement: { dataset: {}, lang: 'ca' } },
   matchMedia: () => ({ matches: false, addEventListener() {} }), addEventListener() {}, AbortController,
-  localStorage: { getItem: () => null, setItem() {} }, navigator: {}, location: { pathname: '/', hash: '' },
+  localStorage: (() => { const m = {}; return { getItem: (k) => (k in m ? m[k] : null), setItem(k, v) { m[k] = String(v); } }; })(),
+  navigator: {}, location: { pathname: '/', hash: '' },
   history: { replaceState() {} }, window: { addEventListener() {} },
   fetch: () => new Promise(() => {}), setTimeout: () => 0, clearTimeout() {},
 });
@@ -183,9 +188,17 @@ const detalls = (n) => (typeof n === 'string' ? [] : [...(n.tag === 'a' && n.cla
 const bloc = vm.runInContext('blocAvisos(__dades)', ctx);
 ctx.__linies = linies;
 ctx.__sensePla = { ...dades, plans: [] };
-console.log(JSON.stringify({ text: bloc.textContent, detalls: detalls(bloc),
-  sensePla: detalls(vm.runInContext('blocAvisos(__sensePla)', ctx)),
-  linies: vm.runInContext('__linies.map(detallLinia)', ctx) }));
+const sensePla = detalls(vm.runInContext('blocAvisos(__sensePla)', ctx));
+const liniesFitxa = vm.runInContext('__linies.map(detallLinia)', ctx);
+// Sense cap avís vermell (la riera, l'incendi i el Pla Alfa 4 ho són), per veure quan es plega.
+vm.runInContext(`HISTORIAL_PERILL = ${JSON.stringify(historial.filter((e) => e.tipus !== 'riera'))};`, ctx);
+ctx.__pocs = { ...dades, entorn: null };
+ctx.__mes = { ...ctx.__pocs, riscos: [{ ...dades.riscos[0], nivell: 'taronja' }] };
+ctx.__vermell = { ...ctx.__pocs, entorn: dades.entorn };
+const obert = (nom) => vm.runInContext(`blocAvisos(${nom}).fills[0].open`, ctx);
+const plec = [obert('__pocs'), obert('__pocs'), obert('__mes'), obert('__vermell')];
+console.log(JSON.stringify({ text: bloc.textContent, curts: bloc.fills[1].textContent, detalls: detalls(bloc),
+  sensePla, linies: liniesFitxa, plec }));
 """
 
 
