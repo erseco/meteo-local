@@ -40,6 +40,17 @@ collserola… usa el mismo color». Se descartó ampliar a 1 km el margen
 alrededor del parque para los incendios que empiezan fuera y pueden entrar
 (Bombers da un solo punto por actuación, el del inicio): «no, no lo amplíes».
 Si cambia la zona, hay que rehacer la imagen con `eines/mapa_incendis.html`.
+
+**16-10-2026 (3.99.1): cómo se decide cada aviso.** El mapa pasa a uno de
+los siete desplegables de «Com es decideixen els avisos», al final de
+«Perill», todos plegados y en el orden de las alertas (Protecció Civil,
+Meteocat, AEMET, riera, incendios, Pla Alfa y temps extrem): solo se
+explicaba cómo se decidían los incendios (Juanjo: «a lo mejor se podría poner
+información sobre el resto de avisos, todo plegado para evitar un tamaño
+excesivo»). Cada uno, en pocas líneas sacadas de su ADR (0051, 0062, 0071,
+0092 y 0093); la riera y el temps extrem, que tienen su apartado en «Com
+funciona», enlazan allí en lugar de repetirlo. El mapa solo se descarga si
+se abre el de los incendios.
 ## Contexto
 
 La noche del 10 al 11-10-2026 llegó por Telegram y al móvil el aviso de un
