@@ -242,14 +242,16 @@ class Castella(unittest.TestCase):
         dades = js("IDIOMA.dades")
         paraules = list(R.NIVELLS) + list(C.PLANES_PC.values()) + list(C.PROCICAT_PC.values()) + list(N.RUMBS) + ["pluja", "tempestes",
                                                                                  "prealerta", "alerta", "emergència"]
-        # Els quatre motius del mode vigilància, tal com surten a les dades.
+        # Els cinc motius del mode vigilància, tal com surten a les dades.
         import datetime as dt
         import prevision as P
         ara = P.AHORA
         avis = [{"zona": C.ZONA_AVISOS, "inicio": (ara - dt.timedelta(hours=1)).isoformat(),
                  "fin": (ara + dt.timedelta(hours=1)).isoformat()}]
-        motius = P.motivos_modo_aviso(avis, [{"fase": "alerta"}], [{"intensitat": 1}], {"km_lluvia": 1})
-        self.assertEqual(len(motius), 4)
+        hora = ara.astimezone()
+        smp = {"avisos": [{"meteor": "Pluja", "dies": {hora.date().isoformat(): [(hora.hour, hora.hour + 1)]}}]}
+        motius = P.motivos_modo_aviso(avis, [{"fase": "alerta"}], [{"intensitat": 1}], {"km_lluvia": 1}, smp)
+        self.assertEqual(len(motius), 5)
         paraules += motius
         self.assertEqual([p for p in paraules if p not in dades], [])
         self.assertEqual(set(js("Object.keys(IDIOMA.riscos)")), set(R.TEXTOS))
@@ -284,7 +286,7 @@ class Castella(unittest.TestCase):
         self.assertEqual(js("TD('al nord-est')"), "el nordeste")
         # Juanjo, 12-10-2026 (ADR 0074): sin «Modo normal» ni «Modo vigilancia»; el «?»
         # de la línea de actualización explica cada cuánto se actualiza.
-        explicacio = ("La página se actualiza cada 15 minutos, y cada 6 cuando hay un aviso de AEMET, un plan de "
+        explicacio = ("La página se actualiza cada 15 minutos, y cada 6 cuando hay un aviso de Meteocat o de AEMET, un plan de "
                       "Protección Civil en alerta o emergencia, lluvia en Montflorit o lluvia en el radar a menos de 15 km.")
         self.assertEqual(js("textActualitzacio({trams: [['00:00', '23:45']], cada_min: 6, mode_avis: ['pluja al radar'], normal_min: 15, avis_min: 6, radar_km: 15})"), explicacio)
         self.assertEqual(js("textActualitzacio({trams: [['00:00', '23:45']], cada_min: 15, mode_avis: []})"), explicacio)

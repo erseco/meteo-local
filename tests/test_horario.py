@@ -53,6 +53,15 @@ class ModoAviso(unittest.TestCase):
         self.assertEqual(P.motivos_modo_aviso([], [], [], {"km_lluvia": 8}), ["pluja al radar"])
         self.assertEqual(P.motivos_modo_aviso([], [], [], {"km_lluvia": 40}), [])
 
+    def test_aviso_de_meteocat_sin_aemet(self):
+        # Juanjo, 16-10-2026: el de Meteocat cuenta aunque AEMET no tenga ninguno.
+        ara = P.AHORA.astimezone()
+        ahora = {"avisos": [{"meteor": "Pluja", "dies": {ara.date().isoformat(): [(ara.hour, ara.hour + 1)]}}]}
+        despues = {"avisos": [{"meteor": "Pluja", "dies": {"2099-01-01": [(0, 6)]}}]}
+        self.assertEqual(P.motivos_modo_aviso([], [], [], None, ahora), ["avís del Meteocat"])
+        self.assertEqual(P.motivos_modo_aviso([], [], [], None, despues), [])
+        self.assertEqual(P.motivos_modo_aviso([], [], [], None, None), [])
+
 
 if __name__ == "__main__":
     unittest.main()

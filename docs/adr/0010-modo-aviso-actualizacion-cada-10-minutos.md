@@ -13,8 +13,10 @@ convendría actualizar más a menudo.
 ## Decisión
 
 - **Modo aviso** cuando se da cualquiera de estas cosas
-  (`motivos_modo_aviso` en `prevision.py`): aviso de AEMET vigente en el
-  Vallès, plan de Protección Civil en alerta o emergencia, lluvia en alguna
+  (`motivos_modo_aviso` en `prevision.py`): aviso de Meteocat vigente para
+  el Vallès Occidental a esa hora (desde la 3.96.2; cuenta aunque AEMET no
+  tenga ninguno: «si solo hay meteocat que cuente para los 6 minutos»,
+  Juanjo, 16-10-2026), aviso de AEMET vigente en el Vallès, plan de Protección Civil en alerta o emergencia, lluvia en alguna
   estación (Montflorit o Meteocat), lluvia en el radar a menos de 15 km
   (`RADAR_AVISO_KM`) o lluvia que el radar llevado hacia delante ve llegar a
   casa en la próxima hora (ADR 0019).

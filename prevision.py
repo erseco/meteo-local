@@ -500,12 +500,18 @@ def pla_per_temps(p, avisos_, ahora=None, smp=None):
 
 # --- Horario y modo aviso -------------------------------------------------------
 
-def motivos_modo_aviso(avisos_, planes, obs, radar_):
+def motivos_modo_aviso(avisos_, planes, obs, radar_, smp=None):
     """Por qué conviene actualizar cada 6 minutos (lista vacía si no): aviso
-    de AEMET vigente, plan de Protección Civil en alerta o emergencia, lluvia
-    en las estaciones o lluvia en el radar a menos de RADAR_AVISO_KM de casa
-    (o que llegará a casa en la próxima hora)."""
+    de Meteocat o de AEMET vigente, plan de Protección Civil en alerta o
+    emergencia, lluvia en las estaciones o lluvia en el radar a menos de
+    RADAR_AVISO_KM de casa (o que llegará a casa en la próxima hora). El de
+    Meteocat cuenta aunque AEMET no tenga ninguno (Juanjo, 16-10-2026)."""
+    import smp as SMP
     res = []
+    hora = AHORA.astimezone()
+    if any(f"{hora.date().isoformat()}:{hora.hour}" in SMP.hores_avis(m)
+           for m in (smp or {}).get("avisos") or []):
+        res.append("avís del Meteocat")
     if any(a["zona"] == C.ZONA_AVISOS
            and dt.datetime.fromisoformat(a["inicio"]) <= AHORA < dt.datetime.fromisoformat(a["fin"])
            for a in avisos_ or []):
@@ -555,6 +561,12 @@ if __name__ == "__main__":
         nc = r["nowcast"] or {}
         print(f"Radar ({r['imatge']}, {r['hora'][11:16]}): pluja a {r['km_lluvia']} km de casa; "
               f"moviment cap {nc.get('cap_a')} a {nc.get('velocitat_kmh')} km/h")
-    motius = motivos_modo_aviso(d.get("avisos"), d.get("plans"), d.get("estacions"), r)
+    import smp as SMP
+    try:
+        smp = SMP.llegeix(get, AHORA)
+    except Exception as ex:
+        smp = None
+        print("  fallo: smp:", ex)
+    motius = motivos_modo_aviso(d.get("avisos"), d.get("plans"), d.get("estacions"), r, smp)
     print("Mode avís:", ", ".join(motius) if motius else "no")
     sys.exit(1 if errores and not d else 0)

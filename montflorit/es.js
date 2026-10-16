@@ -108,7 +108,7 @@ var IDIOMA = {
     "previsió de Meteocat": "previsión de Meteocat",
     "radar": "radar",
     "Cada quan s’actualitza?": "¿Cada cuánto se actualiza?",
-    "La pàgina s’actualitza cada {0} minuts, i cada {1} quan hi ha un avís de l’AEMET, un pla de Protecció Civil en alerta o emergència, pluja a Montflorit o pluja al radar a menys de {2} km.": "La página se actualiza cada {0} minutos, y cada {1} cuando hay un aviso de AEMET, un plan de Protección Civil en alerta o emergencia, lluvia en Montflorit o lluvia en el radar a menos de {2} km.",
+    "La pàgina s’actualitza cada {0} minuts, i cada {1} quan hi ha un avís del Meteocat o de l’AEMET, un pla de Protecció Civil en alerta o emergència, pluja a Montflorit o pluja al radar a menys de {2} km.": "La página se actualiza cada {0} minutos, y cada {1} cuando hay un aviso de Meteocat o de AEMET, un plan de Protección Civil en alerta o emergencia, lluvia en Montflorit o lluvia en el radar a menos de {2} km.",
     " Només s’actualitza de {0}.": " Solo se actualiza de {0}.",
     " del {0}": " del {0}",
     "demà a les {0}": "mañana a las {0}",
@@ -416,7 +416,7 @@ var IDIOMA = {
   dades: {
     groc: 'amarillo', taronja: 'naranja', vermell: 'rojo',
     // Els motius del mode vigilància (prevision.motivos_modo_aviso).
-    "avís de l'AEMET": 'aviso de AEMET', 'pla de Protecció Civil': 'plan de Protección Civil',
+    "avís del Meteocat": 'aviso de Meteocat', "avís de l'AEMET": 'aviso de AEMET', 'pla de Protecció Civil': 'plan de Protección Civil',
     'pluja a les estacions': 'lluvia en las estaciones', 'pluja al radar': 'lluvia en el radar',
     pluja: 'lluvia', tempestes: 'tormentas',
     // Els tipus d'avís de l'AEMET i els fenòmens de Meteocat (ADR 0093).
