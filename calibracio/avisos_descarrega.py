@@ -48,20 +48,29 @@ def clau(nom):
         return f.read().strip()
 
 
-def baixa(url, capcaleres, intents=4):
-    for i in range(intents):
+def baixa(url, capcaleres, intents=4, esperes_429=30):
+    """Con el límite de uso (429: «vuelva a intentarlo el próximo minuto» en
+    AEMET), espera un minuto y vuelve a probar, hasta esperes_429 veces; los
+    demás fallos, hasta «intents»."""
+    errors = esperes = 0
+    while True:
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "meteo-local", **capcaleres})
             with urllib.request.urlopen(req, timeout=120) as r:
                 return r.read()
         except urllib.error.HTTPError as ex:
-            if ex.code == 404:
+            if ex.code == 429 and esperes < esperes_429:
+                esperes += 1
+                print(time.strftime("%H:%M:%S"), "límit d'ús (429), s'espera un minut:", url[:70], flush=True)
+                time.sleep(61)
+                continue
+            errors += 1
+            if ex.code == 404 or errors >= intents:
                 raise
-            if i == intents - 1:
-                raise
-            time.sleep(20 * (i + 1) if ex.code == 429 else 5)
+            time.sleep(5)
         except OSError:
-            if i == intents - 1:
+            errors += 1
+            if errors >= intents:
                 raise
             time.sleep(5)
 
@@ -128,10 +137,11 @@ def tram_aemet(d, fi, k):
     return d, [a for x in xmls(baixa(meta["datos"], {"api_key": k})) for a in avisos_cap(x)]
 
 
-def aemet(des_de, fins, processos=4):
-    """Por tramos de 2 días, lo máximo que admite el archivo, en varios
-    procesos (AEMET tarda unos 7 s en servir cada uno). Se puede
-    interrumpir: los tramos hechos quedan apuntados y no se repiten."""
+def aemet(des_de, fins, processos=1):
+    """Por tramos de 2 días, lo máximo que admite el archivo. En un solo
+    proceso: con cuatro se pasaba del límite de uso de AEMET (16-10-2026).
+    Se puede interrumpir: los tramos hechos quedan apuntados y no se
+    repiten."""
     from concurrent.futures import ProcessPoolExecutor, as_completed
     k = clau("aemet")
     vistos, fets = {}, set()

@@ -73,8 +73,15 @@ siempre en la hora en curso.
   claro (Juanjo: «el color que se diferencie de los que ya hay»). La tabla no
   cambia: «possible pluja» sigue siendo desde el 20 %.
 - **Fuera de entrada**: el viento, la parte alta y el UV, que ya están en las
-  tablas, y tocar una hora para ver sus datos. Se añadirán si se echan en
-  falta.
+  tablas. Se añadirán si se echan en falta.
+- **Tocar una hora** (o pasar el ratón, en el ordenador) muestra encima un
+  rótulo con su hora, sus milímetros y su probabilidad («17 h · 6 mm ·
+  70 %»), y marca la columna; se quita al tocar fuera o la misma hora. Desde
+  la 3.98.0: Juanjo preguntó si se podían poner los milímetros en todas las
+  barras («solo pone la lluvia del mayor?»), pero en el móvil cada hora mide
+  de 9 a 15 px y la cifra unos 17; con litros sería igual de larga y habría
+  que escribir «l/m²». La cifra de la hora más fuerte de cada episodio (desde
+  0,5 mm) sigue a la vista.
 - **SVG dibujado desde `casa.js`**, sin bibliotecas ni conexiones externas,
   con el ancho real de la pantalla (se redibuja al cambiar de tamaño) para que
   el texto no se encoja en el móvil, y con los colores del tema claro y

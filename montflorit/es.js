@@ -335,6 +335,8 @@ var IDIOMA = {
     "Gràfica de la previsió: perill, cel, temperatura i probabilitat de pluja. Les mateixes dades són a les taules de sota.": "Gráfica de la previsión: peligro, cielo, temperatura y probabilidad de lluvia. Los mismos datos están en las tablas de abajo.",
     "Pluja, {0}\u00a0% o més": "Lluvia, {0}\u00a0% o más",
     "Pluja, del {0} al {1}\u00a0%": "Lluvia, del {0} al {1}\u00a0%",
+    "{0}\u00a0h · {1}\u00a0mm": "{0}\u00a0h · {1}\u00a0mm",
+    "{0}\u00a0h · {1}\u00a0mm · {2}\u00a0%": "{0}\u00a0h · {1}\u00a0mm · {2}\u00a0%",
     "Demà": "Mañana",
     "Trens": "Trenes",
     "Trànsit": "Tráfico",

@@ -1063,6 +1063,52 @@ function dibuixaGrafica(fig) {
     if (!gran || x(i) < finsAra || x(i) > W - 8) return;
     g.append(svg('text', { class: 'g-hora', x: x(i), y: yEix, 'text-anchor': 'middle' }, String(hora(f))));
   });
+  // Tocar una hora (o passar-hi el ratolí): la seva pluja en un rètol, perquè
+  // els mil·límetres de cada barra no hi caben (Juanjo, 16-10-2026: «solo pone
+  // la lluvia del mayor?»). Es treu tocant fora o la mateixa hora.
+  const retol = svg('g', { class: 'g-retol' });
+  let actiu = null;
+  const amaga = () => {
+    actiu = null;
+    retol.replaceChildren();
+  };
+  const mostra = (i) => {
+    const f = files[i];
+    // Els mm com a la xifra de la barra: sense decimals a partir de 10.
+    const v = f.pluja_mm || 0;
+    const mm = v >= 10 ? String(Math.round(v)) : coma(Math.round(v * 10) / 10);
+    const text = f.probabilitat == null
+      ? T`${hora(f)}\u00a0h · ${mm}\u00a0mm`
+      : T`${hora(f)}\u00a0h · ${mm}\u00a0mm · ${Math.round(f.probabilitat * 100)}\u00a0%`;
+    actiu = i;
+    retol.replaceChildren(svg('rect', { class: 'g-retol-columna', x: x(i), y: yCel - 2, width: col,
+      height: yPluja + hPluja - yCel + 2 }));
+    const t = svg('text', { class: 'g-retol-text', 'text-anchor': 'middle' }, text);
+    const fons = svg('rect', { class: 'g-retol-fons', rx: 4 });
+    retol.append(fons, t);
+    const llarg = t.getComputedTextLength();
+    const cx = Math.min(Math.max(x(i) + col / 2, llarg / 2 + 6), W - llarg / 2 - 6);
+    const dalt_ = plujaGrafica(f) ? dalt(f) : base;
+    const ty = Math.max(dalt_ - 10, yTemp + 10);
+    t.setAttribute('x', cx);
+    t.setAttribute('y', ty);
+    Object.entries({ x: cx - llarg / 2 - 5, y: ty - 13, width: llarg + 10, height: 18 })
+      .forEach(([k, v]) => fons.setAttribute(k, v));
+  };
+  files.forEach((f, i) => {
+    const zona = svg('rect', { class: 'g-zona', x: x(i), y: yCel - 2, width: col, height: yPluja + hPluja - yCel + 2 });
+    zona.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') mostra(i); });
+    zona.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') amaga(); });
+    zona.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (actiu === i && e.pointerType !== 'mouse') amaga();
+      else mostra(i);
+    });
+    g.append(zona);
+  });
+  g.append(retol);
+  fig._amaga = amaga;
+
   fig.querySelector('.g-llegenda')?.remove();
   const ll = element('p', 'g-llegenda');
   const clau = (classe, text) => {
@@ -1097,6 +1143,10 @@ function dibuixaGrafiques() {
   for (const fig of document.querySelectorAll('figure.grafica')) dibuixaGrafica(fig);
 }
 addEventListener('resize', dibuixaGrafiques);
+// Tocar fora de la gràfica treu el rètol de l'hora.
+addEventListener('click', () => {
+  for (const fig of document.querySelectorAll('figure.grafica')) fig._amaga?.();
+});
 
 // El botó diu el que farà: desplegar-ho tot si en queda algun de plegat.
 function posaBotoTot() {

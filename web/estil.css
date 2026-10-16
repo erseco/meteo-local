@@ -1022,6 +1022,11 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .grafica .g-base, .grafica .g-marca { stroke: var(--suau); }
 .grafica .g-marca.petita { stroke-opacity: .6; }
 .grafica .g-pluja { fill: var(--c-aigua); }
+.grafica .g-zona { fill: transparent; cursor: pointer; }
+.grafica .g-retol { pointer-events: none; }
+.grafica .g-retol-columna { fill: color-mix(in srgb, var(--text) 8%, transparent); }
+.grafica .g-retol-fons { fill: var(--text); }
+.grafica .g-retol-text { fill: var(--superficie); font-size: 12px; font-weight: 600; }
 .grafica .g-pluja.possible { fill: color-mix(in srgb, var(--c-aigua) 50%, transparent); }
 .grafica .g-pluja.forta { fill: #fb923c; }
 .grafica .g-pluja.torrencial { fill: #ef4444; }
