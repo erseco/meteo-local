@@ -32,27 +32,28 @@ class Fonts(unittest.TestCase):
         self.assertTrue(r[0]["collserola"])
 
     def test_nomes_els_que_interessen_al_barri(self):
-        # ADR 0071 (Juanjo, 11-10-2026): Collserola a qualsevol distància,
-        # Cerdanyola sempre, els altres municipis del parc a 3 km o menys.
+        # ADR 0071 (Juanjo, 16-10-2026): Collserola a qualsevol distància i,
+        # fora del parc, a 2 km o menys, sigui quin sigui el municipi.
         parc = {(41.40, 2.02), (41.46, 2.10)}                     # Molins i Sant Cugat, dins del parc
         f = "Incendi vegetació forestal"
-        d = {"features": [feature(f, "Ripollet", 41.495, 2.155, gid="ripollet"),            # 2 km, sense parc
+        d = {"features": [feature(f, "Ripollet", 41.490, 2.148, gid="ripollet"),            # 1,4 km, sense parc
                           feature(f, "Badia del Vallès", 41.505, 2.115, gid="badia"),
                           feature(f, "Montcada i Reixac", 41.483, 2.165, gid="montcada"),  # 2,5 km, fora del parc
                           feature(f, "Montcada i Reixac", 41.483, 2.180, gid="montcada-lluny"),  # 3,8 km
                           feature(f, "Molins de Rei", 41.40, 2.02, gid="molins"),          # 13 km
                           feature(f, "Sant Cugat del Vallès", 41.46, 2.10, gid="stcugat"),
-                          feature(f, "Cerdanyola del Vallès", 41.50, 2.14, gid="cerdanyola")]}
+                          feature(f, "Cerdanyola del Vallès", 41.50, 2.14, gid="cerdanyola")]}   # 2,04 km, fora del parc
         r = EN.incendis(d, collserola=lambda y, x: (y, x) in parc)
-        self.assertEqual(sorted(i["id"] for i in r), ["cerdanyola", "molins", "montcada", "stcugat"])
+        self.assertEqual(sorted(i["id"] for i in r), ["molins", "ripollet", "stcugat"])
         self.assertEqual(r[-1]["id"], "molins")                  # del més a prop al més lluny
 
     def test_interessa(self):
-        self.assertTrue(EN.interessa("Montcada i Reixac", 3.0, False))
-        self.assertFalse(EN.interessa("Montcada i Reixac", 3.1, False))
+        self.assertTrue(EN.interessa("Montcada i Reixac", 2.0, False))
+        self.assertFalse(EN.interessa("Montcada i Reixac", 2.1, False))
         self.assertTrue(EN.interessa("Molins de Rei", 14, True))
-        self.assertFalse(EN.interessa("Ripollet", 1.5, False))
-        self.assertTrue(EN.interessa("Cerdanyola del Vallès", 7, False))
+        self.assertTrue(EN.interessa("Ripollet", 1.5, False))
+        self.assertFalse(EN.interessa("Cerdanyola del Vallès", 7, False))
+        self.assertTrue(EN.interessa("Cerdanyola del Vallès", 1.9, False))
 
     def test_pla_alfa_el_5_no_es_cap_nivell(self):
         respostes = {"avui": 4, "dema": 5}

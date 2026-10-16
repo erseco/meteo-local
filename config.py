@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.98.0"
+VERSION = "3.98.1"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -258,12 +258,12 @@ TRENS = [
 # las últimas ALFA_ACTUAL_H horas (fuera de campaña se queda con el último
 # valor); se muestra desde el nivel ALFA_NIVELL_MOSTRAR, el que restringe el
 # acceso a los espacios forestales.
-ENTORN_RADI_KM = 3
-# Desde el 11-10-2026 (ADR 0071), no todo incendio a 5 km: los de Collserola a
-# cualquier distancia, los de Cerdanyola siempre y, de los demás municipios
-# del parque (los nueve del Consorci), solo los de ENTORN_RADI_KM o menos
-# (5 km hasta el 11-10-2026, cuando Juanjo lo bajó a 3: «5km es demasiado»).
-# Ripollet, Sabadell, Barberà o Badia no tienen parque: no avisan. Se piden a
+ENTORN_RADI_KM = 2
+# Desde el 16-10-2026 (ADR 0071): los de Collserola a cualquier distancia y,
+# fuera del parque, los de ENTORN_RADI_KM o menos, sea cual sea el municipio
+# (Juanjo: «bájalo a 2 km esté donde esté y luego los del parque»). Del
+# 11-10-2026 a esa fecha, los de Cerdanyola siempre y los de los demás
+# municipios del parque a 3 km («5km es demasiado»); Ripollet o Sabadell, no. Se piden a
 # Bombers los de la caja INCENDIS_CAIXA (lon. mín., lat. mín., lon. máx., lat.
 # máx.), que abarca el parque y 6 km alrededor de casa; la posición de cada
 # actuación es aproximada: cuenta como parque hasta COLLSEROLA_MARGE_KM fuera.

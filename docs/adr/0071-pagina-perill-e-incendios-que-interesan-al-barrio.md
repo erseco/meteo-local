@@ -2,6 +2,13 @@
 
 Fecha: 2026-10-11 · Estado: aceptado
 
+
+**16-10-2026 (3.98.1):** fuera del parque, cualquier incendio forestal a
+`ENTORN_RADI_KM` (2 km) o menos, sea cual sea el municipio, y los de
+Collserola a cualquier distancia. Juanjo: «bájalo a 2 km esté donde esté y
+luego los del parque». Deja de valer «Cerdanyola, siempre»: un incendio en
+Cerdanyola fuera del parque y a más de 2 km ya no avisa; uno en Ripollet o
+Sabadell a 2 km o menos, sí.
 ## Contexto
 
 La noche del 10 al 11-10-2026 llegó por Telegram y al móvil el aviso de un

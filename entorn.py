@@ -4,10 +4,8 @@
 - incendios forestales en curso de la capa pública de actuaciones urgentes de
   Bombers de la Generalitat (ArcGIS), solo los que interesan al barrio (ADR
   0071): dentro del Parc Natural de Collserola, a cualquier distancia (el
-  límite oficial, de la capa del Consorci del parque); en Cerdanyola, en
-  cualquier punto; y en los demás municipios del parque, como Montcada, a
-  ENTORN_RADI_KM o menos. Ripollet, Sabadell o Barberà, que no tienen parque,
-  no;
+  límite oficial, de la capa del Consorci del parque), y fuera del parque, a
+  ENTORN_RADI_KM o menos, en cualquier municipio (desde el 16-10-2026);
 - el nivel del Pla Alfa de Cerdanyola hoy y mañana, y los cierres de espacios
   naturales que tocan Collserola, de las capas públicas de Agents Rurals
   (ArcGIS).
@@ -70,13 +68,12 @@ def dins_collserola(y, x):
 
 
 def interessa(municipi, dist, collserola):
-    """Si un incendio interesa al barrio (Juanjo, 11-10-2026): en Collserola,
-    a cualquier distancia; en Cerdanyola, siempre; en los otros municipios del
-    parque, solo cerca. Los demás, no, por cerca que estén."""
-    nom = (municipi or "").strip().lower()
-    if collserola or nom == C.MUNICIPI.lower():
-        return True
-    return nom in {m.lower() for m in C.MUNICIPIS_COLLSEROLA} and dist is not None and dist <= C.ENTORN_RADI_KM
+    """Si un incendio interesa al barrio: en Collserola, a cualquier
+    distancia; fuera, a ENTORN_RADI_KM o menos, en cualquier municipio
+    (Juanjo, 16-10-2026: «bájalo a 2 km esté donde esté y luego los del
+    parque»). El municipio ya no cuenta; se queda en la firma porque lo da
+    Bombers y la página lo muestra."""
+    return bool(collserola) or (dist is not None and dist <= C.ENTORN_RADI_KM)
 
 
 def incendis(dades=None, collserola=None):
