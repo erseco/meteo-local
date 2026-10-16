@@ -31,9 +31,13 @@ siempre en la hora en curso.
   como en los meteogramas habituales (Juanjo: «mezclando ambas, con las barras
   por detrás, será lo mejor y más natural»). La línea lleva un borde del
   color del fondo para verse sobre las barras.
-- **La temperatura**: la máxima y la mínima de cada día en cifras, en rojo y
-  azul. La de la hora en curso no: sería la prevista, distinta de la medida
-  que sale en «Ara», y dos cifras iguales a distinta altura parecían un error.
+- **La temperatura**: la cifra, debajo de cada icono del cielo, la de la
+  hora del medio de su bloque (Juanjo: «no quedaría bien la temperatura bajo
+  el cielo?»): cielo y temperatura se leen juntos. La línea, sin cifras, dice
+  si sube o baja. Antes llevaba la máxima y la mínima de cada día y la de la
+  hora en curso; esta, prevista, no coincidía con la medida de «Ara», y dos
+  cifras iguales a distinta altura parecían un error. La máxima exacta puede
+  caer entre dos iconos: está en el resumen del día y en cada tramo.
 - **La lluvia**: la altura es la cantidad, no la probabilidad (con la
   probabilidad, una hora de 0,5 mm y una de 45 mm salían iguales). Escala fija,
   para que un día de llovizna no parezca un diluvio, y de raíz cuadrada, para
@@ -44,16 +48,15 @@ siempre en la hora en curso.
   rojo: las intensidades del manual de estilo de Meteocat, las palabras de la
   columna «Cel» (ADR 0043). Los avisos no colorean las barras: van en la
   franja. Los milímetros, con su unidad, en la hora más fuerte de cada
-  episodio; si chocan con una cifra de temperatura, dentro de la barra o al
-  lado.
+  episodio.
 - **La noche**, sombreada en gris, de la puesta a la salida del sol: un color
   que no se confunda con la lluvia.
 - **El eje empieza por «Ara»**, sin línea vertical: la gráfica empieza siempre
   en la hora en curso. Cada hora lleva una marca: larga y con número las que
   tocan (cada 3 h, o 2), corta y sin número la resta (Juanjo, 16-10-2026).
 - **Debajo, una leyenda** de una palabra por clave, sin paréntesis:
-  Temperatura, Pluja probable, Pluja possible, Nit, y Pluja forta y Pluja
-  torrencial solo cuando salen.
+  Temperatura y Nit, y cada clase de lluvia (Pluja probable, Pluja possible,
+  Pluja forta, Pluja torrencial) solo cuando sale.
 - **Fuera de entrada**: el viento, la parte alta y el UV, que ya están en las
   tablas, y tocar una hora para ver sus datos. Se añadirán si se echan en
   falta.
@@ -97,5 +100,6 @@ siempre en la hora en curso.
 - Ninguna hora del eje se superpone a «Ara» ni a «Ahora» en los tres
   navegadores, a 320 y 412 px. 478 pruebas en verde, una de ellas para las
   intensidades de las barras.
-- 3.95.0, con datos simulados de tormenta: los mismos navegadores, tamaños y
-  temas, y axe-core sin incidencias.
+- 3.95.0 y 3.96.0, con datos simulados de tormenta: los mismos navegadores,
+  tamaños y temas, y axe-core sin incidencias. En un móvil de 320 px, un
+  primer bloque de menos de 3 horas no lleva icono ni cifra.

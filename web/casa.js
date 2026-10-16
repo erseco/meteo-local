@@ -871,7 +871,10 @@ function dibuixaGrafica(fig) {
   // La temperatura i la pluja comparteixen la zona: les barres darrere de la
   // línia, com als meteogrames habituals (Juanjo, 16-10-2026).
   // El cel queda a part, a dalt: les barres no hi arriben (Juanjo, 16-10-2026).
-  const yTemp = yCel + hCel + 16;
+  // Sota cada icona, la temperatura d'aquella hora (Juanjo, 16-10-2026: «no
+  // quedaría bien la temperatura bajo el cielo?»).
+  const yXifra = yCel + hCel + 13;
+  const yTemp = yXifra + 12;
   const hTemp = 100;
   const yPluja = yTemp;
   const hPluja = hTemp;
@@ -943,6 +946,8 @@ function dibuixaGrafica(fig) {
       const cx = x(i) + amplada / 2;
       const ic = svg('use', { href: '#' + c[1], x: cx - mida / 2, y: yCel + (hCel - mida) / 2, width: mida, height: mida, class: 'g-cel' });
       g.append(ic);
+      const mig = files[Math.floor((i + j - 1) / 2)];
+      g.append(svg('text', { class: 'g-xifra', x: cx, y: yXifra, 'text-anchor': 'middle' }, `${Math.round(mig.temperatura)}°`));
     }
     i = j;
   }
@@ -961,8 +966,8 @@ function dibuixaGrafica(fig) {
     g.append(svg('rect', { class: `g-pluja ${pluja === 'pluja' ? 'segura' : 'possible'}${intensa ? ' ' + intensa : ''}`,
       x: x(i) + col * 0.15, y, width: col * 0.7, height: yPluja + hPluja - y }));
   });
-  // La temperatura: la línia, i les xifres de l'hora d'ara, de la màxima i
-  // de la mínima de cada dia, sense que se superposin.
+  // La temperatura: la línia, sense xifres (són sota el cel), per veure si
+  // puja o baixa.
   const temps = files.map((f) => f.temperatura);
   const tMin = Math.floor(Math.min(...temps)) - 1;
   const tMax = Math.ceil(Math.max(...temps)) + 1;
@@ -972,32 +977,6 @@ function dibuixaGrafica(fig) {
   // Una vora del color del fons, perquè la línia es vegi damunt de les barres.
   g.append(svg('polyline', { class: 'g-temp-vora', points: traç }));
   g.append(svg('polyline', { class: 'g-temp', points: traç }));
-  // Només la màxima i la mínima de cada dia. La d'ara no: seria la prevista,
-  // i la mesurada ja surt a «Ara» (Juanjo, 16-10-2026: «por qué los dos 24
-  // tienen diferente altura?»).
-  const etiquetes = [];
-  const perDia = new Map();
-  files.forEach((f, i) => {
-    const d = new Date(f.hora).toDateString();
-    if (!perDia.has(d)) perDia.set(d, []);
-    perDia.get(d).push(i);
-  });
-  for (const idx of perDia.values()) {
-    const max = idx.reduce((a, b) => (temps[b] > temps[a] ? b : a));
-    const min = idx.reduce((a, b) => (temps[b] < temps[a] ? b : a));
-    etiquetes.push([max, 'max'], [min, 'min']);
-  }
-  const posades = [];
-  for (const [i, tipus] of etiquetes) {
-    if (posades.some((k) => Math.abs(k - i) * col < 26)) continue;
-    posades.push(i);
-    const [px, py] = punts[i];
-    g.append(svg('circle', { class: 'g-punt', cx: px, cy: py, r: 2.5 }));
-    const sota = tipus === 'min';
-    const tx = Math.min(Math.max(px, 12), W - 12);
-    g.append(svg('text', { class: `g-xifra ${tipus}`, x: tx, y: sota ? py + 14 : py - 6, 'text-anchor': 'middle' },
-      `${Math.round(temps[i])}°`));
-  }
 
   // Els mil·límetres, només on la pluja és més forta de cada episodi, a sobre
   // de la barra; si hi ha una xifra de temperatura, a dins de la barra o al
@@ -1046,9 +1025,11 @@ function dibuixaGrafica(fig) {
   };
   // Una clau per cosa, sense explicacions entre parèntesis (Juanjo, 16-10-2026:
   // «es un galimatías»); què vol dir l'alçada ja ho diuen els mm de la barra.
-  // La forta i la torrencial, només si n'hi ha.
-  ll.append(clau('m-temp', T('Temperatura')), clau('m-pluja', T('Pluja probable')),
-    clau('m-pluja possible', T('Pluja possible')));
+  // Cada clau de pluja, només si n'hi ha (Juanjo, 16-10-2026).
+  ll.append(clau('m-temp', T('Temperatura')));
+  const plujes = files.map((f) => plujaHora(f));
+  if (plujes.includes('pluja')) ll.append(clau('m-pluja', T('Pluja probable')));
+  if (plujes.includes('possible')) ll.append(clau('m-pluja possible', T('Pluja possible')));
   const intenses = files.filter((f) => plujaHora(f)).map((f) => intensitatPluja(f.pluja_mm || 0));
   if (intenses.includes('forta')) ll.append(clau('m-pluja forta', T('Pluja forta')));
   if (intenses.includes('torrencial')) ll.append(clau('m-pluja torrencial', T('Pluja torrencial')));
