@@ -4,10 +4,12 @@
 // (subscripcio.php, a IONOS) desa l'adreça de notificacions del dispositiu i
 // el que s'hi tria; bot/push.py els envia. Els canvis es desen sols.
 
+// Clau, nom, icona i, si en té, una etiqueta i una línia de detall: el rètol
+// queda curt i el que està en proves es diu igualment (Juanjo, 16-10-2026).
 const TIPUS_PUSH = [
   ['perill', T('Situacions de perill'), 'i-triangle-alert'],
-  ['riera', T('Desbordament de la riera de Sant Cugat (en proves)'), 'i-waves'],
-  ['pluja', T('Pluja a punt de començar (15 min abans)'), 'i-cloud-rain'],
+  ['riera', T('Desbordament de la riera de Sant Cugat'), 'i-waves', T('en proves')],
+  ['pluja', T('Pluja a punt de començar'), 'i-cloud-rain', null, T('15 min abans')],
   // Els talls de llum del barri (ADR 0072).
   ['llum', T('Talls de llum al barri'), 'i-zap-off'],
 ];
@@ -111,21 +113,37 @@ function boto(text, classe, accio) {
   return b;
 }
 
+// Una fila de la llista: icona i nom a l'esquerra, el control a la dreta,
+// com als ajustos del mòbil. Tota la fila es pot tocar.
+function fila(icon, nom, control, etiqueta, detall) {
+  const f = element('label', 'push-fila');
+  const text = element('span', 'push-nom');
+  text.append(element('span', null, nom));
+  if (etiqueta) text.append(' ', element('span', 'push-etiqueta', etiqueta));
+  if (detall) text.append(element('small', 'push-detall', detall));
+  f.append(icona(icon), text, control);
+  return f;
+}
+
+function interruptor(nom, valor, marcat) {
+  const c = element('input', 'interruptor');
+  c.type = 'checkbox';
+  c.setAttribute('role', 'switch');
+  c.name = nom;
+  if (valor) c.value = valor;
+  c.checked = marcat;
+  return c;
+}
+
 function pinta(opcions) {
   const form = $('push');
-  const tipus = element('fieldset', 'push-tipus');
+  const tipus = element('fieldset', 'push-grup');
   tipus.append(element('legend', null, T('Què vols rebre')));
-  for (const [clau, nom, icon] of TIPUS_PUSH) {
-    const etiqueta = element('label', 'xip');
-    const casella = element('input');
-    casella.type = 'checkbox';
-    casella.name = 'tipus';
-    casella.value = clau;
-    casella.checked = opcions.avisos.includes(clau);
-    etiqueta.append(casella, icona(icon), element('span', null, nom));
-    tipus.append(etiqueta);
+  for (const [clau, nom, icon, etiqueta, detall] of TIPUS_PUSH) {
+    tipus.append(fila(icon, nom, interruptor('tipus', clau, opcions.avisos.includes(clau)), etiqueta, detall));
   }
-  const resum = element('label', 'push-resum', T('Previsió del dia, al matí, a les:'));
+  const previsio = element('fieldset', 'push-grup');
+  previsio.append(element('legend', null, T('Previsió')));
   const select = element('select');
   select.name = 'resum';
   for (const [valor, text] of HORES_PUSH) {
@@ -134,20 +152,15 @@ function pinta(opcions) {
     select.append(o);
   }
   select.value = opcions.resum || '';
-  resum.append(select);
-  const nit = element('label', 'xip push-nit');
-  const casellaNit = element('input');
-  casellaNit.type = 'checkbox';
-  casellaNit.name = 'nit';
-  casellaNit.checked = Boolean(opcions.nit);
-  nit.append(casellaNit, element('span', null, T('A les 21 h, la previsió de demà')));
+  previsio.append(fila('i-sun', T('Del dia, al matí'), select),
+    fila('i-moon', T('De demà, a les 21 h'), interruptor('nit', null, Boolean(opcions.nit))));
   const botons = element('p', 'push-botons');
   if (subscripcioPush) {
     botons.append(boto(T('Envia’m una prova'), 'boto', prova), boto(T('Desactiva'), 'boto secundari', desactiva));
   } else {
     botons.append(boto(T('Activa els avisos'), 'boto', activa));
   }
-  form.replaceChildren(tipus, resum, nit, botons);
+  form.replaceChildren(tipus, previsio, botons);
   form.hidden = false;
   estat(subscripcioPush ? T('Avisos activats en aquest dispositiu. Si canvies què reps, es desa sol.')
     : T('Tria què vols rebre i toca «Activa els avisos». El navegador et demanarà permís.'));

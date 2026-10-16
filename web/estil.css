@@ -784,13 +784,34 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .ajuda .entrada.novetat { border-left: 5px solid var(--enllac); padding: .2rem 0 .2rem .8rem; }
 .ajuda .novetat .nou { color: var(--enllac); }
 .push-tria[hidden] { display: none; }
-.push-tipus { display: grid; justify-items: start; gap: .4rem; margin: .5rem 0 0; padding: 0; border: 0; }
-.push-tipus legend { padding: 0; margin-bottom: .3rem; font-weight: 600; }
-.push-resum { display: block; margin: .9rem 0 0; font-weight: 600; }
-.push-nit { margin-top: .6rem; }
-.push-resum select { font: inherit; font-weight: normal; padding: .2rem .4rem; margin-left: .3rem;
+.push-grup { margin: .6rem 0 0; padding: 0; border: 0; min-width: 0; }
+.push-grup + .push-grup { margin-top: 1rem; }
+.push-grup legend { padding: 0; margin-bottom: .2rem; font-weight: 600; }
+/* «Avisos» (Juanjo, 16-10-2026): una llista com la dels ajustos del mòbil.
+   Totes les files fan el mateix ample i els controls queden en columna. */
+.push-fila { display: flex; align-items: center; gap: .7rem; padding: .55rem .2rem;
+  border-bottom: 1px solid var(--vora); cursor: pointer; }
+.push-fila:last-child { border-bottom: 0; }
+.push-fila > svg { width: 1.2rem; height: 1.2rem; flex: none; fill: none; stroke: var(--suau);
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.push-nom { flex: 1; min-width: 0; }
+.push-detall { display: block; color: var(--suau); font-size: .85em; }
+.push-etiqueta { display: inline-block; padding: 0 .45rem; border-radius: 999px; font-size: .8em;
+  line-height: 1.5; vertical-align: .1em; color: var(--suau); border: 1px solid var(--vora); white-space: nowrap; }
+.push-fila select { flex: none; font: inherit; padding: .2rem .4rem;
   border: 1px solid var(--vora); border-radius: .4rem; background: var(--superficie); color: var(--text); }
-.push-botons { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0 .3rem; }
+/* L'interruptor: la bola a la dreta vol dir activat; el color ho reforça. */
+.interruptor { appearance: none; -webkit-appearance: none; flex: none; position: relative; margin: 0;
+  width: 2.6rem; height: 1.5rem; border-radius: 999px; background: var(--suau); cursor: pointer;
+  transition: background-color .15s; }
+.interruptor::before { content: ""; position: absolute; top: .15rem; left: .15rem; width: 1.2rem; height: 1.2rem;
+  border-radius: 50%; background: var(--superficie); transition: transform .15s; }
+.interruptor:checked { background: var(--verd); }
+.interruptor:checked::before { transform: translateX(1.1rem); }
+.interruptor:focus-visible { outline: 2px solid var(--enllac); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .interruptor, .interruptor::before { transition: none; } }
+.push-botons { display: flex; flex-wrap: wrap; gap: .5rem; margin: .8rem 0 .3rem; padding-top: .9rem;
+  border-top: 1px solid var(--vora); }
 #push-estat.error { color: var(--vermell); }
 .ajuda > p.nota + p.nota { margin-top: .5rem; }
 @media (min-width: 900px) {
@@ -811,7 +832,7 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
   .ajuda .opcio { grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 1.3rem; }
   .ajuda .opcio.canal .info { grid-column: span 2; }
   .ajuda .opcio.bot .info { grid-column: 1 / -1; }
-  .ajuda .info p:has(.boto) { display: inline-block; margin-right: 1rem; }
+  .ajuda .info p:has(.boto):not(.push-botons) { display: inline-block; margin-right: 1rem; }
   .ajuda .info .cerca { display: inline-block; }
   /* el text a dalt i la captura a baix, totes a la mateixa altura */
   .ajuda .pas { grid-template-columns: 1.6rem 1fr; grid-template-rows: 1fr auto; }

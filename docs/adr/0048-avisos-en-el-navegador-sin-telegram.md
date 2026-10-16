@@ -19,8 +19,15 @@ hace, el envoltorio irá en `android/` de este repositorio.
 - **Página «Avisos»** (`web/avisos.html`, `web/avisos.js`), en catalán y
   castellano: las mismas opciones que el bot (peligro, riera, lluvia a punto
   de empezar, trenes y la previsión a las 6, 7, 8 o 20 h; desde el
-  09-10-2026, sin trenes y con las 21 h en vez de las 20 h, ADR 0053), con las mismas
-  casillas que «Si surts»; «Activa els avisos» pide permiso al navegador y se
+  09-10-2026, sin trenes y con las 21 h en vez de las 20 h, ADR 0053). Desde
+  la 3.92.0 (Juanjo, 16-10-2026), en una lista como la de los ajustes del
+  móvil, en vez de las casillas de «Si surts», que quedaban de anchos
+  distintos y, en el ordenador, con la de las 21 h junto a los botones: cada
+  opción en una fila de todo el ancho, con el icono y el nombre a la izquierda
+  y un interruptor (o la hora, en la previsión de la mañana) a la derecha; dos
+  grupos, «Què vols rebre» y «Previsió»; lo que estaba entre paréntesis, como
+  una etiqueta («en proves») o una segunda línea («15 min abans»), y los
+  botones debajo, tras una línea. «Activa els avisos» pide permiso al navegador y se
   suscribe; los cambios se guardan solos, de uno en uno y con lo último
   marcado; «Envia'm una prova» y «Desactiva», que borra la suscripción.
 - **Que no se confunda con Telegram** (Juanjo, 08-10-2026): el enlace de
