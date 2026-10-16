@@ -16,10 +16,18 @@ const FITXER_DADES = document.documentElement.dataset.dades || 'casa.json';
 // probabilitat, manen els mil·límetres.
 const PROB_PLUJA = 0.5;
 const PROB_POSSIBLE = 0.2;
+// Només a la gràfica: de 10 al 20 % plou una de cada set hores, i per sota
+// del 20 % queia una de cada cinc hores de pluja (arxiu 2024-2026; Juanjo,
+// 16-10-2026). La taula no ho distingeix: al cel, «possible pluja» és des del 20 %.
+const PROB_POCA = 0.1;
 function plujaHora(f) {
   const p = f.probabilitat;
   if (f.plou_ara || (p == null ? f.pluja_mm >= 0.2 : p >= PROB_PLUJA)) return 'pluja';
   return p != null && p >= PROB_POSSIBLE ? 'possible' : null;
+}
+function plujaGrafica(f) {
+  const p = f.probabilitat;
+  return plujaHora(f) || (p != null && p >= PROB_POCA ? 'poca' : null);
 }
 
 // Descripció del cel i la icona que hi correspon. Els mil·límetres diuen com
@@ -774,7 +782,7 @@ function taula(hores, mesurada, riscos, sol) {
     dt.append(icona('i-sunrise'), icona('i-sunset'));
     llista.append(dt, element('dd', null, T('L’hora en què surt i es pon el sol, a la fila de l’hora en què passa.')));
   }
-  terme(T('Prob.'), T('La probabilitat que plogui en aquella hora. Per sota del 20\u00a0%, no s’espera pluja; del 20 al 50\u00a0%, pot ploure: si surts, porta paraigua; del 50\u00a0% amunt, el més probable és que plogui. Per exemple, un 40\u00a0% vol dir que, de cada 10 vegades que la previsió dona un 40\u00a0% per a una hora, en 4 acaba plovent.'));
+  terme(T('Prob.'), T('La probabilitat que plogui en aquella hora. Per sota del 10\u00a0%, no s’espera pluja; del 10 al 20\u00a0%, és poc probable, però pot caure algun ruixat; del 20 al 50\u00a0%, pot ploure: si surts, porta paraigua; del 50\u00a0% amunt, el més probable és que plogui. Per exemple, un 40\u00a0% vol dir que, de cada 10 vegades que la previsió dona un 40\u00a0% per a una hora, en 4 acaba plovent.'));
   terme(T('Pluja'), T('Els mil·límetres que caurien si plou.'));
   if (visibles.some((f) => f.segons_estacio)) terme('*', T('Hi compta la pluja que cau ara al barri.'));
   if (visibles.some((f) => f.segons_radar)) terme('\u2020', T('Hi compta la pluja que el radar veu acostar-se.'));
@@ -1006,11 +1014,11 @@ function dibuixaGrafica(fig) {
   // Dalt de tot queda lloc per a la xifra dels mm.
   const dalt = (f) => yPluja + hPluja - Math.max(3, alcadaPluja(f.pluja_mm || 0) * (hPluja - 14));
   files.forEach((f, i) => {
-    const pluja = plujaHora(f);
+    const pluja = plujaGrafica(f);
     if (!pluja) return;
     const y = dalt(f);
     const intensa = intensitatPluja(f.pluja_mm || 0);
-    g.append(svg('rect', { class: `g-pluja ${pluja === 'pluja' ? 'segura' : 'possible'}${intensa ? ' ' + intensa : ''}`,
+    g.append(svg('rect', { class: `g-pluja ${pluja === 'pluja' ? 'segura' : pluja}${intensa ? ' ' + intensa : ''}`,
       x: x(i) + col * 0.15, y, width: col * 0.7, height: base - y }));
   });
   // Una vora del color del fons, perquè la línia es vegi damunt de les barres.
@@ -1066,7 +1074,7 @@ function dibuixaGrafica(fig) {
   // «es un galimatías»); què vol dir l'alçada ja ho diuen els mm de la barra.
   // Cada clau de pluja, només si n'hi ha (Juanjo, 16-10-2026).
   ll.append(clau('m-temp', T('Temperatura')));
-  const plujes = files.map((f) => plujaHora(f));
+  const plujes = files.map((f) => plujaGrafica(f));
   // La probabilitat en xifres: «probable» i «possible» no es distingeixen
   // (Juanjo, 16-10-2026: «entre lluvia probable y puede llover no hay
   // diferencia para un usuario normal»).
@@ -1075,7 +1083,10 @@ function dibuixaGrafica(fig) {
   if (plujes.includes('possible')) {
     ll.append(clau('m-pluja possible', T`Pluja, del ${pct(PROB_POSSIBLE)} al ${pct(PROB_PLUJA)}\u00a0%`));
   }
-  const intenses = files.filter((f) => plujaHora(f)).map((f) => intensitatPluja(f.pluja_mm || 0));
+  if (plujes.includes('poca')) {
+    ll.append(clau('m-pluja poca', T`Pluja, del ${pct(PROB_POCA)} al ${pct(PROB_POSSIBLE)}\u00a0%`));
+  }
+  const intenses = files.filter((f) => plujaGrafica(f)).map((f) => intensitatPluja(f.pluja_mm || 0));
   if (intenses.includes('forta')) ll.append(clau('m-pluja forta', T('Pluja forta')));
   if (intenses.includes('torrencial')) ll.append(clau('m-pluja torrencial', T('Pluja torrencial')));
   ll.append(clau('m-nit', T('Nit')));

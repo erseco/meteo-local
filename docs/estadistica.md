@@ -587,7 +587,8 @@ de la hora es una señal más de la probabilidad, con el peso aprendido.
 
 **El cielo de cada hora** sale de la probabilidad (`web/casa.js`, `cel`):
 «pluja» desde el 50 %, «possible pluja» desde el 20 %, y por debajo, solo las
-nubes. Antes salía de los milímetros del modelo más lluvioso, y la tabla podía
+nubes. La gráfica pinta además, en turquesa, las horas del 10 al 20 %
+(ADR 0096). Antes salía de los milímetros del modelo más lluvioso, y la tabla podía
 decir «Pluja feble» con un 2 %. Con los nombres del manual de estilo de
 Meteocat (ADR 0043):
 

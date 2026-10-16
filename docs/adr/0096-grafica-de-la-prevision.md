@@ -64,6 +64,14 @@ siempre en la hora en curso.
   «Pluja possible». Juanjo: «entre lluvia probable y puede llover no hay
   diferencia para un usuario normal»; los porcentajes son los mismos umbrales
   que el cielo de la tabla (`PROB_PLUJA` y `PROB_POSSIBLE` de `casa.js`).
+  Desde la 3.97.2, también «Pluja, del 10 al 20 %», en turquesa
+  (`PROB_POCA`, solo en la gráfica): en el archivo de 2024-2026, con un 10-20 %
+  llovió una de cada siete horas, y por debajo del 20 % caía una de cada cinco
+  horas de lluvia, que la gráfica no enseñaba. Desde el 1 % se descartó (por
+  debajo del 5 % llueve menos de una vez de cada cien) y desde el 5 %, porque
+  añadía marcas con poca información. El color, propio y no un azul más
+  claro (Juanjo: «el color que se diferencie de los que ya hay»). La tabla no
+  cambia: «possible pluja» sigue siendo desde el 20 %.
 - **Fuera de entrada**: el viento, la parte alta y el UV, que ya están en las
   tablas, y tocar una hora para ver sus datos. Se añadirán si se echan en
   falta.
