@@ -38,8 +38,11 @@ necesita, y no tenía los de Meteocat.
 - **Se adopta solo si la mejora es segura**: con las mismas muestras, en
   semanas que el modelo no ha visto, se equivoca menos que el modelo sin
   avisos en al menos el 95 % de 2.000 remuestreos por días, a corto plazo y
-  un día antes, y la fiabilidad no se separa más de 5 puntos en ningún tramo
-  con 150 horas o más. `pluja_casa_avisos.json` lleva `adoptat`; la página
+  un día antes, y la fiabilidad no empeora: el desvío medio entre lo dado y
+  lo que llovió, ponderado por horas, no pasa del del modelo sin avisos. (Se
+  pensó en que no se separara más de 5 puntos en ningún tramo, como la prueba
+  del modelo del archivo, pero el modelo con ECMWF ya no lo cumple un día
+  antes: da un 24 % y llueve el 32 % en 352 horas desde octubre de 2025.) `pluja_casa_avisos.json` lleva `adoptat`; la página
   lo usa solo si es true y la pasada tiene los avisos
   (`aprenentatge.prob_pluja`). Si no, todo sigue como antes.
 - **El histórico**: AEMET OpenData (`/api/avisos_cap/archivo`, desde el

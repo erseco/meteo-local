@@ -26,8 +26,8 @@ ejemplo, salen cuando ya llueve).
 Se valida contra el modelo sin avisos con las mismas muestras, en grupos de
 semanas, por antelación, y con remuestreos por días (bootstrap): se adopta
 solo si se equivoca menos en al menos el 95 % de ellos a corto plazo y un
-día antes, y si la fiabilidad no se separa más de 5 puntos en ningún tramo
-con 150 horas o más. Escribe pluja_casa_avisos.json, con «adoptat»: la
+día antes, y si la fiabilidad no empeora: el desvío medio entre lo dado y
+lo que llovió, ponderado por horas, no pasa del del modelo sin avisos. Escribe pluja_casa_avisos.json, con «adoptat»: la
 página lo usa solo si es true y la pasada tiene los avisos
 (aprenentatge.prob_pluja).
 
@@ -59,6 +59,8 @@ SEGURETAT = 0.95
 # Los fenómenos de AEMET que cuentan, como en la página (casa.senyals_avis):
 # lluvia y tormentas, con su código de Meteoalerta.
 FENOMENS_AEMET = ("PR", "TO")
+# El primer día descargado del archivo de AEMET (avisos_descarrega.py).
+PRIMER_AVIS = dt.datetime(2023, 12, 25, tzinfo=dt.timezone.utc)
 
 
 def hora(s):
@@ -68,27 +70,32 @@ def hora(s):
 # --- AEMET: el estado de los avisos en cada momento ------------------------------------
 
 def avisos_aemet():
-    """Los avisos de lluvia o tormentas del archivo: [(emès, inici, fi,
-    identificadors que substitueix, cancel·la)]."""
+    """Los avisos de lluvia o tormentas del archivo, cada uno con el tramo de
+    tiempo en que era el vigente: [(emès, substituït, inici, fi)]. Un aviso
+    deja de valer cuando sale un mensaje que lo cita en «references»
+    (actualización, cancelación o nivel verde); los verdes y las
+    cancelaciones no cuentan como aviso."""
     with open(SORTIDA_AEMET, encoding="utf-8") as f:
-        crus = json.load(f)
-    res = []
+        crus = [a for a in json.load(f)
+                if a["fenomen"].split(";")[0] in FENOMENS_AEMET and a["inici"] and a["fi"]]
+    substituit = {}
     for a in crus:
-        if a["fenomen"].split(";")[0] not in FENOMENS_AEMET or not a["inici"] or not a["fi"]:
-            continue
         # «sender,identifier,sent sender,identifier,sent»
-        refs = {r.split(",")[1] for r in a["referencies"].split() if r.count(",") >= 2}
-        res.append((hora(a["emes"]), hora(a["inici"]), hora(a["fi"]), a["id"], refs,
-                    a["tipus_missatge"] == "Cancel" or a["nivell"].lower() == "verde"))
-    return sorted(res)
+        for r in a["referencies"].split():
+            parts = r.split(",")
+            if len(parts) >= 3:
+                t = hora(a["emes"])
+                substituit[parts[1]] = min(substituit.get(parts[1], t), t)
+    fi_temps = dt.datetime.max.replace(tzinfo=UTC)
+    return sorted((hora(a["emes"]), substituit.get(a["id"], fi_temps), hora(a["inici"]), hora(a["fi"]))
+                  for a in crus
+                  if a["tipus_missatge"] != "Cancel" and a["nivell"].lower() not in ("verde", ""))
 
 
 def senyal_aemet(avisos, inici, fi, tall):
-    """1 si a la hora «tall» había un aviso vigente (no sustituido ni
-    cancelado por un mensaje posterior ya emitido) que cubre [inici, fi)."""
-    coneguts = [a for a in avisos if a[0] <= tall]
-    substituits = set().union(*(a[4] for a in coneguts)) if coneguts else set()
-    return float(any(a[1] < fi and a[2] > inici and not a[5] and a[3] not in substituits for a in coneguts))
+    """1 si a la hora «tall» había un aviso vigente (emitido y todavía no
+    sustituido) que cubre [inici, fi)."""
+    return float(any(e <= tall < sub and a < fi and b > inici for e, sub, a, b in avisos))
 
 
 # --- Meteocat ----------------------------------------------------------------------------
@@ -122,7 +129,7 @@ def senyal_meteocat(per_dia, inici, tall):
 def muestras(amb_meteocat):
     obs, prev, ec = leer_obs(), leer_prev(), leer_ecmwf()
     aemet, meteocat = avisos_aemet(), avisos_meteocat() if amb_meteocat else {}
-    primer = min(a[0] for a in aemet)
+    primer = PRIMER_AVIS
     noms = A.RASGOS_ARXIU_ECMWF_AVISOS_METEOCAT if amb_meteocat else A.RASGOS_ARXIU_ECMWF_AVISOS
     res = []
     for t, puntos in sorted(prev.items()):
@@ -166,8 +173,11 @@ def seguretat(p_nou, p_base, y, dies, rng):
     return guanya / REMOSTREJOS
 
 
-def fiable(f):
-    return all(abs(t["donada"] - t["va_ploure"]) <= 0.05 for t in f if t["hores"] >= 150)
+def desviacio(f):
+    """El desvío medio entre lo dado y lo que llovió, ponderado por horas
+    (error de calibración esperado)."""
+    n = sum(t["hores"] for t in f)
+    return round(sum(t["hores"] * abs(t["donada"] - t["va_ploure"]) for t in f) / n, 4)
 
 
 def main():
@@ -200,13 +210,15 @@ def main():
              "error_sense_avisos": b0, "error": b1, "millora_pct": round(100 * (b0 - b1) / b0, 1),
              "seguretat": round(seguretat(p_nou[s], p_base[s], y[s], dies[s], rng), 3),
              "fiabilitat": fiabilitat(p_nou[s], y[s])}
+        v["desviacio"] = desviacio(v["fiabilitat"])
+        v["desviacio_sense_avisos"] = desviacio(fiabilitat(p_base[s], y[s]))
         if amb_meteocat:
             mc = s & (x[:, noms.index("avis_meteocat")] > 0)
             v["mostres_amb_avis_meteocat"] = int(mc.sum())
             v["va_ploure_amb_avis_meteocat"] = round(float(y[mc].mean()), 3) if mc.any() else None
         v["per_grup_pct"] = [round(100 * (brier(p_base, s & (grup == g)) - brier(p_nou, s & (grup == g)))
                                    / brier(p_base, s & (grup == g)), 1) for g in sorted(set(grup))]
-        adoptat = adoptat and v["seguretat"] >= SEGURETAT and fiable(v["fiabilitat"])
+        adoptat = bool(adoptat and v["seguretat"] >= SEGURETAT and v["desviacio"] <= v["desviacio_sense_avisos"])
         validacio[nom] = v
     resultado = {
         "origen": "arxiu", "ecmwf": True, "avisos": True, "meteocat": amb_meteocat, "adoptat": adoptat,
@@ -224,7 +236,7 @@ def main():
               f"amb avís de l'AEMET {v['mostres_amb_avis_aemet']} (va ploure el {v['va_ploure_amb_avis_aemet']}). "
               f"Error sense avisos {v['error_sense_avisos']}, amb avisos {v['error']} ({v['millora_pct']:+} %), "
               f"guanya en el {100 * v['seguretat']:.1f} % dels remostrejos; per grups {v['per_grup_pct']}")
-        print("  fiabilitat", " ".join(f"{100 * f['donada']:.0f}→{100 * f['va_ploure']:.0f} ({f['hores']})"
+        print(f"  desviació {v['desviacio']} (sense avisos {v['desviacio_sense_avisos']}); fiabilitat", " ".join(f"{100 * f['donada']:.0f}→{100 * f['va_ploure']:.0f} ({f['hores']})"
                                        for f in v["fiabilitat"]))
     print("Pesos dels avisos:", {n: w for n, w in zip(noms, resultado["w"]) if n.startswith("avis")})
     print("Adoptat:", adoptat)

@@ -1067,8 +1067,14 @@ function dibuixaGrafica(fig) {
   // Cada clau de pluja, només si n'hi ha (Juanjo, 16-10-2026).
   ll.append(clau('m-temp', T('Temperatura')));
   const plujes = files.map((f) => plujaHora(f));
-  if (plujes.includes('pluja')) ll.append(clau('m-pluja', T('Pluja probable')));
-  if (plujes.includes('possible')) ll.append(clau('m-pluja possible', T('Pluja possible')));
+  // La probabilitat en xifres: «probable» i «possible» no es distingeixen
+  // (Juanjo, 16-10-2026: «entre lluvia probable y puede llover no hay
+  // diferencia para un usuario normal»).
+  const pct = (p) => Math.round(p * 100);
+  if (plujes.includes('pluja')) ll.append(clau('m-pluja', T`Pluja, ${pct(PROB_PLUJA)}\u00a0% o més`));
+  if (plujes.includes('possible')) {
+    ll.append(clau('m-pluja possible', T`Pluja, del ${pct(PROB_POSSIBLE)} al ${pct(PROB_PLUJA)}\u00a0%`));
+  }
   const intenses = files.filter((f) => plujaHora(f)).map((f) => intensitatPluja(f.pluja_mm || 0));
   if (intenses.includes('forta')) ll.append(clau('m-pluja forta', T('Pluja forta')));
   if (intenses.includes('torrencial')) ll.append(clau('m-pluja torrencial', T('Pluja torrencial')));

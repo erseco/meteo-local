@@ -91,8 +91,8 @@ def camp(xml, nom):
     return m.group(1).strip() if m else ""
 
 
-def parametre(info, nom):
-    for p in re.findall(r"<parameter>(.*?)</parameter>", info, re.S):
+def parametre(info, nom, etiqueta="parameter"):
+    for p in re.findall(rf"<{etiqueta}>(.*?)</{etiqueta}>", info, re.S):
         if camp(p, "valueName") == nom:
             return camp(p, "value")
     return ""
@@ -110,40 +110,62 @@ def avisos_cap(xml):
         if C.ZONA_AVISOS not in zones:
             continue
         res.append({"id": camp(s, "identifier"), "emes": camp(s, "sent"), "tipus_missatge": camp(s, "msgType"),
-                    "referencies": camp(s, "references"), "fenomen": parametre(info, "AEMET-Meteoalerta fenomeno"),
+                    "referencies": camp(s, "references"), "fenomen": parametre(info, "AEMET-Meteoalerta fenomeno", "eventCode"),
                     "nivell": parametre(info, "AEMET-Meteoalerta nivel"), "event": camp(info, "event"),
                     "inici": camp(info, "onset") or camp(info, "effective"), "fi": camp(info, "expires")})
     return res
 
 
-def aemet(des_de, fins):
+def tram_aemet(d, fi, k):
+    """Los avisos de la zona de un tramo de 2 días del archivo."""
+    url = ("https://opendata.aemet.es/opendata/api/avisos_cap/archivo/"
+           f"fechaini/{d.isoformat()}T00:00:00UTC/fechafin/{fi.isoformat()}T23:59:59UTC")
+    meta = json.loads(baixa(url, {"api_key": k}).decode("latin-1"))
+    if meta.get("estado") == 404:
+        return d, []
+    if meta.get("estado") != 200 or not meta.get("datos"):
+        raise RuntimeError(f"{d}: {meta.get('descripcion')}")
+    return d, [a for x in xmls(baixa(meta["datos"], {"api_key": k})) for a in avisos_cap(x)]
+
+
+def aemet(des_de, fins, processos=4):
+    """Por tramos de 2 días, lo máximo que admite el archivo, en varios
+    procesos (AEMET tarda unos 7 s en servir cada uno). Se puede
+    interrumpir: los tramos hechos quedan apuntados y no se repiten."""
+    from concurrent.futures import ProcessPoolExecutor, as_completed
     k = clau("aemet")
-    vistos = {}
+    vistos, fets = {}, set()
     if os.path.exists(SORTIDA_AEMET):
         with open(SORTIDA_AEMET) as f:
             vistos = {(a["id"], a["fenomen"], a["inici"]): a for a in json.load(f)}
-    d = dt.date.fromisoformat(des_de).replace(day=1)
-    final = dt.date.fromisoformat(fins)
-    while d <= final:
-        seguent = (d + dt.timedelta(days=32)).replace(day=1)
-        fi = min(seguent - dt.timedelta(days=1), final)
-        url = ("https://opendata.aemet.es/opendata/api/avisos_cap/archivo/"
-               f"fechaini/{d.isoformat()}T00:00:00UTC/fechafin/{fi.isoformat()}T23:59:59UTC")
-        meta = json.loads(baixa(url, {"api_key": k}).decode("latin-1"))
-        if meta.get("estado") != 200 or not meta.get("datos"):
-            print(d, "sense dades:", meta.get("descripcion"))
-        else:
-            n = 0
-            for x in xmls(baixa(meta["datos"], {"api_key": k})):
-                for a in avisos_cap(x):
-                    vistos[(a["id"], a["fenomen"], a["inici"])] = a
-                    n += 1
-            print(d, n, "avisos del", C.ZONA_AVISOS)
+    ruta_fets = SORTIDA_AEMET + ".fets"
+    if os.path.exists(ruta_fets):
+        with open(ruta_fets) as f:
+            fets = set(f.read().split())
+
+    def desa():
         os.makedirs(DADES, exist_ok=True)
         with open(SORTIDA_AEMET, "w", encoding="utf-8") as f:
             json.dump(sorted(vistos.values(), key=lambda a: (a["emes"], a["id"])), f, ensure_ascii=False)
-        d = seguent
-        time.sleep(2)
+        with open(ruta_fets, "w") as f:
+            f.write("\n".join(sorted(fets)))
+
+    d, final, trams = dt.date.fromisoformat(des_de), dt.date.fromisoformat(fins), []
+    while d <= final:
+        fi = min(d + dt.timedelta(days=1), final)
+        if d.isoformat() not in fets:
+            trams.append((d, fi))
+        d = fi + dt.timedelta(days=1)
+    with ProcessPoolExecutor(processos) as ex:
+        for n, fut in enumerate(as_completed([ex.submit(tram_aemet, a, b, k) for a, b in trams]), 1):
+            dia, avisos = fut.result()
+            for a in avisos:
+                vistos[(a["id"], a["fenomen"], a["inici"])] = a
+            fets.add(dia.isoformat())
+            print(dia, len(avisos), "avisos del", C.ZONA_AVISOS, f"({n}/{len(trams)})", flush=True)
+            if n % 10 == 0:
+                desa()
+    desa()
 
 
 # --- Meteocat ---------------------------------------------------------------------------

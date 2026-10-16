@@ -58,8 +58,12 @@ siempre en la hora en curso.
   en la hora en curso. Cada hora lleva una marca: larga y con número las que
   tocan (cada 3 h, o 2), corta y sin número la resta (Juanjo, 16-10-2026).
 - **Debajo, una leyenda** de una palabra por clave, sin paréntesis:
-  Temperatura y Nit, y cada clase de lluvia (Pluja probable, Pluja possible,
-  Pluja forta, Pluja torrencial) solo cuando sale.
+  Temperatura y Nit, y cada clase de lluvia solo cuando sale: «Pluja, 50 % o
+  més», «Pluja, del 20 al 50 %», Pluja forta y Pluja torrencial. Desde la
+  3.97.1 la probabilidad va en cifras; hasta entonces ponía «Pluja probable» y
+  «Pluja possible». Juanjo: «entre lluvia probable y puede llover no hay
+  diferencia para un usuario normal»; los porcentajes son los mismos umbrales
+  que el cielo de la tabla (`PROB_PLUJA` y `PROB_POSSIBLE` de `casa.js`).
 - **Fuera de entrada**: el viento, la parte alta y el UV, que ya están en las
   tablas, y tocar una hora para ver sus datos. Se añadirán si se echan en
   falta.

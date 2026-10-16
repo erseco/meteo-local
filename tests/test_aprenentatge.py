@@ -113,6 +113,32 @@ class Rasgos(unittest.TestCase):
         propi = {"origen": "propi", "rasgos": A.RASGOS_ARXIU, "w": A.modelo_arxiu()["w"]}
         self.assertAlmostEqual(A.prob_pluja({"pluja": propi}, d), A.prob_pluja({"pluja": propi}, hora("2026-10-13T15:00", antelacio=24)))
 
+    def test_modelo_con_avisos_solo_si_esta_adoptado(self):
+        # ADR 0097: el aviso es una señal más, con el peso aprendido, y solo
+        # cuenta si la validación adoptó el modelo y la pasada tiene el dato.
+        d = hora("2026-10-17T16:00", mm=0.0, antelacio=24)
+        d[f"pluja_{C.MODEL_ECMWF}"] = 0.5
+        me = A.modelo_arxiu_ecmwf()
+        sense = A.prob_pluja({"pluja": A.modelo_arxiu()}, d)
+        vell = A.ARXIU_AVISOS
+        with tempfile.TemporaryDirectory() as dir_:
+            A.ARXIU_AVISOS = os.path.join(dir_, "avisos.json")
+            try:
+                model = {"rasgos": A.RASGOS_ARXIU_ECMWF_AVISOS, "w": me["w"] + [2.0], "adoptat": False}
+                with open(A.ARXIU_AVISOS, "w") as f:
+                    json.dump(model, f)
+                d["avis_pluja"] = 1.0
+                self.assertAlmostEqual(A.prob_pluja({"pluja": A.modelo_arxiu()}, d), sense)
+                model["adoptat"] = True
+                with open(A.ARXIU_AVISOS, "w") as f:
+                    json.dump(model, f)
+                self.assertGreater(A.prob_pluja({"pluja": A.modelo_arxiu()}, d), sense)
+                # Sin el dato del aviso (no se pudo leer), el modelo con ECMWF.
+                d["avis_pluja"] = None
+                self.assertAlmostEqual(A.prob_pluja({"pluja": A.modelo_arxiu()}, d), sense)
+            finally:
+                A.ARXIU_AVISOS = vell
+
     def test_fiabilidad_del_modelo_del_archivo(self):
         # La comprobación guardada con el modelo: en cada tramo de
         # probabilidad con bastantes horas, lo dado y lo que llovió no se
