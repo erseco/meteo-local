@@ -198,6 +198,7 @@ def resum_ara(ahora=None):
     a["pluja_15min"] = pluja_entre(filas, hora - dt.timedelta(minutes=C.PLOU_ARA_MIN), hora)
     a["pluja_30min"] = pluja_entre(filas, hora - dt.timedelta(minutes=30), hora)
     a["pluja_1h"] = pluja_entre(filas, hora - dt.timedelta(hours=1), hora)
+    a["pluja_3h"] = pluja_entre(filas, hora - dt.timedelta(hours=3), hora)
     a["pressio_3h"] = tendencia_pressio(filas, hora)
     # Solo vale en positivo: un cero no asegura que no llueva. Ni la
     # intensidad, que tarda en volver a cero, ni la media hora (config.PLOU_ARA_MIN).

@@ -237,8 +237,8 @@ var IDIOMA = {
     "Perill {0} de Meteocat per tempestes": "Peligro {0} de Meteocat por tormentas",
     "Els models preveuen tempesta": "Los modelos prevén tormenta",
     "{0}: {1}": "{0}: {1}",
-    "pluja molt forta": "lluvia muy fuerte", "molta pluja": "mucha lluvia", "vent molt fort": "viento muy fuerte",
-    "calor extrema": "calor extremo", "fred intens": "frío intenso",
+    "pluja intensa": "lluvia intensa", "molta pluja": "mucha lluvia", "vent fort": "viento fuerte",
+    "calor intensa": "calor intenso", "fred intens": "frío intenso",
     "No s’ha pogut carregar la previsió. Torna-ho a provar d’aquí a una estona.": "No se ha podido cargar la previsión. Vuelve a probarlo dentro de un rato.",
     // «Si surts» (ADR 0029).
     "a l\u2019anada ({0}\u00a0h)": "a la ida ({0}\u00a0h)",
@@ -456,10 +456,11 @@ var IDIOMA = {
   },
   // El text d'un risc (riscos.py el fa en català): la previsió i el que es mesura.
   riscos: {
-    pluja_1h: ['Lluvia muy fuerte prevista: hasta {v} mm en una hora, {q}.', 'Ahora llueve muy fuerte: {v} mm en la última hora.'],
-    pluja_12h: ['Mucha lluvia prevista: {v} mm en 12 horas, {q}.', 'Ha llovido mucho: {v} mm en las últimas 12 horas.'],
-    ratxa: ['Viento muy fuerte previsto: rachas de hasta {v} km/h, {q}.', null],
-    calor: ['Calor extremo previsto: hasta {v} °C, {q}.', 'Ahora hace calor extremo: {v} °C.'],
+    pluja_30min: [null, 'Ahora llueve con mucha intensidad: {v} mm en la última media hora.'],
+    pluja_3h: ['Lluvia intensa prevista: {v} mm en 3 horas, {q}.', 'Ha llovido mucho: {v} mm en las últimas 3 horas.'],
+    pluja_24h: ['Mucha lluvia prevista: {v} mm en 24 horas, {q}.', null],
+    ratxa: ['Viento fuerte previsto: rachas de hasta {v} km/h, {q}.', null],
+    calor: ['Calor intenso previsto: hasta {v} °C, {q}.', 'Ahora hace calor intenso: {v} °C.'],
     fred: ['Frío intenso previsto: hasta {v} °C, {q}.', 'Ahora hace frío intenso: {v} °C.'],
     neu_24h: ['Nieve prevista: {v} cm en las próximas 24 horas.', null],
   },
@@ -474,6 +475,10 @@ var IDIOMA = {
         : `${String(ini.getDate()).padStart(2, '0')}/${String(ini.getMonth() + 1).padStart(2, '0')}`;
       quan = `${dia} de ${ini.getHours()} a ${new Date(r.fins).getHours()} h`;
     }
-    return plantilla.replace('{v}', Number(r.valor).toFixed(0).replace('-', '\u2212')).replace('{q}', quan);
+    // Com riscos.num: sense decimals; la temperatura, amb un si no és un grau enter.
+    const v = Number(r.valor);
+    const ambDecimal = ['calor', 'fred'].includes(r.tipus) && Math.abs(v - Math.round(v)) >= 0.05;
+    const xifra = ambDecimal ? v.toFixed(1).replace('.', ',') : v.toFixed(0);
+    return plantilla.replace('{v}', xifra.replace('-', '\u2212')).replace('{q}', quan);
   },
 };

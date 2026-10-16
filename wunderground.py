@@ -203,7 +203,9 @@ def veina_ara(estacio, filas, ahora=None):
          **{k: ultima.get(k) for k in ("temperatura", "humitat", "rosada", "pressio", "vent", "ratxa",
                                        "intensitat", "pluja_avui")},
          "pluja_15min": E.pluja_entre(filas, hora - dt.timedelta(minutes=C.PLOU_ARA_MIN), hora),
-         "pluja_1h": E.pluja_entre(filas, hora - dt.timedelta(hours=1), hora)}
+         "pluja_30min": E.pluja_entre(filas, hora - dt.timedelta(minutes=30), hora),
+         "pluja_1h": E.pluja_entre(filas, hora - dt.timedelta(hours=1), hora),
+         "pluja_3h": E.pluja_entre(filas, hora - dt.timedelta(hours=3), hora)}
     v["plou"] = v["pluja_15min"] > 0
     v["compta"] = bool(C.VEINES.get(estacio, {}).get("plou"))
     v["files"] = filas

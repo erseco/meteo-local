@@ -780,8 +780,8 @@ function enllacAvisos(davant) {
 
 // Els noms curts de cada risc que calcula la pàgina (riscos.py), per a la
 // taula per hores de «El temps» i per al bloc «Avisos actius» plegat.
-const NOM_RISC = () => ({ pluja_1h: T('pluja molt forta'), pluja_12h: T('molta pluja'), ratxa: T('vent molt fort'),
-  calor: T('calor extrema'), fred: T('fred intens'), neu_24h: T('neu') });
+const NOM_RISC = () => ({ pluja_30min: T('pluja intensa'), pluja_3h: T('pluja intensa'), pluja_24h: T('molta pluja'),
+  ratxa: T('vent fort'), calor: T('calor intensa'), fred: T('fred intens'), neu_24h: T('neu') });
 
 // El temps extrem que calcula la pàgina: situacions de perill segons el que mesuren les estacions i el que preveu
 // la pàgina (riscos.py, ADR 0018), amb el color del nivell de l'AEMET.

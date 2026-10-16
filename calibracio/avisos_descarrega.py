@@ -59,7 +59,9 @@ def baixa(url, capcaleres, intents=4, esperes_429=30):
             with urllib.request.urlopen(req, timeout=120) as r:
                 return r.read()
         except urllib.error.HTTPError as ex:
-            if ex.code == 429 and esperes < esperes_429:
+            # Les dades d'AEMET tornen el 429 dins d'un 500.
+            limit = ex.code == 429 or (ex.code == 500 and b"429" in (ex.read() or b""))
+            if limit and esperes < esperes_429:
                 esperes += 1
                 print(time.strftime("%H:%M:%S"), "límit d'ús (429), s'espera un minut:", url[:70], flush=True)
                 time.sleep(61)
@@ -134,7 +136,9 @@ def tram_aemet(d, fi, k):
         return d, []
     if meta.get("estado") != 200 or not meta.get("datos"):
         raise RuntimeError(f"{d}: {meta.get('descripcion')}")
-    return d, [a for x in xmls(baixa(meta["datos"], {"api_key": k})) for a in avisos_cap(x)]
+    res = [a for x in xmls(baixa(meta["datos"], {"api_key": k})) for a in avisos_cap(x)]
+    time.sleep(10)    # per no tocar el límit d'ús
+    return d, res
 
 
 def aemet(des_de, fins, processos=1):

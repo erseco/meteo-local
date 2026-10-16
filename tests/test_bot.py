@@ -780,10 +780,10 @@ class AvisosPublics(unittest.TestCase):
     def test_perill_en_castella(self):
         r = {"clau": "previsio:ratxa", "tipus": "ratxa", "origen": "previsio", "nivell": "groc", "valor": 75,
              "des_de": "2026-10-07T15:00+02:00", "fins": "2026-10-07T16:00+02:00",
-             "text": "Vent molt fort previst: ratxes de fins a 75 km/h, avui de 15 a 16 h."}
+             "text": "Vent fort previst: ratxes de fins a 75 km/h, avui de 15 a 16 h."}
         nous = AB.decideix({}, {"riscos": [r]}, ARA)
-        self.assertIn("Viento muy fuerte previsto: rachas de hasta 75 km/h, hoy de 15 a 16 h.", nous[0]["es"])
-        self.assertTrue(nous[0]["es"].startswith("🟡 <b>Aviso de peligro en Montflorit (amarillo): viento muy fuerte</b>"))
+        self.assertIn("Viento fuerte previsto: rachas de hasta 75 km/h, hoy de 15 a 16 h.", nous[0]["es"])
+        self.assertTrue(nous[0]["es"].startswith("🟡 <b>Aviso de peligro en Montflorit (amarillo): viento fuerte</b>"))
 
     def test_pluja_amb_el_radar(self):
         # El radar en directe que ha donat l'avís: enllaç a Telegram; a la
@@ -1020,7 +1020,7 @@ class AltesIRiscos(unittest.TestCase):
     def test_un_risc_no_caduca_mentre_falten_dades(self):
         r = {"clau": "previsio:ratxa", "tipus": "ratxa", "origen": "previsio", "nivell": "groc", "valor": 75,
              "des_de": "2026-10-07T15:00+02:00", "fins": "2026-10-07T16:00+02:00",
-             "text": "Vent molt fort previst: ratxes de fins a 75 km/h, avui de 15 a 16 h."}
+             "text": "Vent fort previst: ratxes de fins a 75 km/h, avui de 15 a 16 h."}
         complet = {"riscos": [r], "hores": [{}], "ara": {"temperatura": 1}}
         estat = {}
         self.assertEqual(len(AB.decideix(estat, complet, ARA)), 1)

@@ -89,12 +89,12 @@ ORIENTATIU = {
 }
 NIVELLS_ES = {"groc": "amarillo", "taronja": "naranja", "vermell": "rojo"}
 RISCOS_ES = {
-    "pluja_1h": ("Lluvia muy fuerte prevista: hasta {v} mm en una hora, {q}.",
-                 "Ahora llueve muy fuerte: {v} mm en la última hora."),
-    "pluja_12h": ("Mucha lluvia prevista: {v} mm en 12 horas, {q}.",
-                  "Ha llovido mucho: {v} mm en las últimas 12 horas."),
-    "ratxa": ("Viento muy fuerte previsto: rachas de hasta {v} km/h, {q}.", None),
-    "calor": ("Calor extremo previsto: hasta {v} °C, {q}.", "Ahora hace calor extremo: {v} °C."),
+    "pluja_30min": (None, "Ahora llueve con mucha intensidad: {v} mm en la última media hora."),
+    "pluja_3h": ("Lluvia intensa prevista: {v} mm en 3 horas, {q}.",
+                 "Ha llovido mucho: {v} mm en las últimas 3 horas."),
+    "pluja_24h": ("Mucha lluvia prevista: {v} mm en 24 horas, {q}.", None),
+    "ratxa": ("Viento fuerte previsto: rachas de hasta {v} km/h, {q}.", None),
+    "calor": ("Calor intenso previsto: hasta {v} °C, {q}.", "Ahora hace calor intenso: {v} °C."),
     "fred": ("Frío intenso previsto: hasta {v} °C, {q}.", "Ahora hace frío intenso: {v} °C."),
     "neu_24h": ("Nieve prevista: {v} cm en las próximas 24 horas.", None),
 }
@@ -164,10 +164,10 @@ def quan_es(r, ahora):
     return f"{dia} de {ini.hour} a {fin.hour} h"
 
 
-QUE_CA = {"pluja_1h": "pluja molt forta", "pluja_12h": "molta pluja", "ratxa": "vent molt fort",
-          "calor": "calor extrema", "fred": "fred intens", "neu_24h": "neu"}
-QUE_ES = {"pluja_1h": "lluvia muy fuerte", "pluja_12h": "mucha lluvia", "ratxa": "viento muy fuerte",
-          "calor": "calor extremo", "fred": "frío intenso", "neu_24h": "nieve"}
+QUE_CA = {"pluja_30min": "pluja intensa", "pluja_3h": "pluja intensa", "pluja_24h": "molta pluja",
+          "ratxa": "vent fort", "calor": "calor intensa", "fred": "fred intens", "neu_24h": "neu"}
+QUE_ES = {"pluja_30min": "lluvia intensa", "pluja_3h": "lluvia intensa", "pluja_24h": "mucha lluvia",
+          "ratxa": "viento fuerte", "calor": "calor intenso", "fred": "frío intenso", "neu_24h": "nieve"}
 
 
 def linia_risc_es(r, ahora):
@@ -176,7 +176,7 @@ def linia_risc_es(r, ahora):
     plantilla = previst if r["origen"] == "previsio" else mesura
     if not plantilla:
         return r["text"]
-    return plantilla.format(v=RS.num(r["valor"]), q=quan_es(r, ahora) if r.get("des_de") else "")
+    return plantilla.format(v=RS.num(r["valor"], r["tipus"]), q=quan_es(r, ahora) if r.get("des_de") else "")
 
 
 def text_perill(nous, ahora):

@@ -68,8 +68,8 @@ previsión de las 7 y la de mañana a las 21 (ADR 0055). La web tiene una págin
 con capturas, «Avisos a Telegram». El bot y el envío de las notificaciones
 viven en IONOS (ADR 0034 y 0048).
 
-Los avisos de peligro (umbrales de AEMET con lo medido o lo previsto, ADR
-0018), de lluvia en unos 15 minutos (ADR 0022) y de la riera de Sant Cugat (ADR
+Los avisos de peligro (umbrales de Meteocat para Cerdanyola con lo medido o
+lo previsto, ADR 0018), de lluvia en unos 15 minutos (ADR 0022) y de la riera de Sant Cugat (ADR
 0027) los recibe todo el mundo igual, por las notificaciones, el bot o el canal.
 Hasta el 08-10-2026 el NAS los mandaba además a Juanjo por Telegram; ahora solo
 le escribe para lo que es de mantenimiento.

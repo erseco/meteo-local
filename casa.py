@@ -185,7 +185,7 @@ def consens_pluja(casa, veines=None):
     que cuentan para «plou ara», con las que se hayan podido leer, de la
     última hora y de hoy. Sin vecinas, la de casa."""
     estacions = ([casa] if casa else []) + [v for v in veines or [] if v.get("compta")]
-    return {"pluja_1h": _mediana([e.get("pluja_1h") for e in estacions]),
+    return {**{c: _mediana([e.get(c) for e in estacions]) for c in ("pluja_30min", "pluja_1h", "pluja_3h")},
             "pluja_avui": _mediana([casa.get("pluja_avui") if e is casa else pluja_avui_veina(e)
                                     for e in estacions])}
 
@@ -202,7 +202,7 @@ def consens(ara_casa, casa, veines=None):
         return ara_casa
     res = dict(ara_casa)
     pluja = consens_pluja(casa, veines)
-    for camp in ("pluja_1h", "pluja_avui"):
+    for camp in ("pluja_30min", "pluja_1h", "pluja_3h", "pluja_avui"):
         if pluja[camp] is not None and any(v.get("compta") for v in veines or []):
             res.setdefault(f"{camp}_estacio", ara_casa.get(camp))
             res[camp] = pluja[camp]

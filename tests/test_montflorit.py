@@ -296,9 +296,10 @@ class Castella(unittest.TestCase):
     def test_riscos(self):
         ara = "2026-10-06T10:00:00+02:00"
         for tipus, origen, valor, espera in (
-                ("ratxa", "previsio", 75.2, "Viento muy fuerte previsto: rachas de hasta 75 km/h, hoy de 15 a 16 h."),
-                ("pluja_1h", "estacio", 24.6, "Ahora llueve muy fuerte: 25 mm en la última hora."),
-                ("fred", "previsio", -5, "Frío intenso previsto: hasta \u22125 °C, mañana de 15 a 16 h.")):
+                ("ratxa", "previsio", 75.2, "Viento fuerte previsto: rachas de hasta 75 km/h, hoy de 15 a 16 h."),
+                ("pluja_30min", "estacio", 24.6, "Ahora llueve con mucha intensidad: 25 mm en la última media hora."),
+                ("fred", "previsio", -5, "Frío intenso previsto: hasta \u22125 °C, mañana de 15 a 16 h."),
+                ("fred", "estacio", -1.7, "Ahora hace frío intenso: \u22121,7 °C.")):
             dia = "2026-10-07" if "mañana" in espera else "2026-10-06"
             r = {"tipus": tipus, "origen": origen, "valor": valor, "text": "en català",
                  "des_de": f"{dia}T15:00" if origen == "previsio" else None,

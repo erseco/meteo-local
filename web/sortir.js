@@ -37,8 +37,9 @@ const LLINDARS = {
   cotxe: { ratxa: [90, null], fred: [1, null] },
   public: { ratxa: [null, null], fred: [null, null] },
 };
-// Pluja en una hora (mm) per al cotxe: els llindars groc i taronja d'AEMET
-// (config.RISC_LLINDARS pluja_1h): compte i millor no (auditoria del 08-10-2026).
+// Pluja en una hora (mm) per al cotxe: els llindars groc i taronja d'AEMET per
+// pluja en una hora (els del temps extrem fins al 16-10-2026, que ara són els
+// de Meteocat): compte i millor no (auditoria del 08-10-2026).
 const PLUJA_COTXE = [20, 40];
 const VELOCITAT = { peu: 0, bici: 18, moto: 45, cotxe: 0, public: 0 };
 const CANVI_TEMPERATURA = 6;

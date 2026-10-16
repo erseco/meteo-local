@@ -11,6 +11,23 @@ público dice también cuándo ya no queda ningún peligro, como hacía el priva
 
 **09-10-2026 (ADR 0058).** Sin Montflorit, lo medido de ahora es solo casa: la lluvia de la última hora cuando marca y la temperatura. La lluvia de 12 horas medida ya no se evalúa; queda la prevista.
 
+
+**16-10-2026 (3.100.0): umbrales de Meteocat.** Juanjo: «el tiempo extremo se
+usan los límites de aemet, deberían usarse los de meteocat?». Por fenómeno
+manda Meteocat (ADR 0092), y sus umbrales son locales: los de temperatura,
+del municipio (Cerdanyola: calor intensa a más de 36,8 °C y muy intensa a
+38,8; frío intenso a menos de −1,6 y muy intenso a −3,6), y los de viento,
+de la comarca (más de 72 y de 108 km/h). La lluvia pasa a 30 minutos (medida,
+más de 20 y de 40 mm), 3 horas (más de 60 y de 90) y 24 horas (más de 100 y
+de 200); la nieve, a cualquier espesor por debajo de 300 m (y más de 5 cm).
+Dos niveles, amarillo y naranja: el rojo de Meteocat combina el umbral alto
+con la probabilidad. El frío se mide junto a la riera, la zona más fría,
+aunque avise más que el centro de Cerdanyola (Juanjo: «el frío con la
+riera»). El tiempo violento (granizo, tornados, reventones) no se puede medir
+aquí y llega por los avisos oficiales. Fuentes: «Situació Meteorològica de
+Perill» y «Llindars_municipi_2026.pdf» de meteo.cat. «Si surts» sigue usando
+para el coche los umbrales de lluvia en una hora de AEMET (20 y 40 mm), que
+son otra cosa: si conviene conducir.
 ## Contexto
 
 Juanjo pidió que la página de casa indique las situaciones de riesgo («viento

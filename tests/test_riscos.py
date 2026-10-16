@@ -27,7 +27,7 @@ def hores(cambios=None, n=24):
 
 def salida(h=None, casa=None):
     d = {"hores": h if h is not None else hores(),
-         "ara_casa": casa or {"pluja_1h": 0, "plou": False, "temperatura": 18}}
+         "ara_casa": casa or {"pluja_30min": 0, "pluja_3h": 0, "plou": False, "temperatura": 18}}
     d["riscos"] = RS.detecta(d, AHORA)
     return d
 
@@ -37,39 +37,52 @@ class Deteccio(unittest.TestCase):
         self.assertEqual(salida()["riscos"], [])
 
     def test_ratxa_amb_tram_i_nivell(self):
-        r = salida(hores({3: {"ratxa": 75}, 5: {"ratxa": 95}}))["riscos"]
+        # Llindars de Meteocat (16-10-2026): més de 72 km/h, groc; més de 108, taronja.
+        r = salida(hores({3: {"ratxa": 75}, 5: {"ratxa": 110}}))["riscos"]
         self.assertEqual(len(r), 1)
-        self.assertEqual((r[0]["tipus"], r[0]["nivell"], r[0]["valor"]), ("ratxa", "taronja", 95))
+        self.assertEqual((r[0]["tipus"], r[0]["nivell"], r[0]["valor"]), ("ratxa", "taronja", 110))
+        self.assertEqual(salida(hores({3: {"ratxa": 72}}))["riscos"], [])     # cal passar-lo
         self.assertIn("avui de 15 a 18 h", r[0]["text"])
 
-    def test_pluja_12h_sense_cap_hora_forta(self):
-        h = hores({i: {"pluja_mm": 6} for i in range(10, 22)})
+    def test_pluja_24h_sense_cap_tram_fort(self):
+        h = hores({i: {"pluja_mm": 6} for i in range(4, 22)})
         r = salida(h)["riscos"]
-        self.assertEqual([x["tipus"] for x in r], ["pluja_12h"])
-        self.assertEqual(r[0]["valor"], 72)
-        self.assertIn("avui de 22 a 10 h", r[0]["text"])
+        self.assertEqual([x["tipus"] for x in r], ["pluja_24h"])
+        self.assertEqual(r[0]["valor"], 108)
+
+    def test_pluja_3h(self):
+        r = salida(hores({4: {"pluja_mm": 25}, 5: {"pluja_mm": 30}, 6: {"pluja_mm": 10}}))["riscos"]
+        self.assertEqual([(x["tipus"], x["nivell"], x["valor"]) for x in r], [("pluja_3h", "groc", 65)])
+        self.assertIn("avui de 16 a 19 h", r[0]["text"])
 
     def test_mesura_ara_i_previsio_son_claus_diferents(self):
-        r = salida(hores({0: {"pluja_mm": 25}}), casa={"pluja_1h": 42, "plou": True, "temperatura": 15})["riscos"]
-        self.assertEqual({x["clau"]: x["nivell"] for x in r}, {"ara:pluja_1h": "taronja", "previsio:pluja_1h": "groc"})
+        r = salida(hores({0: {"pluja_mm": 65}}), casa={"pluja_30min": 42, "plou": True, "temperatura": 15})["riscos"]
+        self.assertEqual({x["clau"]: x["nivell"] for x in r}, {"ara:pluja_30min": "taronja", "previsio:pluja_3h": "groc"})
         self.assertEqual(r[0]["nivell"], "taronja")   # el pitjor primer
 
     def test_pluja_de_la_xarxa(self):
-        # «pluja_1h» ja és la mediana de la xarxa del barri (casa.consens):
-        # compta encara que ara mateix no plogui, i el zero no fa res.
-        self.assertEqual(len(salida(casa={"pluja_1h": 30, "plou": False, "temperatura": 15})["riscos"]), 1)
-        self.assertEqual(salida(casa={"pluja_1h": 0, "plou": True, "temperatura": 15})["riscos"], [])
-        self.assertEqual(salida(casa={"pluja_1h": None, "temperatura": 15})["riscos"], [])
+        # «pluja_30min» i «pluja_3h» ja són la mediana de la xarxa del barri
+        # (casa.consens): compten encara que ara mateix no plogui, i el zero no fa res.
+        self.assertEqual(len(salida(casa={"pluja_30min": 25, "plou": False, "temperatura": 15})["riscos"]), 1)
+        self.assertEqual(len(salida(casa={"pluja_3h": 61, "temperatura": 15})["riscos"]), 1)
+        self.assertEqual(salida(casa={"pluja_30min": 0, "plou": True, "temperatura": 15})["riscos"], [])
+        self.assertEqual(salida(casa={"pluja_30min": None, "temperatura": 15})["riscos"], [])
         self.assertEqual(salida(casa=None)["riscos"], [])     # sense estació, només la previsió
 
     def test_fred_i_neu(self):
-        h = hores({i: {"temperatura": -5, "neu": 0.5} for i in range(14, 20)})
+        # Cerdanyola: fred intens per sota de −1,6 °C i molt intens per sota de
+        # −3,6; neu, qualsevol gruix per sota de 300 m.
+        h = hores({i: {"temperatura": -2, "neu": 0.5} for i in range(14, 20)})
         tipus = {x["tipus"]: x["nivell"] for x in salida(h)["riscos"]}
         self.assertEqual(tipus, {"fred": "groc", "neu_24h": "groc"})
+        self.assertEqual(salida(hores({14: {"temperatura": -4}}))["riscos"][0]["nivell"], "taronja")
+        self.assertEqual(salida(hores({14: {"temperatura": -1.6}}))["riscos"], [])
+        r = salida(casa={"temperatura": 37.0})["riscos"]
+        self.assertEqual((r[0]["tipus"], r[0]["nivell"], r[0]["text"]), ("calor", "groc", "Ara fa calor intensa: 37 °C."))
 
     def test_nomes_les_24_primeres_hores(self):
         # La taula pot arribar a 45 hores per donar demà sencer (ADR 0041); el risc, no.
-        self.assertEqual(salida(hores({26: {"ratxa": 95}}, n=30))["riscos"], [])
+        self.assertEqual(salida(hores({26: {"ratxa": 115}}, n=30))["riscos"], [])
 
     def test_sense_previsio(self):
         self.assertEqual(salida(h=[])["riscos"], [])
@@ -86,7 +99,7 @@ class Avis(unittest.TestCase):
         groc = salida(hores({3: {"ratxa": 75}}))
         self.assertIn("risc groc", self.pas(groc, 0))
         self.assertIsNone(self.pas(groc, 30))                                  # ja avisat
-        self.assertIn("risc taronja", self.pas(salida(hores({3: {"ratxa": 92}})), 60))
+        self.assertIn("risc taronja", self.pas(salida(hores({3: {"ratxa": 112}})), 60))
         self.assertIsNone(self.pas(groc, 90))                                  # baixa: no avisa
         self.assertIsNone(self.pas(salida(), 120))                             # encara no fa 3 h
         self.assertIn("ja no", self.pas(salida(), 90 + 180))

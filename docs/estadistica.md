@@ -809,20 +809,26 @@ pluja» si no, y «pluja sense avís» si llovió sin aviso.
 ## 11. Situaciones de peligro
 
 Lo medido en las estaciones y la previsión de las 24 primeras horas se
-comparan con los umbrales del Plan Meteoalerta de la AEMET (anexo 1, versión
-del 31-05-2022) para el Prelitoral de Barcelona (`riscos.py`,
-`RISC_LLINDARS` de `config.py`, ADR 0018):
+comparan con los umbrales bajo y alto de los avisos de situación
+meteorológica de peligro de Meteocat para Cerdanyola y el Vallès Occidental
+(`riscos.py`, `RISC_LLINDARS` de `config.py`, ADR 0018; hasta el 16-10-2026,
+los de la AEMET para el Prelitoral). Hay que pasar el umbral:
 
-| Fenómeno | Amarillo | Naranja | Rojo |
+| Fenómeno | Amarillo (umbral bajo) | Naranja (umbral alto) | De dónde |
 |---|---|---|---|
-| Lluvia en 1 hora | 20 mm | 40 mm | 90 mm |
-| Lluvia en 12 horas | 60 mm | 100 mm | 180 mm |
-| Racha | 70 km/h | 90 km/h | 130 km/h |
-| Calor | 36 °C | 39 °C | 42 °C |
-| Frío | −4 °C | −8 °C | −12 °C |
-| Nieve en 24 horas | 2 cm | 5 cm | 20 cm |
+| Lluvia en 30 minutos | más de 20 mm | más de 40 mm | medida |
+| Lluvia en 3 horas | más de 60 mm | más de 90 mm | medida y prevista |
+| Lluvia en 24 horas | más de 100 mm | más de 200 mm | prevista |
+| Racha | más de 72 km/h | más de 108 km/h | prevista |
+| Calor | más de 36,8 °C | más de 38,8 °C | medida y prevista |
+| Frío | menos de −1,6 °C | menos de −3,6 °C | medida y prevista, junto a la riera |
+| Nieve en 24 horas | cualquier espesor | más de 5 cm | prevista |
 
-La lluvia de 12 horas es la ventana de 12 horas seguidas que más acumula.
+Los de temperatura son los del municipio (percentiles 98 y 2 de los últimos
+15 años, y dos grados más allá para el alto). El rojo de Meteocat depende
+también de la probabilidad, que la web no tiene para estos fenómenos: no hay
+rojo propio. La media hora no se puede prever con modelos de horas enteras;
+la lluvia de 3 y de 24 horas es la ventana de horas seguidas que más acumula.
 Para cada fenómeno se da el peor valor y el tramo de horas seguidas en que
 ocurre. Un riesgo se da por acabado tras 3 horas sin verlo, para que el
 vaivén de los modelos entre pasadas no repita el aviso. No sustituye a los

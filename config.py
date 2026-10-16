@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.99.1"
+VERSION = "3.100.0"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -130,19 +130,25 @@ ENSEMBLE = "icon_eu_eps"
 # tiene más de estas horas (ADR 0016).
 CASA_PREVISION_ANTERIOR_MAX_H = 6
 
-# Situaciones de peligro en casa (riscos.py, ADR 0018): los umbrales de aviso
-# amarillo, naranja y rojo de AEMET para el Prelitoral de Barcelona (zona
-# 690803; Plan Meteoalerta, anexo 1, «Umbrales y niveles de aviso», versión del
-# 31-05-2022). Se comparan con lo que miden las estaciones y con la previsión
-# de la página de casa, no con los avisos de AEMET. Lluvia en mm, racha en
-# km/h, temperatura en °C y nieve en cm.
+# Situaciones de peligro en casa (riscos.py, ADR 0018): desde el 16-10-2026,
+# los umbrales bajo y alto de los avisos de situación meteorológica de peligro
+# de Meteocat para Cerdanyola y el Vallès Occidental (meteo.cat, «Situació
+# Meteorològica de Perill» y «Llindars_municipi_2026.pdf»; los de temperatura
+# son del municipio). Hasta entonces, los de AEMET para el Prelitoral; por
+# fenómeno manda Meteocat (ADR 0092). Se superan con «más que» (en el frío,
+# «menos que»), como dice Meteocat. Se comparan con lo que miden las estaciones
+# y con la previsión de la página de casa, no con los avisos oficiales. El frío,
+# con la temperatura de la riera, la zona más fría (Juanjo: «el frío con la
+# riera»). Lluvia en mm, racha en km/h, temperatura en °C y nieve en cm (por
+# debajo de 300 m, cualquier cantidad).
 RISC_LLINDARS = {
-    "pluja_1h": (20, 40, 90),
-    "pluja_12h": (60, 100, 180),
-    "ratxa": (70, 90, 130),
-    "calor": (36, 39, 42),
-    "fred": (-4, -8, -12),
-    "neu_24h": (2, 5, 20),
+    "pluja_30min": (20, 40),
+    "pluja_3h": (60, 90),
+    "pluja_24h": (100, 200),
+    "ratxa": (72, 108),
+    "calor": (36.8, 38.8),
+    "fred": (-1.6, -3.6),
+    "neu_24h": (0, 5),
 }
 # Horas sin ver un riesgo para darlo por acabado: así el vaivén de los modelos
 # entre una pasada y otra no repite el aviso por Telegram.

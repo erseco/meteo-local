@@ -816,16 +816,16 @@ class Web(unittest.TestCase):
         # i el tram en porta el nivell més alt i què és.
         ara = "2026-10-12T07:30:00+02:00"
         f = lambda h, avisos=(): {"hora": f"2026-10-12T{h:02d}:00", "fins": f"2026-10-12T{h + 1:02d}:00", "avisos": list(avisos)}
-        risc = {"tipus": "pluja_1h", "origen": "previsio", "nivell": "taronja",
+        risc = {"tipus": "pluja_3h", "origen": "previsio", "nivell": "taronja",
                 "des_de": "2026-10-12T08:00+02:00", "fins": "2026-10-12T09:00+02:00"}
         hores = [f(7), f(8, [{"nivell": "groc", "tipus": ["pluja"]}]), f(9)]
         expr = (f"hs = {json.dumps(hores)}; for (const x of hs) x.riscos_hora = riscosHora(x, [{json.dumps(risc)}]);"
                 "[hs.map((x) => avisHora(x) && [avisHora(x).nivell, avisHora(x).fonts, avisHora(x).noms]), perillTram(hs)]")
         r = self.avalua(ara, expr)
         # Només el que dona el nivell més alt: el groc de l'AEMET per pluja queda sota el taronja de la web.
-        self.assertEqual(r[0], [None, ["taronja", "web", ["pluja molt forta"]], None])
-        self.assertEqual(r[1], {"nivell": "taronja", "noms": ["pluja molt forta"], "fonts": "web",
-                                "perFont": [["web", ["pluja molt forta"]]]})
+        self.assertEqual(r[0], [None, ["taronja", "web", ["pluja intensa"]], None])
+        self.assertEqual(r[1], {"nivell": "taronja", "noms": ["pluja intensa"], "fonts": "web",
+                                "perFont": [["web", ["pluja intensa"]]]})
         # El text del tram: Meteocat en grau de perill; i, en passar-hi el ratolí, d'on surt (ADR 0093).
         p = {"nivell": "taronja", "noms": ["pluja", "tempestes"], "fonts": "meteocataemet",
              "perFont": [["meteocat", ["pluja"]], ["aemet", ["tempestes"]]]}

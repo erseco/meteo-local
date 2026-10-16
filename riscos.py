@@ -4,9 +4,12 @@
 (ADR 0018).
 
 Se comparan las estaciones (ahora) y la previsión de la página de casa (24
-horas) con los umbrales de aviso de AEMET para el Prelitoral de Barcelona
-(config.RISC_LLINDARS): lluvia en 1 y en 12 horas, rachas de viento, calor,
-frío y nieve. Los avisos de AEMET y los planes de Protección Civil no cuentan
+horas) con los umbrales bajo y alto de los avisos de peligro de Meteocat para
+Cerdanyola (config.RISC_LLINDARS; hasta el 16-10-2026, los de AEMET): lluvia
+en 30 minutos (medida), en 3 horas y en 24 horas (prevista), rachas de
+viento, calor, frío y nieve. Los dos umbrales dan el nivel amarillo y el
+naranja; el rojo de Meteocat también depende de la probabilidad, que la web
+no tiene para estos fenómenos. Los avisos de AEMET y los planes de Protección Civil no cuentan
 aquí: ya salen en la página, y Juanjo solo quiere el aviso cuando la previsión
 propia ve el peligro.
 
@@ -33,23 +36,30 @@ DIR = os.environ.get("REGISTRE_DIR", "/estat/registre")
 ESTADO = os.path.join(os.path.dirname(DIR), "riscos.json")
 WEB = "https://meteo-montflorit.github.io/"
 
-UNITATS = {"pluja_1h": "mm", "pluja_12h": "mm", "ratxa": "km/h", "calor": "°C", "fred": "°C",
-           "neu_24h": "cm"}
+UNITATS = {"pluja_30min": "mm", "pluja_3h": "mm", "pluja_24h": "mm", "ratxa": "km/h", "calor": "°C",
+           "fred": "°C", "neu_24h": "cm"}
 
 
 def nivell(tipus, valor):
-    """Nivel de AEMET que alcanza el valor, o None."""
+    """Nivel que alcanza el valor (el umbral bajo de Meteocat, amarillo; el
+    alto, naranja), o None. Hay que pasar el umbral, no basta con llegar."""
     if valor is None:
         return None
     res = None
     for n, llindar in zip(NIVELLS, C.RISC_LLINDARS[tipus]):
-        if (valor <= llindar) if tipus == "fred" else (valor >= llindar):
+        if (valor < llindar) if tipus == "fred" else (valor > llindar):
             res = n
     return res
 
 
-def num(x):
-    return f"{x:.0f}".replace("-", "−")
+TEMPERATURES = ("calor", "fred")
+
+
+def num(x, tipus=None):
+    """Sin decimales; la temperatura, con uno si no es un grado entero, como
+    los umbrales de Meteocat (36,8 °C)."""
+    t = f"{x:.1f}" if tipus in TEMPERATURES and abs(x - round(x)) >= 0.05 else f"{x:.0f}"
+    return t.replace(".", ",").replace("-", "−")
 
 
 def quan(ini, fin, ahora):
@@ -60,12 +70,11 @@ def quan(ini, fin, ahora):
 
 
 TEXTOS = {
-    "pluja_1h": ("Pluja molt forta prevista: fins a {v} mm en una hora, {q}.",
-                 "Ara plou molt fort: {v} mm en l'última hora."),
-    "pluja_12h": ("Molta pluja prevista: {v} mm en 12 hores, {q}.",
-                  "Ha plogut molt: {v} mm en les últimes 12 hores."),
-    "ratxa": ("Vent molt fort previst: ratxes de fins a {v} km/h, {q}.", None),
-    "calor": ("Calor extrema prevista: fins a {v} °C, {q}.", "Ara fa calor extrema: {v} °C."),
+    "pluja_30min": (None, "Ara plou amb molta intensitat: {v} mm en l'última mitja hora."),
+    "pluja_3h": ("Pluja intensa prevista: {v} mm en 3 hores, {q}.", "Ha plogut molt: {v} mm en les últimes 3 hores."),
+    "pluja_24h": ("Molta pluja prevista: {v} mm en 24 hores, {q}.", None),
+    "ratxa": ("Vent fort previst: ratxes de fins a {v} km/h, {q}.", None),
+    "calor": ("Calor intensa prevista: fins a {v} °C, {q}.", "Ara fa calor intensa: {v} °C."),
     "fred": ("Fred intens previst: fins a {v} °C, {q}.", "Ara fa fred intens: {v} °C."),
     "neu_24h": ("Neu prevista: {v} cm en les pròximes 24 hores.", None),
 }
@@ -77,7 +86,7 @@ def risc(tipus, origen, valor, ini=None, fin=None, ahora=None):
         return None
     previst, mesura = TEXTOS[tipus]
     plantilla = previst if origen == "previsio" else mesura
-    text = plantilla.format(v=num(valor), q=quan(ini, fin, ahora) if ini else "")
+    text = plantilla.format(v=num(valor, tipus), q=quan(ini, fin, ahora) if ini else "")
     llindar = C.RISC_LLINDARS[tipus][NIVELLS.index(n)]
     return {"clau": f"{origen}:{tipus}", "tipus": tipus, "origen": origen, "nivell": n,
             "valor": round(valor, 1), "llindar": llindar, "unitat": UNITATS[tipus],
@@ -119,24 +128,25 @@ def de_la_previsio(hores, ahora):
     res = []
     if not hores:
         return res
-    for tipus, valor_de in (("pluja_1h", lambda f: f.get("pluja_mm")),
-                            ("ratxa", lambda f: f.get("ratxa")),
+    for tipus, valor_de in (("ratxa", lambda f: f.get("ratxa")),
                             ("calor", lambda f: f.get("temperatura")),
                             ("fred", lambda f: f.get("temperatura"))):
         t = pitjor_tram(hores, tipus, valor_de)
         if t:
             res.append(risc(tipus, "previsio", t[0], t[1], t[2], ahora))
-    # Lluvia en 12 horas seguidas: la ventana que más acumula.
-    millor = None
-    for i in range(max(0, len(hores) - 11)):
-        tram = hores[i:i + 12]
-        mm = sum(f.get("pluja_mm") or 0 for f in tram)
-        if millor is None or mm > millor[0]:
-            millor = (mm, tram)
-    if millor and nivell("pluja_12h", millor[0]):
-        tram = millor[1]
-        res.append(risc("pluja_12h", "previsio", millor[0], dt.datetime.fromisoformat(tram[0]["hora"]),
-                        dt.datetime.fromisoformat(tram[-1]["fins"]), ahora))
+    # La lluvia, en las horas seguidas que más acumulan: 3 y 24. La media
+    # hora de Meteocat no se puede prever con modelos que dan horas enteras.
+    for tipus, n in (("pluja_3h", 3), ("pluja_24h", 24)):
+        millor = None
+        for i in range(max(0, len(hores) - n + 1)):
+            tram = hores[i:i + n]
+            mm = sum(f.get("pluja_mm") or 0 for f in tram)
+            if millor is None or mm > millor[0]:
+                millor = (mm, tram)
+        if millor and nivell(tipus, millor[0]):
+            tram = millor[1]
+            res.append(risc(tipus, "previsio", millor[0], dt.datetime.fromisoformat(tram[0]["hora"]),
+                            dt.datetime.fromisoformat(tram[-1]["fins"]), ahora))
     neu = sum(f.get("neu") or 0 for f in hores)
     r = risc("neu_24h", "previsio", neu)
     if r:
@@ -145,18 +155,19 @@ def de_la_previsio(hores, ahora):
 
 
 def de_l_estacio(casa):
-    """Lo que se mide ahora: la lluvia de la última hora de la red del barrio
-    (casa.consens: la mediana de casa y de las vecinas que cuentan), y la
-    temperatura de casa. Ni el viento (el anemómetro no va bien) ni la lluvia
-    de 12 horas, que las estaciones no dan en cada pasada: ese riesgo sale
-    solo de la previsión."""
+    """Lo que se mide ahora: la lluvia de la última media hora y de las tres
+    últimas horas de la red del barrio (casa.consens: la mediana de casa y de
+    las vecinas que cuentan), y la temperatura de casa. Ni el viento (el
+    anemómetro no va bien) ni la lluvia de 24 horas, que las estaciones no dan
+    en cada pasada: esos riesgos salen solo de la previsión."""
     res = []
     if not casa:
         return res
-    if casa.get("pluja_1h"):
-        r = risc("pluja_1h", "ara", casa["pluja_1h"])
-        if r:
-            res.append(r)
+    for tipus in ("pluja_30min", "pluja_3h"):
+        if casa.get(tipus):
+            r = risc(tipus, "ara", casa[tipus])
+            if r:
+                res.append(r)
     if casa.get("temperatura") is not None:
         for tipus in ("calor", "fred"):
             r = risc(tipus, "ara", casa["temperatura"])
@@ -218,7 +229,7 @@ def compara(estat, salida, ahora):
     if nous:
         pitjor = max(nous, key=lambda r: NIVELLS.index(r["nivell"]))["nivell"]
         linies = [f"Temps a casa: risc {pitjor}."]
-        linies += [f"{r['text']} (llindar {r['nivell']} d'AEMET: {num(r['llindar'])} {r['unitat']})"
+        linies += [f"{r['text']} (llindar {r['nivell']} de Meteocat: {num(r['llindar'], r['tipus'])} {r['unitat']})"
                    for r in nous]
         linies.append(WEB)
         return "\n".join(linies)
