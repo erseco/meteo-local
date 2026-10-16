@@ -271,15 +271,19 @@ let anatAlAvis = false;
 
 function vesAlAvis() {
   if (anatAlAvis || !location.hash) return;
-  const art = document.getElementById(location.hash.slice(1));
   anatAlAvis = true;
+  vesA(location.hash.slice(1));
+}
+
+function vesA(id) {
+  const art = id && document.getElementById(id);
   if (!art) return;
   art.closest('details.mes-perill')?.setAttribute('open', '');
   art.querySelector('details')?.setAttribute('open', '');
-  art.scrollIntoView({ block: 'center' });
-  art.classList.add('assenyalat');
-  setTimeout(() => art.classList.remove('assenyalat'), 4000);
+  assenyala(art);
 }
+// Un enllaç dins de la pàgina («Substituït per l'avís de Meteocat»), també.
+window.addEventListener('hashchange', () => vesA(location.hash.slice(1)));
 
 function llegeix() {
   llegeixDades(FITXER_AVISOS).then((d) => { pinta(d); vesAlAvis(); }, () => {

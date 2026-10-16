@@ -770,6 +770,38 @@ function ambDetall(item, href) {
   return item;
 }
 
+// Destaca on porta un enllaç (la fitxa de «Perill», el plec de «Si surts», la
+// consulta): s'hi va i, quan la pàgina ja és quieta, parpelleja dues vegades
+// (2 s), queda marcada 2 s i s'apaga en 1,2 s (estil.css, .assenyalat; Juanjo,
+// 16-10-2026: «que empiece cuando esté quieta» i «en vez de 3 parpadeos, haz 2»).
+const ASSENYALAT_MS = 4000;     // els parpelleigs i el temps marcada
+const QUIETA_MS = 150;          // sense desplaçar-se tant de temps, és quieta
+const QUIETA_MAX_MS = 2000;     // per si el desplaçament no s'acaba mai
+function assenyala(el) {
+  if (!el) return;
+  const suau = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.classList.add('assenyalable');
+  el.classList.remove('assenyalat');
+  clearTimeout(el.assenyalat);
+  let fet = false;
+  let espera = null;
+  const comença = () => {
+    if (fet) return;
+    fet = true;
+    clearTimeout(espera);
+    clearTimeout(maxim);
+    removeEventListener('scroll', quieta);
+    void el.offsetWidth;        // perquè l'animació torni a començar
+    el.classList.add('assenyalat');
+    el.assenyalat = setTimeout(() => el.classList.remove('assenyalat'), ASSENYALAT_MS);
+  };
+  const quieta = () => { clearTimeout(espera); espera = setTimeout(comença, QUIETA_MS); };
+  const maxim = setTimeout(comença, QUIETA_MAX_MS);
+  addEventListener('scroll', quieta, { passive: true });
+  el.scrollIntoView({ block: 'center', behavior: suau ? 'smooth' : 'auto' });
+  quieta();
+}
+
 function posaVersio(versio) {
   $('versio').textContent = T`versió ${versio}`;
   // La pàgina pública enllaça el seu propi repositori (ADR 0024).
@@ -1405,10 +1437,10 @@ document.addEventListener('click', (e) => {
   if (desti.origin !== location.origin || !/\/([a-z-]+\.html)?$/.test(desti.pathname)) return;
   // Dins de la mateixa pàgina (la «›» dels trens a «Consultes»), sense apuntar-ho.
   if (desti.pathname === location.pathname && desti.search === location.search) {
-    if (desti.hash !== location.hash) {
-      e.preventDefault();
-      location.replace(desti.href);
-    }
+    e.preventDefault();
+    if (desti.hash !== location.hash) location.replace(desti.href);
+    // El mateix enllaç un altre cop: es torna a destacar.
+    else if (desti.hash) window.dispatchEvent(new Event('hashchange'));
     return;
   }
   const prof = profunditat();

@@ -95,3 +95,19 @@ Probado en Chromium y Firefox: comparte `perill.html#pla-alfa` con el título
 señalada; axe-core, sin incidencias. Se subió como 3.65.1 y se retiró antes de desplegarse, para
 publicarla con el ADR 0076.
 
+## Cambio del 16-10-2026 (3.89.0): el destino se destaca
+
+Juanjo: al llegar a una ficha por un enlace, «solo la coloca en la parte
+superior pero no queda claro qué ficha es». Ahora `assenyala` (`web/comu.js`)
+la centra con desplazamiento suave y, cuando la página lleva 0,15 s quieta
+(como mucho a los 2 s), la ficha parpadea dos veces con un halo azul de 6
+píxeles (2 s), queda con fondo azulado y borde 2 s y se apaga en 1,2 s: unos
+5,5 s, más el desplazamiento. Los tiempos los fijó él. Con «reducir el
+movimiento», sin parpadeo. Vale para «Perill» (también los enlaces dentro de
+la página, como «Substituït per l'avís de Meteocat», y el mismo enlace otra
+vez), «Si surts» (el plegable de los trenes) y «Consultes». Antes solo había
+un borde de 3 píxeles durante 4 s, y solo al abrir «Perill» desde otra página.
+El fondo claro (`#edf3ff`) deja todos los textos de las fichas por encima de
+4,5:1 de contraste; con el primero probado (`#dbe7ff`) el título naranja
+quedaba en 4,16 (axe-core). Comprobado sin infracciones en tema claro y oscuro.
+

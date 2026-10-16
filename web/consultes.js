@@ -504,6 +504,9 @@ function mapaTall(t, m) {
   return figura;
 }
 
+// Si s'hi arriba per un enllaç (consultes.html#llum), la consulta es destaca
+// la primera vegada que es pinta.
+let assenyalada = !OPCIONS.some(([c]) => c === location.hash.slice(1));
 function pinta(dades) {
   DADES = dades;
   // Dades de fa massa: només l'avís i on mirar (ADR 0031).
@@ -513,6 +516,10 @@ function pinta(dades) {
   else pintaConsulta();
   pintaHorari(dades, fontsConsulta());
   posaVersio(dades.versio);
+  if (!assenyalada && !velles) {
+    assenyalada = true;
+    assenyala($('consulta'));
+  }
 }
 
 pintaOpcions();
@@ -522,6 +529,7 @@ window.addEventListener('hashchange', () => {
   triada = clau;
   for (const r of document.querySelectorAll('#opcions input')) r.checked = r.value === clau;
   pintaConsulta();
+  assenyala($('consulta'));
 });
 carrega(FITXER_DADES, pinta, () => {
   $('consulta').replaceChildren(element('p', 'avis', T('No s’ha pogut carregar la previsió. Torna-ho a provar d’aquí a una estona.')));

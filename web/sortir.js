@@ -585,7 +585,7 @@ function obreDelEnllac() {
   const desti = location.hash && document.getElementById(location.hash.slice(1));
   if (!desti || desti.tagName !== 'DETAILS') return;
   desti.open = true;
-  desti.scrollIntoView({ block: 'center' });
+  assenyala(desti);
 }
 
 pintaTriats();

@@ -3,6 +3,8 @@
 :root {
   --fons: #f6f7f9;
   --superficie: #ffffff;
+  --assenyalat-fons: #edf3ff;
+  --assenyalat-halo: rgba(29, 78, 216, .35);
   --text: #1c2430;
   --suau: #566173;
   --vora: #dde2e8;
@@ -36,6 +38,8 @@
 }
 
 :root[data-theme="dark"] {
+  --assenyalat-fons: #22344f;
+  --assenyalat-halo: rgba(138, 180, 255, .4);
   --alta-fons: #431407;
   --alta-text: #fed7aa;
   --fons: #12161c;
@@ -845,8 +849,15 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .perill .compartir-avis svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2;
   stroke-linecap: round; stroke-linejoin: round; }
 .perill .compartir-avis:focus-visible { outline: 2px solid var(--enllac); outline-offset: 2px; }
-/* L'avís de l'enllaç que s'ha obert, destacat una estona. */
-.perill .episodi.assenyalat { box-shadow: 0 0 0 3px var(--enllac); transition: box-shadow .4s; }
+/* La fitxa o l'apartat on porta un enllaç: parpelleja dues vegades, queda
+   marcada uns segons i s'apaga a poc a poc, perquè es vegi quina és (Juanjo,
+   16-10-2026: «que se ilumine con algún efecto que destaque la ficha»). */
+.assenyalable { transition: box-shadow 1.2s, background-color 1.2s; }
+.assenyalat, .perill .episodi.assenyalat, .consulta.assenyalat {
+  box-shadow: 0 0 0 3px var(--enllac); background-color: var(--assenyalat-fons);
+  animation: assenyala 1s ease-in-out 2; }
+@keyframes assenyala { 50% { box-shadow: 0 0 0 6px var(--assenyalat-halo); } }
+@media (prefers-reduced-motion: reduce) { .assenyalat { animation: none; } }
 
 /* L'enllaç per activar els avisos, sota els apartats que en tenen (ADR 0072). */
 .enllac-avisos { margin: .6rem 0 0; font-size: .92rem; color: var(--suau); }
