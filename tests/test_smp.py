@@ -251,6 +251,12 @@ class Smp(unittest.TestCase):
                                   "hora": AHORA.isoformat(timespec="minutes"), "ca": "a", "es": "a",
                                   "episodi": "aemet:pluja:x"}], AHORA)
         self.assertEqual(h[0]["fi_ca"], "Meteocat en té avís per al Vallès Occidental: ara es mostra el seu.")
+        # Amb la fitxa de Meteocat que la substitueix, perquè «Perill» no la doni per acabada.
+        mc = {"id": "perill:meteocat:x", "tipus": "perill", "nivell": "alt", "hora": AHORA.isoformat(timespec="minutes"),
+              "ca": "b", "es": "b", "episodi": "meteocat:x"}
+        estat["oficials"] = {"smp": {"episodi": "meteocat:x"}}
+        h = AB.historial(estat, [mc], AHORA)
+        self.assertEqual(h[0]["substituit_per"], {"clau": "meteocat:x", "inici": AHORA.isoformat(timespec="minutes")})
 
     def test_avis_a_juanjo_en_el_moment(self):
         # Si la passada no ha pogut llegir Meteocat, una vegada; i quan torna.

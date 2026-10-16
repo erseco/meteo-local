@@ -777,8 +777,12 @@ def fusiona(propi, altre):
         if igual is None:
             res.append(dict(e))
         elif e.get("fi") and not igual.get("fi"):
-            igual.update({k: e[k] for k in ("fi", "fi_ca", "fi_es") if k in e})
+            igual.update({k: e[k] for k in ("fi", "fi_ca", "fi_es", "substituit_per") if k in e})
     return sorted(res, key=lambda e: e["inici"])
+
+
+SUBSTITUIT = {"ca": "Meteocat en té avís per al Vallès Occidental: ara es mostra el seu.",
+              "es": "Meteocat tiene aviso para el Vallès Occidental: ahora se muestra el suyo."}
 
 
 def historial(estat, nous, ahora, anterior=None):
@@ -805,12 +809,17 @@ def historial(estat, nous, ahora, anterior=None):
             h.append({"clau": ep, "tipus": a["tipus"], "inici": a["hora"], "nivell": a.get("nivell"),
                       "ca": a["ca"], "es": a["es"], **{k: a[k] for k in ("enllac", "fins") if a.get(k)}})
     # Un aviso de AEMET que ahora cubre Meteocat ya no se muestra en ningún
-    # sitio (ADR 0093): su ficha se cierra diciéndolo.
+    # sitio (ADR 0093): su ficha se cierra diciéndolo, con la de Meteocat que
+    # la sustituye, para que «Perill» no la dé por acabada (Juanjo, 16-10-2026:
+    # «¿este aviso se ha retirado?»). Las cerradas antes de la 3.88.1 la toman
+    # en la pasada siguiente.
+    smp = ((estat.get("oficials") or {}).get("smp") or {}).get("episodi")
+    mc = next((x for x in reversed(h) if smp and x["clau"] == smp), None)
     for e in h:
         if e["clau"] in (estat.get("aemet_coberts") or []) and not e.get("fi"):
-            e.update(fi=ahora.isoformat(timespec="minutes"),
-                     fi_ca="Meteocat en té avís per al Vallès Occidental: ara es mostra el seu.",
-                     fi_es="Meteocat tiene aviso para el Vallès Occidental: ahora se muestra el suyo.")
+            e.update(fi=ahora.isoformat(timespec="minutes"), fi_ca=SUBSTITUIT["ca"], fi_es=SUBSTITUIT["es"])
+        if mc and e.get("fi_ca") == SUBSTITUIT["ca"] and not e.get("substituit_per"):
+            e["substituit_per"] = {"clau": mc["clau"], "inici": mc["inici"]}
     # Un plan que ya no se muestra (desactivado sin aviso, u oculto por no
     # tener motivo meteorológico: ADR 0062) ya no está activo en la página.
     plans = (estat.get("oficials") or {}).get("plans")

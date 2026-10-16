@@ -91,7 +91,12 @@ function fitxa(e, ara) {
   const compartit = textCompartit([primera, ...resta, ...(textFi ? trossos(textFi) : [])]);
   cap.append(titol, botoCompartir(art.id, primera.map((t) => t.t).join('').trim(), compartit));
   const estat = element('p', 'episodi-quan');
-  if (fi) estat.append(element('span', 'episodi-acabat', `🟢 ${T('Acabat')}`), ' · ');
+  if (fi && e.substituit_per) {
+    // No ha acabat: ara se'n mostra un altre, el de Meteocat (ADR 0093).
+    const a = element('a', null, T('l’avís de Meteocat'));
+    a.href = `#${idFitxa(e.substituit_per)}`;
+    estat.append(element('span', 'episodi-substituit', T('Substituït per ')), a, ' · ');
+  } else if (fi) estat.append(element('span', 'episodi-acabat', `🟢 ${T('Acabat')}`), ' · ');
   else estat.append(element('span', 'episodi-actiu', T('Actiu ara')), ' · ');
   estat.append(quan(e, fi));
   art.append(cap, estat);

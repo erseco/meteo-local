@@ -87,6 +87,13 @@ y «Si surts» usan ese bloque tal cual; que cada aviso de peligro que crea
 `avisos_bot.py` tiene su tipo, y que un tipo nuevo sin marca hace fallar la
 prueba. Las instrucciones del repositorio lo piden.
 
+## Cambio del 16-10-2026 (3.88.1)
+
+La ficha cerrada de un aviso de AEMET que pasa a cubrir Meteocat decía «🟢
+Acabat», y Juanjo preguntó si se había retirado: el aviso seguía vigente. Ahora
+lleva `substituit_per` (la ficha de Meteocat) y «Perill» dice «Substituït per
+l'avís de Meteocat», con enlace a esa ficha, sin el círculo verde.
+
 ## Alternativas descartadas
 
 - **AEMET solo de reserva** (ADR 0092): calla avisos que Meteocat no da.
