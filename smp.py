@@ -254,6 +254,18 @@ def marca_coberts(avisos, smp):
     return avisos
 
 
+def graus_pluja(ini, smp):
+    """Los grados de peligro (1-6) de los avisos de Meteocat por lluvia o
+    tiempo violento que cubren la hora que empieza en ini, para el
+    aprendizaje (ADR 0097). None sin lectura de Meteocat."""
+    if smp is None:
+        return None
+    t = ini.astimezone()
+    hora = f"{t.date().isoformat()}:{t.hour}"
+    return [a["perill"] for a in smp.get("avisos") or []
+            if fenomen(a["meteor"]) in ("pluja", "temps_violent") and hora in hores_avis(a)]
+
+
 def per_hora(ini, fin, smp):
     """Els avisos de Meteocat d'un tram, com els de l'AEMET a la taula:
     [{nivell (groc, taronja, vermell), tipus: [fenomen], font}]."""

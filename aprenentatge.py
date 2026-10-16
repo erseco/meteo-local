@@ -45,6 +45,7 @@ import prevision as P
 AQUI = os.path.dirname(os.path.abspath(__file__))
 ARXIU = os.path.join(AQUI, "calibracio", "pluja_casa.json")
 ARXIU_ECMWF = os.path.join(AQUI, "calibracio", "pluja_casa_ecmwf.json")
+ARXIU_AVISOS = os.path.join(AQUI, "calibracio", "pluja_casa_avisos.json")
 ARXIU_TEMPERATURA = os.path.join(AQUI, "calibracio", "temperatura_casa.json")
 REGISTRE = os.environ.get("REGISTRE_DIR", "/estat/registre")
 DIR = os.environ.get("APRENENTATGE_DIR", "/estat/aprenentatge")
@@ -79,6 +80,10 @@ RASGOS_ARXIU = ["constant", "arome_hd", "arome", "icon_eu", "antelacio",
 RASGOS_ECMWF = ["ecmwf", "plou_ecmwf", "ecmwf_antelacio", "quatre_models", "nomes_ecmwf"]
 RASGOS_ARXIU_ECMWF = RASGOS_ARXIU + RASGOS_ECMWF
 RASGOS_PROPIS = RASGOS_ARXIU + ["ensemble", "persistencia", "sequedat"]
+# El del archivo con ECMWF y los avisos oficiales de cada hora (ADR 0097):
+# solo se usa si su ajuste lo ha adoptado (pluja_casa_avisos.py).
+RASGOS_ARXIU_ECMWF_AVISOS = RASGOS_ARXIU_ECMWF + ["avis_aemet"]
+RASGOS_ARXIU_ECMWF_AVISOS_METEOCAT = RASGOS_ARXIU_ECMWF_AVISOS + ["avis_meteocat", "avis_meteocat_alt"]
 # Con la lluvia de la última hora en Sant Cugat (Meteocat, a 4,6 km, en la
 # cuenca de la riera): se ajusta aparte y solo gana si acierta más (ADR 0042).
 RASGOS_PROPIS_XV = RASGOS_PROPIS + ["sant_cugat"]
@@ -136,6 +141,8 @@ def rasgos(d, noms):
         # Lo oficial de la hora (0 o 1); sin dato, no hay vector.
         "avis_aemet": d.get("avis_pluja"),
         "pla_inuncat": d.get("pla_inuncat"),
+        "avis_meteocat": d.get("avis_meteocat"),
+        "avis_meteocat_alt": d.get("avis_meteocat_alt"),
         "temperatura": d.get("temperature_2m"),
         "nuvols": None if d.get("cloud_cover") is None else d["cloud_cover"] / 100,
         "vent": None if d.get("wind_speed_10m") is None else d["wind_speed_10m"] / 10,
@@ -215,6 +222,16 @@ def modelo_arxiu_ecmwf():
         return None
 
 
+def modelo_arxiu_avisos():
+    """El del archivo con los avisos, solo si su validación lo adoptó."""
+    try:
+        with open(ARXIU_AVISOS, encoding="utf-8") as f:
+            m = json.load(f)
+    except (OSError, ValueError):
+        return None
+    return m if m.get("adoptat") else None
+
+
 def modelo_arxiu_temperatura():
     with open(ARXIU_TEMPERATURA, encoding="utf-8") as f:
         m = json.load(f)
@@ -240,15 +257,16 @@ def carrega():
 
 
 def prob_pluja(model, d):
-    """Probabilidad de lluvia. Con el modelo del archivo, el que lleva ECMWF si
-    la pasada lo tiene (ADR 0086). Si el modelo propio necesita la estación de
-    casa y no hay dato, la del archivo."""
+    """Probabilidad de lluvia. Con el modelo del archivo, el que lleva los
+    avisos oficiales si está adoptado y la pasada los tiene (ADR 0097); si
+    no, el que lleva ECMWF si la pasada lo tiene (ADR 0086). Si el modelo
+    propio necesita la estación de casa y no hay dato, la del archivo."""
     m = (model or {}).get("pluja")
     if m and m.get("origen") == "arxiu":
-        me = modelo_arxiu_ecmwf()
-        xe = rasgos(d, me["rasgos"]) if me else None
-        if xe is not None:
-            return float(predecir(np.array(me["w"]), np.array(xe)))
+        for me in (modelo_arxiu_avisos(), modelo_arxiu_ecmwf()):
+            xe = rasgos(d, me["rasgos"]) if me else None
+            if xe is not None:
+                return float(predecir(np.array(me["w"]), np.array(xe)))
     x = rasgos(d, m["rasgos"]) if m else None
     if x is None and m and m.get("origen") != "arxiu":
         m = modelo_arxiu()

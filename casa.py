@@ -333,12 +333,18 @@ def avisos_mostrats(ini, fin, avisos):
 
 def senyals_avis(ini, fin, avisos, planes):
     """Lo que dice lo oficial de la hora, para que el modelo aprenda cuánto
-    pesa (ADR 0047): si había aviso de AEMET por lluvia o tormentas y si el
-    INUNCAT estaba en alerta o emergencia. None si no se pudieron leer."""
+    pesa (ADR 0047 y 0097): si había aviso de AEMET por lluvia o tormentas, si
+    el INUNCAT estaba en alerta o emergencia y si Meteocat avisaba por lluvia
+    o tiempo violento en la comarca, y con peligro alto o más (grado 3 o
+    más). None si no se pudieron leer."""
     tipus = {t for a in avisos_del_tramo(ini, fin, avisos) for t in a["tipus"]}
-    return {"avis_pluja": None if avisos is None else float(bool(tipus & {"pluja", "tempestes"})),
-            "pla_inuncat": None if planes is None else float(any(
-                p["pla"] == "INUNCAT" and p["fase"] in ("alerta", "emergència") for p in planes))}
+    res = {"avis_pluja": None if avisos is None else float(bool(tipus & {"pluja", "tempestes"})),
+           "pla_inuncat": None if planes is None else float(any(
+               p["pla"] == "INUNCAT" and p["fase"] in ("alerta", "emergència") for p in planes))}
+    graus = SMP.graus_pluja(ini, SMP_ACTUAL)
+    res["avis_meteocat"] = None if graus is None else float(bool(graus))
+    res["avis_meteocat_alt"] = None if graus is None else float(max(graus, default=0) >= 3)
+    return res
 
 
 def prob_ensemble(e):

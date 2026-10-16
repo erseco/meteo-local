@@ -98,5 +98,6 @@
 | [0094](0094-avisos-actius-plegados-cuando-no-hay-nada-nuevo.md) | «Avisos actius» plegado cuando no hay nada nuevo, y una sola hora en la portada | aceptado |
 | [0095](0095-releases-de-github-automaticas.md) | Las releases de GitHub las crea una acción con cada etiqueta | aceptado |
 | [0096](0096-grafica-de-la-prevision.md) | Una gráfica de la previsión encima de los tramos | aceptado |
+| [0097](0097-peso-de-los-avisos-oficiales-en-la-probabilidad-de-lluvia.md) | Peso de los avisos oficiales en la probabilidad de lluvia | en curso |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

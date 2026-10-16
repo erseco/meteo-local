@@ -270,6 +270,14 @@ sale de lo que pasa en Montflorit en lugar de fijarse a mano. Como se
 registran desde el 08-10-2026, se valida solo con esas horas y se adopta con
 las mismas condiciones que las otras.
 
+Desde la 3.97.0 el registro apunta también si Meteocat avisa por lluvia o
+tiempo violento en el Vallès Occidental, y si el aviso es de peligro alto o
+más. Mientras tanto, el peso de los avisos se aprende con el archivo
+(ADR 0097): $`a`$ de AEMET y, cuando haya su histórico, $`m`$ y
+$`m_{\text{alt}}`$ de Meteocat entran en el modelo con ECMWF, con los avisos
+ya emitidos al prever. Se adopta solo si se equivoca menos que sin ellos en
+el 95 % de los remuestreos por días y sigue siendo fiable.
+
 ### 2.3 Lo que aporta casa con su historial
 
 Con la lluvia de casa de octubre de 2025 a agosto de 2026, cuando el
@@ -572,7 +580,8 @@ $`\min(t/24, 1) = 1`$ (apartado 18). El registro con que se aprende y el riesgo
 propio (apartado 11) usan solo las 24 primeras horas.
 
 **Lo que no cambia la estadística.** Los avisos de la AEMET y los planes de
-Protección Civil se muestran tal cual, encima de la tabla y en cada hora.
+Protección Civil se muestran tal cual, encima de la tabla y en cada hora. Si se adopta el modelo con los avisos (ADR 0097), el aviso
+de la hora es una señal más de la probabilidad, con el peso aprendido.
 
 ## 7. Cómo se dice en la página
 

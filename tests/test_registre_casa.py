@@ -55,11 +55,25 @@ class Registre(unittest.TestCase):
         def senyals(h, avisos=avisos, plans=plans):
             fin = dt.datetime(2026, 10, 8, h, tzinfo=tz)
             return casa.senyals_avis(fin - dt.timedelta(hours=1), fin, avisos, plans)
-        self.assertEqual(senyals(11), {"avis_pluja": 1.0, "pla_inuncat": 1.0})
-        self.assertEqual(senyals(8), {"avis_pluja": 0.0, "pla_inuncat": 1.0})   # el de vent no compta
-        self.assertEqual(senyals(11, plans=[{"pla": "INUNCAT", "fase": "prealerta"}])["pla_inuncat"], 0.0)
-        # Si no s'han pogut llegir, no se sap: res de zeros.
-        self.assertEqual(senyals(11, None, None), {"avis_pluja": None, "pla_inuncat": None})
+        vell = casa.SMP_ACTUAL
+        try:
+            casa.SMP_ACTUAL = None
+            self.assertEqual(senyals(11), {"avis_pluja": 1.0, "pla_inuncat": 1.0,
+                                           "avis_meteocat": None, "avis_meteocat_alt": None})
+            self.assertEqual(senyals(8)["avis_pluja"], 0.0)   # el de vent no compta
+            self.assertEqual(senyals(11, plans=[{"pla": "INUNCAT", "fase": "prealerta"}])["pla_inuncat"], 0.0)
+            # Si no s'han pogut llegir, no se sap: res de zeros.
+            self.assertEqual(senyals(11, None, None), {"avis_pluja": None, "pla_inuncat": None,
+                                                       "avis_meteocat": None, "avis_meteocat_alt": None})
+            # Meteocat (ADR 0097): pluja o temps violent a la comarca, i si és de perill alt (grau 3 o més).
+            casa.SMP_ACTUAL = {"avisos": [
+                {"meteor": "Intensitat de pluja en 3 hores", "perill": 2, "dies": {"2026-10-08": [(12, 24)]}},
+                {"meteor": "Intensitat de pluja en 30 minuts", "perill": 4, "dies": {"2026-10-08": [(18, 24)]}},
+                {"meteor": "Ratxa màxima de vent", "perill": 4, "dies": {"2026-10-08": [(0, 24)]}}]}
+            self.assertEqual([senyals(h)["avis_meteocat"] for h in (11, 13, 19)], [0.0, 1.0, 1.0])
+            self.assertEqual([senyals(h)["avis_meteocat_alt"] for h in (11, 13, 19)], [0.0, 0.0, 1.0])
+        finally:
+            casa.SMP_ACTUAL = vell
 
     def test_cinc_minuts_de_casa(self):
         # Trams complets de 5 minuts; el que passa per mitjanit, amb l'acumulat que torna a zero.
