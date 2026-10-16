@@ -745,6 +745,8 @@ function taula(hores, mesurada, riscos, sol) {
   });
   cap.append(element('h2', 'perque', T('Previsió')), boto);
   sec.append(cap);
+  const graf = grafica(hores);
+  if (graf) sec.append(graf);
   const solHora = solPerHora(sol);
   trams.forEach((t) => sec.append(taulaTram(t, obertDeSortida(t), solHora)));
   // Les notes, plegades: només les que diuen alguna cosa de les hores d'ara.
@@ -799,6 +801,215 @@ function taula(hores, mesurada, riscos, sol) {
   sec.append(notes);
   return sec;
 }
+
+// --- La gràfica de la previsió (Juanjo, 16-10-2026: «un resumen visual …
+// muy visual y muy claro»). Un meteograma, de l'hora en curs fins al final de
+// la taula: la franja de perill, el cel cada 3 h, la temperatura i la
+// probabilitat de pluja, amb el mateix eix d'hores. Les dades, les de la
+// taula; la gràfica no diu res que no sigui a sota. ---
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svg(nom, atributs = {}, text = null) {
+  const e = document.createElementNS(SVG_NS, nom);
+  for (const [k, v] of Object.entries(atributs)) e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+// La pluja d'una hora, fosca segons els mil·límetres (els llindars del cel).
+function classePluja(mm) {
+  if (mm >= INTENSITAT_PLUJA[0]) return 'pluja-forta';
+  if (mm >= 1) return 'pluja-mitja';
+  if (mm >= 0.2) return 'pluja-feble';
+  return 'pluja-res';
+}
+
+// El cel d'un bloc de 3 h: la pluja, si n'hi ha en alguna hora; si no, la del mig.
+function celBloc(files) {
+  const amb = files.map((f) => [f, cel(f)]).filter(([, c]) => c[1]);
+  if (!amb.length) return null;
+  const plujoses = amb.filter(([f]) => plujaHora(f));
+  if (plujoses.length) return plujoses.sort(([a], [b]) => (b.probabilitat || 0) - (a.probabilitat || 0))[0][1];
+  return amb[Math.floor(amb.length / 2)][1];
+}
+
+function grafica(hores) {
+  const ara = new Date();
+  const files = (hores || []).filter((f) => new Date(f.fins) > ara && f.temperatura != null);
+  if (files.length < 6) return null;
+  const fig = element('figure', 'grafica');
+  fig.append(element('figcaption', 'visualment-amagat',
+    T('Gràfica de la previsió: perill, cel, temperatura i probabilitat de pluja. Les mateixes dades són a les taules de sota.')));
+  fig._files = files;
+  return fig;
+}
+
+function dibuixaGrafica(fig) {
+  const files = fig._files;
+  const W = fig.clientWidth;
+  if (!W) return;
+  const n = files.length;
+  const col = W / n;
+  const x = (i) => i * col;
+  const pas = col >= 28 ? 2 : 3;
+  const hora = (f) => new Date(f.hora).getHours();
+  const trams = tramsAvis(files);
+  const ambAvis = trams.some(Boolean);
+  // Les files de la gràfica, de dalt a baix.
+  const yAvis = 0;
+  const hAvis = ambAvis ? 22 : 0;
+  const yDia = hAvis + (ambAvis ? 6 : 0);
+  const yCel = yDia + 16;
+  const hCel = 28;
+  const yTemp = yCel + hCel + 16;
+  const hTemp = 70;
+  const yPluja = yTemp + hTemp + 18;
+  const hPluja = 40;
+  const yEix = yPluja + hPluja + 16;
+  const H = yEix + 4;
+  const g = svg('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true' });
+  // A la pàgina des del principi: el text de la franja s'ha de poder mesurar.
+  fig.querySelector('svg')?.remove();
+  fig.prepend(g);
+
+  // La nit, ombrejada, de la posta a la sortida (a mitja hora de cada tram),
+  // en un sol rectangle per nit.
+  const esNit = files.map((f) => alturaSol(new Date(new Date(f.hora).getTime() + 18e5)) < 0);
+  for (let i = 0; i < n; i++) {
+    if (!esNit[i] || (i && esNit[i - 1])) continue;
+    let j = i;
+    while (j < n && esNit[j]) j++;
+    g.append(svg('rect', { class: 'g-nit', x: x(i), y: yCel - 2, width: x(j) - x(i), height: yPluja + hPluja - yCel + 2 }));
+  }
+
+  // Mitjanit: la ratlla que separa els dies, i el nom de cada dia.
+  g.append(svg('text', { class: 'g-dia', x: 2, y: yDia + 11 }, T('Avui')));
+  files.forEach((f, i) => {
+    if (i && hora(f) === 0) {
+      g.append(svg('line', { class: 'g-mitjanit', x1: x(i), x2: x(i), y1: yDia, y2: yPluja + hPluja }));
+      g.append(svg('text', { class: 'g-dia', x: x(i) + 4, y: yDia + 11 }, T('Demà')));
+    }
+  });
+
+  // La franja de perill, del color del nivell, amb el text que hi càpiga.
+  trams.forEach((t, i) => {
+    if (!t) return;
+    const grup = svg('g', { class: `g-avis ${t.nivell}` });
+    const amplada = t.hores * col;
+    grup.append(svg('rect', { x: x(i) + 1, y: yAvis, width: amplada - 2, height: hAvis, rx: 4 }));
+    const text = svg('text', { x: x(i) + 6, y: yAvis + 15 });
+    grup.append(text);
+    g.append(grup);
+    for (const t2 of [textPerillCurt(t), textPerillCurt(t, false), '']) {
+      text.textContent = t2;
+      if (text.getComputedTextLength() <= amplada - 12) break;
+    }
+    const complet = textPerill(t);
+    grup.append(svg('title', {}, complet));
+    grup.addEventListener('click', () => avisBreu(`${complet}.`));
+  });
+
+  // El cel, un per bloc de 3 h (o de 2, si hi ha lloc), al centre del bloc.
+  for (let i = 0; i < n;) {
+    let j = i + 1;
+    while (j < n && hora(files[j]) % pas !== 0) j++;
+    const c = celBloc(files.slice(i, j));
+    const amplada = (j - i) * col;
+    if (c && amplada >= 20) {
+      const mida = Math.min(24, amplada - 6);
+      const cx = x(i) + amplada / 2;
+      const ic = svg('use', { href: '#' + c[1], x: cx - mida / 2, y: yCel + (hCel - mida) / 2, width: mida, height: mida, class: 'g-cel' });
+      g.append(ic);
+    }
+    i = j;
+  }
+
+  // La temperatura: la línia, i les xifres de l'hora d'ara, de la màxima i
+  // de la mínima de cada dia, sense que se superposin.
+  const temps = files.map((f) => f.temperatura);
+  const tMin = Math.floor(Math.min(...temps)) - 1;
+  const tMax = Math.ceil(Math.max(...temps)) + 1;
+  const yT = (t) => yTemp + hTemp - ((t - tMin) / (tMax - tMin)) * hTemp;
+  const punts = files.map((f, i) => [x(i) + col / 2, yT(f.temperatura)]);
+  g.append(svg('polyline', { class: 'g-temp', points: punts.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ') }));
+  // Primer la màxima i la mínima; la d'ara, si hi cap (ja surt a «Ara»).
+  const etiquetes = [];
+  const perDia = new Map();
+  files.forEach((f, i) => {
+    const d = new Date(f.hora).toDateString();
+    if (!perDia.has(d)) perDia.set(d, []);
+    perDia.get(d).push(i);
+  });
+  for (const idx of perDia.values()) {
+    const max = idx.reduce((a, b) => (temps[b] > temps[a] ? b : a));
+    const min = idx.reduce((a, b) => (temps[b] < temps[a] ? b : a));
+    etiquetes.push([max, 'max'], [min, 'min']);
+  }
+  etiquetes.push([0, 'ara']);
+  const posades = [];
+  for (const [i, tipus] of etiquetes) {
+    if (posades.some((k) => Math.abs(k - i) * col < 26)) continue;
+    posades.push(i);
+    const [px, py] = punts[i];
+    g.append(svg('circle', { class: 'g-punt', cx: px, cy: py, r: 2.5 }));
+    const sota = tipus === 'min';
+    const tx = Math.min(Math.max(px, 12), W - 12);
+    g.append(svg('text', { class: `g-xifra ${tipus}`, x: tx, y: sota ? py + 14 : py - 6, 'text-anchor': 'middle' },
+      `${Math.round(temps[i])}°`));
+  }
+
+  // La pluja: una barra per hora, tan alta com la probabilitat; el 50 %, de referència.
+  g.append(svg('line', { class: 'g-ref', x1: 0, x2: W, y1: yPluja + hPluja / 2, y2: yPluja + hPluja / 2 }));
+  g.append(svg('line', { class: 'g-base', x1: 0, x2: W, y1: yPluja + hPluja, y2: yPluja + hPluja }));
+  files.forEach((f, i) => {
+    const p = f.probabilitat != null ? f.probabilitat : (f.pluja_mm >= 0.2 ? 0.5 : 0);
+    const prob = f.plou_ara ? Math.max(p, 1) : p;
+    if (prob <= 0) return;
+    const h = Math.max(1.5, prob * hPluja);
+    g.append(svg('rect', { class: `g-pluja ${classePluja(f.pluja_mm || 0)}`, x: x(i) + col * 0.15, y: yPluja + hPluja - h, width: col * 0.7, height: h }));
+  });
+  // Els mil·límetres, només on la pluja és més forta de cada episodi.
+  files.forEach((f, i) => {
+    const mm = f.pluja_mm || 0;
+    if (mm < 0.5 || !plujaHora(f)) return;
+    const veins = files.slice(Math.max(0, i - 2), i + 3).map((v) => v.pluja_mm || 0);
+    if (mm < Math.max(...veins) || files.slice(Math.max(0, i - 2), i).some((v) => (v.pluja_mm || 0) === mm)) return;
+    const p = f.probabilitat != null ? f.probabilitat : 0.5;
+    g.append(svg('text', { class: 'g-mm', x: x(i) + col / 2, y: yPluja + hPluja - Math.max(1.5, p * hPluja) - 3, 'text-anchor': 'middle' },
+      `${coma(Math.round(mm * 10) / 10)}`));
+  });
+
+  // L'eix: «Ara» a l'esquerra i les hores en punt, cada 3 h (o 2).
+  const textAra = svg('text', { class: 'g-hora ara', x: 1, y: yEix }, T('Ara'));
+  g.append(textAra);
+  // Cap hora a sobre d'«Ara» («Ahora» és més llarg): mesurat a la pàgina.
+  const finsAra = textAra.getComputedTextLength() + 14;
+  // Una marca a cada hora: llarga i amb el número a les que toquen; curta i
+  // sense número a la resta (Juanjo, 16-10-2026).
+  files.forEach((f, i) => {
+    if (!i) return;
+    const gran = hora(f) % pas === 0;
+    g.append(svg('line', { class: gran ? 'g-marca' : 'g-marca petita', x1: x(i), x2: x(i),
+      y1: yPluja + hPluja, y2: yPluja + hPluja + (gran ? 4 : 2) }));
+    if (!gran || x(i) < finsAra || x(i) > W - 8) return;
+    g.append(svg('text', { class: 'g-hora', x: x(i), y: yEix, 'text-anchor': 'middle' }, String(hora(f))));
+  });
+  if (!fig.querySelector('.g-llegenda')) {
+    const ll = element('p', 'g-llegenda');
+    const clau = (classe, text) => {
+      const s = element('span', 'g-clau');
+      s.append(element('span', classe), text);
+      return s;
+    };
+    ll.append(clau('m-temp', T('Temperatura')), clau('m-pluja', T('Probabilitat de pluja (la ratlla, el 50 %)')),
+      clau('m-nit', T('Nit')));
+    fig.append(ll);
+  }
+}
+
+function dibuixaGrafiques() {
+  for (const fig of document.querySelectorAll('figure.grafica')) dibuixaGrafica(fig);
+}
+addEventListener('resize', dibuixaGrafiques);
 
 // El botó diu el que farà: desplegar-ho tot si en queda algun de plegat.
 function posaBotoTot() {
@@ -876,6 +1087,7 @@ function pinta(dades) {
   const previsio = dades.hores && taula(dades.hores, dades.temperatura_mesurada, dades.riscos, dades.sol);
   if (previsio) {
     cont.append(previsio);
+    dibuixaGrafiques();
     ajustaFranges();
     posaBotoTot();
   }

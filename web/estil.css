@@ -76,7 +76,7 @@
 
 /* On es pinten les icones del temps amb els colors del cel. Fora d'aquí (els
    botons, les pestanyes) les mateixes icones queden del color del text. */
-.taula-hores, .tram-hores > summary, .dades-ara, .resum-linia {
+.taula-hores, .tram-hores > summary, .dades-ara, .resum-linia, .grafica {
   --ic-sol: var(--c-sol); --ic-sol-fons: var(--c-sol-fons);
   --ic-nuvol: var(--c-nuvol); --ic-nuvol-fons: var(--c-nuvol-fons);
   --ic-aigua: var(--c-aigua); --ic-aigua-fons: var(--c-aigua-fons);
@@ -995,3 +995,40 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .oferta-avisos a.boto { text-decoration: none; display: inline-block; }
 .oferta-avisos .boto:focus-visible { outline: 2px solid var(--enllac); outline-offset: 2px; }
 .oferta-estat:not(:empty) { margin-top: .5rem !important; font-size: .92rem; color: var(--suau); }
+
+/* La gràfica de la previsió (Juanjo, 16-10-2026): un meteograma damunt dels trams. */
+.grafica { margin: .4rem 0 .9rem; padding: .7rem .7rem .5rem; background: var(--superficie);
+  border: 1px solid var(--vora); border-radius: .75rem; }
+.grafica svg { display: block; width: 100%; overflow: visible; font-family: inherit; }
+.grafica .g-nit { fill: var(--c-lluna-fons); opacity: .45; }
+.grafica .g-mitjanit { stroke: var(--suau); stroke-width: 1; stroke-dasharray: 3 3; }
+.grafica .g-dia { fill: var(--suau); font-size: 12px; font-weight: 600; }
+.grafica .g-avis { cursor: pointer; }
+.grafica .g-avis rect { fill: var(--nivell); }
+.grafica .g-avis text { fill: #111; font-size: 12px; font-weight: 600; }
+.grafica .g-avis.groc { --nivell: #eab308; }
+.grafica .g-avis.taronja { --nivell: #fb923c; }
+.grafica .g-avis.vermell { --nivell: #ef4444; }
+.grafica .g-avis.vermell text { fill: #fff; }
+.grafica .g-cel { fill: none; stroke: var(--text); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.grafica .g-temp { fill: none; stroke: var(--c-maxima); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.grafica .g-punt { fill: var(--c-maxima); }
+.grafica .g-xifra { fill: var(--text); font-size: 13px; font-weight: 700; }
+.grafica .g-xifra.max { fill: var(--c-maxima); }
+.grafica .g-xifra.min { fill: var(--c-minima); }
+.grafica .g-ref { stroke: var(--vora); stroke-dasharray: 2 3; }
+.grafica .g-base, .grafica .g-marca { stroke: var(--suau); }
+.grafica .g-marca.petita { stroke-opacity: .6; }
+.grafica .g-pluja { fill: var(--c-aigua); }
+.grafica .g-pluja.pluja-res { opacity: .35; }
+.grafica .g-pluja.pluja-feble { opacity: .55; }
+.grafica .g-pluja.pluja-mitja { opacity: .8; }
+.grafica .g-mm { fill: var(--c-aigua-text); font-size: 11px; font-weight: 600; }
+.grafica .g-hora { fill: var(--suau); font-size: 11px; }
+.grafica .g-hora.ara { fill: var(--text); font-weight: 700; }
+.g-llegenda { display: flex; flex-wrap: wrap; gap: .2rem 1rem; margin: .4rem 0 0; color: var(--suau); font-size: .85rem; }
+.g-clau { display: inline-flex; align-items: center; gap: .35rem; }
+.g-clau > span { display: inline-block; flex: none; }
+.g-clau .m-temp { width: 1rem; height: 3px; border-radius: 2px; background: var(--c-maxima); }
+.g-clau .m-pluja { width: .55rem; height: .8rem; background: var(--c-aigua); opacity: .8; }
+.g-clau .m-nit { width: .9rem; height: .8rem; background: var(--c-lluna-fons); border: 1px solid var(--vora); }

@@ -97,5 +97,6 @@
 | [0093](0093-todas-las-alertas-juntas-y-aemet-para-lo-que-meteocat-no-cubre.md) | Todas las alertas de peligro juntas, y AEMET para lo que Meteocat no cubre | aceptado |
 | [0094](0094-avisos-actius-plegados-cuando-no-hay-nada-nuevo.md) | «Avisos actius» plegado cuando no hay nada nuevo, y una sola hora en la portada | aceptado |
 | [0095](0095-releases-de-github-automaticas.md) | Las releases de GitHub las crea una acción con cada etiqueta | aceptado |
+| [0096](0096-grafica-de-la-prevision.md) | Una gráfica de la previsión encima de los tramos | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.
