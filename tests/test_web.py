@@ -736,6 +736,14 @@ class Web(unittest.TestCase):
         self.assertEqual(nous("2026-10-12T05:10:00+02:00"), [])
         self.assertEqual(self.avalua(ara, "perillsNous([{inici: '2026-10-11T19:30+02:00', fi: '2026-10-11T19:36+02:00'}], null)"), [])
 
+    def test_grafica_pluja_forta_i_torrencial(self):
+        # ADR 0096: les barres de la gràfica, amb les intensitats de Meteocat (les de la columna «Cel»).
+        ara = "2026-10-12T10:00:00+02:00"
+        self.assertEqual([self.avalua(ara, f"intensitatPluja({mm})") for mm in (5, 39.9, 40, 79.9, 80)],
+                         [None, None, "forta", "forta", "torrencial"])
+        self.assertEqual(self.avalua(ara, "cel({hora: '2026-10-12T12:00', probabilitat: 0.9, pluja_mm: 40, codi: 63, nuvols: 100})[0]"),
+                         "Pluja forta")
+
     def test_resum_del_dia_a_la_portada(self):
         # ADR 0074 i 0076: el text de «Consultes › Avui», sense «Ara mateix», la roba ni l'AEMET (ja és a dalt);
         # des de les 18 h, també demà.

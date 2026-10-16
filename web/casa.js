@@ -815,12 +815,20 @@ function svg(nom, atributs = {}, text = null) {
   return e;
 }
 
-// La pluja d'una hora, fosca segons els mil·límetres (els llindars del cel).
-function classePluja(mm) {
-  if (mm >= INTENSITAT_PLUJA[0]) return 'pluja-forta';
-  if (mm >= 1) return 'pluja-mitja';
-  if (mm >= 0.2) return 'pluja-feble';
-  return 'pluja-res';
+// L'alçada de la barra de pluja, en mil·límetres (Juanjo, 16-10-2026: «la
+// lluvia sale pequeña… aquí hay mucha»): escala fixa, perquè un dia de
+// plovisqueig no sembli un diluvi, i d'arrel quadrada, perquè 1 o 2 mm no
+// desapareguin. Dalt de tot, 40 mm en una hora (el llindar taronja de la web).
+const MM_DALT = 40;
+const alcadaPluja = (mm) => Math.min(1, Math.sqrt(Math.max(0, mm) / MM_DALT));
+// La pluja forta i la torrencial, amb color propi: les intensitats del manual
+// d'estil de Meteocat, les mateixes paraules que la columna «Cel» de la taula
+// (INTENSITAT_PLUJA; ADR 0043). L'avís, a la franja de dalt (Juanjo,
+// 16-10-2026: «no hay unas etiquetas normalizadas?»).
+function intensitatPluja(mm) {
+  if (mm >= INTENSITAT_PLUJA[2]) return 'torrencial';
+  if (mm >= INTENSITAT_PLUJA[1]) return 'forta';
+  return null;
 }
 
 // El cel d'un bloc de 3 h: la pluja, si n'hi ha en alguna hora; si no, la del mig.
@@ -860,10 +868,13 @@ function dibuixaGrafica(fig) {
   const yDia = hAvis + (ambAvis ? 6 : 0);
   const yCel = yDia + 16;
   const hCel = 28;
+  // La temperatura i la pluja comparteixen la zona: les barres darrere de la
+  // línia, com als meteogrames habituals (Juanjo, 16-10-2026).
+  // El cel queda a part, a dalt: les barres no hi arriben (Juanjo, 16-10-2026).
   const yTemp = yCel + hCel + 16;
-  const hTemp = 70;
-  const yPluja = yTemp + hTemp + 18;
-  const hPluja = 40;
+  const hTemp = 100;
+  const yPluja = yTemp;
+  const hPluja = hTemp;
   const yEix = yPluja + hPluja + 16;
   const H = yEix + 4;
   const g = svg('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true' });
@@ -899,9 +910,22 @@ function dibuixaGrafica(fig) {
     const text = svg('text', { x: x(i) + 6, y: yAvis + 15 });
     grup.append(text);
     g.append(grup);
-    for (const t2 of [textPerillCurt(t), textPerillCurt(t, false), '']) {
+    let cap = false;
+    for (const t2 of [textPerillCurt(t), textPerillCurt(t, false)]) {
       text.textContent = t2;
-      if (text.getComputedTextLength() <= amplada - 12) break;
+      if (text.getComputedTextLength() <= amplada - 12) { cap = true; break; }
+    }
+    // Si no hi cap (un avís de poques hores), el text va al costat de la
+    // franja, a l'esquerra si hi ha lloc i si no, a la dreta.
+    if (!cap) {
+      text.classList.add('fora');
+      for (const t2 of [textPerillCurt(t), textPerillCurt(t, false)]) {
+        text.textContent = t2;
+        const llarg = text.getComputedTextLength();
+        if (llarg + 6 <= x(i)) { text.setAttribute('x', x(i) - 4); text.setAttribute('text-anchor', 'end'); break; }
+        if (x(i) + amplada + 4 + llarg <= W) { text.setAttribute('x', x(i) + amplada + 4); break; }
+        text.textContent = '';
+      }
     }
     const complet = textPerill(t);
     grup.append(svg('title', {}, complet));
@@ -923,6 +947,20 @@ function dibuixaGrafica(fig) {
     i = j;
   }
 
+  // La pluja: una barra per hora, tan alta com els mil·límetres; plena si és
+  // probable (del 50 % amunt) i clara si només és possible (del 20 %), els
+  // mateixos llindars que el cel de la taula. Per sota, cap barra.
+  g.append(svg('line', { class: 'g-base', x1: 0, x2: W, y1: yPluja + hPluja, y2: yPluja + hPluja }));
+  // Dalt de tot queda lloc per a la xifra dels mm.
+  const dalt = (f) => yPluja + hPluja - Math.max(3, alcadaPluja(f.pluja_mm || 0) * (hPluja - 14));
+  files.forEach((f, i) => {
+    const pluja = plujaHora(f);
+    if (!pluja) return;
+    const y = dalt(f);
+    const intensa = intensitatPluja(f.pluja_mm || 0);
+    g.append(svg('rect', { class: `g-pluja ${pluja === 'pluja' ? 'segura' : 'possible'}${intensa ? ' ' + intensa : ''}`,
+      x: x(i) + col * 0.15, y, width: col * 0.7, height: yPluja + hPluja - y }));
+  });
   // La temperatura: la línia, i les xifres de l'hora d'ara, de la màxima i
   // de la mínima de cada dia, sense que se superposin.
   const temps = files.map((f) => f.temperatura);
@@ -930,8 +968,13 @@ function dibuixaGrafica(fig) {
   const tMax = Math.ceil(Math.max(...temps)) + 1;
   const yT = (t) => yTemp + hTemp - ((t - tMin) / (tMax - tMin)) * hTemp;
   const punts = files.map((f, i) => [x(i) + col / 2, yT(f.temperatura)]);
-  g.append(svg('polyline', { class: 'g-temp', points: punts.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ') }));
-  // Primer la màxima i la mínima; la d'ara, si hi cap (ja surt a «Ara»).
+  const traç = punts.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ');
+  // Una vora del color del fons, perquè la línia es vegi damunt de les barres.
+  g.append(svg('polyline', { class: 'g-temp-vora', points: traç }));
+  g.append(svg('polyline', { class: 'g-temp', points: traç }));
+  // Només la màxima i la mínima de cada dia. La d'ara no: seria la prevista,
+  // i la mesurada ja surt a «Ara» (Juanjo, 16-10-2026: «por qué los dos 24
+  // tienen diferente altura?»).
   const etiquetes = [];
   const perDia = new Map();
   files.forEach((f, i) => {
@@ -944,7 +987,6 @@ function dibuixaGrafica(fig) {
     const min = idx.reduce((a, b) => (temps[b] < temps[a] ? b : a));
     etiquetes.push([max, 'max'], [min, 'min']);
   }
-  etiquetes.push([0, 'ara']);
   const posades = [];
   for (const [i, tipus] of etiquetes) {
     if (posades.some((k) => Math.abs(k - i) * col < 26)) continue;
@@ -957,25 +999,27 @@ function dibuixaGrafica(fig) {
       `${Math.round(temps[i])}°`));
   }
 
-  // La pluja: una barra per hora, tan alta com la probabilitat; el 50 %, de referència.
-  g.append(svg('line', { class: 'g-ref', x1: 0, x2: W, y1: yPluja + hPluja / 2, y2: yPluja + hPluja / 2 }));
-  g.append(svg('line', { class: 'g-base', x1: 0, x2: W, y1: yPluja + hPluja, y2: yPluja + hPluja }));
-  files.forEach((f, i) => {
-    const p = f.probabilitat != null ? f.probabilitat : (f.pluja_mm >= 0.2 ? 0.5 : 0);
-    const prob = f.plou_ara ? Math.max(p, 1) : p;
-    if (prob <= 0) return;
-    const h = Math.max(1.5, prob * hPluja);
-    g.append(svg('rect', { class: `g-pluja ${classePluja(f.pluja_mm || 0)}`, x: x(i) + col * 0.15, y: yPluja + hPluja - h, width: col * 0.7, height: h }));
-  });
-  // Els mil·límetres, només on la pluja és més forta de cada episodi.
+  // Els mil·límetres, només on la pluja és més forta de cada episodi, a sobre
+  // de la barra; si hi ha una xifra de temperatura, a dins de la barra o al
+  // costat, on no se superposi.
+  const xifres = [...g.querySelectorAll('.g-xifra')].map((t) => t.getBBox());
+  const xoca = (b) => xifres.some((c) => b.x < c.x + c.width && c.x < b.x + b.width && b.y < c.y + c.height && c.y < b.y + b.height);
   files.forEach((f, i) => {
     const mm = f.pluja_mm || 0;
     if (mm < 0.5 || !plujaHora(f)) return;
     const veins = files.slice(Math.max(0, i - 2), i + 3).map((v) => v.pluja_mm || 0);
     if (mm < Math.max(...veins) || files.slice(Math.max(0, i - 2), i).some((v) => (v.pluja_mm || 0) === mm)) return;
-    const p = f.probabilitat != null ? f.probabilitat : 0.5;
-    g.append(svg('text', { class: 'g-mm', x: x(i) + col / 2, y: yPluja + hPluja - Math.max(1.5, p * hPluja) - 3, 'text-anchor': 'middle' },
-      `${coma(Math.round(mm * 10) / 10)}`));
+    const t = svg('text', { class: 'g-mm', 'text-anchor': 'middle' },
+      `${mm >= 10 ? Math.round(mm) : coma(Math.round(mm * 10) / 10)}\u00a0mm`);
+    g.append(t);
+    const cx = x(i) + col / 2;
+    const llarg = t.getComputedTextLength();
+    const llocs = [[cx, dalt(f) - 4], [cx, dalt(f) + 14], [cx - llarg / 2 - col, dalt(f) + 4], [cx + llarg / 2 + col, dalt(f) + 4]];
+    for (const [lx, ly] of llocs) {
+      t.setAttribute('x', Math.min(Math.max(lx, llarg / 2 + 1), W - llarg / 2 - 1));
+      t.setAttribute('y', ly);
+      if (!xoca(t.getBBox())) break;
+    }
   });
 
   // L'eix: «Ara» a l'esquerra i les hores en punt, cada 3 h (o 2).
@@ -993,17 +1037,23 @@ function dibuixaGrafica(fig) {
     if (!gran || x(i) < finsAra || x(i) > W - 8) return;
     g.append(svg('text', { class: 'g-hora', x: x(i), y: yEix, 'text-anchor': 'middle' }, String(hora(f))));
   });
-  if (!fig.querySelector('.g-llegenda')) {
-    const ll = element('p', 'g-llegenda');
-    const clau = (classe, text) => {
-      const s = element('span', 'g-clau');
-      s.append(element('span', classe), text);
-      return s;
-    };
-    ll.append(clau('m-temp', T('Temperatura')), clau('m-pluja', T('Probabilitat de pluja (la ratlla, el 50 %)')),
-      clau('m-nit', T('Nit')));
-    fig.append(ll);
-  }
+  fig.querySelector('.g-llegenda')?.remove();
+  const ll = element('p', 'g-llegenda');
+  const clau = (classe, text) => {
+    const c = element('span', 'g-clau');
+    c.append(element('span', classe), text);
+    return c;
+  };
+  // Una clau per cosa, sense explicacions entre parèntesis (Juanjo, 16-10-2026:
+  // «es un galimatías»); què vol dir l'alçada ja ho diuen els mm de la barra.
+  // La forta i la torrencial, només si n'hi ha.
+  ll.append(clau('m-temp', T('Temperatura')), clau('m-pluja', T('Pluja probable')),
+    clau('m-pluja possible', T('Pluja possible')));
+  const intenses = files.filter((f) => plujaHora(f)).map((f) => intensitatPluja(f.pluja_mm || 0));
+  if (intenses.includes('forta')) ll.append(clau('m-pluja forta', T('Pluja forta')));
+  if (intenses.includes('torrencial')) ll.append(clau('m-pluja torrencial', T('Pluja torrencial')));
+  ll.append(clau('m-nit', T('Nit')));
+  fig.append(ll);
 }
 
 function dibuixaGrafiques() {

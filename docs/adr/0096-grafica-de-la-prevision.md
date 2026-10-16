@@ -22,19 +22,38 @@ siempre en la hora en curso.
   horas y los mismos datos que las tablas (`casa.grafica`), sin nada que no
   esté debajo.
 - **De arriba abajo**: la franja de peligro, del color del nivel y con el
-  texto de la tabla («Perill alt: pluja»), tan largo como quepa y completo al
-  tocarla; «Avui» y «Demà», separados por una raya discontinua a medianoche;
-  el cielo, un icono cada 3 h (cada 2 h si hay sitio), el de lluvia si
-  llueve en alguna hora del bloque; la temperatura en una línea, con la
-  máxima y la mínima de cada día en cifras (la de ahora, solo si cabe: ya
-  sale en «Ara»); la lluvia, una barra por hora tan alta como la
-  probabilidad, más oscura cuantos más milímetros, con los milímetros en la
-  hora más fuerte de cada episodio y una raya en el 50 %; la noche,
-  sombreada de la puesta a la salida del sol.
-- **El eje empieza por «Ara»**, sin línea vertical. Cada hora lleva una
-  marca: larga y con número las que tocan (cada 3 h, o 2), corta y sin
-  número la resta (Juanjo, 16-10-2026).
-- **Debajo, una leyenda corta** (temperatura, probabilidad de lluvia, noche).
+  texto de la tabla («Perill alt: pluja»); si no cabe dentro (un aviso de
+  pocas horas), al lado, y completo al tocarla. Debajo, «Avui» y «Demà»,
+  separados por una raya discontinua a medianoche, y el cielo, un icono cada
+  3 h (cada 2 h si hay sitio), el de lluvia si llueve en alguna hora del
+  bloque. El cielo queda aparte, arriba: nada llega a su fila.
+- **Temperatura y lluvia en la misma zona**, las barras detrás de la línea,
+  como en los meteogramas habituales (Juanjo: «mezclando ambas, con las barras
+  por detrás, será lo mejor y más natural»). La línea lleva un borde del
+  color del fondo para verse sobre las barras.
+- **La temperatura**: la máxima y la mínima de cada día en cifras, en rojo y
+  azul. La de la hora en curso no: sería la prevista, distinta de la medida
+  que sale en «Ara», y dos cifras iguales a distinta altura parecían un error.
+- **La lluvia**: la altura es la cantidad, no la probabilidad (con la
+  probabilidad, una hora de 0,5 mm y una de 45 mm salían iguales). Escala fija,
+  para que un día de llovizna no parezca un diluvio, y de raíz cuadrada, para
+  que 1 o 2 mm se vean: arriba del todo, 40 mm en una hora. Azul lleno si es
+  probable (desde el 50 %), claro si solo es posible (del 20 al 50 %) y sin
+  barra por debajo, los mismos umbrales que el cielo de la tabla. La pluja
+  forta (desde 40 mm en una hora) en naranja y la torrencial (desde 80) en
+  rojo: las intensidades del manual de estilo de Meteocat, las palabras de la
+  columna «Cel» (ADR 0043). Los avisos no colorean las barras: van en la
+  franja. Los milímetros, con su unidad, en la hora más fuerte de cada
+  episodio; si chocan con una cifra de temperatura, dentro de la barra o al
+  lado.
+- **La noche**, sombreada en gris, de la puesta a la salida del sol: un color
+  que no se confunda con la lluvia.
+- **El eje empieza por «Ara»**, sin línea vertical: la gráfica empieza siempre
+  en la hora en curso. Cada hora lleva una marca: larga y con número las que
+  tocan (cada 3 h, o 2), corta y sin número la resta (Juanjo, 16-10-2026).
+- **Debajo, una leyenda** de una palabra por clave, sin paréntesis:
+  Temperatura, Pluja probable, Pluja possible, Nit, y Pluja forta y Pluja
+  torrencial solo cuando salen.
 - **Fuera de entrada**: el viento, la parte alta y el UV, que ya están en las
   tablas, y tocar una hora para ver sus datos. Se añadirán si se echan en
   falta.
@@ -53,13 +72,22 @@ siempre en la hora en curso.
   como alternativa si el meteograma no se leyera bien en el móvil.
 - **Una biblioteca de gráficas**: añadiría una dependencia para un dibujo
   sencillo.
+- **La altura de la lluvia por probabilidad, con una raya en el 50 %** (la
+  3.94.0): la lluvia fuerte salía tan pequeña como la débil.
+- **Temperatura y lluvia en zonas separadas**: se probó, primero con la lluvia
+  baja y después con la misma altura; juntas se leen mejor y caben más altas.
+- **Barras con los colores de aviso** (desde 20, 40 y 90 mm, los umbrales de
+  AEMET): no corresponden a ninguna escala de nombres y obligaban a inventar
+  una etiqueta («pluja d'avís»). El aviso ya está en la franja.
 
 ## Riesgos
 
 - En un móvil estrecho (320 px), 33 horas salen a unos 10 px por hora: los
   iconos van cada 3 h y el texto de la franja se acorta.
-- El día del prototipo la lluvia era floja (16 % como mucho): falta ver la
-  gráfica con lluvia de verdad.
+- La lluvia se probó con datos simulados (una tormenta con 45 y 85 mm en una
+  hora y un aviso naranja propio); falta verla con un episodio real.
+- La escala se corta en 40 mm: por encima, la barra llena y el color (forta,
+  torrencial) dicen cuánto.
 
 ## Validación
 
@@ -67,4 +95,7 @@ siempre en la hora en curso.
   claro y oscuro, sin errores ni desbordamiento; móvil de 320 px y versión en
   castellano en móvil. axe-core sin incidencias en «Previsió».
 - Ninguna hora del eje se superpone a «Ara» ni a «Ahora» en los tres
-  navegadores, a 320 y 412 px. 477 pruebas en verde.
+  navegadores, a 320 y 412 px. 478 pruebas en verde, una de ellas para las
+  intensidades de las barras.
+- 3.95.0, con datos simulados de tormenta: los mismos navegadores, tamaños y
+  temas, y axe-core sin incidencias.
