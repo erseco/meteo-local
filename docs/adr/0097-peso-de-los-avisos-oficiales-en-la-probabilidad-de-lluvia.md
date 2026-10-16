@@ -1,6 +1,6 @@
 # 97. Peso de los avisos oficiales en la probabilidad de lluvia
 
-Fecha: 2026-10-16 · Estado: en curso (falta el histórico de avisos)
+Fecha: 2026-10-16 · Estado: en curso (AEMET probado y no adoptado; falta Meteocat)
 
 ## Contexto
 
@@ -76,5 +76,19 @@ necesita, y no tenía los de Meteocat.
 ## Validación
 
 `tests/test_registre_casa.py`: las señales de Meteocat de cada hora (lluvia y
-peligro alto sí, viento no; sin lectura, None). El ajuste y su resultado se
-anotarán aquí cuando haya histórico.
+peligro alto sí, viento no; sin lectura, None). `tests/test_aprenentatge.py`:
+la página solo usa el modelo con avisos si está adoptado y la pasada tiene el
+dato.
+
+**Resultado con AEMET (16-10-2026).** El archivo de AEMET OpenData del
+25-12-2023 al 04-10-2026 (507 tramos de dos días; 498 avisos de lluvia o
+tormentas para el Prelitoral, con sus actualizaciones). En las horas con aviso
+ya emitido llovió el 31 % a corto plazo (2.258 muestras) y el 35 % un día
+antes (646), frente a un 4 % en general. Pero los modelos ya lo ven casi
+todo: con el aviso como señal (peso 0,66, multiplica por 1,9 las posibilidades
+de lluvia), el error baja un 0,1 % a corto plazo y un 0,7 % un día antes, y
+gana solo en el 57 % y el 74 % de los remuestreos por días, lejos del 95 %. La
+fiabilidad no empeora (desvío 0,0011 frente a 0,0012; 0,0049 frente a 0,0052).
+**No se adopta** (`adoptat: false`): la página sigue con el modelo con ECMWF.
+Queda probar con los avisos de Meteocat, por comarca y con su grado, cuando
+llegue la clave de su API; y el registro del barrio apunta ya los dos.
