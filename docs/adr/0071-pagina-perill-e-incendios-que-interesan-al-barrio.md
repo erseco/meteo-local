@@ -9,6 +9,21 @@ Collserola a cualquier distancia. Juanjo: «bájalo a 2 km esté donde esté y
 luego los del parque». Deja de valer «Cerdanyola, siempre»: un incendio en
 Cerdanyola fuera del parque y a más de 2 km ya no avisa; uno en Ripollet o
 Sabadell a 2 km o menos, sí.
+
+**16-10-2026 (3.98.2):** dos correcciones. (1) El parque cuenta sin sus
+agujeros: el límite oficial del Consorci deja fuera 77 enclaves urbanos (les
+Planes, Can Cerdà, Vallvidrera, el propio Montflorit…), y un incendio que
+empieza en uno de ellos puede llegar al barrio a través del parque (Juanjo:
+«todo lo que quede dentro del recinto debe marcarse»). Se usa el contorno
+exterior de la capa, bajado cada semana (`entorn.contorn`), con el mismo
+margen de 200 m; si no se puede bajar, la consulta a la capa, con los
+agujeros. (2) Salir de la zona no es acabar: al bajar a 2 km, un incendio en
+curso en Cerdanyola a 2,6 km se anunció a las 19:18 como «ja no consta com a
+actiu» por el canal y en el navegador, y el punto rojo de «Perill» se apagó.
+Ahora `entorn.calcula` da también los que siguen en curso fuera de la zona
+(`incendis_fora`); de esos no se dice el final, su ficha se cierra con
+«Segons Bombers continua actiu, però és fora de la zona que vigila aquesta
+web» y, si vuelven a la zona, no se anuncian otra vez.
 ## Contexto
 
 La noche del 10 al 11-10-2026 llegó por Telegram y al móvil el aviso de un

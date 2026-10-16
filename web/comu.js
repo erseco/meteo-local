@@ -1457,6 +1457,11 @@ if (!/(^|\/)perill\.html$/.test(location.pathname) && document.querySelectorAll(
   miraPerill();
   setInterval(miraPerill, 5 * 60000);
   enArribarUnAvis(miraPerill);
+  // Amb el mòbil bloquejat o la pestanya al fons, el navegador atura la
+  // pàgina i l'avís pot arribar sense que es repinti: es torna a mirar en
+  // tornar-la a tenir davant (Juanjo, 16-10-2026: «aunque esté abierta debe
+  // salir que ha aparecido una alerta nueva en perill»).
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) miraPerill(); });
 }
 
 // En tornar enrere, el navegador pot restaurar la pàgina tal com era (memòria

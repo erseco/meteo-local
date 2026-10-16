@@ -632,16 +632,26 @@ def decideix(estat, salida, ahora):
     # que hay: lo que ya estaba no es una novedad.
     entorn = salida.get("entorn") or {}
     e = estat.get("entorn")
+    # Uno que sigue en curso pero sale de la zona (porque cambia la zona o la
+    # posición que da Bombers) no ha acabado: no se dice «ja no consta», se
+    # aparta (fora) y su ficha de «Perill» lo explica; si vuelve, no es nuevo.
+    # El 16-10-2026, al bajar a 2 km, uno de Cerdanyola a 2,6 km se anunció
+    # como acabado sin estarlo (ADR 0071).
     if entorn.get("incendis") is not None:
         ara_ids = {i["id"]: i for i in entorn["incendis"]}
+        fora = set(entorn.get("incendis_fora") or [])
+        apartats = set((e or {}).get("fora") or [])
+        abans = dict((e or {}).get("incendis") or {})
         if e is not None:
             for i in entorn["incendis"]:
-                if i["id"] not in e["incendis"]:
+                if i["id"] not in e["incendis"] and i["id"] not in apartats:
                     afegeix("perill", f"incendi:{i['id']}", text_incendi(i), "incendi", episodi=f"incendi:{i['id']}")
             for iid, i in e["incendis"].items():
-                if iid not in ara_ids:
+                if iid not in ara_ids and iid not in fora:
                     afegeix("perill", f"incendi:{iid}:fi", text_incendi(i, acabat=True), "fi", episodi=f"incendi:{iid}")
         estat.setdefault("entorn", {"incendis": {}})["incendis"] = ara_ids
+        estat["entorn"]["fora"] = sorted((apartats | set(abans)) & fora)
+        estat["entorn"]["en_curs_fora"] = sorted(fora)
     # Cortes de luz del barrio (ADR 0072): al aparecer y al dejar de constar. La
     # primera vez solo se apunta lo que hay; si e-distribución no responde
     # (None), no se toca el estado.
@@ -780,6 +790,10 @@ def fusiona(propi, altre):
     return sorted(res, key=lambda e: e["inici"])
 
 
+FORA_ZONA = {"ca": "Segons Bombers continua actiu, però és fora de la zona que vigila aquesta web "
+                   "(el parc de Collserola i fins a 2 km del barri).",
+             "es": "Según Bombers sigue activo, pero está fuera de la zona que vigila esta web "
+                   "(el parque de Collserola y hasta 2 km del barrio)."}
 SUBSTITUIT = {"ca": "Meteocat en té avís per al Vallès Occidental: ara es mostra el seu.",
               "es": "Meteocat tiene aviso para el Vallès Occidental: ahora se muestra el suyo."}
 
@@ -819,6 +833,15 @@ def historial(estat, nous, ahora, anterior=None):
             e.update(fi=ahora.isoformat(timespec="minutes"), fi_ca=SUBSTITUIT["ca"], fi_es=SUBSTITUIT["es"])
         if mc and e.get("fi_ca") == SUBSTITUIT["ca"] and not e.get("substituit_per"):
             e["substituit_per"] = {"clau": mc["clau"], "inici": mc["inici"]}
+    # Un incendio que sigue en curso pero ha salido de la zona: su ficha se
+    # cierra diciéndolo, sin darlo por apagado.
+    # Las que se cerraron con «ja no consta» estando en curso (16-10-2026)
+    # se corrigen igual.
+    en_curs_fora = set((estat.get("entorn") or {}).get("en_curs_fora") or [])
+    for e in h:
+        if e["clau"].startswith("incendi:") and e["clau"][8:] in en_curs_fora and (
+                not e.get("fi") or "ja no consta" in (e.get("fi_ca") or "")):
+            e.update(fi=e.get("fi") or ahora.isoformat(timespec="minutes"), fi_ca=FORA_ZONA["ca"], fi_es=FORA_ZONA["es"])
     # Un plan que ya no se muestra (desactivado sin aviso, u oculto por no
     # tener motivo meteorológico: ADR 0062) ya no está activo en la página.
     plans = (estat.get("oficials") or {}).get("plans")

@@ -4,7 +4,7 @@
 - incendios forestales en curso de la capa pública de actuaciones urgentes de
   Bombers de la Generalitat (ArcGIS), solo los que interesan al barrio (ADR
   0071): dentro del Parc Natural de Collserola, a cualquier distancia (el
-  límite oficial, de la capa del Consorci del parque), y fuera del parque, a
+  límite oficial de la capa del Consorci, sin sus enclaves), y fuera del parque, a
   ENTORN_RADI_KM o menos, en cualquier municipio (desde el 16-10-2026);
 - el nivel del Pla Alfa de Cerdanyola hoy y mañana, y los cierres de espacios
   naturales que tocan Collserola, de las capas públicas de Agents Rurals
@@ -22,7 +22,10 @@ de datos documentados: si una falla, su parte queda en None y se dice.
 import datetime as dt
 import json
 import math
+import os
 import sys
+import tempfile
+import time
 import urllib.parse
 import urllib.request
 
@@ -55,9 +58,69 @@ def hora_iso(ms):
     return dt.datetime.fromtimestamp(ms / 1000).astimezone().isoformat(timespec="minutes") if ms else None
 
 
+# El contorno exterior del parque, sin los agujeros de su límite oficial (Les
+# Planes, Can Cerdà, Vallvidrera…: 77 enclaves urbanos): un incendio que
+# empieza en uno de ellos puede llegar a Montflorit a través del parque
+# (Juanjo, 16-10-2026: «todo lo que quede dentro del recinto debe marcarse»).
+# Se baja de la capa del Consorci y se guarda CONTORN_DIES días; sin él, la
+# consulta a la capa, con los agujeros.
+CONTORN = os.path.join(tempfile.gettempdir(), "meteo-collserola-contorn.json")
+CONTORN_DIES = 7
+
+
+def contorn():
+    """Los anillos exteriores del parque, [[(lon, lat), …], …], o None."""
+    try:
+        if time.time() - os.path.getmtime(CONTORN) < CONTORN_DIES * 86400:
+            with open(CONTORN) as f:
+                return json.load(f)
+    except (OSError, ValueError):
+        pass
+    try:
+        d = get(COLLSEROLA + "/query", {"where": "1=1", "outSR": 4326, "f": "geojson"})
+        anells = [f["geometry"]["coordinates"][0] for f in d["features"] if f["geometry"]["type"] == "Polygon"]
+        anells += [pol[0] for f in d["features"] if f["geometry"]["type"] == "MultiPolygon"
+                   for pol in f["geometry"]["coordinates"]]
+        if not anells:
+            raise ValueError("sense polígons")
+        with open(CONTORN + ".tmp", "w") as f:
+            json.dump(anells, f)
+        os.replace(CONTORN + ".tmp", CONTORN)
+        return anells
+    except Exception:
+        try:
+            with open(CONTORN) as f:
+                return json.load(f)
+        except (OSError, ValueError):
+            return None
+
+
+def dins_anells(y, x, anells, marge_km):
+    """Si el punto (lat y, lon x) cae dentro de algún anillo o a marge_km o
+    menos de su borde (en plano local, que a estas distancias basta)."""
+    kx, ky = 111.32 * math.cos(math.radians(y)), 110.57
+    for anell in anells:
+        dins = False
+        for (x1, y1), (x2, y2) in zip(anell, anell[1:] + anell[:1]):
+            if (y1 > y) != (y2 > y) and x < x1 + (y - y1) * (x2 - x1) / (y2 - y1):
+                dins = not dins
+            # Distancia del punto al segmento.
+            ax, ay, bx, by = (x1 - x) * kx, (y1 - y) * ky, (x2 - x) * kx, (y2 - y) * ky
+            dx, dy = bx - ax, by - ay
+            t = 0 if dx == dy == 0 else max(0, min(1, -(ax * dx + ay * dy) / (dx * dx + dy * dy)))
+            if math.hypot(ax + t * dx, ay + t * dy) <= marge_km:
+                return True
+        if dins:
+            return True
+    return False
+
+
 def dins_collserola(y, x):
-    """Si el punto cae dentro del parque, con COLLSEROLA_MARGE_KM de margen:
-    la posición de una actuación es aproximada."""
+    """Si el punto cae dentro del parque, sin sus enclaves, con
+    COLLSEROLA_MARGE_KM de margen: la posición de una actuación es aproximada."""
+    anells = contorn()
+    if anells:
+        return dins_anells(y, x, anells, C.COLLSEROLA_MARGE_KM)
     d = get(COLLSEROLA + "/query", {
         "geometry": f"{x},{y}", "geometryType": "esriGeometryPoint", "inSR": 4326,
         "spatialRel": "esriSpatialRelIntersects", "distance": C.COLLSEROLA_MARGE_KM,
@@ -76,9 +139,11 @@ def interessa(municipi, dist, collserola):
     return bool(collserola) or (dist is not None and dist <= C.ENTORN_RADI_KM)
 
 
-def incendis(dades=None, collserola=None):
+def incendis(dades=None, collserola=None, fora=None):
     """Incendios de vegetación forestal en curso que interesan al barrio
-    (interessa), del más cercano al más lejano."""
+    (interessa), del más cercano al más lejano. En «fora», si se pasa, los
+    identificadores de los que siguen en curso pero quedan fuera de la zona:
+    salir de ella no es acabar (16-10-2026, ADR 0071)."""
     xmin, ymin, xmax, ymax = C.INCENDIS_CAIXA
     d = dades or get(BOMBERS + "/query", {
         "where": "TAL_COD_ALARMA1='IV'", "geometry": f"{xmin},{ymin},{xmax},{ymax}",
@@ -101,6 +166,8 @@ def incendis(dades=None, collserola=None):
         municipi = a.get("MUNICIPI_SIG")
         al_parc = collserola(g["y"], g["x"])
         if not interessa(municipi, dist, al_parc):
+            if fora is not None:
+                fora.append(a["GlobalID"])
             continue
         res.append({"id": a["GlobalID"], "municipi": municipi, "km": round(dist, 1),
                     "collserola": al_parc, "inici": hora_iso(a.get("ACT_DAT_INICI")),
@@ -143,12 +210,14 @@ def calcula(ara=None):
     """Para casa.json y los datos públicos. Cada parte, None si su fuente falla."""
     ara = ara or dt.datetime.now().astimezone()
     res = {"hora": ara.isoformat(timespec="minutes"), "errors": []}
-    for clau, funcio in (("incendis", incendis), ("pla_alfa", lambda: pla_alfa(ara))):
+    fora = []
+    for clau, funcio in (("incendis", lambda: incendis(fora=fora)), ("pla_alfa", lambda: pla_alfa(ara))):
         try:
             res[clau] = funcio()
         except Exception as ex:
             res[clau] = None
             res["errors"].append(f"{clau}: {ex}")
+    res["incendis_fora"] = None if res["incendis"] is None else fora
     return res
 
 

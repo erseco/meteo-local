@@ -47,6 +47,14 @@ class Fonts(unittest.TestCase):
         self.assertEqual(sorted(i["id"] for i in r), ["molins", "ripollet", "stcugat"])
         self.assertEqual(r[-1]["id"], "molins")                  # del més a prop al més lluny
 
+    def test_el_parc_sense_forats(self):
+        # Juanjo, 16-10-2026: els enclavaments (les Planes, Can Cerdà…) també compten.
+        anell = [[2.0, 41.0], [2.1, 41.0], [2.1, 41.1], [2.0, 41.1]]
+        self.assertTrue(EN.dins_anells(41.05, 2.05, [anell], 0.2))      # al mig, on hi hauria un forat
+        self.assertTrue(EN.dins_anells(41.05, 2.1015, [anell], 0.2))    # a uns 130 m del límit
+        self.assertFalse(EN.dins_anells(41.05, 2.11, [anell], 0.2))     # a 840 m
+        self.assertFalse(EN.dins_anells(41.2, 2.05, [anell], 0.2))
+
     def test_interessa(self):
         self.assertTrue(EN.interessa("Montcada i Reixac", 2.0, False))
         self.assertFalse(EN.interessa("Montcada i Reixac", 2.1, False))
@@ -102,6 +110,26 @@ class Avisos(unittest.TestCase):
         fi = self.passada(estat, [], 18)
         self.assertIn("ja no consta com a actiu", fi[0]["ca"])
         self.assertTrue(fi[0]["ca"].startswith("🟢"))
+
+    def test_sortir_de_la_zona_no_es_acabar(self):
+        # 16-10-2026: en baixar a 2 km, un incendi de Cerdanyola a 2,6 km es va
+        # anunciar «ja no consta com a actiu» sense estar apagat (ADR 0071).
+        def passada(incendis, fora, minuts):
+            salida = {"entorn": {"incendis": incendis, "incendis_fora": fora, "pla_alfa": {}}}
+            return [a for a in AB.decideix(estat, salida, ARA + dt.timedelta(minutes=minuts)) if a["tipus"] == "perill"]
+        estat = {}
+        passada([], [], 0)
+        foc = [{"id": "x", "municipi": "Cerdanyola del Vallès", "km": 1.8, "inici": ARA.isoformat()}]
+        self.assertEqual(len(passada(foc, [], 6)), 1)
+        AB.historial(estat, [{"tipus": "perill", "episodi": "incendi:x", "nivell": "incendi", "hora": ARA.isoformat(),
+                              "ca": "🔥", "es": "🔥"}], ARA)
+        self.assertEqual(passada([], ["x"], 12), [])                 # en curs, fora de la zona: res
+        self.assertEqual(estat["entorn"]["fora"], ["x"])
+        h = AB.historial(estat, [], ARA + dt.timedelta(minutes=12))
+        self.assertTrue(h[-1]["fi"] and h[-1]["fi_ca"].startswith("Segons Bombers continua actiu"))
+        self.assertEqual(passada(foc, [], 18), [])                   # torna a la zona: no és nou
+        self.assertEqual(passada([], [], 24)[0]["nivell"], "fi")      # ara sí que s'acaba
+        self.assertEqual(passada([], [], 30), [])
 
     def test_a_collserola_es_diu_on_es(self):
         foc = {"id": "y", "municipi": "Molins de Rei", "km": 13.4, "collserola": True, "inici": ARA.isoformat()}

@@ -179,3 +179,13 @@ y no lo repite. Validación: reproducido en Chrome con la versión anterior
 (página restaurada, punto presente) y corregido con la nueva (punto y «Nou!»
 fuera). El Chromium y el Firefox de Playwright no lo reproducen porque no usan
 esa caché; la prueba de `marcaNovetats` cubre el repintado.
+
+## Corrección del 16-10-2026 (3.98.2): el punto rojo con la página abierta
+
+Juanjo recibió en el móvil el aviso de un incendio con la portada abierta y
+el punto rojo de «Perill» no salió. Había dos causas: el incendio se dio por
+acabado a los nueve minutos sin estarlo (ADR 0071), y con el móvil bloqueado o
+la pestaña al fondo el navegador congela la página. La página vuelve a leer
+`avisos.json` cada vez que vuelve a estar a la vista (`visibilitychange`),
+además de al cargar, cada 5 minutos y al llegar un aviso. Comprobado en
+Chromium y Firefox con un suceso nuevo añadido con la página abierta.
