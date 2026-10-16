@@ -132,3 +132,27 @@ pluja de 18 a 19 h (fins al 25 %).». Lo mismo en «Aquesta nit: …», en
 «Consultes › Avui» y «Demà», y en el resumen diario de Telegram y del móvil
 (`bot.text_franges`).
 
+
+## Corrección del 16-10-2026 (3.93.1): de una explicación a otra pestaña
+
+Juanjo vio en el móvil que «atrás» pasaba por todas las páginas vistas, en
+vez de ir a la portada. La causa: de una pestaña a una explicación
+(«Avisos», «Com funciona»…) el navegador apunta un paso, y si desde la
+explicación se iba a otra pestaña, esta sustituía a la explicación, pero la
+pestaña de debajo seguía apuntada. Con El temps → Si surts → campana →
+Consultes, «atrás» iba a Si surts y después a la portada; cada explicación
+visitada dejaba una pestaña más.
+
+Ahora, de una explicación a una pestaña (con la portada dos pasos atrás),
+`comNavega` responde `torna`: se vuelve a la pestaña de debajo
+(`history.go`) y, al llegar, se sustituye por la nueva (el destino viaja en
+`sessionStorage`; si el navegador no lo permite, se sustituye la explicación,
+como antes). Así solo queda la portada debajo de la pestaña. Al volver, la
+pestaña de debajo puede verse un instante antes de la nueva. «Atrás» desde
+una explicación sigue volviendo a la pestaña de donde se venía.
+
+Validación: prueba nueva en `tests/test_web.py`; en Chromium (Pixel 7),
+WebKit (iPhone 15) y Firefox, ocho recorridos que mezclan pestañas,
+«Avisos» y «Com funciona», con la portada después de un «atrás» y fuera
+después del segundo, y la pestaña de origen después de un «atrás» desde
+una explicación.

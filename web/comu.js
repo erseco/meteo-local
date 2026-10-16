@@ -1555,22 +1555,29 @@ for (const b of document.querySelectorAll('.boto-compartir')) b.addEventListener
 // de la portada a una pestanya, o d'una pestanya a una pàgina d'explicació
 // («Com funciona», «Fonts i crèdits»…), el navegador ho apunta, perquè enrere
 // torni on s'era (de «Què vol dir aquest avís», a l'avís). Tocar «El temps» és
-// tornar enrere fins a la portada. El canvi d'idioma no s'apunta. Qui entra per
+// tornar enrere fins a la portada. D'una explicació a una pestanya, primer es
+// torna a la pestanya de sota i se substitueix per la nova: si no, la de sota
+// es quedava apuntada i enrere passava per totes (Juanjo, 16-10-2026: «me pasa
+// por todas las páginas que he visto»). El canvi d'idioma no s'apunta. Qui entra per
 // un enllaç a una altra pàgina (un avís compartit) surt amb enrere.
 // La profunditat (quants passos apuntats hi ha des de la portada) va a
 // history.state i, d'una pàgina a la següent, per sessionStorage.
 const CLAU_PROFUNDITAT = 'meteo.profunditat';
+// On anar en arribar a la pestanya de sota (l'acció 'torna').
+const CLAU_DESTI = 'meteo.desti';
 const esPortada = (url) => /\/(index\.html|casa\.html)?$/.test(new URL(url, location.href).pathname);
 const esPestanya = (url) => /\/(index\.html|casa\.html|perill\.html|sortir\.html|consultes\.html)?$/
   .test(new URL(url, location.href).pathname);
 
 // Què fer en anar d'«actual» a «desti», amb la profunditat d'ara (0 a la
 // portada; null si no s'hi ha passat): [acció, profunditat de la pàgina nova].
-// L'acció: 'apunta', 'substitueix' o 'enrere'.
+// L'acció: 'apunta', 'substitueix', 'enrere' (fins a la portada) o 'torna'
+// (enrere fins a la primera pestanya, que se substitueix per la nova).
 function comNavega(actual, desti, prof) {
   if (esPortada(desti)) return esPortada(actual) || !prof ? ['substitueix', esPortada(actual) ? 0 : null] : ['enrere', 0];
   if (esPortada(actual)) return ['apunta', 1];
   if (esPestanya(actual) && !esPestanya(desti)) return ['apunta', prof == null ? null : prof + 1];
+  if (!esPestanya(actual) && esPestanya(desti) && prof > 1) return ['torna', 1];
   return ['substitueix', prof];
 }
 
@@ -1587,6 +1594,26 @@ try {
   }
   sessionStorage.removeItem(CLAU_PROFUNDITAT);
 } catch (_) {}
+
+// Després d'un 'torna': ja a la pestanya de sota, la nova la substitueix (si
+// no és la mateixa). Al carregar i, si ve de la memòria del navegador, al pageshow.
+function segueixDesti() {
+  let desti = null;
+  try {
+    desti = sessionStorage.getItem(CLAU_DESTI);
+    sessionStorage.removeItem(CLAU_DESTI);
+  } catch (_) {}
+  if (!desti) return;
+  const d = new URL(desti, location.href);
+  if (d.pathname === location.pathname && d.search === location.search) {
+    if (d.hash && d.hash !== location.hash) location.replace(d.href);
+    return;
+  }
+  try { sessionStorage.setItem(CLAU_PROFUNDITAT, '1'); } catch (_) {}
+  location.replace(d.href);
+}
+segueixDesti();
+addEventListener('pageshow', (e) => { if (e.persisted) segueixDesti(); });
 
 // L'idioma triat amb el selector es recorda en aquest aparell (ADR 0083): la
 // web i l'app s'obren en català fins que algú en tria un altre, i després en
@@ -1617,6 +1644,19 @@ document.addEventListener('click', (e) => {
   if (com === 'enrere') {
     e.preventDefault();
     history.go(-prof);
+    return;
+  }
+  if (com === 'torna') {
+    try {
+      sessionStorage.setItem(CLAU_DESTI, desti.href);
+    } catch (_) {
+      // Sense sessionStorage no es pot seguir: se substitueix, com abans.
+      e.preventDefault();
+      location.replace(desti.href);
+      return;
+    }
+    e.preventDefault();
+    history.go(1 - prof);
     return;
   }
   try {

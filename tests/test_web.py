@@ -783,6 +783,10 @@ class Web(unittest.TestCase):
         self.assertEqual(com("perill.html", "com-funciona.html", 1), ["apunta", 2])
         self.assertEqual(com("com-funciona.html", "", 2), ["enrere", 0])
         self.assertEqual(com("com-funciona.html", "fonts.html", 2), ["substitueix", 2])
+        # D'una explicació a una pestanya, enrere fins a la de sota i se substitueix (16-10-2026).
+        self.assertEqual(com("avisos.html", "consultes.html", 2), ["torna", 1])
+        self.assertEqual(com("avisos.html", "consultes.html", 1), ["substitueix", 1])  # de la portada a «Avisos»
+        self.assertEqual(com("avisos.html", "consultes.html", None), ["substitueix", None])
         self.assertEqual(com("perill.html", "./", None), ["substitueix", None])     # hi ha entrat per un enllaç
         self.assertEqual(com("perill.html", "com-funciona.html", None), ["apunta", None])
         self.assertEqual(com("", "es/", 0), ["substitueix", 0])                      # l'idioma
