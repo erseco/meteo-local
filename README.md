@@ -218,7 +218,7 @@ python3 pollen.py                              # el polen de la semana en Bellat
 python3 aire.py                                # la calidad del aire
 python3 riera.py ara                           # el índice de la riera
 python3 calibracio/regla_moto.py               # la regla de lluvia de la moto, con el archivo
-python3 -m unittest discover -s tests          # pruebas
+python3 -m unittest discover -s tests -b       # pruebas (-b: solo se ve lo que escriben las que fallan)
 ```
 
 Necesita Python 3 con `numpy` y `Pillow`, y Node para las pruebas de la web.

@@ -23,4 +23,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install numpy pillow
-      - run: python -m unittest discover -s tests
+      - run: python -m unittest discover -s tests -b

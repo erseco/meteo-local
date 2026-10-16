@@ -37,7 +37,8 @@ Al cambiar algo:
 - Si cambia un umbral, actualiza `config.py`, el texto «Com es decideix» de
   `web/sortir.html` (o «D'on surt» de `web/casa.html`), el README, las pruebas
   y el ADR.
-- Pasa las pruebas y `probar-web` antes de publicar; sube `VERSION` en
+- Pasa las pruebas (`python3 -m unittest discover -s tests -b`; con `-b`, lo
+  que escriben las que pasan no se ve) y `probar-web` antes de publicar; sube `VERSION` en
   `config.py` y etiqueta la versión (la release de GitHub, adonde lleva el
   «versió» del pie, la crea sola `.github/workflows/release.yml`; ADR 0095).
   Pasa también axe-core si cambia el HTML,
