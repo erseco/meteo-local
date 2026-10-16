@@ -180,10 +180,20 @@ function textComparacio(n, esDema) {
   return n > 0 ? T`${Math.abs(n)}° més que ahir` : T`${Math.abs(n)}° menys que ahir`;
 }
 
+// D'on surt la tempesta d'un tram: d'un avís oficial o dels models.
+function origenTempesta(files) {
+  const avis = files.flatMap((f) => (f.avisos || []).filter((a) => (a.tipus || []).includes('tempestes')))[0];
+  const font = avis && (avis.font === 'meteocat' ? 'Meteocat' : 'AEMET');
+  const parts = [];
+  if (font === 'AEMET') parts.push(T`Avís ${TD(avis.nivell)} de l\u2019AEMET per tempestes`);
+  else if (font) parts.push(T`Perill ${GRAU_METEOCAT()[avis.nivell]} de Meteocat per tempestes`);
+  if (files.some((f) => f.codi >= 95)) parts.push(T('Els models preveuen tempesta'));
+  return parts.join('; ');
+}
+
 // El perill d'un tram: el nivell més alt de les seves hores i què és.
 function perillTram(files) {
-  const p = delNivellMesAlt(files.flatMap(elementsPerill));
-  return p && { nivell: p.nivell, noms: p.noms };
+  return delNivellMesAlt(files.flatMap(elementsPerill));
 }
 
 function resumTrams(hores, ara, mesurada) {
@@ -204,7 +214,7 @@ function resumTrams(hores, ara, mesurada) {
     const alta = g.files.filter((f) => f.temperatura != null).map((f) => f.temperatura + (f.dif_alta || 0));
     const fenomens = [];
     const tempesta = (f) => f.codi >= 95 || (f.avisos || []).some((a) => (a.tipus || []).includes('tempestes'));
-    if (g.files.some(tempesta)) fenomens.push([NOM_FENOMEN.tempesta(), 'i-cloud-lightning']);
+    if (g.files.some(tempesta)) fenomens.push([NOM_FENOMEN.tempesta(), 'i-cloud-lightning', origenTempesta(g.files)]);
     if (g.files.some((f) => (f.pluja_mm || 0) >= FENOMENS.pluja_torrencial)) fenomens.push([NOM_FENOMEN.pluja_torrencial(), 'i-cloud-rain-wind']);
     else if (g.files.some((f) => (f.pluja_mm || 0) >= FENOMENS.pluja_forta)) fenomens.push([NOM_FENOMEN.pluja_forta(), 'i-cloud-rain-wind']);
     if (g.files.reduce((s, f) => s + (f.neu || 0), 0) >= 0.1) fenomens.push([NOM_FENOMEN.neu(), 'i-snowflake']);
@@ -266,8 +276,9 @@ function textAltaAra(n) {
 function resumTram(t) {
   const sum = element('summary');
   sum.append(element('strong', null, t.nom), element('span', 'quan', ` (${t.hores})`));
-  const peca = (id, text, classe = 'dada') => {
+  const peca = (id, text, classe = 'dada', titol = '') => {
     const s = element('span', classe);
+    if (titol) s.title = titol;
     const contingut = element('span');
     contingut.append(...[].concat(text));
     s.append(icona(id), typeof text === 'string' ? text : contingut);
@@ -297,11 +308,13 @@ function resumTram(t) {
   // El perill, primer i del color del nivell, com els avisos de dalt (ADR 0076).
   if (t.perill) {
     const xip = element('span', `perill-tram ${t.perill.nivell}`);
-    xip.append(icona('i-triangle-alert'), T`Avís ${TD(t.perill.nivell)}: ${t.perill.noms.join(', ')}`);
+    xip.append(icona('i-triangle-alert'), textPerillCurt(t.perill));
+    // D'on surt, en passar-hi el ratolí (Juanjo, 16-10-2026).
+    xip.title = textPerill(t.perill);
     sum.append(xip);
   }
   if (t.plou) peca('i-umbrella', `${Math.round(t.prob * 100)} %` + (t.mm >= 1 ? T`, uns ${coma(t.mm, 0)} mm` : ''));
-  for (const [text, id] of t.fenomens) peca(id, text, 'dada fenomen');
+  for (const [text, id, origen] of t.fenomens) peca(id, text, 'dada fenomen', origen);
   return sum;
 }
 
@@ -516,25 +529,54 @@ function tramsAvis(hores) {
 
 // Barra vertical del color de l'avís al llarg de les hores que cobreix. El
 // text, tan llarg com hi càpiga; el complet, per als lectors de pantalla.
-function franjaAvis(tram) {
-  const td = element('td', `col-avis franja-avis ${tram.nivell}`);
-  td.rowSpan = tram.hores;
-  const nivell = TD(tram.nivell);
-  const tipus = tram.noms.join(T(' i '));
-  // Meteocat parla de grau de perill (moderat, alt, molt alt), no de colors (ADR 0093).
-  const GRAU = { groc: T('moderat'), taronja: T('alt'), vermell: T('molt alt') };
-  const complet = (tram.perFont || [[tram.fonts, tram.noms]]).map(([font, noms]) => {
+// El perill dit com el diu cada font: Meteocat, en grau de perill (moderat,
+// alt, molt alt); l'AEMET i aquesta web, en colors (ADR 0093). El complet, amb
+// d'on surt cada cosa; el curt, per a la franja i l'etiqueta del tram.
+const GRAU_METEOCAT = () => ({ groc: T('moderat'), taronja: T('alt'), vermell: T('molt alt') });
+
+function perFonts(p) {
+  return p.perFont || [[p.fonts, p.noms]];
+}
+
+function textPerill(p) {
+  const nivell = TD(p.nivell);
+  return perFonts(p).map(([font, noms]) => {
     const que = noms.join(T(' i '));
-    if (font === 'meteocat') return T`Perill ${GRAU[tram.nivell]} de Meteocat per ${que}`;
+    if (font === 'meteocat') return T`Perill ${GRAU_METEOCAT()[p.nivell]} de Meteocat per ${que}`;
     if (font === 'web') return T`Avís ${nivell} d\u2019aquesta web: ${que}`;
     return T`Avís ${nivell} de l\u2019AEMET per ${que}`;
   }).join('; ');
+}
+
+// «Perill alt: pluja», «Avís groc: tempestes»; si n'hi ha de les dues maneres, juntes.
+function textPerillCurt(p, ambQue = true) {
+  const parts = [];
+  const meteocat = perFonts(p).filter(([f]) => f === 'meteocat').flatMap(([, n]) => n);
+  const altres = perFonts(p).filter(([f]) => f !== 'meteocat').flatMap(([, n]) => n);
+  if (meteocat.length) parts.push([T`Perill ${GRAU_METEOCAT()[p.nivell]}`, meteocat]);
+  if (altres.length) parts.push([T`Avís ${TD(p.nivell)}`, [...new Set(altres)]]);
+  return parts.map(([nom, que]) => (ambQue ? `${nom}: ${que.join(', ')}` : nom)).join(' · ');
+}
+
+function franjaAvis(tram) {
+  const td = element('td', `col-avis franja-avis ${tram.nivell}`);
+  td.rowSpan = tram.hores;
+  const complet = textPerill(tram);
   td.title = complet;
   const barra = element('span', 'barra-avis');
   barra.append(element('span', 'text-avis'));
-  barra.dataset.textos = JSON.stringify([T`Avís ${nivell} · ${tipus}`, T`Avís ${nivell}`, T('Avís'), '']);
+  const curt = textPerillCurt(tram, false);
+  barra.dataset.textos = JSON.stringify([textPerillCurt(tram).replace(/: /g, ' · '), curt,
+    curt.startsWith(T('Perill')) ? T('Perill') : T('Avís'), '']);
   barra.setAttribute('aria-hidden', 'true');
-  td.append(barra, element('span', 'visualment-amagat', complet));
+  // D'on surt, també al mòbil, on no hi ha ratolí: en tocar-la, un missatge
+  // breu a baix (Juanjo, 16-10-2026; ADR 0093).
+  const boto = element('button', 'boto-franja');
+  boto.type = 'button';
+  boto.setAttribute('aria-label', complet);
+  boto.addEventListener('click', () => avisBreu(`${complet}.`));
+  boto.append(barra);
+  td.append(boto);
   return td;
 }
 
@@ -592,11 +634,28 @@ function marcaSol([id, text, quan]) {
   return m;
 }
 
+function origenTram(t) {
+  const parts = t.perill ? [textPerill(t.perill)] : [];
+  const tempesta = (t.fenomens.find(([, id]) => id === 'i-cloud-lightning') || [])[2];
+  if (tempesta && !parts.some((x) => x.includes(tempesta))) {
+    parts.push(T`${NOM_FENOMEN.tempesta().replace(/^./, (c) => c.toUpperCase())}: ${tempesta.replace(/^./, (c) => c.toLowerCase())}`);
+  }
+  return parts.length ? `${parts.join('. ')}.` : '';
+}
+
 function taulaTram(t, obert, solHora) {
   const det = element('details', `tram-hores${t.perill ? ` amb-perill ${t.perill.nivell}` : ''}`);
   det.open = obert;
   det.dataset.clau = t.clau;
   det.append(resumTram(t));
+  // D'on surten el perill i la tempesta del tram, a la vista en obrir-lo: al
+  // mòbil no hi ha el text del ratolí (Juanjo, 16-10-2026; ADR 0093).
+  const origen = origenTram(t);
+  if (origen) {
+    const p = element('p', 'origen-tram');
+    p.append(icona('i-triangle-alert'), origen);
+    det.append(p);
+  }
   const contenidor = element('div', 'taula-contenidor');
   // Al mòbil la taula es desplaça de costat: s'hi ha de poder arribar amb el teclat (axe-core).
   contenidor.tabIndex = 0;

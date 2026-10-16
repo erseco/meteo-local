@@ -555,6 +555,12 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
   writing-mode: vertical-rl;
   transform: rotate(180deg);
 }
+/* La franja es pot tocar: diu d'on surt l'avís (ADR 0093). */
+.boto-franja { position: absolute; inset: 0; padding: 0; margin: 0; border: 0; background: none; cursor: pointer; }
+.boto-franja:focus-visible { outline: 2px solid var(--enllac); outline-offset: -2px; border-radius: .3rem; }
+.origen-tram { display: flex; gap: .4rem; align-items: flex-start; margin: .5rem .7rem 0; font-size: .9rem; color: var(--suau); }
+.origen-tram svg { flex: none; width: 1rem; height: 1rem; margin-top: .15em; fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; }
 .franja-avis.taronja .barra-avis { background: #fb923c; }
 .franja-avis.vermell .barra-avis { background: #ef4444; color: #fff; }
 

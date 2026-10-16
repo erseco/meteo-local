@@ -812,7 +812,14 @@ class Web(unittest.TestCase):
         r = self.avalua(ara, expr)
         # Només el que dona el nivell més alt: el groc de l'AEMET per pluja queda sota el taronja de la web.
         self.assertEqual(r[0], [None, ["taronja", "web", ["pluja molt forta"]], None])
-        self.assertEqual(r[1], {"nivell": "taronja", "noms": ["pluja molt forta"]})
+        self.assertEqual(r[1], {"nivell": "taronja", "noms": ["pluja molt forta"], "fonts": "web",
+                                "perFont": [["web", ["pluja molt forta"]]]})
+        # El text del tram: Meteocat en grau de perill; i, en passar-hi el ratolí, d'on surt (ADR 0093).
+        p = {"nivell": "taronja", "noms": ["pluja", "tempestes"], "fonts": "meteocataemet",
+             "perFont": [["meteocat", ["pluja"]], ["aemet", ["tempestes"]]]}
+        self.assertEqual(self.avalua(ara, f"[textPerillCurt({json.dumps(p)}), textPerill({json.dumps(p)})]"),
+                         ["Perill alt: pluja · Avís taronja: tempestes",
+                          "Perill alt de Meteocat per pluja; Avís taronja de l’AEMET per tempestes"])
         self.assertIsNone(self.avalua(ara, f"perillTram({json.dumps([f(7)])})"))
 
     def test_en_obrir_la_web_marxen_les_notificacions(self):

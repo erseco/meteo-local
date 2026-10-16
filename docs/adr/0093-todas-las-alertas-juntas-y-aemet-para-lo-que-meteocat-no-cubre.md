@@ -94,6 +94,17 @@ Acabat», y Juanjo preguntó si se había retirado: el aviso seguía vigente. Ah
 lleva `substituit_per` (la ficha de Meteocat) y «Perill» dice «Substituït per
 l'avís de Meteocat», con enlace a esa ficha, sin el círculo verde.
 
+## Cambio del 16-10-2026 (3.90.0): de dónde sale cada aviso, también en el móvil
+
+La etiqueta de peligro de cada tramo decía «Avís taronja: pluja» para un
+aviso de Meteocat, que habla de grado de peligro. Ahora dice «Perill alt:
+pluja», como la franja vertical («Perill alt · pluja»), y si hay de las dos
+maneras, juntas («Perill alt: pluja · Avís groc: tempestes»; `textPerillCurt`).
+De dónde sale cada cosa (`textPerill`, «Perill alt de Meteocat per pluja»;
+`origenTempesta`, si la tempesta es de un aviso o de los modelos) sale al
+pasar el ratón y, para el móvil (Juanjo: «¿en móvil esta info se ve?»), en
+una línea al abrir el tramo y en un mensaje breve al tocar la franja vertical.
+
 ## Alternativas descartadas
 
 - **AEMET solo de reserva** (ADR 0092): calla avisos que Meteocat no da.
