@@ -156,4 +156,6 @@ izquierda, así se simplifica la visualización» y «plegadas sí aparecen,
 desplegadas no». Desde la 3.113.1, la etiqueta de peligro de la cabecera de
 cada tramo («⚠ Perill molt alt: pluja · Avís groc: tempestes») se ve con el
 tramo plegado y se oculta al desplegarlo: entonces lo dicen la barra de
-color de cada hora y el borde del tramo.
+color de cada hora y el borde del tramo. Desde la 3.114.2, también la del
+fenómeno destacado («tempesta»): desplegado queda el resumen normal, sin
+avisos («que solo quede el resumen normal, sin avisos»).
