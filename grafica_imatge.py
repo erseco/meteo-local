@@ -99,6 +99,8 @@ const dades = {json_dades};
 const fig = graficaDia(dades.hores, dades.riscos, {json.dumps(dia)});
 if (fig) {{
   fig._opcions = {{ gran: true }};
+  // Sense la càmera de «Consultes»: en una imatge no serveix (Juanjo, 17-10-2026).
+  fig._botoImatge = false;
   document.getElementById('lloc').append(fig);
   dibuixaGrafica(fig);
   document.getElementById('lloc').insertAdjacentHTML('beforeend', {json.dumps('<p class="credits">' + '<br>'.join(html_mod.escape(l) for l in credits(dades, idioma)) + '</p>')});

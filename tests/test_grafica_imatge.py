@@ -22,3 +22,5 @@ class Credits(unittest.TestCase):
         p = G.pagina({"generat": "2026-10-17T07:21+02:00", "hores": []}, "avui", "ca")
         self.assertIn("meteo-montflorit.github.io", p)
         self.assertIn('<symbol id="i-cloud"', p)
+        # Sense el botó de la càmera, que a la imatge no fa res.
+        self.assertIn("fig._botoImatge = false", p)
