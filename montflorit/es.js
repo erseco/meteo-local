@@ -350,6 +350,8 @@ var IDIOMA = {
     "Amplia la gràfica": "Ampliar la gráfica",
     "Quines hores": "Qué horas",
     "Tot": "Todo",
+    "Part alta": "Parte alta",
+    "{0}\u00a0°C (part alta)": "{0}\u00a0°C (parte alta)",
     "Comparteix l’enllaç de la gràfica": "Compartir el enlace de la gráfica",
     "Comparteix la imatge de la gràfica": "Compartir la imagen de la gráfica",
     "Temps a Montflorit (Cerdanyola del Vallès) · previsió de {0}, {1} · meteo-montflorit.github.io": "Temps a Montflorit (Cerdanyola del Vallès) · previsión del {0}, {1} · meteo-montflorit.github.io",

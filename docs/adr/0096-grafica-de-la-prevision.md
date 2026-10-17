@@ -147,6 +147,26 @@ siempre en la hora en curso.
   con el límite de tres filas.
 - **La imagen para Telegram y los avisos** sale de esta misma gráfica (ADR
   0098).
+- **La máxima toca la raya del techo** (3.107.0; Juanjo, 17-10-2026: «la
+  temperatura debe llegar al máximo de la lluvia y poner esa temperatura
+  máxima a la izquierda, así la misma línea indica el máximo de lluvia (por
+  tramos) y por temperatura»): la escala de la temperatura va de un grado
+  por debajo de la mínima a la máxima, que toca la raya del techo de la
+  lluvia; la raya, ahora gris y siempre a la vista, lleva la máxima a la
+  izquierda («24 °C», en el rojo de la temperatura) y el techo de la lluvia a
+  la derecha («10 mm», solo si llueve). La curva es monótona entre horas,
+  así que no pasa de la raya.
+- **La parte alta, como segunda curva** (3.107.0; Juanjo, 17-10-2026: «una
+  opción en la vista de gráfico que actúe como conmutador para mostrar la
+  temperatura en la parte baja y alta»): botón «Part alta» en la vista en
+  grande, junto a «Vent», que añade la temperatura de la parte alta
+  (temperatura + `dif_alta`) en discontinua, del color de la parte alta; las
+  dos a la vez, para ver a qué horas y cuánto difieren, en lugar de cambiar
+  una por otra. Apagado por defecto; la elección se recuerda y vale para
+  todas las gráficas, como el viento. Con ella, la raya del techo marca la
+  máxima de las dos y, si es la de arriba, lo dice («26 °C (part alta)»).
+  Deshace en parte lo de la ficha de cada hora («las capas de UV y parte
+  alta sobran»): la ficha sigue dando el valor; la curva enseña la forma.
 - **El viento, por defecto en todas las gráficas** (3.106.0; Juanjo,
   17-10-2026: «el viento aparecerá marcado por defecto, aunque el usuario lo
   podrá quitar si quiere» y «también en la página inicial saldrá»): en la
