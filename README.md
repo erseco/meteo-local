@@ -177,6 +177,7 @@ Umbrales y lugares, en `config.py`. El porqué, en los ADR.
 | `montflorit-limits.geojson` | Los límites de Montflorit, calcados del mapa de barrios del Ayuntamiento (PLACC 2023) y con el poblado de Ca n'Oliver; para cualquier uso que necesite saber si algo es del barrio (ADR 0072) |
 | `montflorit-carrers.geojson` | Las calles con nombre del barrio y alrededores, de OpenStreetMap (ODbL), para estimar la calle probable de un corte de luz (ADR 0072) |
 | `eines/limits.py` | Editor de esos límites en un mapa: guarda en un borrador y `aplica` lo pasa a la web (ADR 0072) |
+| `eines/fons_radar.py` | Hace el fondo del mapa del radar (`web/img/radar-fons.webp`), del mapa base gris del ICGC; se rehace si cambia el radio del mapa (ADR 0019) |
 | `eines/mapa_barri.py` | Dibuja el mapa de esos límites que sale en «Com funciona» (`web/img/montflorit-limits.svg`) y, para el mapa de cada corte de luz, el fondo (`web/img/mapa-base.svg`) y las calles (`web/img/carrers.json`); se rehace al cambiarlos (ADR 0072 y 0077) |
 | `avisos_bot.py` | Decide los avisos públicos para el bot y el canal y los deja en `avisos.json`, con el historial de un año de la página «Perill» (ADR 0034 y 0071) |
 | `bot/` | Lo que vive en IONOS para repartir avisos: el bot de Telegram, `bot.py` (menú, suscripciones, reparto y resumen, ADR 0034); los avisos en el navegador, `push.py` (envío) y `subscripcio.php` (altas y bajas, ADR 0048); e `instalar.sh` |
@@ -195,6 +196,7 @@ Umbrales y lugares, en `config.py`. El porqué, en los ADR.
 | `pluviometre.py` | Comprueba una vez, tras limpiarlo, si el pluviómetro marca la lluvia débil y avisa por Telegram (ADR 0017) |
 | `riscos.py` | Situaciones de peligro según lo medido y lo previsto, que usan la página y los avisos (ADR 0018) |
 | `fi_pluja.py` | Comprueba a qué hora para la lluvia según el radar, antes de enseñarlo (ADR 0049) |
+| `moviment_registre.py` | Registra si el movimiento del radar acierta, comparado con dejar la lluvia quieta y con el viento en altura; se decide con un mes de datos (ADR 0019) |
 | `pluja_arriba.py` | Cuándo llegará la lluvia que ve el radar (la usa el aviso público de lluvia) y registro de sus aciertos (ADR 0022) |
 | `riera.py` | Lluvia en la cuenca de la riera de Sant Cugat y aviso de atención o peligro de desbordamiento, con registro de episodios (ADR 0027) |
 | `radar_fonts.py` | Apunta lo que daba cada radar y, cada día, elige el que acierta más (ADR 0026) |

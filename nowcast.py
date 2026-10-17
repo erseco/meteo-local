@@ -448,7 +448,8 @@ def resum(r, ahora=None):
     if mov:
         res["velocitat_kmh"] = round(math.hypot(*v) * r["km_px"] * 60)
         res["cap_a"] = rumb(v)
-        res["graus"] = round(graus(v))      # para comprobarlo con el registro
+        res["graus"] = round(graus(v))      # para la flecha del mapa
+        res["v"] = [round(v[0], 4), round(v[1], 4)]   # filas y columnas por minuto (moviment_registre)
     for nom, (lat, lon) in (("casa", C.CASA), ("conca", C.CONCA_RIERA)):
         res["llocs"][nom] = serie(r, camp, v, lat, lon)
     res["fonts"] = fonts(r, v)

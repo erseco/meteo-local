@@ -475,6 +475,23 @@ Con las imágenes de la tarde del 06-10-2026 (ADR 0023,
 cerca. En 97 puntos a menos de 55 km de casa, el error de Brier a 60 minutos
 pasó de 0,184 a 0,126 (0,179 con la lluvia quieta).
 
+Como esa comprobación es de una sola tarde, desde el 17-10-2026 el NAS
+registra el movimiento en cada pasada (`moviment_registre.py`): guarda el
+trozo de 60 km alrededor de casa de la última imagen de cada radar y, 30 y 60
+minutos después, compara con la imagen nueva del mismo radar, en el círculo de
+50 km, la lluvia llevada hacia delante y la lluvia quieta, con el índice de
+acierto
+
+```math
+\mathrm{CSI} = \frac{\text{aciertos}}{\text{aciertos} + \text{fallos} + \text{falsas alarmas}},
+```
+
+contando píxeles con 0,5 mm/h o más. El resumen (`python3 moviment_registre.py
+resum`) da el CSI medio de los dos por antelación y por fuente del
+movimiento, en cuántos casos gana cada uno y cuánto se aparta la dirección del
+viento a 700 hPa de Open-Meteo. Con un mes de datos se decidirá si hay que
+revisar el método.
+
 ### Hacia delante
 
 Para cada lugar (casa y el centro de la cuenca de la riera) y cada 5 minutos

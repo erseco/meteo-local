@@ -607,7 +607,7 @@ class Web(unittest.TestCase):
         self.assertEqual(self.avalua(ara, 'textRadar({"arriba": null, "possible": null, "fi": null, "sense_fi": false}, true)'),
                          ["arriba", "Pluja a sobre", False])
         self.assertEqual(self.avalua(ara, 'textRadar({"arriba": null, "possible": null}, false)')[1],
-                         "No s’acosta pluja en 2 hores")
+                         "El radar no veu pluja que vingui cap aquí")
         # Sense dada (dades d'abans), com sempre.
         self.assertEqual(self.avalua(ara, 'textRadar({"arriba": "2026-10-08T19:00"}, true)'),
                          ["arriba", "Pluja a sobre", False])
@@ -902,6 +902,12 @@ espera.then(() => console.log(JSON.stringify([mostrades, enviats])));
         # Una hora que comença passades les dues hores no compta.
         self.assertFalse(self.avalua(ara, f"plujaPrevistaAviat({json.dumps([hora(13, 0.9)])}, new Date())"))
         self.assertFalse(self.avalua(ara, "plujaPrevistaAviat(undefined, new Date())"))
+        # La primera hora amb pluja que comença, i la seva probabilitat
+        # (17-10-2026): la de les 12, encara que la de les 10 en curs en doni.
+        hores = [hora(10, 0.3), hora(11, 0.1), hora(12, 0.49), hora(13, 0.7)]
+        self.assertEqual(self.avalua(ara, f"primeraPluja({json.dumps(hores)}, new Date()).hora"), "2026-10-10T12:00")
+        self.assertEqual(self.avalua(ara, f"textPct(primeraPluja({json.dumps(hores)}, new Date()))"), " (49\u00a0%)")
+        self.assertIsNone(self.avalua(ara, f"primeraPluja({json.dumps(sec[:2])}, new Date())"))
 
     def test_icones_del_cel_amb_els_seus_colors(self):
         # ADR 0063: cada icona del temps que posa la pàgina de casa té les

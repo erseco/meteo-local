@@ -297,7 +297,7 @@ class Resum(unittest.TestCase):
         d["radar"].update(possible=None, fi=None)
         self.assertTrue(B.text_radar_bot(d, "ca", ARA).startswith("Pluja a sobre de Montflorit.\n"))
         d["ara_casa"].update(intensitat=0, plou=False)
-        self.assertTrue(B.text_radar_bot(d, "ca", ARA).startswith("No s'acosta pluja a Montflorit en 2 hores."))
+        self.assertTrue(B.text_radar_bot(d, "ca", ARA).startswith("El radar no veu pluja que vingui cap a Montflorit."))
 
     def test_radar_pluja_propera_i_sense_moviment(self):
         # 17-10-2026: la pluja més propera, i sense «a 0 km/h».
@@ -514,7 +514,7 @@ class Consultes(unittest.TestCase):
 
     def test_respostes(self):
         subs = {"7": {"idioma": "ca", "avisos": [], "resum": None}}
-        self.assertIn("No s'acosta pluja a Montflorit en 2 hores.", self.ordre("/radar", subs))
+        self.assertIn("El radar no veu pluja que vingui cap a Montflorit.", self.ordre("/radar", subs))
         self.assertIn("https://www.rainviewer.com/map.html", self.ordre("/radar", subs))
         trens = self.ordre("/trens", subs)
         # Cada línia una sola vegada, amb el seu avís al costat i el text de l'operador escapat.

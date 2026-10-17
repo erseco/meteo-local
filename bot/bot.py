@@ -1357,7 +1357,10 @@ def text_radar_bot(dades, idioma, moment):
     elif r.get("possible"):
         que = (f"Puede llegar lluvia a Montflorit hacia las {h(r['possible'])}." if idioma == "es" else f"Pot arribar pluja a Montflorit cap a les {h(r['possible'])}.")
     else:
-        que = "No se acerca lluvia a Montflorit en 2 horas." if idioma == "es" else "No s'acosta pluja a Montflorit en 2 hores."
+        # Només el que veu: la pluja que encara no s'ha format no hi surt
+        # (Juanjo, 17-10-2026: «son mensajes contrarios» amb la previsió).
+        que = ("El radar no ve lluvia que venga hacia Montflorit." if idioma == "es"
+               else "El radar no veu pluja que vingui cap a Montflorit.")
     # La pluja més propera, si no és a sobre, com a la web (17-10-2026).
     p = r.get("propera")
     if p and p.get("km", 0) >= 1:

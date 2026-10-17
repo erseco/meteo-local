@@ -320,8 +320,7 @@ function blocAra(casa, radarDades, vent, veines, hores, resum) {
 const LINIA_PLUJA = /^(Possible pluja|Pluja|Posible lluvia|Lluvia|Aquesta nit|Esta noche)\b/;
 const LINIA_SECA = /^(Sense pluja|Sin lluvia)/;
 function posaComptePluja(cos, hores, ara = new Date()) {
-  const fins = new Date(ara.getTime() + 24 * 3600e3);
-  const f = (hores || []).find((x) => new Date(x.hora) > ara && new Date(x.hora) < fins && plujaHora(x));
+  const f = primeraPluja(hores, ara);
   if (!f) return;
   const files = [...cos.querySelectorAll('.resum-linia')];
   const text = (fila) => (fila.lastElementChild && fila.lastElementChild.textContent || '').trim();
@@ -330,8 +329,10 @@ function posaComptePluja(cos, hores, ara = new Date()) {
     // Destacat en una etiqueta del color de la pluja, com la de la part alta
     // (Juanjo, 17-10-2026: «quisiera que se destacase algo… decide tú»; un
     // destacat amb color, no amb negreta).
+    // Amb la probabilitat, i «Pot començar» si només és possible (Juanjo,
+    // 17-10-2026: el «Comença» d'una hora del 49 % ho deia massa segur).
     const etiqueta = element('span', 'comenca-pluja');
-    etiqueta.append(T('Comença '), compte(f.hora, true));
+    etiqueta.append(plujaHora(f) === 'pluja' ? T('Comença ') : T('Pot començar '), compte(f.hora, true), textPct(f));
     pluja.lastElementChild.append(' ', etiqueta);
     return;
   }
@@ -369,11 +370,22 @@ function actualitzaComptes() {
 }
 if (typeof setInterval === 'function') setInterval(actualitzaComptes, 30e3);
 
-// La primera hora de les 24 que venen amb pluja segons la previsió (del 20 %,
-// «possible pluja», com a la taula), amb l'hora i la probabilitat.
-function liniaPlujaPrevista(hores, ara = new Date()) {
+// La primera hora que comença en les 24 que venen amb pluja segons la
+// previsió (del 20 %, «possible pluja», com a la taula).
+function primeraPluja(hores, ara = new Date()) {
   const fins = new Date(ara.getTime() + 24 * 3600e3);
-  const f = (hores || []).find((x) => new Date(x.hora) > ara && new Date(x.hora) < fins && plujaHora(x));
+  return (hores || []).find((x) => new Date(x.hora) > ara && new Date(x.hora) < fins && plujaHora(x)) || null;
+}
+
+// « (49 %)», la probabilitat d'una hora; res si no en té.
+function textPct(f) {
+  return f.probabilitat == null ? '' : ` (${Math.round(f.probabilitat * 100)}\u00a0%)`;
+}
+
+// La primera hora de les 24 que venen amb pluja segons la previsió, amb
+// l'hora i la probabilitat.
+function liniaPlujaPrevista(hores, ara = new Date()) {
+  const f = primeraPluja(hores, ara);
   if (!f) return null;
   const pct = f.probabilitat == null ? null : Math.round(f.probabilitat * 100);
   const segura = plujaHora(f) === 'pluja';
@@ -446,7 +458,10 @@ function textRadar(r, plou) {
     if (aviat(r.possible)) return ['possible', T('Pluja a prop: pot arribar')];
     return ['possible', [T('Pot arribar pluja '), compte(r.possible), T` (cap a les\u00a0${horaCurta(r.possible)})`]];
   }
-  return ['res', T('No s\u2019acosta pluja en 2 hores')];
+  // Només diu el que veu: la pluja que encara no s'ha format no hi surt
+  // (Juanjo, 17-10-2026, davant «No s'acosta pluja en 2 hores» i «Comença
+  // d'aquí a menys d'una hora» alhora: «son mensajes contrarios»).
+  return ['res', T('El radar no veu pluja que vingui cap aquí')];
 }
 
 // On veure el radar en directe, centrat a Montflorit quan es pot.
@@ -483,6 +498,21 @@ function blocRadar(r, plou, hores) {
     p.append(marca);
   }
   cos.append(p);
+  // Si la previsió en dona i el radar no en veu venir, la mateixa hora i
+  // probabilitat que l'etiqueta «Comença…», perquè es llegeixin juntes.
+  if (estat === 'res') {
+    const ara = new Date();
+    const f = primeraPluja(hores, ara);
+    const resta = (x) => T`${textPct(x)}: seria pluja que es formi a prop, que el radar encara no veu.`;
+    if (f && new Date(f.hora) < new Date(ara.getTime() + 2 * 3600e3)) {
+      const linia = element('p', 'radar-propera');
+      linia.append(T('La previsió en dona '), compte(f.hora, true), resta(f));
+      cos.append(linia);
+    } else {
+      const g = (hores || []).find((x) => new Date(x.hora) <= ara && new Date(x.fins) > ara && plujaHora(x));
+      if (g) cos.append(element('p', 'radar-propera', T('La previsió en dona per a aquesta hora') + resta(g)));
+    }
+  }
   // La pluja més propera, si no és a sobre (Juanjo, 17-10-2026).
   const propera = textPropera(r.propera);
   if (propera) cos.append(element('p', 'radar-propera', propera));
@@ -492,12 +522,7 @@ function blocRadar(r, plou, hores) {
   const font = r.imatge === 'rainviewer' ? 'RainViewer' : 'Meteocat';
   const mov = r.cap_a && r.velocitat_kmh >= 1 ? T` \u00b7 va cap ${TD(r.cap_a)} a ${r.velocitat_kmh}\u00a0km/h` : '';
   const detall = element('p', 'radar-detall');
-  const [abans, despres] = T`Radar de ${font} de les ${horaCurta(r.hora)}${mov}`.split(font);
-  const enllac = element('a', null, font);
-  enllac.href = RADAR_EN_DIRECTE[r.imatge === 'rainviewer' ? 'rainviewer' : 'meteocat'];
-  enllac.target = '_blank';
-  enllac.rel = 'noopener';
-  detall.append(abans, enllac, despres);
+  detall.append(...ambEnllacRadar(T`Radar de ${font} de les ${horaCurta(r.hora)}${mov}`, r, font));
   cos.append(detall);
   caixa.append(cos);
   if (r.mapa) caixa.append(miniaturaMapa(r, font));
@@ -509,12 +534,15 @@ function blocRadar(r, plou, hores) {
 // porten les dades (nowcast.mapa), 30 km al voltant, dibuixat aquí, sense
 // demanar res a cap servidor de mapes. Cercles cada 10 km, el nord i unes
 // quantes poblacions per situar-se. Una miniatura al requadre i, en prémer-la,
-// gran. ---
+// gran. A sota, el Mapa base estàndard gris de l'ICGC del mateix quadrat
+// (img/radar-fons.webp, fet amb eines/fons_radar.py), amb els noms dels
+// pobles, la costa i les carreteres. ---
 const NOM_INTENSITAT = () => [null, T('feble'), T('moderada'), T('forta'), T('molt forta'), T('torrencial')];
 const COLOR_INTENSITAT = [null, '#93c5fd', '#2563eb', '#facc15', '#f97316', '#dc2626'];
 // Les poblacions, en km des de Montflorit (est i nord), i on va el nom: a la
 // dreta o, perquè no en tapi cap altre ni surti del mapa, a l'esquerra («e»)
-// o a sota («s»).
+// o a sota («s»). Damunt del mapa, que les porta més febles perquè és aclarit
+// (Juanjo, 17-10-2026: «ahora ya no se ve mucho»).
 const POBLES = [['Terrassa', -10.6, 9.1], ['Sabadell', -2.1, 6.8], ['Sant Cugat', -4.1, -1.1, 's'],
   ['Barcelona', 2.8, -10.5], ['Badalona', 9.4, -3.6], ['Granollers', 12.7, 14.0], ['Mataró', 25.8, 6.2, 'e'],
   ['Martorell', -17.0, -0.8]];
@@ -528,7 +556,8 @@ function textPropera(p) {
   return T`La més propera, a ${Math.round(p.km)}\u00a0km ${rumb} (${NOM_INTENSITAT()[p.classe] || T('feble')}).`;
 }
 
-function svgMapa(m, gran) {
+function svgMapa(r, gran) {
+  const m = r.mapa;
   const ns = 'http://www.w3.org/2000/svg';
   const nou = (tag, at = {}) => {
     const e = document.createElementNS(ns, tag);
@@ -536,8 +565,13 @@ function svgMapa(m, gran) {
     return e;
   };
   const R = CERCLES_KM[CERCLES_KM.length - 1];
-  const svg = nou('svg', { viewBox: `${-R} ${-R} ${2 * R} ${2 * R}`, class: 'mapa-radar-svg', role: 'img' });
-  svg.append(nou('rect', { x: -R, y: -R, width: 2 * R, height: 2 * R, class: 'mapa-fons' }));
+  // La miniatura és dins d'un botó que ja diu què és: per als lectors de
+  // pantalla, només el botó.
+  const svg = nou('svg', { viewBox: `${-R} ${-R} ${2 * R} ${2 * R}`, class: 'mapa-radar-svg',
+    ...(gran ? { role: 'img' } : { 'aria-hidden': 'true' }) });
+  svg.append(nou('rect', { x: -R, y: -R, width: 2 * R, height: 2 * R, class: 'mapa-fons' }),
+    nou('image', { href: ARREL + 'img/radar-fons.webp', x: -R, y: -R, width: 2 * R, height: 2 * R,
+      preserveAspectRatio: 'none', class: 'mapa-base' }));
   // La pluja: un camí per intensitat, un quadrat per píxel.
   const k = m.km_px;
   const camins = COLOR_INTENSITAT.map(() => []);
@@ -553,13 +587,13 @@ function svgMapa(m, gran) {
       camins[c].push(`M${x.toFixed(2)} ${y.toFixed(2)}h1.04v1.04h-1.04z`);
     }
   }
-  const pluja = nou('g', { transform: `scale(${k})` });
+  const pluja = nou('g', { transform: `scale(${k})`, class: 'mapa-pluja' });
   camins.forEach((d, c) => { if (d.length) pluja.append(nou('path', { d: d.join(''), fill: COLOR_INTENSITAT[c] })); });
   svg.append(pluja);
   for (const km of CERCLES_KM) svg.append(nou('circle', { cx: 0, cy: 0, r: km, class: 'mapa-cercle' }));
   if (gran) {
     for (const km of CERCLES_KM) {
-      const t = nou('text', { x: 0.6, y: -km - 0.6, class: 'mapa-km' });
+      const t = nou('text', { x: 0.6, y: -km + 1.9, class: 'mapa-km' });
       t.textContent = `${km} km`;
       svg.append(t);
     }
@@ -570,6 +604,10 @@ function svgMapa(m, gran) {
       t.textContent = nom;
       svg.append(t);
     }
+    svg.append(...fletxesMoviment(r, R, nou));
+    const credit = nou('text', { x: R - 0.8, y: R - 0.8, class: 'mapa-credit' });
+    credit.textContent = 'Mapa © ICGC · CC BY 4.0';
+    svg.append(credit);
     const n = nou('text', { x: R - 2.2, y: -R + 3.6, class: 'mapa-nord' });
     n.textContent = 'N';
     svg.append(nou('path', { d: `M${R - 1.6} ${-R + 8.4}l0 -3.2m-1 1l1 -1.2l1 1.2`, class: 'mapa-fletxa' }), n);
@@ -583,12 +621,48 @@ function svgMapa(m, gran) {
   return svg;
 }
 
+// El text amb el nom de la font enllaçat al radar en directe.
+function ambEnllacRadar(text, r, font) {
+  const [abans, despres] = text.split(font);
+  const enllac = element('a', null, font);
+  enllac.href = RADAR_EN_DIRECTE[r.imatge === 'rainviewer' ? 'rainviewer' : 'meteocat'];
+  enllac.target = '_blank';
+  enllac.rel = 'noopener';
+  return [abans, enllac, despres];
+}
+
+// Cap on va la pluja (Juanjo, 17-10-2026: «un vector… y también la
+// velocidad»). El moviment és un de sol per a tota la pluja (nowcast.moviment),
+// el mateix amb què es calcula quan arriba: una fletxa a la cantonada, amb què
+// és i la velocitat. Sense moviment (menys d'1 km/h o no se sap), cap fletxa,
+// com al text.
+function fletxesMoviment(r, R, nou) {
+  if (r.graus == null || !(r.velocitat_kmh >= 1)) return [];
+  const rad = r.graus * Math.PI / 180;
+  const [ux, uy] = [Math.sin(rad), -Math.cos(rad)];   // l'est cap a la dreta, el nord cap amunt
+  const punta = (x, y, mida) => `M${x - mida * (ux + 0.6 * uy)} ${y - mida * (uy - 0.6 * ux)}L${x} ${y}`
+    + `L${x - mida * (ux - 0.6 * uy)} ${y - mida * (uy + 0.6 * ux)}`;
+  const res = [];
+  // A la cantonada de baix a l'esquerra, davant del nord.
+  const [cx, cy, l] = [-R + 3.6, R - 3.6, 2.4];
+  res.push(nou('circle', { cx, cy, r: 3.1, class: 'mapa-mov-fons' }),
+    nou('path', { d: `M${cx - ux * l} ${cy - uy * l}L${cx + ux * l} ${cy + uy * l}${punta(cx + ux * l, cy + uy * l, 1)}`,
+      class: 'mapa-mov' }));
+  // Què és, al costat (Juanjo, 17-10-2026: «no dice lo que es y debería decirlo»).
+  const que = nou('text', { x: cx + 3.8, y: cy - 0.5, class: 'mapa-nom mapa-que' });
+  que.textContent = T('moviment de la pluja');
+  const vel = nou('text', { x: cx + 3.8, y: cy + 1.6, class: 'mapa-nom mapa-vel' });
+  vel.textContent = `${r.velocitat_kmh}\u00a0km/h`;
+  res.push(que, vel);
+  return res;
+}
+
 function miniaturaMapa(r, font) {
   const b = element('button', 'mapa-radar-mini');
   b.type = 'button';
   b.title = T('Amplia el mapa del radar');
   b.setAttribute('aria-label', T('Amplia el mapa del radar'));
-  b.append(svgMapa(r.mapa, false));
+  b.append(svgMapa(r, false));
   b.addEventListener('click', () => obreMapa(r, font));
   return b;
 }
@@ -596,9 +670,10 @@ function miniaturaMapa(r, font) {
 function obreMapa(r, font) {
   const visor = element('dialog', 'visor mapa-radar');
   const caixa = element('div', 'mapa-radar-caixa');
-  const svg = svgMapa(r.mapa, true);
+  const svg = svgMapa(r, true);
   const titol = T`Radar de ${font} de les ${horaCurta(r.hora)}`;
-  svg.setAttribute('aria-label', T`${titol}: la pluja al voltant de ${LLOC}, amb cercles cada 10 km.`);
+  const mov = r.cap_a && r.velocitat_kmh >= 1 ? T` Va cap ${TD(r.cap_a)} a ${r.velocitat_kmh}\u00a0km/h.` : '';
+  svg.setAttribute('aria-label', T`${titol}: la pluja al voltant de ${LLOC}, amb cercles cada 10 km.` + mov);
   const llegenda = element('p', 'mapa-llegenda');
   const presents = new Set(r.mapa.classes);
   NOM_INTENSITAT().forEach((nom, c) => {
@@ -609,7 +684,11 @@ function obreMapa(r, font) {
     s.append(q, nom);
     llegenda.append(s);
   });
-  caixa.append(element('p', 'mapa-titol', `${titol} \u00b7 ${T('cercles cada 10 km')}`), svg, llegenda);
+  // La font, enllaçada al radar en directe, com al requadre (Juanjo,
+  // 17-10-2026: «aquí puedes poner un enlace clicable al radar en tiempo real?»).
+  const capcalera = element('p', 'mapa-titol');
+  capcalera.append(...ambEnllacRadar(`${titol} \u00b7 ${T('cercles cada 10 km')}`, r, font));
+  caixa.append(capcalera, svg, llegenda);
   const tanca = element('button', 'visor-tanca');
   tanca.type = 'button';
   tanca.title = T('Tanca');

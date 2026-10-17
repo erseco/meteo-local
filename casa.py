@@ -680,7 +680,8 @@ def recoger(anterior=None):
     motivos = P.motivos_modo_aviso(avisos, planes, obs, radar, salida["smp"])
     # En modo aviso, todo el día: hasta las 23:50, no solo hasta las 23:00.
     nc = (radar or {}).get("nowcast")
-    salida["radar"] = nc and {k: nc[k] for k in ("hora", "imatge", "moviment", "velocitat_kmh", "cap_a")}
+    # Els graus, per a la fletxa del mapa (17-10-2026).
+    salida["radar"] = nc and {k: nc.get(k) for k in ("hora", "imatge", "moviment", "velocitat_kmh", "cap_a", "graus")}
     if nc:
         # Cuándo llegaría: probable (50 %) o, si no, posible (20 %).
         for clau, prob in (("arriba", 0.5), ("possible", C.PROB_ATENCION)):

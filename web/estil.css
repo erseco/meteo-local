@@ -457,15 +457,26 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .mapa-radar-mini { flex: none; width: 5.5rem; height: 5.5rem; padding: 0; border: 1px solid var(--vora); border-radius: .4rem;
   background: none; cursor: pointer; overflow: hidden; }
 .radar-ara .mapa-radar-mini svg { display: block; width: 100%; height: 100%; stroke: none; stroke-width: 0; fill: none; }
-.mapa-radar-svg .mapa-fons { fill: var(--superficie); }
-.mapa-radar-svg .mapa-cercle { fill: none; stroke: var(--suau); stroke-width: .15; stroke-dasharray: .8 .6; }
-.mapa-radar-svg .mapa-casa { fill: var(--text); stroke: var(--superficie); stroke-width: .35; }
-.mapa-radar-svg .mapa-poble { fill: var(--suau); }
-.mapa-radar-svg .mapa-nom { font-size: 1.7px; fill: var(--text); paint-order: stroke; stroke: var(--superficie); stroke-width: .35; }
+/* El fons és el mapa clar de l'ICGC, també en tema fosc: el que hi va a sobre,
+   amb colors fixos. */
+/* El mapa, aclarit perquè destaqui el que hi va a sobre (Juanjo, 17-10-2026). */
+.mapa-radar-svg .mapa-fons { fill: #fff; }
+.mapa-radar-svg .mapa-base { opacity: .55; }
+.mapa-radar-svg .mapa-pluja { opacity: .9; }
+.mapa-radar-svg .mapa-cercle { fill: none; stroke: #1f2937; stroke-width: .15; stroke-dasharray: .8 .6; }
+.mapa-radar-svg .mapa-casa { fill: #b91c1c; stroke: #fff; stroke-width: .35; }
+.mapa-radar-svg .mapa-poble { fill: #374151; }
+/* El contorn blanc dels noms, semitransparent: no amaga la pluja de sota. */
+.mapa-radar-svg .mapa-nom { font-size: 1.7px; fill: #111827; paint-order: stroke; stroke: #fff; stroke-opacity: .7; stroke-width: .35; }
 .mapa-radar-svg .mapa-nom-casa { font-weight: 700; }
-.mapa-radar-svg .mapa-km { font-size: 1.4px; fill: var(--suau); paint-order: stroke; stroke: var(--superficie); stroke-width: .3; }
-.mapa-radar-svg .mapa-nord { font-size: 1.8px; font-weight: 700; fill: var(--text); text-anchor: middle; }
-.mapa-radar-svg .mapa-fletxa { fill: none; stroke: var(--text); stroke-width: .25; }
+.mapa-radar-svg .mapa-km { font-size: 1.4px; fill: #374151; paint-order: stroke; stroke: #fff; stroke-width: .3; }
+.mapa-radar-svg .mapa-credit { font-size: 1.2px; fill: #374151; text-anchor: end; paint-order: stroke; stroke: #fff; stroke-width: .3; }
+.mapa-radar-svg .mapa-nord { font-size: 1.8px; font-weight: 700; fill: #111827; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: .3; }
+.mapa-radar-svg .mapa-mov-fons { fill: #fff; fill-opacity: .85; stroke: #9ca3af; stroke-width: .12; }
+.mapa-radar-svg .mapa-mov { fill: none; stroke: #111827; stroke-width: .3; stroke-linecap: round; stroke-linejoin: round; }
+.mapa-radar-svg .mapa-vel { font-weight: 700; }
+.mapa-radar-svg .mapa-que { font-size: 1.4px; }
+.mapa-radar-svg .mapa-fletxa { fill: none; stroke: #111827; stroke-width: .25; }
 .mapa-radar .mapa-radar-caixa { width: min(92vw, 80vh, 40rem); padding: .8rem; border-radius: .6rem; background: var(--superficie);
   color: var(--text); }
 .mapa-radar .mapa-radar-svg { display: block; width: 100%; height: auto; }
@@ -952,7 +963,7 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .resta-dia .pluja-prevista { display: grid; font-size: inherit; }
 .resta-dia .pluja-prevista svg { margin-top: .15rem; }
 /* Quant falta per a la pluja, en una etiqueta del color de la pluja (casa.js). */
-.comenca-pluja { background: var(--c-aigua-fons); color: var(--c-aigua); border-radius: .7rem; padding: .05rem .5rem;
+.comenca-pluja { background: var(--c-aigua-fons); color: var(--c-aigua-text); border-radius: .7rem; padding: .05rem .5rem;
   font-size: .92em; white-space: nowrap; }
 
 /* Al mòbil, les pàgines en una barra fixa a baix, com a les aplicacions, i

@@ -207,3 +207,80 @@ decidir si se igualan. Validación: con la imagen real de RainViewer
 desplazada para poner la lluvia cerca, en Chromium y Firefox, 320, 390 y
 1280 px, claro y oscuro, catalán y castellano; pruebas de `propera`, `mapa`,
 `textPropera` y /radar.
+
+## Cambio del 17-10-2026 (3.127.0): mapa de verdad, flecha, enlace y textos
+
+Juanjo, ante el mapa de la 3.126.0, que solo tenía círculos y puntos: «pero y
+el mapa? se suupone que esto es un mapa». Ahora:
+
+- **Fondo**: el Mapa base estándar gris del ICGC (© ICGC, CC BY 4.0), con la
+  costa, las poblaciones, las carreteras y las comarcas, en una imagen fija de
+  la propia web (`web/img/radar-fons.webp`, 524 × 524 px, 46 KB, hecha con
+  `eines/fons_radar.py` a partir de las teselas del nivel 10, en la misma
+  proyección que el radar). Al abrir la página no se pide nada a ningún
+  servidor de mapas. El gris y no el de color, porque en este las carreteras
+  van en naranja y se confundirían con la lluvia fuerte; la versión gris sin
+  rótulos (`topografic-gris-mut`) tiene teselas que faltan. Va aclarado
+  (opacidad 0,55 sobre blanco) para que destaque lo de encima («el mapa de
+  fondo puede ser un poco mas claro»), también en tema oscuro, como el de los
+  cortes de luz; lo de encima, con colores fijos. La lluvia, con opacidad 0,9.
+- **Nombres**: los ocho de referencia, encima del mapa («ahora ya no se ve
+  mucho»), con un contorno blanco semitransparente que no tapa la lluvia (con
+  el opaco, el de «Martorell» vaciaba un píxel y parecía un cuadrado vacío).
+  Los del ICGC quedan debajo, más tenues.
+- **«30 km»** dentro de su círculo, como los otros: escrita por encima quedaba
+  fuera del dibujo.
+- **Movimiento**: una flecha abajo a la izquierda, con «moviment de la pluja»
+  y la velocidad («un vector… y también la velocidad»; «no dice lo que es y
+  debería decirlo»). Es uno solo para toda la lluvia, el mismo con que se
+  calcula cuándo llega: flechas por foco dirían lo mismo repetido, y seguir
+  cada foco es poco fiable con tormentas que nacen y se deshacen en diez
+  minutos. Sin movimiento (menos de 1 km/h o no medido), sin flecha. Los datos
+  llevan `graus`, que ya se calculaba. Una segunda flecha discontinua desde la
+  lluvia más cercana, con lo que recorrería en una hora, se probó y se quitó:
+  repetía la de la esquina («por que hay una flecha de puntos?»).
+- **Enlace**: el nombre de la fuente del título del mapa ampliado lleva al
+  radar en directo, como en el recuadro («aquí puedes poner un enlace
+  clicable al radar en tiempo real?»).
+
+**Textos que se contradecían.** Con la previsión dando lluvia a las 17 h y el
+radar sin nada que se acercara, la página decía a la vez «Comença d'aquí a
+menys d'una hora» y «No s'acosta pluja en 2 hores» («son mensajes
+contrarios»). Los dos podían ser ciertos: el radar no ve la lluvia que aún no
+se ha formado, y ese día las tormentas nacían donde no había nada. Pero la
+frase del radar decía más de lo que sabe, y «Comença» hablaba de una hora del
+49 %. Ahora:
+
+- El recuadro dice solo lo que ve: «El radar no veu pluja que vingui cap
+  aquí»; y, si la previsión da lluvia en las dos horas siguientes, «La
+  previsió en dona d'aquí a menys d'una hora (49 %): seria pluja que es formi
+  a prop, que el radar encara no veu.», con la misma hora y cifra que la
+  etiqueta de la previsión. El /radar del bot, «El radar no veu pluja que
+  vingui cap a Montflorit.».
+- La etiqueta lleva la probabilidad y dice «Comença» desde el 50 % y «Pot
+  començar» por debajo («ese me interesa que siga ahí, con las matizaciones
+  que hagan falta»).
+
+**¿Acierta el movimiento?** Juanjo: «el calculo de la velocidad y direccion
+de la lluvia es correcto o habria que revisarlo?». El 17-10-2026 a las 17:00,
+la advección de Meteocat daba 12 km/h hacia los 121°; el viento a 700 hPa de
+Open-Meteo, 17 km/h del 298° (hacia los 118°): la misma dirección y algo más
+deprisa, como es normal en las tormentas. El centro de la lluvia a 40 km
+avanzó unos 20 km/h hacia el este, pero porque la lluvia pasó de 26 a 209 km²
+con tormentas nuevas por delante, no por moverse más rápido. Los pares de
+RainViewer daban de 0,2 a 44 km/h; como no concuerdan, el programa los
+descarta y deja la lluvia quieta. El método solo se había comprobado con la
+tarde del 06-10-2026 (ADR 0023) y el movimiento no se guardaba: desde la
+3.127.0 lo registra `moviment_registre.py` (en cada pasada del NAS, sin
+descargas nuevas), que compara la lluvia llevada hacia delante 30 y 60
+minutos con la que ve después el mismo radar y con dejarla quieta, y la
+dirección con el viento a 700 hPa. Con un mes de datos, el 17-11-2026, se
+decide si hay que revisarlo.
+
+Validación: `probar-web` con el mapa abierto (Chromium, Firefox y WebKit;
+escritorio, móvil y tableta; claro y oscuro), catalán y castellano, con la
+lluvia real del 17-10-2026; axe-core sin incidencias tras dos arreglos (la
+miniatura, oculta a los lectores de pantalla dentro de su botón, que ya dice
+qué es; la etiqueta «Comença…», con el azul oscuro del texto de lluvia, que
+tenía un contraste de 4,2); prueba del registro con un chubasco que se
+desplaza una distancia conocida.
