@@ -1811,16 +1811,28 @@ function ofereixApp(ua, tactil, dinsApp, instal) {
   return !ios && !dinsApp && !instal;
 }
 
+function dinsApp() {
+  try {
+    if (document.referrer.startsWith('android-app://')) sessionStorage.setItem('meteo.app', '1');
+    return sessionStorage.getItem('meteo.app') === '1';
+  } catch (_) {
+    return false;
+  }
+}
+
+// El nom del que es mira: l'app («Montflorit al dia», ADR 0082) o la web
+// («Temps a Montflorit»; la de casa, «Temps a casa»). Són noms propis: no es
+// tradueixen (Juanjo, 17-10-2026: «hay dos nombres»).
+function nomPropi() {
+  if (dinsApp()) return 'Montflorit al dia';
+  return document.documentElement.dataset.lloc === 'Montflorit' ? 'Temps a Montflorit' : 'Temps a casa';
+}
+
 (function () {
   const p = $('app-android');
   if (!p) return;
-  let dinsApp = false;
-  try {
-    if (document.referrer.startsWith('android-app://')) sessionStorage.setItem('meteo.app', '1');
-    dinsApp = sessionStorage.getItem('meteo.app') === '1';
-  } catch (_) {}
   const instal = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
-  p.hidden = !ofereixApp(navigator.userAgent || '', navigator.maxTouchPoints || 0, dinsApp, instal);
+  p.hidden = !ofereixApp(navigator.userAgent || '', navigator.maxTouchPoints || 0, dinsApp(), instal);
 })();
 
 // Per poder instal·lar la web com a aplicació (sw.js).

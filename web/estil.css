@@ -469,6 +469,8 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .mapa-radar-svg .mapa-nom { font-size: 1.7px; fill: #111827; paint-order: stroke; stroke: #fff; stroke-opacity: .7; stroke-width: .35; }
 .mapa-radar-svg .mapa-nom-casa { font-weight: 700; }
 .mapa-radar-svg .mapa-km { font-size: 1.4px; fill: #374151; paint-order: stroke; stroke: #fff; stroke-width: .3; }
+.mapa-radar-svg .mapa-autor { font-size: 1.4px; fill: #111827; paint-order: stroke; stroke: #fff; stroke-opacity: .85; stroke-width: .4; }
+.mapa-radar-svg .mapa-autor-nom { font-size: 1.7px; font-weight: 700; }
 .mapa-radar-svg .mapa-credit { font-size: 1.2px; fill: #374151; text-anchor: end; paint-order: stroke; stroke: #fff; stroke-width: .3; }
 .mapa-radar-svg .mapa-nord { font-size: 1.8px; font-weight: 700; fill: #111827; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: .3; }
 .mapa-radar-svg .mapa-mov-fons { fill: #fff; fill-opacity: .85; stroke: #9ca3af; stroke-width: .12; }

@@ -339,3 +339,12 @@ desde las 18:36 en Meteocat (+50 km²) y desde las 18:40 en RainViewer
 (+70), sigue a las 19:00 (+145) y a las 19:20 (+103), y no salta con un paso
 de 10 a 20 km². Los 50 km² salen de una sola tarde y solo deciden cuándo se
 dice lo medido; si sirve para anunciar la lluvia lo dirá el registro.
+
+En la 3.134.0 el mapa ampliado dice dentro de la imagen, arriba a la
+izquierda, quién lo ha hecho y con qué: el nombre de lo que se está mirando
+(«Temps a Montflorit» en la web, «Montflorit al dia» dentro de la app de
+Android, que la web reconoce por el referrer android-app://; «Temps a casa»
+en la de casa), «Mapa d'elaboració pròpia» y el radar y la hora de la imagen.
+Juanjo: «que se vea que es una elaboración de la propia app y no una captura
+de otra web». Los nombres no se traducen; también lo dice la descripción
+para lectores de pantalla.

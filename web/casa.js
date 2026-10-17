@@ -659,6 +659,17 @@ function svgMapa(r, gran) {
     const credit = nou('text', { x: R - 0.8, y: R - 0.8, class: 'mapa-credit' });
     credit.textContent = 'Mapa © ICGC · CC BY 4.0';
     svg.append(credit);
+    // Qui l'ha fet, dins de la imatge: és un mapa propi, no una captura d'una
+    // altra web (Juanjo, 17-10-2026), amb el radar i l'hora de què surt.
+    const autor = nou('text', { class: 'mapa-autor' });
+    const font = r.imatge === 'rainviewer' ? 'RainViewer' : 'Meteocat';
+    [[nomPropi(), 'mapa-autor-nom'], [T('Mapa d’elaboració pròpia')],
+      [T`Radar: ${font}, ${horaCurta(r.hora)}`]].forEach(([text, classe], i) => {
+      const linia = nou('tspan', { x: -R + 0.8, y: -R + 2.2 + i * 1.8, ...(classe ? { class: classe } : {}) });
+      linia.textContent = text;
+      autor.append(linia);
+    });
+    svg.append(autor);
     const n = nou('text', { x: R - 2.2, y: -R + 3.6, class: 'mapa-nord' });
     n.textContent = 'N';
     svg.append(nou('path', { d: `M${R - 1.6} ${-R + 8.4}l0 -3.2m-1 1l1 -1.2l1 1.2`, class: 'mapa-fletxa' }), n);
@@ -737,7 +748,8 @@ function obreMapa(r, font) {
   const svg = svgMapa(r, true);
   const titol = T`Radar de ${font} de les ${horaCurta(r.hora)}`;
   const mov = r.cap_a && r.velocitat_kmh >= 1 ? T` Va cap ${TD(r.cap_a)} a ${r.velocitat_kmh}\u00a0km/h.` : '';
-  svg.setAttribute('aria-label', T`${titol}: la pluja al voltant de ${LLOC}, amb cercles cada 10 km.` + mov);
+  svg.setAttribute('aria-label', T`${titol}: la pluja al voltant de ${LLOC}, amb cercles cada 10 km.` + mov
+    + T` Mapa d’elaboració pròpia de ${nomPropi()}.`);
   const llegenda = element('p', 'mapa-llegenda');
   const presents = classesDibuixades(r.mapa, CERCLES_KM[CERCLES_KM.length - 1]);
   NOM_INTENSITAT().forEach((nom, c) => {
