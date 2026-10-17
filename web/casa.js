@@ -709,6 +709,7 @@ function pinta(dades) {
   }
   DADES_AVISOS = dades;
   GENERAT_GRAFICA = dades.generat;
+  AVISOS_GRAFICA = dades;
   $('avisos').replaceChildren();
   pintaAvisos(dades);
   const avisos = $('avisos');

@@ -90,12 +90,15 @@ body {{ margin: 0; padding: 0; max-width: none; background: #fff; width: {AMPLE 
 main {{ padding: {MARGE}px; max-width: none; margin: 0; }}
 .grafica {{ margin: 0; padding: 0; border: none; background: #fff; }}
 .credits {{ margin: 10px 0 0; color: #475569; font-size: 13px; line-height: 1.45; }}
+.g-mes-enlla-avis::after {{ content: none; }}
 </style></head>
 <body>{icones}<main id="lloc"></main>
 {es}<script>{llegeix(WEB, 'comu.js')}</script>
 <script>{llegeix(WEB, 'grafica.js')}</script>
 <script>
 const dades = {json_dades};
+GENERAT_GRAFICA = dades.generat;
+AVISOS_GRAFICA = dades;
 const fig = graficaDia(dades.hores, dades.riscos, {json.dumps(dia)});
 if (fig) {{
   // Amb el vent (Juanjo, 17-10-2026: «aporta información útil con poco cambio

@@ -1117,3 +1117,11 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .vg-antelacio .boto-icona { width: 2rem; height: 2rem; }
 .vg-antelacio .boto-icona:disabled { opacity: .35; cursor: default; }
 .vg-nom-antelacio { font-weight: 600; color: var(--text); min-width: 2.5rem; text-align: center; }
+/* Els avisos de després de la gràfica (grafica.js, avisosMesEnlla). */
+.g-mes-enlla { display: flex; flex-direction: column; gap: .2rem; margin: 0 0 .4rem; font-size: .85rem; font-weight: 600; }
+.g-mes-enlla-avis { display: inline-flex; align-items: center; gap: .4rem; color: var(--text); text-decoration: none; }
+.g-mes-enlla-avis::after { content: "›"; color: var(--suau); }
+.g-mes-enlla-marca { width: .7rem; height: .7rem; border-radius: 2px; background: var(--nivell); flex: none; }
+.g-mes-enlla-avis.groc { --nivell: #eab308; }
+.g-mes-enlla-avis.taronja { --nivell: #fb923c; }
+.g-mes-enlla-avis.vermell { --nivell: #ef4444; }

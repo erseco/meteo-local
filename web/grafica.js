@@ -804,6 +804,14 @@ function dibuixaGrafica(fig) {
   if (hVent) ll.append(clau('m-vent', T('Vent')), clau('m-ratxa', T('Ratxes')));
   ll.append(clau('m-nit', T('Nit')));
   if (fig._botoImatge) ll.append(botoImatge(fig, 'g-imatge'));
+  // Els avisos de més enllà de la gràfica, a sobre (avisosMesEnlla).
+  fig.querySelector('.g-mes-enlla')?.remove();
+  const mesEnlla = files.length && new Date(files[n - 1].fins) > new Date() ? avisosMesEnlla(files[n - 1].fins) : [];
+  if (mesEnlla.length) {
+    const caixa = element('div', 'g-mes-enlla');
+    caixa.append(...mesEnlla);
+    g.before(caixa);
+  }
   fig.append(ll);
 }
 
@@ -1150,6 +1158,55 @@ addEventListener('hashchange', () => { if (location.hash === '#grafica') vistaGr
 
 // L'hora de les dades de la gràfica: la posen casa.js i consultes.js.
 let GENERAT_GRAFICA = null;
+// Les dades amb els avisos (smp de Meteocat i avisos de l'AEMET), per als de
+// més enllà de la gràfica: també les posen casa.js i consultes.js.
+let AVISOS_GRAFICA = null;
+
+// Els avisos oficials que comencen després de l'última hora de la gràfica (que
+// arriba a demà a les 21 h), un per dia, amb el color del nivell i el seu
+// origen, cap a la seva fitxa de «Perill» (Juanjo, 17-10-2026: el perill molt
+// alt de Meteocat de dilluns no sortia enlloc de la gràfica ni dels trams).
+function avisosMesEnlla(fiIso) {
+  const d = AVISOS_GRAFICA;
+  if (!d) return [];
+  const fi = new Date(fiIso);
+  const NIVELL_SMP = { mig: 'groc', alt: 'taronja', maxim: 'vermell' };
+  const nivellSmp = (p) => NIVELL_SMP[p <= 2 ? 'mig' : p <= 4 ? 'alt' : 'maxim'];
+  const fenomenSmp = (m) => ([['violent', 'temps_violent'], ['pluja', 'pluja'], ['neu', 'neu'], ['vent', 'vent'],
+    ['calor', 'calor'], ['fred', 'fred']].find(([k]) => (m || '').toLowerCase().includes(k)) || [null, m])[1];
+  const perDia = new Map();
+  const afegeix = (dia, e) => {
+    if (!perDia.has(dia)) perDia.set(dia, []);
+    perDia.get(dia).push(e);
+  };
+  for (const a of (d.smp && d.smp.avisos) || []) {
+    for (const [dia, franges] of Object.entries(a.dies || {})) {
+      if (franges.some(([h]) => new Date(`${dia}T${String(h).padStart(2, '0')}:00`) >= fi)) {
+        const fenomen = fenomenSmp(a.meteor);
+        afegeix(dia, { nivell: nivellSmp(a.perill), nom: TD(fenomen), font: 'meteocat', fenomen });
+      }
+    }
+  }
+  for (const a of d.avisos || []) {
+    if (a.cobert || new Date(a.inicio) < fi) continue;
+    const dia = a.inicio.slice(0, 10);
+    afegeix(dia, { nivell: a.nivel, nom: TD(a.tipo), font: 'aemet', fenomen: a.tipo });
+  }
+  const codi = IDIOMA.codi === 'es' ? 'es' : 'ca';
+  return [...perDia.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([dia, elements]) => {
+    const p = delNivellMesAlt(elements);
+    const nom = new Date(`${dia}T12:00`).toLocaleDateString(codi, { weekday: 'long', day: 'numeric' });
+    const text = `${nom.charAt(0).toUpperCase()}${nom.slice(1)}: ${textPerillCurt(p, true, true)}`;
+    const a = element('a', `g-mes-enlla-avis ${p.nivell}`);
+    // La fitxa, en tocar-lo: l'historial de «Perill» pot arribar després de dibuixar.
+    const fitxa = () => fitxaDeLinia(p.perFont[0][0] === 'meteocat' ? 'Meteocat' : `AEMET ${p.noms.join(' ')}`);
+    a.href = fitxa();
+    a.addEventListener('click', () => { a.href = fitxa(); });
+    a.title = textPerill(p);
+    a.append(element('span', 'g-mes-enlla-marca'), text);
+    return a;
+  });
+}
 
 function creditsGrafica() {
   const g = GENERAT_GRAFICA ? new Date(GENERAT_GRAFICA) : new Date();

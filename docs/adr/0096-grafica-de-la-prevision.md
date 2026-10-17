@@ -147,6 +147,13 @@ siempre en la hora en curso.
   con el límite de tres filas.
 - **La imagen para Telegram y los avisos** sale de esta misma gráfica (ADR
   0098).
+- **Los avisos de después de la gráfica** (3.114.0; Juanjo, 17-10-2026, ante
+  un perill molt alt de Meteocat para el lunes que no salía en la gráfica ni
+  en los tramos, que llegan a mañana a las 21 h): encima de la gráfica, una
+  línea por día con los avisos oficiales que empiezan después de su última
+  hora («Dilluns 19: Perill molt alt (Meteocat): pluja ›»), con el cuadrito
+  del nivel, cada fenómeno una vez en su nivel más alto, y que lleva a su
+  ficha de «Perill». También en «Consultes» y en la imagen de Telegram.
 - **«Opcions», que valen para toda la web** (3.108.0; Juanjo, 17-10-2026:
   «no me gusta esa doble flecha… o un botón de configuración… decide tú
   cómo hacerlo, que sea fácil de entender y útil», «lo que se decida en la
