@@ -540,12 +540,12 @@ addEventListener('resize', ajustaFranges);
 // Quins trams surten oberts (Juanjo, 09-10-2026: «no debería ser
 // persistente?»). Els trams canvien de nom al llarg del dia, així que no es
 // recorda cadascun sinó com ho vol veure cadascú: amb «Desplega-ho tot», tots
-// oberts, desat en aquest dispositiu; si no, els que tenen un avís o un
-// fenomen, perquè el perill no quedi plegat. El primer ja no: el resum del dia
-// ja diu el que ve, i els trams es veuen junts (Juanjo, 12-10-2026; ADR
-// 0074). El que s'obre o es tanca a
-// mà es manté mentre la pàgina és oberta, encara que es torni a pintar amb
-// dades noves, però no es desa.
+// oberts, desat en aquest dispositiu; si no, tots plegats, també els que tenen
+// un avís o un fenomen, que ja es veu a la capçalera (Juanjo, 17-10-2026: «no
+// hay que desplegar los tramos horarios con avisos… el usuario mira lo que le
+// interesa según la hora en que se encuentra»). El que s'obre o es tanca a mà
+// es manté mentre la pàgina és oberta, encara que es torni a pintar amb dades
+// noves, però no es desa.
 const CLAU_TOT_OBERT = 'meteo.previsio-tot-obert';
 function totObert() {
   try { return localStorage.getItem(CLAU_TOT_OBERT) === '1'; } catch (_) { return false; }
@@ -553,7 +553,7 @@ function totObert() {
 const obertsAMa = new Map();
 function obertDeSortida(t) {
   if (obertsAMa.has(t.clau)) return obertsAMa.get(t.clau);
-  return totObert() || t.avis || t.fenomens.length > 0;
+  return totObert();
 }
 
 // Una taula per tram, amb les mateixes columnes.

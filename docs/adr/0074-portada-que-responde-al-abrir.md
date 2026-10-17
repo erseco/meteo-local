@@ -215,3 +215,14 @@ resumen de hoy sale en la suya, como antes.
 Validación: Chromium y Firefox a 390 px, en catalán y castellano, con los
 datos del momento, con el radar simulado (lluvia a 23 minutos) y con la hora
 simulada a las 18:35 (tarjeta de mañana aparte); Juanjo lo vio en el móvil.
+
+## Cambio del 17-10-2026 (3.124.0): los tramos, plegados
+
+Juanjo: «en la pagina inicial no hay que desplegar los tramos horarios con
+avisos. por defecto todos plegados», porque «el usuario mira lo que le
+interesa según la hora en que se encuentra y mañana igual le interesa otra».
+Los tramos con aviso o fenómeno ya no se abren solos: el aviso se ve en la
+cabecera plegada, con la etiqueta de peligro de su color. Lo que se abre a
+mano se mantiene mientras la página está abierta (se repinta cada 6 o 15
+minutos) y no se guarda para otra visita; «Desplega-ho tot» sí se guarda,
+porque es una preferencia que no depende de la hora.

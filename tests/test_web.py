@@ -248,16 +248,16 @@ class Web(unittest.TestCase):
                          ["Temperatura: entre 16 °C i 24 °C", "fins a 26 °C a la part alta", ", semblant a la d'ahir."])
 
     def test_trams_oberts_de_sortida(self):
-        # Juanjo, 09-10-2026: «no debería ser persistente?»: els de perill; amb «Desplega-ho tot» desat, tots.
-        # Des de l'ADR 0074, el primer ja no: el resum del dia ja diu el que ve.
+        # Juanjo, 09-10-2026: «no debería ser persistente?»: amb «Desplega-ho tot» desat, tots. Des del
+        # 17-10-2026, la resta plegats, també els de perill (l'avís ja surt a la capçalera).
         trams = [{"clau": "a", "avis": False, "fenomens": []}, {"clau": "b", "avis": True, "fenomens": []},
                  {"clau": "c", "avis": False, "fenomens": [["calor", "i"]]}, {"clau": "d", "avis": False, "fenomens": []}]
         expr = f"{json.dumps(trams)}.map((t) => obertDeSortida(t))"
-        self.assertEqual(self.avalua("2026-10-09T18:00:00+02:00", expr), [False, True, True, False])
+        self.assertEqual(self.avalua("2026-10-09T18:00:00+02:00", expr), [False] * 4)
         self.assertEqual(self.avalua("2026-10-09T18:00:00+02:00", "localStorage.getItem = () => '1'; " + expr), [True] * 4)
         # El que s'ha obert o tancat a mà mana mentre la pàgina és oberta.
         self.assertEqual(self.avalua("2026-10-09T18:00:00+02:00", "obertsAMa.set('a', false); obertsAMa.set('d', true); " + expr),
-                         [False, True, True, True])
+                         [False, False, False, True])
 
     def test_cel_de_cada_tram(self):
         # El cel del tram, amb el seu nom i la seva icona: la mitjana dels núvols, i de nit, la lluna.
