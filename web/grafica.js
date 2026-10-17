@@ -163,6 +163,45 @@ function tramsAvis(hores) {
   return res;
 }
 
+// Cada gràfica, els seus identificadors (els retalls del text dels avisos).
+let COMPTADOR_GRAFIQUES = 0;
+
+// Les barres d'avisos de la gràfica: cada avís (font, nivell i fenomen) en
+// les hores seguides que dura, i els fenòmens d'un mateix avís que duren el
+// mateix, junts («Avís groc (AEMET): pluja, tempestes»). Cada fenomen, a cada
+// hora, només al seu nivell més alt, com a la franja de les taules (avisHora).
+function barresAvis(hores) {
+  const obertes = new Map();
+  const res = [];
+  hores.forEach((f, i) => {
+    const p = avisHora(f);
+    const ara = new Set();
+    for (const [font, noms, nivell] of (p ? p.perFont : [])) {
+      for (const nom of noms) {
+        const clau = `${font}|${nivell}|${nom}`;
+        ara.add(clau);
+        const b = obertes.get(clau);
+        if (b && b.fi === i) b.fi = i + 1;
+        else {
+          const nova = { font, nivell, nom, ini: i, fi: i + 1 };
+          obertes.set(clau, nova);
+          res.push(nova);
+        }
+      }
+    }
+  });
+  const juntes = [];
+  for (const b of res) {
+    const igual = juntes.find((j) => j.font === b.font && j.nivell === b.nivell && j.ini === b.ini && j.fi === b.fi);
+    if (igual) igual.noms.push(b.nom);
+    else juntes.push({ font: b.font, nivell: b.nivell, ini: b.ini, fi: b.fi, noms: [b.nom] });
+  }
+  const ordre = (nv) => ORDRE_NIVELL.indexOf(nv);
+  return juntes
+    .sort((a, b) => ordre(b.nivell) - ordre(a.nivell) || a.ini - b.ini)
+    .map((j) => ({ ini: j.ini, fi: j.fi, p: { nivell: j.nivell, perFont: [[j.font, j.noms.sort(), j.nivell]] } }));
+}
+
 // El perill dit com el diu cada font: Meteocat, en grau de perill (moderat,
 // alt, molt alt); l'AEMET i aquesta web, en colors (ADR 0093). El complet, amb
 // d'on surt cada cosa; el curt, per a la franja i l'etiqueta del tram.
@@ -332,9 +371,7 @@ function dibuixaGrafica(fig) {
   // cada hora»); si no, cada 2 o cada 3.
   const pas = col >= 30 ? 1 : col >= 18 ? 2 : 3;
   const hora = (f) => new Date(f.hora).getHours();
-  const trams = tramsAvis(files);
-  const ambAvis = trams.some(Boolean);
-  // A la pàgina des del principi: el text de la franja s'ha de poder mesurar.
+  // A la pàgina des del principi: el text dels avisos s'ha de poder mesurar.
   const g = svg('svg', { width: W, 'aria-hidden': 'true' });
   fig.querySelector('svg')?.remove();
   fig.prepend(g);
@@ -347,59 +384,38 @@ function dibuixaGrafica(fig) {
     prova.remove();
     return llarg;
   };
-  // El text de cada avís, sencer (el nivell i el què), dins de la franja si
-  // hi cap. Si no (un avís de poques hores), al costat, a la dreta o a
-  // l'esquerra, només si allà no hi ha cap franja ni cap altre text (Juanjo,
-  // 17-10-2026: el text a sota «no lo entiendo»). Si tampoc, en una fila a
-  // sota, amb un quadret del seu color, on comença l'avís i sense trepitjar
-  // l'anterior: si no hi cap, en una fila més (fins a tres), i només si
-  // tampoc, el nivell sol. Abans anava al costat sense mirar-ho i podia caure
-  // damunt del text d'una altra (Juanjo, 17-10-2026: «sin que se pierda
-  // información vital. si es necesario usa dos filas»). Sencer, sempre en
-  // tocar la franja.
-  const MARCA = 14;
-  const dins = trams.map((t) => t && mesura(textPerillCurt(t, true, true)) <= t.hores * col - 12);
-  // La fila de les franges: el que ja hi ha (les franges i els textos del costat).
-  const ocupada = trams.flatMap((t, i) => (t ? [[x(i), x(i) + t.hores * col]] : []));
-  const lliure = (a, b) => a >= 0 && b <= W && ocupada.every(([c, d]) => b + 4 <= c || a >= d + 4);
-  const costat = trams.map((t, i) => {
-    if (!t || dins[i]) return null;
-    const llarg = mesura(textPerillCurt(t, true, true));
-    const fi = x(i) + t.hores * col;
-    for (const [a, ancora] of [[fi + 4, 'start'], [x(i) - 4 - llarg, 'end']]) {
-      if (!lliure(a, a + llarg)) continue;
-      ocupada.push([a, a + llarg]);
-      return { x: ancora === 'start' ? a : a + llarg, ancora };
-    }
-    return null;
-  });
-  // A sota, cada avís de la franja per separat, amb el quadret del seu nivell
-  // («■ Perill alt (Meteocat): pluja», «■ Avís groc (AEMET): tempestes»): junts
-  // no hi cabrien al mòbil.
-  // Si no hi cap a cap fila, en fa una de nova: cap avís no es perd (amb
-  // quatre avisos seguits al mòbil, el vermell es quedava sense lloc).
-  const fila2 = [];
-  const ocupat = [];
-  trams.forEach((t, i) => {
-    if (!t || dins[i] || costat[i]) return;
-    const curts = partsPerill(t, false, true);
-    partsPerill(t, true, true).forEach((part, k) => {
-      // El text sencer; només si és més ample que la gràfica, el nivell sol.
-      const p = MARCA + mesura(part.text) <= W ? part : curts[k];
-      const llarg = MARCA + mesura(p.text);
-      let fila = ocupat.findIndex((o) => Math.min(Math.max(x(i), o + 10), W - llarg) >= o + 10 - 0.5);
-      if (fila < 0) fila = ocupat.push(-Infinity) - 1;
-      const lx = Math.max(0, Math.min(Math.max(x(i), ocupat[fila] + 10), W - llarg));
-      fila2.push({ t, nivell: p.nivell, text: p.text, x: lx, fila });
-      ocupat[fila] = lx + llarg;
-    });
-  });
+  // Els avisos: una barra per avís, de les hores que dura, amb el seu nivell,
+  // el seu origen i el seu text enganxat (Juanjo, 17-10-2026: «por qué aemet
+  // tormentas sale repetido?», amb el groc de tempestes partit entre la franja
+  // del taronja de Meteocat i la de l'endemà). Les que coincideixen, en files;
+  // cada barra va a la primera fila on hi cap amb el seu text. El text,
+  // sencer (nivell, origen i fenomen), comença dins de la barra i, el que no hi
+  // cap, continua fora amb el color del text de la pàgina (Juanjo, 17-10-2026:
+  // «y si metes dentro el texto? el que no quepa sigue por fuera con el cambio
+  // de color necesario para verse bien»); vora la dreta de la gràfica, acaba
+  // on acaba la barra i el que no hi cap queda a l'esquerra. Sencer, també
+  // en tocar-la.
+  const barres = barresAvis(files).map((b) => ({ ...b, x0: x(b.ini) + 1, x1: x(b.fi) - 1 }));
+  const files_ = [];
+  for (const b of barres) {
+    const text = textPerillCurt(b.p, true, true);
+    const llarg = mesura(text);
+    const tx = b.x0 + 5 + llarg <= W ? b.x0 + 5 : Math.max(0, Math.min(b.x1 - 5 - llarg, W - llarg));
+    const lloc = { text, tx, llarg, ocupa: [Math.min(b.x0, tx), Math.max(b.x1, tx + llarg)] };
+    const [a, z] = lloc.ocupa;
+    // Una barra pot anar just darrere de l'altra (el groc de demà després del
+    // taronja d'avui), però no damunt seu ni del seu text.
+    let fila = files_.findIndex((o) => o.every(([c, d]) => z + 2 <= c || a >= d + 2));
+    if (fila < 0) fila = files_.push([]) - 1;
+    files_[fila].push(lloc.ocupa);
+    Object.assign(b, lloc, { fila });
+  }
+  const ambAvis = barres.length > 0;
   // Les files de la gràfica, de dalt a baix.
   const yAvis = 0;
-  const hAvis = ambAvis ? 22 : 0;
-  const yFila2 = hAvis + 4;
-  const hFila2 = fila2.length ? 16 * (1 + Math.max(...fila2.map((e) => e.fila))) : 0;
-  const yDia = hAvis + hFila2 + (ambAvis ? 6 : 0);
+  const hBarra = 20;
+  const hAvis = ambAvis ? files_.length * (hBarra + 3) - 3 : 0;
+  const yDia = hAvis + (ambAvis ? 6 : 0);
   const yCel = yDia + 16;
   const hCel = 28;
   // La temperatura i la pluja comparteixen la zona: les barres darrere de la
@@ -452,32 +468,31 @@ function dibuixaGrafica(fig) {
     g.append(svg('text', { class: 'g-dia', x: x(i) + 4, y: yDia + 11 }, nomDia(files[i])));
   }
 
-  // La franja de perill, del color del nivell, amb el text si hi cap.
-  const avisSencer = (grup, t) => {
-    const complet = textPerill(t);
+  // Les barres dels avisos. El text que surt de la barra es dibuixa dues
+  // vegades, retallat: dins, fosc sobre el color; fora, del color del text.
+  const id = `g-${++COMPTADOR_GRAFIQUES}`;
+  const defsAvis = svg('defs');
+  g.append(defsAvis);
+  barres.forEach((b, k) => {
+    const grup = svg('g', { class: `g-avis ${b.p.nivell}` });
+    const y = yAvis + b.fila * (hBarra + 3);
+    grup.append(svg('rect', { x: b.x0, y, width: b.x1 - b.x0, height: hBarra, rx: 4 }));
+    if (b.tx >= b.x0 + 4 && b.tx + b.llarg <= b.x1 - 4) grup.append(svg('text', { x: b.tx, y: y + 14 }, b.text));
+    else {
+      const dins = svg('clipPath', { id: `${id}-d${k}` });
+      dins.append(svg('rect', { x: b.x0, y, width: b.x1 - b.x0, height: hBarra }));
+      const fora = svg('clipPath', { id: `${id}-f${k}` });
+      fora.append(svg('rect', { x: 0, y, width: Math.max(0, b.x0), height: hBarra }),
+        svg('rect', { x: b.x1, y, width: Math.max(0, W - b.x1), height: hBarra }));
+      defsAvis.append(dins, fora);
+      grup.append(svg('text', { x: b.tx, y: y + 14, 'clip-path': `url(#${id}-d${k})` }, b.text),
+        svg('text', { class: 'fora', x: b.tx, y: y + 14, 'clip-path': `url(#${id}-f${k})` }, b.text));
+    }
+    const complet = textPerill(b.p);
     grup.append(svg('title', {}, complet));
     grup.addEventListener('click', () => avisBreu(`${complet}.`));
-  };
-  trams.forEach((t, i) => {
-    if (!t) return;
-    const grup = svg('g', { class: `g-avis ${t.nivell}` });
-    const amplada = t.hores * col;
-    grup.append(svg('rect', { x: x(i) + 1, y: yAvis, width: amplada - 2, height: hAvis, rx: 4 }));
-    if (dins[i]) grup.append(svg('text', { x: x(i) + 6, y: yAvis + 15 }, textPerillCurt(t, true, true)));
-    else if (costat[i]) {
-      grup.append(svg('text', { class: 'fora', x: costat[i].x, y: yAvis + 15, 'text-anchor': costat[i].ancora }, textPerillCurt(t, true, true)));
-    }
-    avisSencer(grup, t);
     g.append(grup);
   });
-  for (const e of fila2) {
-    const grup = svg('g', { class: `g-avis ${e.nivell}` });
-    const y = yFila2 + 16 * e.fila;
-    grup.append(svg('rect', { class: 'g-avis-marca', x: e.x, y: y + 2, width: 10, height: 10, rx: 2 }),
-      svg('text', { class: 'fora', x: e.x + MARCA, y: y + 11 }, e.text));
-    avisSencer(grup, e.t);
-    g.append(grup);
-  }
 
   // El cel, un per bloc de 3 h (o de 2, si hi ha lloc), al centre del bloc.
   for (let i = 0; i < n;) {

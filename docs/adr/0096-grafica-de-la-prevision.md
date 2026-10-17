@@ -147,6 +147,20 @@ siempre en la hora en curso.
   con el límite de tres filas.
 - **La imagen para Telegram y los avisos** sale de esta misma gráfica (ADR
   0098).
+- **Una barra por aviso** (3.105.0; Juanjo, 17-10-2026: «por qué aemet
+  tormentas sale repetido?»): la franja juntaba los avisos de cada hora, y
+  un mismo aviso de AEMET quedaba partido entre la franja naranja de
+  Meteocat y la del día siguiente, con su texto debajo de la que no era.
+  Ahora cada aviso (fuente, nivel y fenómeno; los fenómenos que duran lo
+  mismo, juntos) es una barra con su duración real, en filas cuando
+  coinciden, de más grave a menos (`barresAvis`). Cada fenómeno, a cada
+  hora, solo en su nivel más alto, como en las tablas. El texto, entero,
+  empieza dentro de la barra y lo que no cabe sigue fuera con el color del
+  texto de la página («el que no quepa sigue por fuera con el cambio de
+  color necesario para verse bien»): se dibuja dos veces con recortes, así
+  que nunca se acorta. Si no cabe a la derecha, se desplaza a la izquierda;
+  si choca con otra barra o su texto, va a la fila siguiente. Sustituye las
+  filas de debajo con cuadrito.
 - **El techo de la lluvia, por escalones** (3.101.1; Juanjo, 17-10-2026: «las
   columnas me parecen cortas» y «no sería mejor una escala variable?»): en
   lugar de 40 mm siempre, el primer escalón de 10, 20, 40, 80 o 160 mm que

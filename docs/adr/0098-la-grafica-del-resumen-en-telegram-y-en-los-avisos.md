@@ -52,6 +52,9 @@ texto. En IONOS no hay navegador; en el NAS, tampoco había.
   copiar, la imagen en una ventana para copiarla a mano. Comprobado: en
   Chromium el portapapeles contiene el PNG; Firefox, por Juanjo en su
   equipo («va perfectamente»); WebKit confirma la copia.
+- **Con el viento** (3.105.0; Juanjo, 17-10-2026: «aporta información útil
+  con poco cambio del gráfico»): las imágenes llevan la capa del viento,
+  media y rachas, como la vista en grande con «Vent».
 - **Solo la parte de la que habla el resumen** (`graficaDia`, la misma que
   «Consultes»): la de hoy, de ahora a medianoche (resúmenes de la mañana y
   /resum); la de mañana, de las 18 h de hoy (la noche, como `bot.resum`) al
