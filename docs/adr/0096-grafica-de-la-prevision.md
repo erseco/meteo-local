@@ -147,6 +147,14 @@ siempre en la hora en curso.
   con el límite de tres filas.
 - **La imagen para Telegram y los avisos** sale de esta misma gráfica (ADR
   0098).
+- **El viento, por defecto en todas las gráficas** (3.106.0; Juanjo,
+  17-10-2026: «el viento aparecerá marcado por defecto, aunque el usuario lo
+  podrá quitar si quiere» y «también en la página inicial saldrá»): en la
+  portada, en la vista en grande y en «Consultes». «Vent» de la vista en
+  grande lo quita, y la elección se recuerda en el dispositivo para todas;
+  al cerrar la vista se redibujan las demás. Clave nueva
+  (`meteo.grafica.2`): la anterior guardaba «vent: false» sin que nadie lo
+  eligiera, solo por cambiar las horas.
 - **Una barra por aviso** (3.105.0; Juanjo, 17-10-2026: «por qué aemet
   tormentas sale repetido?»): la franja juntaba los avisos de cada hora, y
   un mismo aviso de AEMET quedaba partido entre la franja naranja de

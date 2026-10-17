@@ -429,7 +429,10 @@ function dibuixaGrafica(fig) {
   const yPluja = yTemp;
   const hPluja = hTemp;
   // El vent, a sota de la pluja, amb el mateix eix d'hores.
-  const hVent = opcions.vent ? (opcions.gran ? 70 : 50) : 0;
+  // A la vista en gran, el que s'hi tria; a la resta, el que s'hi va triar
+  // (per defecte, amb vent). Sense dades de vent, res.
+  const ambVent = (opcions.gran ? opcions.vent : opcions.vent ?? ambVentTriat()) && files.some((f) => f.vent != null);
+  const hVent = ambVent ? (opcions.gran ? 70 : 50) : 0;
   const yVent = yPluja + hPluja + (hVent ? 12 : 0);
   const baix = hVent ? yVent + hVent : yPluja + hPluja;
   const yEix = baix + 16;
@@ -722,7 +725,14 @@ function dibuixaGrafica(fig) {
 // con posibilidad de alguna configuració»): a sobre de la pàgina, amb marge,
 // i amb la seva adreça (#grafica) per compartir-la. Es tria quines hores (avui,
 // demà o totes) i si s'hi veu el vent; es recorda en aquest dispositiu. ---
-const CLAU_GRAFICA = 'meteo.grafica';
+// El vent surt per defecte a totes les gràfiques de la web (la portada, la
+// vista en gran i «Consultes») i es treu amb «Vent» de la vista en gran; es
+// recorda per a totes (Juanjo, 17-10-2026: «el viento aparecerá marcado por
+// defecto, aunque el usuario lo podrá quitar» i «también en la página
+// inicial»). Clau nova: l'anterior desava «vent: false» sense que ningú
+// l'hagués triat, només per haver canviat les hores.
+const CLAU_GRAFICA = 'meteo.grafica.2';
+const ambVentTriat = () => llegeixOpcionsGrafica().vent !== false;
 
 function horesVista(tram) {
   const ara = new Date();
@@ -740,7 +750,7 @@ function llegeixOpcionsGrafica() {
 
 function vistaGrafica() {
   if (!HORES_GRAFICA || document.querySelector('dialog.vista-grafica')) return;
-  const opcions = { tram: 'tot', vent: false, ...llegeixOpcionsGrafica() };
+  const opcions = { tram: 'tot', vent: true, ...llegeixOpcionsGrafica() };
   const dlg = element('dialog', 'vista-grafica');
   dlg.setAttribute('aria-labelledby', 'vg-titol');
   const cap = element('div', 'vg-cap');
@@ -808,6 +818,8 @@ function vistaGrafica() {
   });
   dlg.addEventListener('close', () => {
     dlg.remove();
+    // Les altres gràfiques de la pàgina, amb el vent que s'hi hagi triat.
+    dibuixaGrafiques();
     if (location.hash === '#grafica') history.replaceState(null, '', location.pathname + location.search);
   });
   document.body.append(dlg);
