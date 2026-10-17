@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.110.0"
+VERSION = "3.111.0"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -170,6 +170,10 @@ AVIS_PLUJA_VERIFICA_MIN = 45
 # del círculo del radar): lo que ya moja, y desde qué probabilidad se avisa
 # de lluvia posible.
 UMBRAL_MM = 0.2
+# La boira de l'hora en curs (ADR 0100): l'observa l'aeroport de Sabadell
+# (METAR) i l'estació de casa és saturada. Sola, la humitat no n'hi ha prou:
+# del 13 al 17-10-2026, 26 hores amb el 98 % o més i boira només en 4.
+HUMITAT_BOIRA = 97
 PROB_ATENCION = 0.2
 # Llueve ahora si una de las dos estaciones ha recogido lluvia en estos
 # minutos. Ni la intensidad que dan (tarda en volver a cero) ni la media hora:

@@ -729,6 +729,15 @@ def recoger(anterior=None):
         antes = previsio_anterior(anterior, avisos, casa, veines, nuvols_ara)
         if antes:
             salida.update(antes)
+    # La niebla de la hora en curso (ADR 0100): la que observa el aeropuerto
+    # de Sabadell, si además la estación de casa está saturada. AROME, de
+    # donde sale el tipo de tiempo de cada hora, no da niebla (17-10-2026).
+    try:
+        humitat = (salida.get("ara_casa") or {}).get("humitat")
+        if salida["hores"] and NV.boira_ara(metars, P.AHORA) and humitat is not None and humitat >= C.HUMITAT_BOIRA:
+            salida["hores"][0].update(codi=45, boira_observada=True)
+    except Exception as ex:
+        salida["errors"].append(f"boira: {ex}")
     # Para «Si surts» (ADR 0029): el índice UV de cada hora y si circulan los
     # trenes de cerca.
     try:

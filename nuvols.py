@@ -128,6 +128,23 @@ def ara(obs, ahora):
     return o["nuvols"]
 
 
+# La boira al METAR: FG (visibilitat de menys d'1 km) i les seves variants
+# (bancs, parcial, baixa, gelant). La boirina (BR) no és boira.
+BOIRA_METAR = ("FG", "BCFG", "PRFG", "MIFG", "FZFG")
+
+
+def te_boira(brut):
+    return any(tros in BOIRA_METAR for tros in (brut or "").split())
+
+
+def boira_ara(obs, ahora):
+    """Si l'última observació de Sabadell, recent, diu boira (ADR 0100)."""
+    if not obs:
+        return False
+    o = obs[-1]
+    return ahora - o["t"] <= dt.timedelta(minutes=ARA_MAX_MIN) and te_boira(o["brut"])
+
+
 def apunta(obs, ahora):
     """Las horas ya cerradas, en nuvols-sabadell.csv."""
     from registre import _desa_per_hores

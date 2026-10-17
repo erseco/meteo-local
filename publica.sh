@@ -60,6 +60,10 @@ if [ -n "$ESTAT_DIR" ]; then
     || echo "$(date '+%F %T')  han fallat les imatges de la gràfica: $(tr '\n' ' ' < "$dades/grafiques.err" | cut -c1-300)" >&2
   grafiques=$(cd "$dades/grafiques" 2>/dev/null && ls grafica-*.png 2>/dev/null | tr '\n' ' ' || true)
 fi
+# Lo que dice ICON de la niebla, para comprobar en un mes si acierta antes de
+# usarlo (boira.py, ADR 0100); una vez por hora como mucho.
+[ -z "$ESTAT_DIR" ] || python3 boira.py apunta >/dev/null 2>&1 \
+  || echo "$(date '+%F %T')  ha fallat la vigilància de la boira" >&2
 # El historial de la gráfica y el acierto de la previsión (ADR 0099): el
 # índice y los dos últimos días (hoy cambia a cada hora; ayer se cierra a
 # medianoche). Los anteriores ya están en IONOS. Solo en el NAS, con el registro.
