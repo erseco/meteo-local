@@ -61,10 +61,12 @@ class Smp(unittest.TestCase):
     def test_nomes_els_vigents_de_la_comarca(self):
         a = smp.de_la_comarca(EPISODIS, 40)
         # El preavís i l'avís d'una altra comarca no hi són; les franges seguides, juntes.
-        self.assertEqual(len(a), 1)
+        # Cada nivell amb les seves hores: el grau 3 de dissabte no s'estén als
+        # graus 1 i 2 (17-10-2026: deia «perill molt alt» per a un dilluns en groc).
+        self.assertEqual(len(a), 2)
         self.assertEqual(a[0]["meteor"], "Intensitat de pluja")
-        self.assertEqual(a[0]["perill"], 3)
-        self.assertEqual(a[0]["dies"], {"2026-10-10": [(12, 24)], "2026-10-11": [(0, 6)]})
+        self.assertEqual((a[0]["perill"], a[0]["dies"]), (3, {"2026-10-10": [(12, 18)]}))
+        self.assertEqual((a[1]["perill"], a[1]["dies"]), (2, {"2026-10-10": [(18, 24)], "2026-10-11": [(0, 6)]}))
         self.assertEqual(smp.de_la_comarca(EPISODIS, 99), [])
 
     def test_grau_com_el_mapa_de_meteocat(self):
@@ -76,10 +78,18 @@ class Smp(unittest.TestCase):
         self.assertEqual(l["nivell"], "alt")
         hora = smp.hora_local("2026-10-10T08:09Z")
         self.assertEqual(l["ca"], "Meteocat: avís de perill alt per «Intensitat de pluja» al Vallès Occidental, "
-                                  "dissabte 10 de 12 a 24 h i diumenge 11 de 0 a 6 h "
-                                  f"(Intensitat > 20 mm / 30 minuts; emès a les {hora}).")
+                                  f"dissabte 10 de 12 a 18 h (Intensitat > 20 mm / 30 minuts; emès a les {hora}).")
         self.assertTrue(l["es"].startswith("Meteocat: aviso de peligro alto por «Intensitat de pluja» en el Vallès "
-                                           "Occidental, sábado 10 de 12 a 24 h y domingo 11 de 0 a 6 h"))
+                                           "Occidental, sábado 10 de 12 a 18 h"))
+        self.assertTrue(r["linies"][1]["ca"].startswith("Meteocat: avís de perill moderat per «Intensitat de pluja» al "
+                                                        "Vallès Occidental, dissabte 10 de 18 a 24 h i diumenge 11 de 0 a 6 h"))
+        # El resum per fenomen, igual: cada nivell amb les seves hores, sense repetir-ne.
+        self.assertEqual([(f["nivell"], f["dies"]) for f in smp.per_fenomen(r["avisos"])],
+                         [("alt", {"2026-10-10": [[12, 18]]}),
+                          ("mig", {"2026-10-10": [[18, 24]], "2026-10-11": [[0, 6]]})])
+        # Les hores passades no surten al resum: a les 19 h, de 12 a 18 h ja no.
+        self.assertEqual([(f["nivell"], f["dies"]) for f in r["fenomens"]],
+                         [("mig", {"2026-10-10": [[19, 24]], "2026-10-11": [[0, 6]]})])
         cap = smp.llegeix(lambda url: pagina([]), AHORA)["linies"]
         self.assertEqual(cap, [{"nivell": "nul",
                                 "ca": "Meteocat no té cap avís de perill per al Vallès Occidental (dades de les 19:00).",
@@ -113,7 +123,7 @@ class Smp(unittest.TestCase):
         # El 16-10-2026 la pàgina portava els episodis en dos blocs repetits
         # ([[…], […]]) i la lectura fallava: ara s'aplana i cada un va una vegada.
         self.assertEqual(smp.episodis(pagina([EPISODIS, EPISODIS])), EPISODIS)
-        self.assertEqual(len(smp.de_la_comarca(smp.episodis(pagina([EPISODIS, EPISODIS])), 40)), 1)
+        self.assertEqual(len(smp.de_la_comarca(smp.episodis(pagina([EPISODIS, EPISODIS])), 40)), 2)
         with self.assertRaises(ValueError):
             smp.episodis(pagina([["no és un episodi"]]))
 

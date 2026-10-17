@@ -92,29 +92,39 @@ def de_la_comarca(llista, comarca=None):
             if (av.get("estat") or "").lower() != "vigent" or tipus_mc.lower().startswith("preav"):
                 continue
             tipus = TIPUS.get(tipus_mc.lower(), "previsio")
-            dies, perill, llindar = {}, 0, None
+            # Un aviso de previsión lleva su grado y su umbral en cada franja:
+            # se parte en uno por nivel de la página y umbral, cada uno con
+            # sus horas. Hasta la 3.129.0 se tomaba el grado más alto para
+            # todas: el 17-10-2026 la web decía «perill molt alt» para el
+            # lunes 19, que Meteocat daba en amarillo (grado 1; el 5 era del
+            # sábado). Juanjo: «cual es lo correcto?».
+            trossos = {}
             if tipus == "previsio":
                 for ev in av.get("evolucions") or []:
                     for per in ev.get("periodes") or []:
                         for af in per.get("afectacions") or []:
-                            if int(af.get("idComarca") or 0) != comarca:
+                            if int(af.get("idComarca") or 0) != comarca or not int(af.get("perill") or 0):
                                 continue
+                            perill = int(af["perill"])
+                            llindar = af.get("llindar") or ev.get("llindar1")
+                            t = trossos.setdefault((nivell(perill), llindar), {"perill": 0, "dies": {}})
+                            t["perill"] = max(t["perill"], perill)
                             dia = (af.get("dia") or ev.get("dia") or "")[:10]
-                            dies.setdefault(dia, set()).add(franja(per["nom"]))
-                            perill = max(perill, int(af.get("perill") or 0))
-                            llindar = llindar or af.get("llindar") or ev.get("llindar1")
-                dies = {d: junta(sorted(f)) for d, f in sorted(dies.items())}
+                            t["dies"].setdefault(dia, set()).add(franja(per["nom"]))
+                for t in trossos.values():
+                    t["dies"] = {d: junta(sorted(f)) for d, f in sorted(t["dies"].items())}
             else:
                 afs = [af for af in av.get("afectacions") or [] if int(af.get("idComarca") or 0) == comarca]
                 if afs and av.get("dataInici") and av.get("dataFi"):
                     perill = max(int(af.get("perill") or 0) for af in afs)
                     llindar = next((af.get("llindar") for af in afs if af.get("llindar")), None)
-                    dies = hores(av["dataInici"], av["dataFi"])
-            clau = (meteor, tipus, av.get("dataEmisio"))
-            if dies and perill and clau not in vistos:
-                vistos.add(clau)
-                res.append({"meteor": meteor or "Temps violent", "tipus": tipus, "llindar": llindar,
-                            "perill": perill, "emissio": av.get("dataEmisio"), "dies": dies})
+                    trossos[(nivell(perill), llindar)] = {"perill": perill, "dies": hores(av["dataInici"], av["dataFi"])}
+            for (n, llindar), t in sorted(trossos.items(), key=lambda x: -x[1]["perill"]):
+                clau = (meteor, tipus, av.get("dataEmisio"), n, llindar)
+                if t["dies"] and t["perill"] and clau not in vistos:
+                    vistos.add(clau)
+                    res.append({"meteor": meteor or "Temps violent", "tipus": tipus, "llindar": llindar,
+                                "perill": t["perill"], "emissio": av.get("dataEmisio"), "dies": t["dies"]})
     return res
 
 
@@ -282,24 +292,40 @@ def per_hora(ini, fin, smp):
     return [{"nivell": n, "tipus": sorted(t), "font": "meteocat"} for n, t in res.items()]
 
 
-def per_fenomen(avisos):
-    """Un element per fenomen, el resum que surt a la previsió del dia (ADR
-    0093): {fenomen, nivell (el més alt), dies (totes les franges), ca, es}."""
-    grups = {}
+def per_fenomen(avisos, ahora=None):
+    """Un element per fenomen i nivell, el resum que surt a la previsió del dia
+    (ADR 0093): {fenomen, nivell, dies (les hores d'aquest nivell), ca, es}.
+    Cada hora, al nivell més alt que hi té el fenomen: des de la 3.129.0, no el
+    més alt de tot l'avís per a tots els dies (deia «perill molt alt» per a
+    un dilluns en groc), i sense franges repetides («de 0 a 24 h i de 12 a
+    24 h»). Amb ahora, sense les hores ja passades: és el resum del que ve."""
+    rang = {"mig": 1, "alt": 2, "maxim": 3}
+    passat = ahora and f"{ahora.astimezone().date().isoformat()}:{ahora.astimezone().hour:02d}"
+    hores_f = {}
     for a in avisos:
-        g = grups.setdefault(fenomen(a["meteor"]), {"perill": 0, "dies": {}})
-        g["perill"] = max(g["perill"], a["perill"])
-        for d, franges in a["dies"].items():
-            g["dies"].setdefault(d, set()).update(tuple(f) for f in franges)
+        n = nivell(a["perill"])
+        h = hores_f.setdefault(fenomen(a["meteor"]), {})
+        for hora in hores_avis(a):
+            d, hh = hora.split(":")
+            if passat and f"{d}:{int(hh):02d}" < passat:
+                continue
+            if rang[n] > rang.get(h.get(hora), 0):
+                h[hora] = n
     nom = C.SMP_COMARCA_NOM
     res = []
-    for f, g in sorted(grups.items(), key=lambda x: -x[1]["perill"]):
-        n = nivell(g["perill"])
+    for f, h in hores_f.items():
         nca, nes = NOM_FENOMEN["ca"].get(f, f), NOM_FENOMEN["es"].get(f, f)
-        res.append({"fenomen": f, "nivell": n,
-                    "dies": {d: [list(x) for x in junta(sorted(fr))] for d, fr in sorted(g["dies"].items())},
-                    "ca": f"Meteocat: avís de perill {GRAU['ca'][n]} per {nca} al {nom}",
-                    "es": f"Meteocat: aviso de peligro {GRAU['es'][n]} por {nes} en el {nom}"})
+        for n in sorted(set(h.values()), key=lambda n: -rang[n]):
+            dies = {}
+            for hora, nh in h.items():
+                if nh == n:
+                    d, hh = hora.split(":")
+                    dies.setdefault(d, []).append((int(hh), int(hh) + 1))
+            res.append({"fenomen": f, "nivell": n,
+                        "dies": {d: [list(x) for x in junta(sorted(fr))] for d, fr in sorted(dies.items())},
+                        "ca": f"Meteocat: avís de perill {GRAU['ca'][n]} per {nca} al {nom}",
+                        "es": f"Meteocat: aviso de peligro {GRAU['es'][n]} por {nes} en el {nom}"})
+    res.sort(key=lambda x: -rang[x["nivell"]])
     return res
 
 
@@ -309,7 +335,7 @@ def llegeix(get, ahora):
     avisos = de_la_comarca(episodis(get(URL)))
     hora = ahora.strftime("%H:%M")
     return {"hora": ahora.isoformat(timespec="minutes"), "avisos": avisos, "linies": textos(avisos, hora),
-            "fenomens": per_fenomen(avisos)}
+            "fenomens": per_fenomen(avisos, ahora)}
 
 
 def comprova(get, marca, avisa=True):

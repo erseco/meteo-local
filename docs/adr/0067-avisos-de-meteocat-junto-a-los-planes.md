@@ -107,3 +107,23 @@ tiene sus propios avisos (`decideix_smp`). Se quitan `liniesSmp` (web) y
 `text_smp` (avisos_bot.py). Validación: Chromium y Firefox con los avisos
 del momento (INUNCAT en alerta y tres de Meteocat), «El temps» y «Si surts»,
 en catalán y castellano; `tests/test_smp.py`.
+
+## Cambio del 17-10-2026 (3.129.0): el grado de cada franja
+
+Un aviso de Meteocat lleva el grado y el umbral en cada franja de seis horas,
+y hasta la 3.128.0 se tomaba el grado más alto del aviso para todas sus
+horas. El aviso de lluvia en 30 minutos de las 18:05 tenía grado 5 el sábado
+17 de 18 a 24 h y grado 1 el lunes 19, y la web decía «Dilluns 19: Perill molt
+alt»; el enlace a meteo.cat lo enseñaba en amarillo (Juanjo: «cual es lo
+correcto?»). Lo correcto era Meteocat.
+
+Ahora `smp.de_la_comarca` parte cada aviso en uno por nivel de la página
+(moderado, alto, muy alto) y umbral, cada uno con sus horas, y el resumen
+por fenómeno (`smp.per_fenomen`) da una línea por fenómeno y nivel, con cada
+hora en el nivel más alto que tiene, sin franjas repetidas (decía «dilluns de
+0 a 24 h i de 12 a 24 h») y sin las horas ya pasadas. Afecta a todo lo que
+lee los avisos: la portada, la gráfica, los tramos, «Perill», el bot y el
+grado que guarda el aprendizaje de la probabilidad de lluvia (ADR 0097), que
+hasta ahora apuntaba el grado más alto del aviso también en sus horas de
+grado menor. Los avisos por Telegram y en el navegador comparan por
+fenómeno (nivel más alto y horas), así que el cambio no dispara ninguno.
