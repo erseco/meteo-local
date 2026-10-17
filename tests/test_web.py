@@ -612,6 +612,16 @@ class Web(unittest.TestCase):
         self.assertEqual(self.avalua(ara, 'textRadar({"arriba": "2026-10-08T19:00"}, true)'),
                          ["arriba", "Pluja a sobre", False])
 
+    def test_llegenda_del_mapa_nomes_el_que_es_dibuixa(self):
+        # 17-10-2026: deia «moderada» i «forta» per pluja de la vora del tros,
+        # fora del quadrat de 30 km que es dibuixa.
+        n = 5
+        classes = ["0"] * n * n
+        classes[0] = "3"          # a la cantonada: (2 px) × 20 km > 30 km
+        classes[2 * n + 3] = "1"  # al costat de casa
+        m = {"n": n, "fila": 2, "col": 2, "km_px": 20, "classes": "".join(classes)}
+        self.assertEqual(self.avalua("2026-10-17T17:00:00+02:00", f"[...classesDibuixades({json.dumps(m)}, 30)]"), ["1"])
+
     def test_propera_lectura(self):
         horari = {"trams": [["00:00", "23:50"]], "cada_min": 10, "desfase_min": 1}
         expr = f"properaActualitzacio({json.dumps(horari)}).toISOString()"

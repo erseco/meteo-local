@@ -657,6 +657,19 @@ function fletxesMoviment(r, R, nou) {
   return res;
 }
 
+// Les intensitats que surten al dibuix, per a la llegenda: el tros de les
+// dades és una mica més gran que el mapa, i el que en queda fora no compta.
+function classesDibuixades(m, R) {
+  const res = new Set();
+  for (let i = 0; i < m.n; i++) {
+    for (let j = 0; j < m.n; j++) {
+      const c = m.classes[i * m.n + j];
+      if (c !== '0' && Math.abs((j - m.col) * m.km_px) <= R && Math.abs((i - m.fila) * m.km_px) <= R) res.add(c);
+    }
+  }
+  return res;
+}
+
 function miniaturaMapa(r, font) {
   const b = element('button', 'mapa-radar-mini');
   b.type = 'button';
@@ -675,7 +688,7 @@ function obreMapa(r, font) {
   const mov = r.cap_a && r.velocitat_kmh >= 1 ? T` Va cap ${TD(r.cap_a)} a ${r.velocitat_kmh}\u00a0km/h.` : '';
   svg.setAttribute('aria-label', T`${titol}: la pluja al voltant de ${LLOC}, amb cercles cada 10 km.` + mov);
   const llegenda = element('p', 'mapa-llegenda');
-  const presents = new Set(r.mapa.classes);
+  const presents = classesDibuixades(r.mapa, CERCLES_KM[CERCLES_KM.length - 1]);
   NOM_INTENSITAT().forEach((nom, c) => {
     if (!nom || !presents.has(String(c))) return;
     const s = element('span', 'mapa-clau');

@@ -284,3 +284,8 @@ miniatura, oculta a los lectores de pantalla dentro de su botón, que ya dice
 qué es; la etiqueta «Comença…», con el azul oscuro del texto de lluvia, que
 tenía un contraste de 4,2); prueba del registro con un chubasco que se
 desplaza una distancia conocida.
+
+En la 3.127.1, la leyenda del mapa ampliado solo nombra las intensidades que
+se dibujan: el trozo de los datos (67 píxeles, unos 61 km) es algo mayor que
+el cuadro de 60 km, y la lluvia de su borde ponía «moderada» y «forta» en
+un mapa sin ninguna (visto en producción el 17-10-2026, con la 3.127.0).
