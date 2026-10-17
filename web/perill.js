@@ -92,8 +92,10 @@ function fitxa(e, ara) {
   cap.append(titol, botoCompartir(art.id, primera.map((t) => t.t).join('').trim(), compartit));
   const estat = element('p', 'episodi-quan');
   if (fi && e.substituit_per) {
-    // No ha acabat: ara se'n mostra un altre, el de Meteocat (ADR 0093).
-    const a = element('a', null, T('l’avís de Meteocat'));
+    // No ha acabat: ara se'n mostra un altre, el de Meteocat (ADR 0093) o un
+    // altre de l'AEMET que l'inclou (17-10-2026).
+    const a = element('a', null, e.substituit_per.clau.startsWith('aemet:') ? T('un altre avís de l’AEMET')
+      : T('l’avís de Meteocat'));
     a.href = `#${idFitxa(e.substituit_per)}`;
     estat.append(element('span', 'episodi-substituit', T('Substituït per ')), a, ' · ');
   } else if (fi && e.fora_zona) {

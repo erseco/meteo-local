@@ -178,3 +178,21 @@ propios (lo dice el círculo), y la lluvia inminente lleva 🌧️. Lo mismo en 
 resumen del día, «Avisos actius» y la franja de la gráfica
 («Meteocat: perill alt per pluja; AEMET: avís groc per tempestes»). Las
 fichas ya guardadas en «Perill» conservan su título.
+
+## Corrección del 17-10-2026 (3.122.0): las fichas de AEMET siguen a AEMET
+
+«Perill» enseñaba como activos dos avisos de AEMET de mañana de 0 a 4 h
+(lluvia y tormentas) que AEMET ya había juntado en los de hoy, alargados
+hasta las 4 h; en la portada no salían. Causa: `avisos_bot.py` solo cerraba
+una ficha de AEMET al llegar su hora final o al cubrirla Meteocat; un aviso
+que AEMET deja de publicar antes de acabar seguía abierto, y un aviso que
+AEMET alarga mantenía en su ficha la hora final de antes.
+
+Ahora cada pasada que lee AEMET guarda los avisos vigentes con su final
+(`aemet_vigents`) y `tanca_aemet` pone al día las fichas: alarga `fins` si
+AEMET lo alarga y, si un aviso desaparece antes de acabar, cierra su ficha
+diciendo que está dentro de otro aviso de AEMET (con el enlace a su ficha,
+«Substituït per un altre avís de l'AEMET»), que lo cubre Meteocat, o que AEMET
+lo ha retirado. Si AEMET no se ha podido leer, no se toca nada. Validación:
+`tests/test_smp.py` y una pasada en seco con los datos del momento, que
+cierra las dos fichas y alarga la de tormentas de hoy hasta las 03:59.

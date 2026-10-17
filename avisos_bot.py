@@ -699,6 +699,12 @@ def decideix(estat, salida, ahora):
         nou_of["aemet"] = {k: (anterior_aemet.get(k) if a.get("cobert") else a["nivel"]) for k, a in aemet.items()}
         nou_of["aemet"] = {k: v for k, v in nou_of["aemet"].items() if v}
         estat["aemet_coberts"] = [f"aemet:{k}" for k, a in aemet.items() if a.get("cobert")]
+        # Els vigents ara, amb el final, per tancar les fitxes dels que l'AEMET
+        # ja no publica i allargar les dels que allarga (historial).
+        estat["aemet_vigents"] = {f"aemet:{k}": {"fin": a["fin"], "cobert": bool(a.get("cobert"))}
+                                  for k, a in aemet.items()}
+    else:
+        estat["aemet_vigents"] = None
     # Los avisos de peligro de Meteocat para la comarca (ADR 0092). La primera
     # vez, solo se apuntan; un estado de antes de la 3.87.0 ({clave: grado},
     # sin «fenomens») se toma como vacío: lo vigente se avisa una vez.
@@ -803,6 +809,55 @@ FORA_ZONA = {"ca": "Segons Bombers continua actiu, però és fora de la zona que
                    "(el parque de Collserola y hasta 2 km del barrio)."}
 SUBSTITUIT = {"ca": "Meteocat en té avís per al Vallès Occidental: ara es mostra el seu.",
               "es": "Meteocat tiene aviso para el Vallès Occidental: ahora se muestra el suyo."}
+INCLOS = {"ca": "L'AEMET l'ha inclòs en un altre avís seu, que continua actiu.",
+          "es": "La AEMET lo ha incluido en otro aviso suyo, que sigue activo."}
+RETIRAT = {"ca": "L'AEMET l'ha retirat abans d'hora.",
+           "es": "La AEMET lo ha retirado antes de tiempo."}
+
+
+def aemet_que_inclou(clau, vigents):
+    """El aviso vigente de AEMET del mismo fenómeno que abarca el comienzo de
+    uno que ya no publica: «aemet:tempestes:2026-10-18T00:00…» dentro de
+    «aemet:tempestes:2026-10-17T12:00…» con final a las 04:00."""
+    _, tipus, inici = clau.split(":", 2)
+    for k, v in vigents.items():
+        _, t, i = k.split(":", 2)
+        if t == tipus and k != clau and i <= inici <= v["fin"]:
+            return k
+    return None
+
+
+def tanca_aemet(h, vigents, ahora):
+    """Las fichas de AEMET al día con lo que publica AEMET ahora (Juanjo,
+    17-10-2026: «Perill» enseñaba como activos dos avisos que AEMET ya había
+    juntado en otro). Si alarga uno, su ficha también; si uno desaparece antes
+    de acabar, la ficha se cierra diciendo si está dentro de otro (con el
+    enlace a su ficha, o a la de Meteocat si lo cubre Meteocat) o si se ha
+    retirado. Sin lectura de AEMET (None), no se toca nada."""
+    if vigents is None:
+        return
+    ara = ahora.isoformat(timespec="minutes")
+    for e in h:
+        if not e["clau"].startswith("aemet:") or e.get("fi"):
+            continue
+        v = vigents.get(e["clau"])
+        if v:
+            if v["fin"] != e.get("fins"):
+                e["fins"] = v["fin"]
+            continue
+        if e.get("fins") and dt.datetime.fromisoformat(e["fins"]) <= ahora:
+            continue        # ja ha acabat a la seva hora
+        k = aemet_que_inclou(e["clau"], vigents)
+        if k and vigents[k]["cobert"]:
+            # El substituït_per de Meteocat el posa el pas de sota.
+            e.update(fi=ara, fi_ca=SUBSTITUIT["ca"], fi_es=SUBSTITUIT["es"])
+        elif k:
+            e.update(fi=ara, fi_ca=INCLOS["ca"], fi_es=INCLOS["es"])
+            altra = next((x for x in h if x["clau"] == k and not x.get("fi")), None)
+            if altra:
+                e["substituit_per"] = {"clau": altra["clau"], "inici": altra["inici"]}
+        else:
+            e.update(fi=ara, fi_ca=RETIRAT["ca"], fi_es=RETIRAT["es"])
 
 
 def historial(estat, nous, ahora, anterior=None):
@@ -833,6 +888,7 @@ def historial(estat, nous, ahora, anterior=None):
     # la sustituye, para que «Perill» no la dé por acabada (Juanjo, 16-10-2026:
     # «¿este aviso se ha retirado?»). Las cerradas antes de la 3.88.1 la toman
     # en la pasada siguiente.
+    tanca_aemet(h, estat.get("aemet_vigents"), ahora)
     smp = ((estat.get("oficials") or {}).get("smp") or {}).get("episodi")
     mc = next((x for x in reversed(h) if smp and x["clau"] == smp), None)
     for e in h:

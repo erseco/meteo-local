@@ -364,6 +364,7 @@ var IDIOMA = {
     "publicat {0} {1}": "publicado {0} {1}",
     "ahir": "ayer",
     "Nou": "Nuevo",
+    "un altre avís de l’AEMET": "otro aviso de la AEMET",
     "El temps avui a {0}": "El tiempo hoy en {0}",
     "Avui, {0}, a {1}": "Hoy, {0}, en {1}",
     ", cap a les {0}\u00a0h": ", hacia las {0}\u00a0h",

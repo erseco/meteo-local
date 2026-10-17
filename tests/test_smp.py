@@ -258,6 +258,28 @@ class Smp(unittest.TestCase):
         h = AB.historial(estat, [mc], AHORA)
         self.assertEqual(h[0]["substituit_per"], {"clau": "meteocat:x", "inici": AHORA.isoformat(timespec="minutes")})
 
+    def test_la_fitxa_de_l_aemet_segueix_l_aemet(self):
+        # 17-10-2026: l'AEMET va juntar els avisos de demà de 0 a 4 h en el d'avui, allargat fins a les 4 h.
+        hora = AHORA.isoformat(timespec="minutes")
+        fitxa = lambda k, fins: {"clau": k, "tipus": "perill", "inici": hora, "nivell": "groc", "ca": "x", "es": "x",
+                                 "fins": fins}
+        avui_t, dema_t = "aemet:tempestes:2026-10-17T12:00:00+02:00", "aemet:tempestes:2026-10-18T00:00:00+02:00"
+        dema_p, altra = "aemet:pluja:2026-10-18T00:00:00+02:00", "aemet:neu:2026-10-18T00:00:00+02:00"
+        fi = "2026-10-18T03:59:59+02:00"
+        estat = {"historial": [fitxa(avui_t, "2026-10-17T23:59:59+02:00"), fitxa(dema_t, fi), fitxa(dema_p, fi), fitxa(altra, fi)],
+                 "aemet_vigents": {avui_t: {"fin": fi, "cobert": False},
+                                   "aemet:pluja:2026-10-17T12:00:00+02:00": {"fin": fi, "cobert": True}}}
+        h = {e["clau"]: e for e in AB.historial(estat, [], AHORA)}
+        self.assertEqual(h[avui_t]["fins"], fi)                        # allargat
+        self.assertNotIn("fi", h[avui_t])
+        self.assertEqual(h[dema_t]["fi_ca"], AB.INCLOS["ca"])          # dins del d'avui
+        self.assertEqual(h[dema_t]["substituit_per"], {"clau": avui_t, "inici": hora})
+        self.assertEqual(h[dema_p]["fi_ca"], AB.SUBSTITUIT["ca"])      # dins d'un que cobreix Meteocat
+        self.assertEqual(h[altra]["fi_ca"], AB.RETIRAT["ca"])          # retirat
+        # Sense lectura de l'AEMET, no es toca res.
+        estat = {"historial": [fitxa(dema_t, fi)], "aemet_vigents": None}
+        self.assertNotIn("fi", AB.historial(estat, [], AHORA)[0])
+
     def test_avis_a_juanjo_en_el_moment(self):
         # Si la passada no ha pogut llegir Meteocat, una vegada; i quan torna.
         from unittest import mock
