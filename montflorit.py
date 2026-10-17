@@ -167,7 +167,7 @@ SW_PECES = re.compile(r"const PECES = \[.*?\];", re.S)
 PECES = ["./", "index.html", "sortir.html", "perill.html", "consultes.html", "avisos.html", "telegram.html",
          "fonts.html", "com-funciona.html", "privacitat.html", "es/", "es/sortir.html", "es/perill.html", "es/consultes.html",
          "es/avisos.html", "es/telegram.html", "es/fonts.html", "es/com-funciona.html", "es/privacitat.html", "estil.css",
-         "comu.js", "casa.js", "sortir.js", "perill.js", "consultes.js", "avisos.js", "es.js", "manifest.webmanifest",
+         "comu.js", "grafica.js", "casa.js", "sortir.js", "perill.js", "consultes.js", "avisos.js", "es.js", "manifest.webmanifest",
          "icones/icona-192.png"]
 
 # --- En castellano (ADR 0025) ---
@@ -185,6 +185,7 @@ CANVIS_ES = [
 CANVIS_ES_INDEX = [
     ('data-estacio="l’estació particular"', 'data-estacio="la estación particular" data-arrel="../"'),
     ('<script src="comu.js"></script>', '<script src="../es.js"></script>\n  <script src="../comu.js"></script>'),
+    ('<script src="grafica.js"></script>', '<script src="../grafica.js"></script>'),
     ('<script src="casa.js"></script>', '<script src="../casa.js"></script>'),
 ]
 CANVIS_ES_TELEGRAM = [
@@ -213,6 +214,7 @@ CANVIS_ES_SORTIR = [
 CANVIS_ES_CONSULTES = [
     (f'data-dades="{DADES}"', f'data-dades="{DADES}" data-arrel="../"'),
     ('<script src="comu.js"></script>', '<script src="../es.js"></script>\n  <script src="../comu.js"></script>'),
+    ('<script src="grafica.js"></script>', '<script src="../grafica.js"></script>'),
     ('<script src="consultes.js"></script>', '<script src="../consultes.js"></script>'),
     (">Què vols veure</legend>", ">Qué quieres ver</legend>"),
 ]
@@ -477,7 +479,7 @@ def construeix(desti, web=None):
         escriu(nom, html)
         escriu("es/" + nom, castella(html, nom))
     escriu("sw.js", service_worker(llegeix("sw.js")))
-    for nom in ("estil.css", "comu.js", "casa.js", "sortir.js", "perill.js", "consultes.js", "avisos.js"):
+    for nom in ("estil.css", "comu.js", "grafica.js", "casa.js", "sortir.js", "perill.js", "consultes.js", "avisos.js"):
         shutil.copy(os.path.join(web, nom), desti)
     shutil.copytree(propi, desti, dirs_exist_ok=True)
     shutil.copytree(os.path.join(web, "img"), os.path.join(desti, "img"), dirs_exist_ok=True)

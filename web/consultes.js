@@ -307,6 +307,15 @@ function pintaConsulta() {
   const text = textos[triada];
   if (!text) caixa.replaceChildren(element('p', 'nota', T('Ara aquesta consulta no està disponible.')));
   else caixa.replaceChildren(...((triada === 'avui' || triada === 'dema') ? ambDetalls(pintaResum(text)) : pintaText(text)));
+  // «Avui» i «Demà», amb la gràfica del seu dia sota el títol (Juanjo,
+  // 17-10-2026), la mateixa de la portada (grafica.js).
+  if (text && (triada === 'avui' || triada === 'dema')) {
+    const fig = graficaDia(DADES.hores, DADES.riscos, triada);
+    if (fig && caixa.firstElementChild) {
+      caixa.firstElementChild.after(fig);
+      dibuixaGrafica(fig);
+    }
+  }
   // Les fitxes que tenen un avís configurable, amb l'enllaç per activar-lo (ADR 0072).
   const avis = { llum: () => T('Per rebre els talls de llum al moment, '),
     avui: () => T('Per rebre la previsió cada dia, '), dema: () => T('Per rebre la previsió cada dia, ') }[triada];

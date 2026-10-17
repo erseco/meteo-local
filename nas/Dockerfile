@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Lo justo para calcular la previsión y publicarla: Python con numpy y Pillow
 # (el radar), git y ssh (para publicar la web y subir los datos a IONOS con
-# las claves de despliegue), y Claude Code, que usan otros automatismos del
-# NAS desde este contenedor (meteo-local ya no usa IA, ADR 0030).
+# las claves de despliegue), Chromium sin pantalla y la letra Roboto (la
+# gráfica del resumen como imagen, ADR 0098), y Claude Code, que usan otros
+# automatismos del NAS desde este contenedor (meteo-local ya no usa IA, ADR 0030).
 FROM debian:12-slim
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -12,6 +13,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates curl git openssh-client tzdata tini \
       python3 python3-numpy python3-pil \
+      chromium fonts-roboto-unhinted \
  && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
  && rm -rf /var/lib/apt/lists/*
 

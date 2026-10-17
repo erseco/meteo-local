@@ -51,11 +51,20 @@ if [ -n "$ESTAT_DIR" ]; then
 fi
 # Los datos de la web pública: los de casa sin lo privado.
 python3 montflorit.py dades "$dades/casa.json" "$publica/montflorit.json" "$dades/avisos.json"
+# La gráfica del resumen del día como imagen, para el bot, el canal y los
+# avisos de la web y la app (ADR 0098): solo en el NAS, que tiene Chromium.
+# Si falla, los resúmenes salen solo con texto, como antes.
+grafiques=""
+if [ -n "$ESTAT_DIR" ]; then
+  python3 grafica_imatge.py "$publica/montflorit.json" "$dades/grafiques" >/dev/null 2>"$dades/grafiques.err" \
+    || echo "$(date '+%F %T')  han fallat les imatges de la gràfica: $(tr '\n' ' ' < "$dades/grafiques.err" | cut -c1-300)" >&2
+  grafiques=$(cd "$dades/grafiques" 2>/dev/null && ls grafica-*.png 2>/dev/null | tr '\n' ' ' || true)
+fi
 
 # Los datos, a IONOS: una conexión con una clave que solo puede ejecutar
 # reserva/rep-dades.sh (la orden la fija IONOS en authorized_keys), que acepta
 # únicamente montflorit.json y avisos.json, archivos normales con JSON válido
-# (ADR 0038).
+# (ADR 0038), y las imágenes de la gráfica, PNG de verdad (ADR 0098).
 # El usuario y el servidor están en el NAS, fuera del repositorio, que es
 # público: ~/.config/meteo-local/ionos.env (IONOS=usuario@servidor).
 CLAU_IONOS=${CLAU_IONOS:-$HOME/.ssh/id_ionos}
@@ -68,6 +77,7 @@ if [ -f "$CLAU_IONOS" ] && [ -n "${IONOS:-}" ]; then
   # registro: falla cada día a las 06:03 y a las 06:09 y sin el mensaje no
   # se sabe si rechaza SSH o el receptor (10-10-2026).
   if tar -czf - -C "$publica" montflorit.json $([ -f "$dades/avisos.json" ] && echo "-C $dades avisos.json") \
+      $([ -n "$grafiques" ] && echo "-C $dades/grafiques $grafiques") \
       | ssh -i "$CLAU_IONOS" -o BatchMode=yes -o ConnectTimeout=20 "$IONOS" 2>"$dades/ionos.err"; then
     a_ionos=1
     echo "$(date '+%F %T')  dades a IONOS"

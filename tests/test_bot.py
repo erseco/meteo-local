@@ -1034,3 +1034,58 @@ class AltesIRiscos(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GraficaDelResum(unittest.TestCase):
+    """ADR 0098: el resum amb la gràfica a dalt, si la imatge és recent."""
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: __import__("shutil").rmtree(self.dir))
+        B.FOTOS.clear()
+
+    def imatge(self, nom, fa_min):
+        ruta = os.path.join(self.dir, nom)
+        open(ruta, "wb").write(b"\x89PNG\r\n\x1a\n")
+        t = ARA.timestamp() - fa_min * 60
+        os.utime(ruta, (t, t))
+
+    def test_la_imatge_del_dia_que_toca_i_recent(self):
+        self.imatge("grafica-avui-ca.png", 10)
+        self.imatge("grafica-dema-es.png", 10)
+        self.assertTrue(B.imatge_resum("ca", ARA, dades=self.dir).startswith(B.URL_DADES + "grafica-avui-ca.png?v="))
+        # De vespre, la de demà, com el text; /resum, sempre la d'avui.
+        vespre = ARA.replace(hour=21)
+        self.imatge("grafica-dema-es.png", -14 * 60 + 10)
+        self.assertIn("grafica-dema-es.png", B.imatge_resum("es", vespre, dades=self.dir))
+        self.assertIsNone(B.imatge_resum("es", vespre, avui=True, dades=self.dir))
+        # Vella, cap: el resum surt només amb text.
+        self.imatge("grafica-avui-ca.png", B.IMATGE_MAX_MIN + 5)
+        self.assertIsNone(B.imatge_resum("ca", ARA, dades=self.dir))
+
+    def test_foto_amb_el_text_a_sota(self):
+        api = Api()
+        B.envia_resum(api, 1, "<b>Avui</b>\nTemperatura 20 °C.", "https://x/grafica-avui-ca.png?v=1")
+        self.assertEqual([m for m, _ in api.enviats], ["sendPhoto"])
+        self.assertEqual(api.enviats[0][1]["caption"], "<b>Avui</b>\nTemperatura 20 °C.")
+        self.assertEqual(api.enviats[0][1]["parse_mode"], "HTML")
+
+    def test_text_llarg_foto_i_despres_text(self):
+        api = Api()
+        B.envia_resum(api, 1, "x" * (B.PEU_MAX + 1), "https://x/g.png")
+        self.assertEqual([m for m, _ in api.enviats], ["sendPhoto", "sendMessage"])
+        self.assertIsNone(api.enviats[0][1].get("caption"))
+
+    def test_si_la_foto_no_entra_nomes_el_text(self):
+        class SenseFoto(Api):
+            def __call__(self, metode, temps=30, **p):
+                if metode == "sendPhoto":
+                    raise RuntimeError("sendPhoto: wrong file identifier/HTTP URL specified")
+                return super().__call__(metode, temps, **p)
+        api = SenseFoto()
+        B.envia_resum(api, 1, "Avui", "https://x/g.png")
+        self.assertEqual([m for m, _ in api.enviats], ["sendMessage"])
+        # Sense imatge, com abans.
+        api = Api()
+        B.envia_resum(api, 1, "Avui", None)
+        self.assertEqual([m for m, _ in api.enviats], ["sendMessage"])

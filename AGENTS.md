@@ -53,7 +53,9 @@ Al cambiar algo:
   puede ejecutar `reserva/rep-dades.sh` (orden fija en el `authorized_keys` de
   IONOS, instalado en `.meteo-reserva/bin/rep-dades` por `reserva/instalar.sh`),
   que solo acepta `montflorit.json` y `avisos.json` como archivos normales con
-  JSON válido y de 2 MB como mucho, también descomprimidos (ADR 0038 y 0057); la carpeta tiene un `.htaccess` que permite leer los
+  JSON válido y de 2 MB como mucho, también descomprimidos (ADR 0038 y 0057),
+  y las cuatro imágenes de la gráfica del resumen (`grafica-{avui,dema}-{ca,es}.png`,
+  PNG de 600 KB como mucho, que dibuja el NAS con `grafica_imatge.py`; ADR 0098); la carpeta tiene un `.htaccess` que permite leer los
   datos desde `meteo-montflorit.github.io`.
 - La web pública (repositorio `meteo-montflorit/meteo-montflorit.github.io`;
   ADR 0024, 0028 y 0029) la genera `montflorit.py` a partir de

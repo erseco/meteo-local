@@ -1482,7 +1482,7 @@ function avisBreu(text) {
   document.querySelector('.avis-breu')?.remove();
   const p = element('p', 'avis-breu', text);
   p.setAttribute('role', 'status');
-  document.body.append(p);
+  llocActiu().append(p);
   setTimeout(() => p.remove(), 4000);
 }
 
@@ -1516,13 +1516,18 @@ function copiaEnllac(url, text = '') {
   else mostraPerCopiar(tot);
 }
 
+// Amb una finestra oberta (la gràfica en gran), la resta de la pàgina queda
+// inert: el que s'hi posa no es pot seleccionar ni es veu. Va dins de la
+// finestra (Juanjo, 17-10-2026: «dice copiado pero no se copia nada»).
+const llocActiu = () => document.querySelector('dialog[open]') || document.body;
+
 function copiaClassica(tot) {
   try {
     const area = element('textarea');
     area.value = tot;
     area.setAttribute('readonly', '');
     area.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
-    document.body.append(area);
+    llocActiu().append(area);
     area.select();
     area.setSelectionRange(0, tot.length);
     const ok = document.execCommand('copy');

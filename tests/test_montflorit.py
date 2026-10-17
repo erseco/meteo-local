@@ -39,7 +39,7 @@ const ctx = vm.createContext({
   localStorage: { getItem: () => null, setItem() {} }, navigator: {}, location: { pathname: '/' },
   fetch: () => new Promise(() => {}), setTimeout: () => 0, clearTimeout() {},
 });
-for (const f of ['montflorit/es.js', 'web/comu.js', 'web/casa.js']) {
+for (const f of ['montflorit/es.js', 'web/comu.js', 'web/grafica.js', 'web/casa.js']) {
   vm.runInContext(fs.readFileSync(`${arrel}/${f}`, 'utf8'), ctx);
 }
 console.log(JSON.stringify(vm.runInContext(expr, ctx)));

@@ -33,7 +33,7 @@ const ctx = vm.createContext({
   history: { replaceState() {} }, window: { addEventListener() {} },
   fetch: () => new Promise(() => {}), setTimeout: () => 0, clearTimeout() {},
 });
-for (const f of ['comu.js', pagina]) vm.runInContext(fs.readFileSync(`${web}/${f}`, 'utf8'), ctx);
+for (const f of ['comu.js', ...(['casa.js', 'consultes.js'].includes(pagina) ? ['grafica.js'] : []), pagina]) vm.runInContext(fs.readFileSync(`${web}/${f}`, 'utf8'), ctx);
 console.log(JSON.stringify(vm.runInContext(expr, ctx)));
 """
 
@@ -825,7 +825,14 @@ class Web(unittest.TestCase):
         # Només el que dona el nivell més alt: el groc de l'AEMET per pluja queda sota el taronja de la web.
         self.assertEqual(r[0], [None, ["taronja", "web", ["pluja intensa"]], None])
         self.assertEqual(r[1], {"nivell": "taronja", "noms": ["pluja intensa"], "fonts": "web",
-                                "perFont": [["web", ["pluja intensa"]]]})
+                                "perFont": [["web", ["pluja intensa"], "taronja"]]})
+        # Fenòmens diferents de nivells diferents, tots dos, del més alt al més baix
+        # (Juanjo, 17-10-2026: «que la franja diga las dos cosas»).
+        dos = f(8, [{"nivell": "taronja", "tipus": ["pluja"], "font": "meteocat"}, {"nivell": "groc", "tipus": ["tempestes"]},
+                    {"nivell": "groc", "tipus": ["pluja"], "font": "meteocat"}])
+        self.assertEqual(self.avalua(ara, f"[textPerillCurt(avisHora({json.dumps(dos)})), textPerill(avisHora({json.dumps(dos)})), avisHora({json.dumps(dos)}).nivell]"),
+                         ["Perill alt: pluja · Avís groc: tempestes",
+                          "Perill alt de Meteocat per pluja; Avís groc de l’AEMET per tempestes", "taronja"])
         # El text del tram: Meteocat en grau de perill; i, en passar-hi el ratolí, d'on surt (ADR 0093).
         p = {"nivell": "taronja", "noms": ["pluja", "tempestes"], "fonts": "meteocataemet",
              "perFont": [["meteocat", ["pluja"]], ["aemet", ["tempestes"]]]}
@@ -901,8 +908,9 @@ espera.then(() => console.log(JSON.stringify([mostrades, enviats])));
         # peces pintades amb els colors del cel (sol, núvol, aigua, neu, lluna);
         # i la paleta és als dos temes.
         import re
-        with open(os.path.join(WEB, "casa.js"), encoding="utf-8") as f:
-            usades = set(re.findall(r"'(i-(?:cloud[a-z-]*|sun|moon-cel|snowflake|umbrella|droplets))'", f.read()))
+        # El cel de cada hora és a grafica.js (el comparteix amb «Consultes»).
+        codi = "".join(open(os.path.join(WEB, n), encoding="utf-8").read() for n in ("grafica.js", "casa.js"))
+        usades = set(re.findall(r"'(i-(?:cloud[a-z-]*|sun|moon-cel|snowflake|umbrella|droplets))'", codi))
         with open(os.path.join(WEB, "casa.html"), encoding="utf-8") as f:
             html = f.read()
         self.assertIn("i-cloud-sun", usades)

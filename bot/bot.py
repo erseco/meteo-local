@@ -195,6 +195,57 @@ def envia(api, chat, text, teclat=None, html=False):
                reply_markup={"inline_keyboard": teclat} if teclat else None)
 
 
+# --- La gràfica del resum, com a imatge (ADR 0098) ---------------------------------
+# El NAS la dibuixa a cada publicació (grafica_imatge.py) i la puja aquí amb
+# les dades: la d'avui (d'ara a mitjanit) i la de demà (de la nit d'avui al
+# final de demà), en català i en castellà. Telegram la baixa de la carpeta
+# pública; després es reaprofita el seu file_id. Només si és recent: si no, el
+# resum surt només amb text, com abans.
+URL_DADES = "https://bilateria.org/app/meteo-local/"
+IMATGE_MAX_MIN = 45
+PEU_MAX = 1024          # el text que admet Telegram sota una foto
+FOTOS = {}
+
+
+def es_resum_de_dema(moment, dema=False, avui=False):
+    """El mateix criteri que resum(): /dema, o el programat des de HORA_DEMA."""
+    return dema or (moment.hour >= HORA_DEMA and not avui)
+
+
+def imatge_resum(idioma, moment, dema=False, avui=False, dades=None):
+    nom = f"grafica-{'dema' if es_resum_de_dema(moment, dema, avui) else 'avui'}-{'es' if idioma == 'es' else 'ca'}.png"
+    try:
+        mt = os.path.getmtime(os.path.join(dades or DADES, nom))
+    except OSError:
+        return None
+    if moment.timestamp() - mt > IMATGE_MAX_MIN * 60:
+        return None
+    return f"{URL_DADES}{nom}?v={int(mt)}"
+
+
+def envia_resum(api, chat, text, imatge=None):
+    """El resum amb la seva gràfica a dalt (Juanjo, 17-10-2026). Si el text no
+    cap sota la foto, la foto i després el text; si la foto no entra, només el
+    text."""
+    if imatge:
+        net = UNITATS.sub("\\1\u00a0\\2", text)
+        pla = html.unescape(re.sub(r"<[^>]+>", "", net))
+        cap = len(pla.encode("utf-16-le")) // 2 <= PEU_MAX
+        try:
+            r = api("sendPhoto", chat_id=chat, photo=FOTOS.get(imatge, imatge),
+                    caption=net if cap else None, parse_mode="HTML" if cap else None)
+        except Bloquejat:
+            raise
+        except Exception as ex:
+            registra(f"la gràfica del resum no ha entrat: {ex}")
+        else:
+            if isinstance(r, dict) and r.get("photo"):
+                FOTOS[imatge] = r["photo"][-1]["file_id"]
+            if cap:
+                return r
+    return envia(api, chat, text, html=True)
+
+
 # --- Menú ----------------------------------------------------------------------
 
 def teclat(sub):
@@ -1549,12 +1600,16 @@ def atén(api, subs, update, estat=None):
     elif ordre in ("/avisos", "/menu"):
         envia(api, chat, t["menu"], teclat(sub))
     elif ordre == "/resum":
-        envia(api, chat, resum(llegeix(os.path.join(DADES, "montflorit.json"), {}), sub["idioma"], ara(), avui=True), html=True)
+        moment = ara()
+        envia_resum(api, chat, resum(llegeix(os.path.join(DADES, "montflorit.json"), {}), sub["idioma"], moment, avui=True),
+                    imatge_resum(sub["idioma"], moment, avui=True))
     elif ordre == "/ara":
         dades = llegeix(os.path.join(DADES, "montflorit.json"), {})
         envia(api, chat, text_ara_bot(dades, sub["idioma"], ara()) + "\n" + WEB)
     elif ordre == "/dema":
-        envia(api, chat, resum(llegeix(os.path.join(DADES, "montflorit.json"), {}), sub["idioma"], ara(), dema=True), html=True)
+        moment = ara()
+        envia_resum(api, chat, resum(llegeix(os.path.join(DADES, "montflorit.json"), {}), sub["idioma"], moment, dema=True),
+                    imatge_resum(sub["idioma"], moment, dema=True))
     elif ordre in CONSULTES:
         dades = llegeix(os.path.join(DADES, "montflorit.json"), {})
         funcio = {"/trens": text_trens_bot, "/transit": text_transit_bot, "/llum": text_llum_bot,
@@ -1670,7 +1725,7 @@ def reparteix(api, subs, estat, moment):
         dades = llegeix(os.path.join(DADES, "montflorit.json"), {})
         try:
             # El canal, solo en catalán (Juanjo, 08-10-2026).
-            envia(api, CANAL, resum(dades, "ca", moment), html=True)
+            envia_resum(api, CANAL, resum(dades, "ca", moment), imatge_resum("ca", moment))
             canal[hora] = avui
         except Exception as ex:
             registra(f"el resumen del canal de las {hora} h no ha entrado: {ex}")
@@ -1685,7 +1740,7 @@ def reparteix(api, subs, estat, moment):
                 continue
             dades = dades or llegeix(os.path.join(DADES, "montflorit.json"), {})
             try:
-                envia(api, chat, resum(dades, sub["idioma"], moment), html=True)
+                envia_resum(api, chat, resum(dades, sub["idioma"], moment), imatge_resum(sub["idioma"], moment))
                 resums[chat] = {**fets, hora: avui}
             except Bloquejat:
                 treu(subs, estat, chat, "bloqueig")

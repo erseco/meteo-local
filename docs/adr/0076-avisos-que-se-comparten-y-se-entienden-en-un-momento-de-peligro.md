@@ -65,6 +65,9 @@ Versión 3.66.0.
   nivel y, en la cabecera, «⚠ Avís taronja: pluja molt forta», y se abre
   solo. Se nombra solo lo que da el nivel más alto: con un amarillo de la
   AEMET por lluvia y un naranja de la web, «taronja: pluja molt forta».
+  Desde el 17-10-2026 (ADR 0096), los fenómenos distintos de un nivel más
+  bajo también se dicen, detrás («Perill alt: pluja · Avís groc:
+  tempestes»); el mismo fenómeno sigue diciéndose una sola vez.
 - **El aviso de la AEMET no se repite** en el resumen del día de la portada:
   ya sale arriba, en «Avisos actius». En «Consultes › Avui» se queda.
 - **«Atrás» vuelve a donde se estaba** desde una página de explicación
@@ -156,3 +159,12 @@ WebKit (iPhone 15) y Firefox, ocho recorridos que mezclan pestañas,
 «Avisos» y «Com funciona», con la portada después de un «atrás» y fuera
 después del segundo, y la pestaña de origen después de un «atrás» desde
 una explicación.
+
+## Con una ventana abierta (17-10-2026)
+
+Desde la gráfica en grande (ADR 0096), compartir decía «Enllaç copiat» sin
+copiar nada (Juanjo: «dice copiado pero no se copia nada»). Con una ventana
+modal abierta, el resto de la página queda inerte: el texto que se
+seleccionaba para copiar y el aviso iban fuera de la ventana. Ahora los dos
+van dentro de la ventana abierta, si la hay (`llocActiu` en `comu.js`).
+Comprobado en Chromium leyendo el portapapeles.

@@ -137,6 +137,19 @@ class Push(unittest.TestCase):
         self.assertEqual(d["expira"], (ARA + dt.timedelta(minutes=1)).isoformat(timespec="seconds"))
         self.assertNotIn("expira", P.notificacio("<b>T</b>\nx"))
 
+    def test_la_previsio_porta_la_grafica(self):
+        # ADR 0098: la imatge del resum, si n'hi ha una de recent; si no, sense.
+        B.desa(os.path.join(B.DADES, "montflorit.json"), {})
+        envia = Envia()
+        P.reparteix({}, ARA, envia)
+        self.assertNotIn("image", envia.enviats[0][1])
+        ruta = os.path.join(B.DADES, "grafica-avui-ca.png")
+        open(ruta, "wb").write(b"\x89PNG")
+        os.utime(ruta, (ARA.timestamp() - 600, ARA.timestamp() - 600))
+        envia = Envia()
+        P.reparteix({}, ARA, envia)
+        self.assertTrue(envia.enviats[0][1]["image"].startswith(B.URL_DADES + "grafica-avui-ca.png?v="))
+
     def test_la_subscripcio_morta_s_esborra(self):
         self.avisos([self.avis("pluja")])
         P.reparteix({}, ARA, Envia(mortes={ES}))

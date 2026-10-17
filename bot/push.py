@@ -235,6 +235,11 @@ def reparteix(estat, moment, envia=envia_push):
             idioma = sub.get("idioma", "ca")
             pagina, dia = desti_resum(moment)
             n = notificacio(B.resum(dades_web, idioma, moment), url(pagina, idioma), "resum", dia=dia)
+            # La gràfica del resum, com a Telegram (ADR 0098): on el navegador
+            # la mostra (Chrome i la app d'Android); on no, només el text.
+            imatge = B.imatge_resum(idioma, moment)
+            if imatge:
+                n["image"] = imatge
             r = prova(e, lambda: envia(sub, n, TTL_RESUM_S))
             if r is True:
                 resums[e] = {**fets, hora: avui}

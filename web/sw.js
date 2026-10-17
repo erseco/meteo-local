@@ -4,7 +4,7 @@
 // connexió, les pàgines i els estils guardats. Les dades (.json) no es guarden
 // mai: una previsió vella no s'ha de mostrar com si fos d'ara.
 const MAGATZEM = 'meteo-local';
-const PECES = ['casa.html', 'sortir.html', 'perill.html', 'consultes.html', 'avisos.html', 'fonts.html', 'privacitat.html', 'estil.css', 'comu.js', 'casa.js', 'sortir.js', 'perill.js', 'consultes.js', 'avisos.js',
+const PECES = ['casa.html', 'sortir.html', 'perill.html', 'consultes.html', 'avisos.html', 'fonts.html', 'privacitat.html', 'estil.css', 'comu.js', 'grafica.js', 'casa.js', 'sortir.js', 'perill.js', 'consultes.js', 'avisos.js',
   'manifest.webmanifest', 'icones/icona-192.png'];
 
 self.addEventListener('install', (e) => {
@@ -49,6 +49,9 @@ self.addEventListener('push', (e) => {
     self.registration.showNotification(d.title || 'Temps a Montflorit', {
       body: d.body || '',
       icon: 'icones/icona-192.png',
+      // La gràfica del resum (ADR 0098): Chrome i la app d'Android la mostren
+      // en desplegar la notificació; Firefox i Safari, no, i surt el text sol.
+      image: d.image,
       tag: d.tag,
       data: { url: new URL(d.url || './', self.registration.scope).href, dia: d.dia },
     }),

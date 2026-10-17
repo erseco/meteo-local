@@ -50,6 +50,18 @@ class RepDades(unittest.TestCase):
         self.assertIn(b"descomprimit", r.stderr)
         self.assertFalse(os.path.exists(os.path.join(self.dir, "montflorit.json")))
 
+    def test_accepta_les_imatges_de_la_grafica(self):
+        # ADR 0098: les quatre imatges del resum, només si són PNG de veritat.
+        png = b"\x89PNG\r\n\x1a\n" + b"\0" * 100
+        r = self.rep(paquet([("montflorit.json", b"{}"), ("grafica-avui-ca.png", png), ("grafica-dema-es.png", png)]))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(os.path.exists(os.path.join(self.dir, "grafica-avui-ca.png")))
+        for nom, cos in (("grafica-avui-ca.png", b"<?php echo 1; ?>"), ("altra.png", png), ("grafica-avui-ca.png.php", png),
+                         ("grafica-avui-ca.png", b"\x89PNG\r\n\x1a\n" + b"\0" * 700_000)):
+            r = self.rep(paquet([("montflorit.json", b'{"b": 2}'), (nom, cos)]))
+            self.assertEqual(r.returncode, 1, nom)
+        self.assertEqual(json.load(open(os.path.join(self.dir, "montflorit.json"))), {})
+
     def test_rebutja_noms_repetits_i_de_mes(self):
         r = self.rep(paquet([("montflorit.json", b"{}"), ("montflorit.json", b"{}")]))
         self.assertEqual(r.returncode, 1)

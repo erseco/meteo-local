@@ -82,6 +82,71 @@ siempre en la hora en curso.
   de 9 a 15 px y la cifra unos 17; con litros sería igual de larga y habría
   que escribir «l/m²». La cifra de la hora más fuerte de cada episodio (desde
   0,5 mm) sigue a la vista.
+- **La ficha de cada hora** (desde la 3.101.0; Juanjo, 17-10-2026: «no se
+  podrían añadir el resto de datos meteorológicos de previsión de esa
+  hora?»): el rótulo pasa a ser una ficha con la hora y el cielo, la
+  temperatura, la lluvia (mm y probabilidad) y el viento con sus rachas.
+  La parte alta, solo si difiere al menos 1 °C (el mismo redondeo que las
+  tablas); la nieve, solo si se espera, y el UV, solo de día y desde 3,
+  donde la escala de la OMS ya pide protección. Fuera, el porcentaje de
+  nubes (ya lo dice el cielo) y los avisos (la franja está encima de la
+  columna). No hay humedad ni dirección del viento en los datos. La ficha
+  va al lado de la columna, donde quepa, para no tapar la hora; si no cabe
+  a ningún lado (en el móvil, las horas del centro), debajo del eje,
+  encima de la leyenda.
+- **La gráfica en grande** (desde la 3.101.0; Juanjo, 17-10-2026: «verlo en
+  su propia ventana o sección y con posibilidad de alguna configuración»):
+  el botón «Amplia», junto a «Desplega-ho tot» (en el móvil, solo el icono,
+  para que los dos quepan al lado del título), la abre sobre la página, con
+  margen, más alta y con su dirección (`#grafica`) para compartirla. No es
+  una página más del menú: sería la misma gráfica repetida. Opciones: qué
+  horas (hoy, mañana o todo; hoy y mañana, solo si tienen al menos 3 horas)
+  y el viento como capa (media y rachas, escala de 10 en 10 desde 20 km/h).
+  La parte alta y el UV no son capas: ya salen en la ficha de cada hora. Lo
+  elegido se recuerda en el dispositivo. Se cierra con la X, Esc o tocando
+  fuera. Con columnas anchas, el cielo y las horas salen cada hora.
+- **El nombre de cada día, por su fecha** (Juanjo, 17-10-2026): de noche la
+  tabla llega hasta pasado mañana, y la segunda medianoche decía otra vez
+  «Demà»; ahora «Demà passat». El primer nombre se quita si no cabe antes de
+  la medianoche («si avui no cabe no se escriba nada, ya se entiende»).
+- **También en «Consultes»** (Juanjo, 17-10-2026: «en las fichas de
+  consulta: avui y demà también deberá aparecer el gráfico
+  correspondiente»): bajo el título de «Avui», la gráfica de ahora a
+  medianoche; en «Demà», la de mañana (de 0 h al final de los datos). Con
+  menos de 3 horas, ninguna. El dibujo es el mismo: la gráfica y lo que
+  necesita (el cielo, la lluvia y el perill de cada hora) pasan de
+  `casa.js` a `web/grafica.js`, que cargan la portada y «Consultes».
+- **Los textos de los avisos, sin pisarse** (Juanjo, 17-10-2026: «sin que
+  se pierda información vital. si es necesario usa dos filas»): dentro de
+  la franja, el texto entero (nivel y fenómenos) si cabe. Si no, al lado,
+  a la derecha o a la izquierda, solo si allí no hay ninguna franja ni
+  otro texto (el texto debajo, solo, «no lo entiendo»). Si tampoco, en una
+  fila debajo, con un cuadrito del color del aviso, desde donde empieza;
+  si choca con el anterior, en otra fila (hasta tres), y solo si tampoco
+  cabe, el nivel solo. Antes iba al lado sin comprobarlo y caía encima del
+  texto de otra. Al tocar la franja o su texto, siempre el aviso completo.
+  Probado con cuatro avisos seguidos a 320 px: nada se pisa.
+- **Todos los avisos de la hora en la franja** (Juanjo, 17-10-2026: con
+  perill alt de Meteocat por lluvia y aviso amarillo de AEMET por
+  tormentas, la franja solo decía el primero; «que la franja diga las dos
+  cosas»): el color es el del nivel más alto y el texto los dice todos, del
+  más alto al más bajo («Perill alt: pluja · Avís groc: tempestes»). Cada
+  fenómeno, una sola vez y en su nivel más alto: un amarillo de AEMET por
+  lluvia no se repite bajo un naranja de lluvia intensa de la web. Vale
+  también para la barra de las tablas y la etiqueta de cada tramo, que usan
+  lo mismo (`avisHora`, `perillTram`).
+- **El cielo, la temperatura y la hora, cada hora si hay sitio** (Juanjo,
+  17-10-2026: «la gráfica está bastante vacía, mejor que salga cada hora»):
+  desde 30 px por hora; si no, cada 2 (desde 18 px) o cada 3.
+- **El origen de cada aviso en la franja** (Juanjo, 17-10-2026: «añade el
+  origen: meteocat, aemet, etc»): «Perill alt (Meteocat): pluja · Avís groc
+  (AEMET): tempestes»; los de la web, «(aquesta web)». Solo en la gráfica:
+  las tablas lo dicen al tocar la barra. Debajo de la franja, cada aviso va
+  por separado, con el cuadrito de su nivel, y abre las filas que hagan
+  falta: con cuatro avisos seguidos a 320 px, el rojo se quedaba sin sitio
+  con el límite de tres filas.
+- **La imagen para Telegram y los avisos** sale de esta misma gráfica (ADR
+  0098).
 - **SVG dibujado desde `casa.js`**, sin bibliotecas ni conexiones externas,
   con el ancho real de la pantalla (se redibuja al cambiar de tamaño) para que
   el texto no se encoja en el móvil, y con los colores del tema claro y
