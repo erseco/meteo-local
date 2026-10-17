@@ -16,6 +16,8 @@ import json
 import os
 import re
 import sys
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from zoneinfo import ZoneInfo
@@ -104,6 +106,34 @@ def get(url, binario=False):
     with urllib.request.urlopen(req, timeout=30) as r:
         datos = r.read()
     return datos if binario else datos.decode("utf-8", "replace")
+
+
+# Open-Meteo respon a estones «503 Service Unavailable» uns segons, i la
+# pasada es quedava amb la previsió anterior i l'avís a la pàgina, unes
+# quantes vegades al dia (Juanjo, 17-10-2026: «se podría evitar de algun
+# modo? reintentando o algo así»). Ara es torna a provar, i cada reintent
+# queda al registre del contenidor per poder-ne mesurar l'efecte.
+ESPERES_REINTENT = (5, 15)      # segons abans del segon i del tercer intent
+
+
+def transitori(ex):
+    """Un error que pot passar sol: el servidor saturat (5xx), massa
+    peticions (429), la connexió que cau o triga massa."""
+    if isinstance(ex, urllib.error.HTTPError):
+        return ex.code >= 500 or ex.code == 429
+    return isinstance(ex, (urllib.error.URLError, TimeoutError, ConnectionError))
+
+
+def get_reintenta(url, esperes=ESPERES_REINTENT, dorm=time.sleep):
+    """get() que torna a provar els errors transitoris, esperant `esperes`."""
+    for espera in (*esperes, None):
+        try:
+            return get(url)
+        except Exception as ex:
+            if espera is None or not transitori(ex):
+                raise
+            print(f"Open-Meteo: {ex}; es torna a provar d'aquí a {espera} s", file=sys.stderr)
+            dorm(espera)
 
 
 CACHE_WEB = os.environ.get("CACHE_WEB", "/estat/cache-web")

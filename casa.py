@@ -80,12 +80,12 @@ def modelos(desde, errors=None):
                   "wind_speed_10m,wind_gusts_10m,relative_humidity_2m,shortwave_radiation,snowfall",
         "models": "meteofrance_seamless," + ",".join(C.MODELOS_FINOS),
         "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
-    h = P.horas_locales(json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}")))["hourly"]
+    h = P.horas_locales(json.loads(P.get_reintenta(f"https://api.open-meteo.com/v1/forecast?{q}")))["hourly"]
     q = urllib.parse.urlencode({
         "latitude": C.CASA[0], "longitude": C.CASA[1], "hourly": "precipitation",
         "models": C.ENSEMBLE, "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
     try:
-        e = P.horas_locales(json.loads(P.get(f"https://ensemble-api.open-meteo.com/v1/ensemble?{q}")))["hourly"]
+        e = P.horas_locales(json.loads(P.get_reintenta(f"https://ensemble-api.open-meteo.com/v1/ensemble?{q}")))["hourly"]
     except Exception as ex:
         if errors is None:
             raise
@@ -97,7 +97,7 @@ def modelos(desde, errors=None):
         "latitude": C.CASA[0], "longitude": C.CASA[1], "hourly": "precipitation",
         "models": C.MODEL_ECMWF, "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
     try:
-        ec = P.horas_locales(json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}")))["hourly"]
+        ec = P.horas_locales(json.loads(P.get_reintenta(f"https://api.open-meteo.com/v1/forecast?{q}")))["hourly"]
         serie = ec.get("precipitation") or ec.get(f"precipitation_{C.MODEL_ECMWF}")
         if serie and ec.get("time") == h.get("time"):
             h[f"precipitation_{C.MODEL_ECMWF}"] = serie
@@ -111,7 +111,7 @@ def modelos(desde, errors=None):
             "latitude": C.CASA[0], "longitude": C.CASA[1], "hourly": "cloud_cover,cloud_cover_low",
             "models": m, "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
         try:
-            nv = P.horas_locales(json.loads(P.get(f"https://api.open-meteo.com/v1/forecast?{q}")))["hourly"]
+            nv = P.horas_locales(json.loads(P.get_reintenta(f"https://api.open-meteo.com/v1/forecast?{q}")))["hourly"]
             if nv.get("time") == h.get("time"):
                 for camp in ("cloud_cover", "cloud_cover_low"):
                     serie = nv.get(camp) or nv.get(f"{camp}_{m}")
@@ -725,6 +725,7 @@ def recoger(anterior=None):
     except Exception as ex:
         salida["hores"] = salida["models"] = None
         salida["errors"].append(f"previsió: {ex}")
+        print("Sense previsió nova:", ex, file=sys.stderr)
         # Sin modelos: la última previsión buena, si es reciente, avisando.
         antes = previsio_anterior(anterior, avisos, casa, veines, nuvols_ara)
         if antes:

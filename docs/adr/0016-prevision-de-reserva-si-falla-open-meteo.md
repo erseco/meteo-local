@@ -43,3 +43,22 @@ aprobó mantener la última previsión buena avisando de que es de antes.
 `tests/test_previsio_anterior.py` (horas que quedan, lluvia de ahora,
 encadenado y caducidad) y prueba de principio a fin con un fallo 503 simulado:
 las dos páginas muestran la reserva y su aviso; `probar-web` y axe-core.
+
+## Cambio del 17-10-2026 (3.125.0): reintentar antes de usar la reserva
+
+Juanjo: el aviso «Open-Meteo, d'on surten els models, ara no respon» «sale
+varias veces al dia, se podría evitar de algun modo? reintentando o algo
+así». En el registro del NAS, los fallos de Open-Meteo eran «HTTP Error 503:
+Service Unavailable», que dura segundos; la consulta principal se hacía una
+sola vez, y si caía en ese momento toda la pasada usaba la previsión
+anterior.
+
+Ahora las consultas de los modelos (la principal, el ensemble, ECMWF y las
+nubes de ECMWF y GFS) pasan por `prevision.get_reintenta`: hasta tres
+intentos, esperando 5 y 15 segundos, solo ante errores transitorios (5xx,
+429, conexión caída o tiempo agotado); un error de la consulta (4xx) falla a
+la primera. La reserva sigue igual si los tres fallan. Cada reintento y cada
+pasada sin previsión nueva quedan en el registro del contenedor («Open-Meteo:
+… es torna a provar», «Sense previsió nova»), para medir dentro de unos días
+cuántas veces ha evitado el aviso. Hipótesis por comprobar: la mayoría de
+503 se resuelven en menos de 20 segundos.
