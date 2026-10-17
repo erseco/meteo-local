@@ -147,3 +147,13 @@ escritorio (portada, «Si surts», «Consultes › Demà»), sin errores de
 JavaScript ni desbordamiento; axe-core (WCAG 2.1 AA y buenas prácticas) sin
 infracciones en la portada, «Si surts», «Consultes» y «Perill», en catalán y
 castellano.
+
+## La etiqueta del tramo, solo plegado (17-10-2026)
+
+Juanjo: «cuando despliego una franja horaria quiero que desaparezcan estas
+alertas de peligro porque ya salen en vertical además del color que hay a la
+izquierda, así se simplifica la visualización» y «plegadas sí aparecen,
+desplegadas no». Desde la 3.113.1, la etiqueta de peligro de la cabecera de
+cada tramo («⚠ Perill molt alt: pluja · Avís groc: tempestes») se ve con el
+tramo plegado y se oculta al desplegarlo: entonces lo dicen la barra de
+color de cada hora y el borde del tramo.
