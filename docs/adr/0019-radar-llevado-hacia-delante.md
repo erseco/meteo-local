@@ -20,8 +20,9 @@ de Meteocat, que es el que él mira.
   radares (XRAD: Vallirana, a unos 20 km de casa, Puig d'Arques, Tivissa-
   Llaberia y La Panadella), cada 6 minutos. Si se queda más de 15 minutos por
   detrás de la de RainViewer (composición de AEMET, cada 10 minutos), se usa
-  la de RainViewer. Desde el ADR 0026, con 10 minutos basta, y una
-  comparación diaria decide cuál de las dos acierta más.
+  la de RainViewer. Desde el ADR 0026, con 10 minutos basta (desde la
+  3.129.0, con RainViewer como preferida, su imagen siempre que no sea más
+  vieja), y una comparación diaria decide cuál de las dos acierta más.
 - **Movimiento**: el de la advección de Meteocat, su predicción a una hora,
   que calcula el campo de movimiento con las tres últimas imágenes. Se mide
   cuánto se desplaza su lluvia de la primera imagen prevista a la última, en
@@ -294,3 +295,19 @@ En la 3.128.0 la etiqueta dice de qué es la cifra: «Pot començar d'aquí a un
 hora (29 % en aquesta hora)», porque es la probabilidad de que llueva en esa
 hora (0,2 mm o más), no la de que empiece (Juanjo: «este % que indica
 exactamente?»). En el móvil la etiqueta se parte en dos líneas si no cabe.
+
+En la 3.129.0, si el radar ve lluvia fuerte o más a 15 km o menos que no
+llega a casa, el titular lo dice («Pluja molt forta a 10 km al nord, que de
+moment no ve cap aquí», en azul, como «pot arribar») en lugar de «El radar no
+veu pluja que vingui cap aquí» (`nowcast.forta`: la intensidad más alta en
+ese radio y su punto más cercano). Juanjo, con truenos y a punto de llover:
+«esta imagen es compatible con el mensaje?»; el radar veía una tormenta
+torrencial a 10 km al norte que, con el movimiento, pasaba de largo, y el
+recuadro solo nombraba la lluvia débil más cercana. Si el radar ve lluvia a
+15 km o menos, la línea de la previsión ya no dice «seria pluja que es formi
+a prop, que el radar encara no veu», que era falso, sino «la pluja de prop
+pot créixer o desviar-se cap aquí». La línea «La més propera…» no se repite
+si es el mismo punto que el titular. Lo mismo en /radar del bot. Esa tarde
+el registro del movimiento daba más acierto a dejar la lluvia quieta que a
+moverla (20 comparaciones, una sola tarde): las tormentas crecían más que se
+desplazaban, y por eso el texto no promete que pasen de largo.

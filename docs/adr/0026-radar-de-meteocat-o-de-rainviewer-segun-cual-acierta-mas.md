@@ -3,6 +3,20 @@
 Fecha: 2026-10-06 · Estado: aceptado
 
 
+**17-10-2026 (3.129.0).** Con RainViewer como preferida, su imagen se usa
+siempre que no sea más vieja que la de Meteocat, no solo cuando es 10
+minutos más nueva. Juanjo vio en la portada la imagen de Meteocat con mucho
+retraso y preguntó por qué no cambiaba de radar. En las pasadas del 16 y el
+17-10 la imagen de Meteocat tenía de 13 a 18 minutos al cogerla (casi
+siempre 15: es lo que tarda Meteocat en publicarla) y la de RainViewer, de 0
+a 10. Como una sale cada 6 minutos y la otra cada 10, la diferencia iba de 5
+a 14 minutos, y con el margen de 10 la página cambiaba de radar casi en cada
+pasada y la mitad de las veces enseñaba la de Meteocat con 15 minutos. Los
+10 minutos se eligieron a ojo; lo medido es que la imagen de RainViewer
+acierta más (Brier 0,0116 frente a 0,0134, 126 casos con lluvia en 4 días,
+del 07 al 17-10). Meteocat queda de reserva: sin RainViewer o con su imagen
+más vieja. Con Meteocat como preferida, sigue la regla de los 15 minutos.
+
 **09-10-2026 (ADR 0058).** La observación es solo si llueve en casa; sin estación en la pasada, no se apunta observación y la pasada no entra en la comparación.
 
 ## Contexto
@@ -18,7 +32,8 @@ imagen era más de 15 minutos más nueva que la de Meteocat.
 ## Decisión
 
 - **RainViewer en cuanto su imagen es 10 minutos más nueva** que la de
-  Meteocat (`nowcast.MARGES`). En la práctica, casi siempre que Meteocat va
+  Meteocat (`nowcast.MARGES`; desde la 3.129.0, siempre que no sea más vieja,
+  ver arriba). En la práctica, casi siempre que Meteocat va
   con su retraso habitual.
 - **Las dos se comparan solas.** En cada pasada de la página de casa,
   `nowcast.fonts` calcula lo que daría para casa cada fuente con su última

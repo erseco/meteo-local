@@ -23,9 +23,12 @@ def r_amb(retard_mc, retard_rv=0):
 
 
 class Imatge(unittest.TestCase):
-    def test_amb_rainviewer_preferit_n_hi_ha_prou_amb_10_minuts(self):
+    def test_amb_rainviewer_preferit_la_seva_si_no_es_mes_vella(self):
+        # 17-10-2026: amb 10 minuts de marge, la web saltava d'un radar a l'altre.
         self.assertEqual(N.imatge(r_amb(10), "rainviewer")[2], "rainviewer")
-        self.assertEqual(N.imatge(r_amb(8), "rainviewer")[2], "meteocat")
+        self.assertEqual(N.imatge(r_amb(6), "rainviewer")[2], "rainviewer")
+        self.assertEqual(N.imatge(r_amb(0), "rainviewer")[2], "rainviewer")
+        self.assertEqual(N.imatge(r_amb(0, 20), "rainviewer")[2], "meteocat")   # RainViewer encallat
 
     def test_amb_meteocat_preferit_la_regla_d_abans(self):
         self.assertEqual(N.imatge(r_amb(14), "meteocat")[2], "meteocat")

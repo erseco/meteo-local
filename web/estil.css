@@ -447,7 +447,7 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
   border-left: .3rem solid var(--to);
   background: color-mix(in srgb, var(--to) 10%, var(--superficie));
 }
-.radar-ara.possible { --to: var(--enllac); }
+.radar-ara.possible, .radar-ara.a-prop { --to: var(--enllac); }
 .radar-ara { flex-wrap: wrap; }
 .radar-ara > div { flex: 1 1 9rem; min-width: 0; }
 .radar-propera { margin: .15rem 0 0; font-size: .92rem; }

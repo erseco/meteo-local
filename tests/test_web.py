@@ -608,6 +608,10 @@ class Web(unittest.TestCase):
                          ["arriba", "Pluja a sobre", False])
         self.assertEqual(self.avalua(ara, 'textRadar({"arriba": null, "possible": null}, false)')[1],
                          "El radar no veu pluja que vingui cap aquí")
+        # Pluja forta a prop que no ve cap aquí: al titular (17-10-2026, amb trons).
+        forta = {"arriba": None, "possible": None, "forta": {"km": 10.2, "rumb": "al nord", "classe": 4}}
+        self.assertEqual(self.avalua(ara, f"textRadar({json.dumps(forta)}, false)"),
+                         ["a-prop", "Pluja molt forta a 10\u00a0km al nord, que de moment no ve cap aquí"])
         # Sense dada (dades d'abans), com sempre.
         self.assertEqual(self.avalua(ara, 'textRadar({"arriba": "2026-10-08T19:00"}, true)'),
                          ["arriba", "Pluja a sobre", False])

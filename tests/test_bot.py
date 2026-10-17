@@ -312,6 +312,21 @@ class Resum(unittest.TestCase):
         self.assertIn("va cap al sud-oest a 12\u00a0km/h", B.text_radar_bot(d, "ca", ARA))
         self.assertNotIn("més propera", B.text_radar_bot(d, "ca", ARA))   # a sobre, no
 
+    def test_radar_pluja_forta_a_prop(self):
+        # 17-10-2026: amb trons, deia «El radar no veu pluja que vingui cap a Montflorit».
+        d = dades()
+        d["radar"] = {"hora": ARA.isoformat(timespec="minutes"), "imatge": "rainviewer", "arriba": None, "possible": None,
+                      "forta": {"km": 10.2, "rumb": "al nord", "classe": 4},
+                      "propera": {"km": 6.4, "rumb": "al nord-est", "mm_h": 0.6, "classe": 1}}
+        ca = B.text_radar_bot(d, "ca", ARA)
+        self.assertTrue(ca.startswith("Pluja molt forta a 10\u00a0km al nord, que de moment no ve cap a Montflorit.\n"
+                                      "La més propera, a 6\u00a0km al nord-est (feble)."))
+        self.assertTrue(B.text_radar_bot(d, "es", ARA).startswith(
+            "Lluvia muy fuerte a 10\u00a0km al norte, que de momento no viene hacia Montflorit."))
+        # Si la més propera és la mateixa, no es repeteix.
+        d["radar"]["propera"] = {"km": 10.4, "rumb": "al nord", "mm_h": 35, "classe": 4}
+        self.assertNotIn("més propera", B.text_radar_bot(d, "ca", ARA))
+
     def test_pluja_aquesta_nit(self):
         # El 08-10-2026 deia «Esta noche: posible de 20 a 23 h»: hi faltava la pluja.
         vespre = ARA.replace(hour=20)

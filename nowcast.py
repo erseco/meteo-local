@@ -54,7 +54,11 @@ DESACORD_KMH = 20           # pares de RainViewer que difieren más: sin movimie
 # Cuántos minutos más nueva ha de ser la imagen de RainViewer para usarla en
 # lugar de la de Meteocat, según qué fuente acierta más (ADR 0026). Las horas
 # de las dos son pares: 16 equivale a «más de 15», la regla de antes.
-MARGES = {"rainviewer": 10, "meteocat": 16}
+# Con RainViewer como preferida, su imagen siempre que no sea más vieja que la
+# de Meteocat (hasta el 17-10-2026, solo si era 10 minutos más nueva: con
+# imágenes cada 10 y cada 6 minutos, la web saltaba de un radar a otro en
+# cada pasada y enseñaba la de Meteocat con 15 minutos; ADR 0026).
+MARGES = {"rainviewer": 0, "meteocat": 16}
 FONT_PER_DEFECTE = "rainviewer"
 FONT_PREFERIDA = os.path.join(os.environ.get("APRENENTATGE_DIR", "/estat/aprenentatge"), "radar-font.json")
 ADVECCIO_MAX_MIN = 60       # advección más vieja: no se usa su movimiento
@@ -400,7 +404,8 @@ def font_preferida():
 
 def imatge(r, preferida=None):
     """La imagen de la que se parte: la de Meteocat, salvo que la de
-    RainViewer sea MARGES[preferida] minutos más nueva o más. Devuelve
+    RainViewer sea MARGES[preferida] minutos más nueva o más (con 0, la de
+    RainViewer siempre que no sea más vieja). Devuelve
     (hora, mm/h, origen)."""
     mc, rv = r.get("meteocat") or {}, r.get("rainviewer")
     t_rv = rv["hores"][-1] if rv else None
@@ -491,6 +496,8 @@ def rumb(v):
 # que el «quan arriba», perquè diguin el mateix. ---
 MAPA_KM = 30                # el mapa, de 30 km al voltant de casa
 PROPERA_MAX_KM = 60         # més lluny, no es diu
+FORTA_KM = 15               # la pluja forta o més, fins aquí (forta())
+FORTA_CLASSE = 3            # forta
 # Les franges d'intensitat de l'AEMET (mm/h): feble, moderada, forta, molt
 # forta i torrencial; per sota de PLOU_MMH, sense pluja.
 FRANGES_MMH = (2, 15, 30, 60)
@@ -531,6 +538,25 @@ def propera(camp, fila, col, km_px, max_km=PROPERA_MAX_KM):
     angle = math.degrees(math.atan2(c - col, -(f - fila))) % 360
     return {"km": round(float(d[f, c]), 1), "rumb": RUMBS[int((angle + 22.5) // 45) % 8],
             "mm_h": round(float(camp[f, c]), 1), "classe": int(classe(camp[f, c]))}
+
+
+def forta(camp, fila, col, km_px, max_km=FORTA_KM):
+    """La pluja més intensa, si és forta o més, a max_km o menys de casa: a
+    quants km i cap a on hi ha el punt més proper amb aquesta intensitat.
+    None si no n'hi ha. Perquè el requadre no digui només «la més propera,
+    feble» amb una tempesta a 10 km (Juanjo, 17-10-2026: «esta tronando… y
+    el radar decía que no había nada»)."""
+    import numpy as np
+    yy, xx = np.ogrid[:camp.shape[0], :camp.shape[1]]
+    dist = np.hypot((yy - fila) * km_px, (xx - col) * km_px)
+    cl = np.where(dist <= max_km, classe(camp), 0)
+    maxim = int(cl.max())
+    if maxim < FORTA_CLASSE:
+        return None
+    d = np.where(cl == maxim, dist, np.inf)
+    f, c = np.unravel_index(np.argmin(d), d.shape)
+    angle = math.degrees(math.atan2(c - col, -(f - fila))) % 360
+    return {"km": round(float(d[f, c]), 1), "rumb": RUMBS[int((angle + 22.5) // 45) % 8], "classe": maxim}
 
 
 def en_tram(nc, lloc, ini, fin, minim_min=0):

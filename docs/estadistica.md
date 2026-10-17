@@ -424,9 +424,10 @@ qué radar usar (apartado 8).
 
 ### De color a lluvia
 
-La imagen es la última del radar de Meteocat (cada 6 minutos; el radar de
-Vallirana está a unos 20 km) o la de RainViewer, una composición de la
-AEMET cada 10 minutos, si es bastante más nueva. Cada píxel se pasa a
+La imagen es la última del radar que más acierta (ver más abajo): la de
+RainViewer, una composición de la AEMET cada 10 minutos, o la de Meteocat
+(cada 6 minutos; el radar de Vallirana está a unos 20 km), que publica cada
+imagen unos 15 minutos después de tomarla. Cada píxel se pasa a
 reflectividad en dBZ (decibelios de reflectividad) con la leyenda de cada
 radar, y de ahí a intensidad $`R`$ en mm/h con la relación de Marshall-Palmer:
 
@@ -677,8 +678,9 @@ B_R = \frac{1}{n}\sum_{i=1}^{n} (p_{R,i} - o_i)^2
 Cuanto más baja, mejor. Con al menos 30 casos con lluvia en 3 días
 distintos, se cambia de radar si el otro cumple la misma regla del 5 %:
 $`B_{\text{otro}} < 0\text{,}95 \, B_{\text{actual}}`$. Con RainViewer como
-preferido, su imagen se usa en cuanto es 10 minutos más nueva que la de
-Meteocat; con Meteocat, solo si lo es más de 15.
+preferido, su imagen se usa siempre que no sea más vieja que la de Meteocat
+(hasta la 3.128.0, solo si era 10 minutos más nueva); con Meteocat, la de
+RainViewer solo si es más de 15 minutos más nueva.
 
 ### Qué modelos dan el cielo
 

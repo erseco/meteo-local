@@ -460,6 +460,14 @@ function textRadar(r, plou) {
     if (aviat(r.possible)) return ['possible', T('Pluja a prop: pot arribar')];
     return ['possible', [T('Pot arribar pluja '), compte(r.possible), T` (cap a les\u00a0${horaCurta(r.possible)})`]];
   }
+  // Pluja forta o més a 15 km o menys que no ve cap aquí: es diu al titular,
+  // amb el color de «pot arribar» (Juanjo, 17-10-2026, amb trons i el radar
+  // dient «no veu pluja que vingui cap aquí»: «esta imagen es compatible con
+  // el mensaje?»).
+  const f = r.forta;
+  if (f && f.km >= 1) {
+    return ['a-prop', T`Pluja ${NOM_INTENSITAT()[f.classe]} a ${Math.round(f.km)}\u00a0km ${textRumb(f.rumb)}, que de moment no ve cap aquí`];
+  }
   // Només diu el que veu: la pluja que encara no s'ha format no hi surt
   // (Juanjo, 17-10-2026, davant «No s'acosta pluja en 2 hores» i «Comença
   // d'aquí a menys d'una hora» alhora: «son mensajes contrarios»).
@@ -501,11 +509,15 @@ function blocRadar(r, plou, hores) {
   }
   cos.append(p);
   // Si la previsió en dona i el radar no en veu venir, la mateixa hora i
-  // probabilitat que l'etiqueta «Comença…», perquè es llegeixin juntes.
-  if (estat === 'res') {
+  // probabilitat que l'etiqueta «Comença…», perquè es llegeixin juntes. Si
+  // el radar veu pluja a 15 km o menys, no és «pluja que el radar encara no
+  // veu»: pot ser aquesta, que creixi o es desviï (Juanjo, 17-10-2026).
+  if (estat === 'res' || estat === 'a-prop') {
     const ara = new Date();
     const f = primeraPluja(hores, ara);
-    const resta = (x) => T`${textPct(x)}: seria pluja que es formi a prop, que el radar encara no veu.`;
+    const aProp = r.propera && r.propera.km <= 15;
+    const resta = (x) => (aProp ? T`${textPct(x)}: la pluja de prop pot créixer o desviar-se cap aquí.`
+      : T`${textPct(x)}: seria pluja que es formi a prop, que el radar encara no veu.`);
     if (f && new Date(f.hora) < new Date(ara.getTime() + 2 * 3600e3)) {
       const linia = element('p', 'radar-propera');
       linia.append(T('La previsió en dona '), compte(f.hora, true), resta(f));
@@ -515,8 +527,11 @@ function blocRadar(r, plou, hores) {
       if (g) cos.append(element('p', 'radar-propera', T('La previsió en dona per a aquesta hora') + resta(g)));
     }
   }
-  // La pluja més propera, si no és a sobre (Juanjo, 17-10-2026).
-  const propera = textPropera(r.propera);
+  // La pluja més propera, si no és a sobre (Juanjo, 17-10-2026), i si no és
+  // la mateixa que ja diu el titular.
+  const pr = r.propera;
+  const repetida = estat === 'a-prop' && pr && Math.round(pr.km) === Math.round(r.forta.km) && pr.rumb === r.forta.rumb;
+  const propera = !repetida && textPropera(pr);
   if (propera) cos.append(element('p', 'radar-propera', propera));
   // La font i l'hora de la imatge, com demana Meteocat per reutilitzar-la,
   // amb l'enllaç al radar en directe (Juanjo, 08-10-2026). Sense moviment
@@ -551,11 +566,15 @@ const POBLES = [['Terrassa', -10.6, 9.1], ['Sabadell', -2.1, 6.8], ['Sant Cugat'
 const LLOC_NOM = { e: [-0.9, 0.6, 'end'], s: [0, 2.3, 'middle'] };
 const CERCLES_KM = [10, 20, 30];
 
-// «a 6 km al nord-oest (moderada)»; en castellà, «al noroeste».
+// «al nord-oest»; en castellà, «al noroeste».
+function textRumb(rumb) {
+  return IDIOMA.codi === 'es' ? `al ${TD(rumb).replace(/^el /, '')}` : rumb;
+}
+
+// «a 6 km al nord-oest (moderada)».
 function textPropera(p) {
   if (!p || p.km < 1) return null;
-  const rumb = IDIOMA.codi === 'es' ? `al ${TD(p.rumb).replace(/^el /, '')}` : p.rumb;
-  return T`La més propera, a ${Math.round(p.km)}\u00a0km ${rumb} (${NOM_INTENSITAT()[p.classe] || T('feble')}).`;
+  return T`La més propera, a ${Math.round(p.km)}\u00a0km ${textRumb(p.rumb)} (${NOM_INTENSITAT()[p.classe] || T('feble')}).`;
 }
 
 function svgMapa(r, gran) {

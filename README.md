@@ -131,8 +131,9 @@ Fuentes de la previsión:
    se usó del 05-10-2026 al 09-10-2026 (ADR 0004 y 0058). Las nubes, del
    METAR del aeropuerto de Sabadell, cada media hora, para el cielo de la hora
    en curso y para elegir qué mezcla de modelos acierta más (ADR 0088).
-2. **Radar** de Meteocat o, si su imagen va 10 minutos por detrás, de
-   RainViewer; una comparación diaria decide cuál acierta más (ADR 0026).
+2. **Radar** de RainViewer o de Meteocat: una comparación diaria decide cuál
+   acierta más, y se usa la imagen de esa salvo que sea más vieja que la de
+   la otra (con Meteocat, hasta 15 minutos más vieja; ADR 0026).
 3. **Modelos** de Open-Meteo (AROME HD, AROME e ICON-EU, y el ensemble
    ICON-EU-EPS; ECMWF IFS a 9 km, solo para la probabilidad de lluvia, ADR
    0086), con el índice UV del modelo por defecto. El cielo es la mezcla de

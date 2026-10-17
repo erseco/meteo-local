@@ -47,6 +47,23 @@ class MapaIPropera(unittest.TestCase):
         lluny[384, 384 + 70] = 5
         self.assertIsNone(N.propera(lluny, fila, col, km))
 
+    def test_forta(self):
+        # 17-10-2026: amb trons i una tempesta a 10 km, el requadre només deia
+        # «la més propera, feble».
+        fila, col, km = 384.3, 384.6, 0.9
+        camp = np.zeros((N.MIDA, N.MIDA))
+        camp[380, 384] = 1.0          # feble, uns 4 km al nord
+        self.assertIsNone(N.forta(camp, fila, col, km))
+        camp[384, 395] = 20.0         # forta, uns 9,4 km a l'est
+        camp[373, 384] = 35.0         # molt forta, uns 10 km al nord: mana la més intensa
+        f = N.forta(camp, fila, col, km)
+        self.assertEqual((f["rumb"], f["classe"]), ("al nord", 4))
+        self.assertAlmostEqual(f["km"], 10.2, delta=0.3)
+        # Més lluny de FORTA_KM, no.
+        lluny = np.zeros((N.MIDA, N.MIDA))
+        lluny[384, 384 + 20] = 60
+        self.assertIsNone(N.forta(lluny, fila, col, km))
+
 
 class Conversions(unittest.TestCase):
     def test_marshall_palmer(self):

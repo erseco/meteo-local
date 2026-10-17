@@ -330,7 +330,8 @@ def radar():
            "km_lluvia": round(float(dist[lluvia].min()), 1) if lluvia.any() else None,
            "km2_50km_ahora": round(float((lluvia & cerca).sum() * r["km_px"] ** 2)),
            "km2_50km_antes": None, "nowcast": N.resum(r), "a_prop": {},
-           "mapa": N.mapa(ara, fila, col, r["km_px"]), "propera": N.propera(ara, fila, col, r["km_px"])}
+           "mapa": N.mapa(ara, fila, col, r["km_px"]), "propera": N.propera(ara, fila, col, r["km_px"]),
+           "forta": N.forta(ara, fila, col, r["km_px"])}
     # El registro del movimiento, para comprobar en un mes si acierta (moviment_registre.py).
     try:
         MR.apunta(r, res["nowcast"])

@@ -1356,13 +1356,24 @@ def text_radar_bot(dades, idioma, moment):
         que = (f"Llegaría lluvia a Montflorit hacia las {h(r['arriba'])}." if idioma == "es" else f"Arribaria pluja a Montflorit cap a les {h(r['arriba'])}.")
     elif r.get("possible"):
         que = (f"Puede llegar lluvia a Montflorit hacia las {h(r['possible'])}." if idioma == "es" else f"Pot arribar pluja a Montflorit cap a les {h(r['possible'])}.")
+    elif (r.get("forta") or {}).get("km", 0) >= 1:
+        # Pluja forta o més a 15 km o menys, com a la web (17-10-2026).
+        f = r["forta"]
+        cap = ("al " + DIRECCIO_ES.get(f["rumb"], f["rumb"]).removeprefix("el ")) if es else f["rumb"]
+        nom = INTENSITAT_RADAR[idioma][f["classe"]]
+        que = (f"Lluvia {nom} a {round(f['km'])}\u00a0km {cap}, que de momento no viene hacia Montflorit." if es
+               else f"Pluja {nom} a {round(f['km'])}\u00a0km {cap}, que de moment no ve cap a Montflorit.")
     else:
         # Només el que veu: la pluja que encara no s'ha format no hi surt
         # (Juanjo, 17-10-2026: «son mensajes contrarios» amb la previsió).
         que = ("El radar no ve lluvia que venga hacia Montflorit." if idioma == "es"
                else "El radar no veu pluja que vingui cap a Montflorit.")
-    # La pluja més propera, si no és a sobre, com a la web (17-10-2026).
+    # La pluja més propera, si no és a sobre, com a la web (17-10-2026), i si
+    # no és la mateixa que la forta que ja s'ha dit.
     p = r.get("propera")
+    f = r.get("forta")
+    if f and p and round(p.get("km", 0)) == round(f["km"]) and p.get("rumb") == f["rumb"]:
+        p = None
     if p and p.get("km", 0) >= 1:
         noms = INTENSITAT_RADAR[idioma]
         cap = ("al " + DIRECCIO_ES.get(p["rumb"], p["rumb"]).removeprefix("el ")) if es else p["rumb"]
