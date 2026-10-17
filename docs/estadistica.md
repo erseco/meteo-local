@@ -499,8 +499,12 @@ a 15 km o menos de casa en media hora sin acercarse. Desde ese día se
 registra también, para cada imagen de RainViewer (`creixement.csv`), la
 superficie con lluvia (0,5 mm/h o más) a 15 km o menos, $`A_t`$, la de 30
 minutos antes, $`A_{t-30}`$, y la distancia de la lluvia moderada (2 mm/h o
-más) en las dos. La página solo dice lo medido («n'hi ha el triple que fa
-mitja hora») cuando $`A_t \ge 20`$ km² y $`A_t \ge 2\,A_{t-30}`$. Con un mes
+más) en las dos. La página solo dice lo medido, como parte del círculo de
+15 km (unos 707 km²) que ocupa la lluvia ahora y hace media hora («ja ocupa
+el 31 % del terreny a 15 km o menys; fa mitja hora, el 16 %»), cuando ha
+ganado al menos 50 km²: $`A_t - A_{t-30} \ge 50`$ km². Se cuenta lo que gana
+y no cuántas veces crece, porque el doble de 10 km² son unos píxeles y el de
+216 es buena parte del entorno. Con un mes
 de datos se comprobará, con regresión logística y validación con días que el
 modelo no ha visto, si $`A_t`$, $`A_t / A_{t-30}`$ y esas distancias
 anuncian lluvia en casa en la hora siguiente; solo si la mejora es segura

@@ -574,12 +574,13 @@ const CERCLES_KM = [10, 20, 30];
 // creixement). El moviment només desplaça la imatge, i el 17-10-2026 la
 // tempesta es formava cada cop més a prop (Juanjo: «no se trata solo de la
 // direccion de la lluvia sino de hacia donde crece»).
+// Quina part del terreny ocupa, ara i fa mitja hora: el doble de 10 km² no és
+// el doble de 216 (Juanjo, 17-10-2026).
 function textCreixement(r) {
   const c = r && r.creixement;
-  if (!c || !c.creix) return null;
-  if (!c.vegades) return T('La pluja s’està formant a prop: a 15\u00a0km o menys, fa mitja hora no n’hi havia.');
-  const quant = c.vegades === 2 ? T('el doble') : c.vegades === 3 ? T('el triple') : T`${c.vegades} vegades més`;
-  return T`La pluja s’està formant a prop: a 15\u00a0km o menys n’hi ha ${quant} que fa mitja hora.`;
+  if (!c || !c.creix || c.pct == null) return null;
+  if (!c.km2_abans) return T`La pluja s’està formant a prop: ja ocupa el ${c.pct}\u00a0% del terreny a 15\u00a0km o menys; fa mitja hora, gens.`;
+  return T`La pluja s’està formant a prop: ja ocupa el ${c.pct}\u00a0% del terreny a 15\u00a0km o menys; fa mitja hora, el ${Math.max(c.pct_abans, 1)}\u00a0%.`;
 }
 
 // «al nord-oest»; en castellà, «al noroeste».

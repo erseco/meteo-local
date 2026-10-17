@@ -501,8 +501,10 @@ FORTA_CLASSE = 3            # forta
 CREIX_KM = 15               # creixement(): la pluja d'aquí al voltant
 CREIX_MIN = 30              # comparada amb la de fa 30 minuts, del mateix radar
 CREIX_MARGE_MIN = 5
-CREIX_MIN_KM2 = 20          # perquè es digui: almenys 20 km² ara…
-CREIX_VEGADES = 2           # …i el doble que abans (o abans res)
+CREIX_GUANY_KM2 = 50        # perquè es digui: 50 km² més que fa 30 minuts
+# (unes 7 parts de cada 100 del cercle); el doble de 10 km² no és res i el
+# doble de 216 és molt (Juanjo, 17-10-2026: «no es lo mismo el doble de 10km²
+# que de 216»; fins a la 3.131.0, el doble i 20 km²).
 # Les franges d'intensitat de l'AEMET (mm/h): feble, moderada, forta, molt
 # forta i torrencial; per sota de PLOU_MMH, sense pluja.
 FRANGES_MMH = (2, 15, 30, 60)
@@ -595,13 +597,15 @@ def creixement(r, fila, col, km_px):
         return round(float(dist[m].min()), 1) if m.any() else None
 
     ara, abans = km2(rv["mm_h"][-1]), km2(rv["mm_h"][j])
+    cercle = float(a_prop.sum() * km_px ** 2)
     mc = (r.get("meteocat") or {}).get("mm_h")
     return {"radar": "rainviewer", "hora": t1.isoformat(timespec="minutes"), "minuts": minuts,
             "km2": ara, "km2_abans": abans,
+            # La part del cercle amb pluja, en %: el que es diu a la pàgina.
+            "pct": round(100 * ara / cercle), "pct_abans": round(100 * abans / cercle),
             "km_moderada": km_moderada(rv["mm_h"][-1]), "km_moderada_abans": km_moderada(rv["mm_h"][j]),
             "km2_meteocat": None if mc is None else km2(mc),
-            "creix": ara >= CREIX_MIN_KM2 and ara >= CREIX_VEGADES * abans,
-            "vegades": round(ara / abans) if abans else None}
+            "creix": ara - abans >= CREIX_GUANY_KM2}
 
 
 def en_tram(nc, lloc, ini, fin, minim_min=0):

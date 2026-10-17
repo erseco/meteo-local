@@ -74,7 +74,7 @@ class Creixement(unittest.TestCase):
             import moviment_registre
             MR = importlib.reload(moviment_registre)
             c = {"hora": "2026-10-17T19:10+02:00", "minuts": 30, "km2": 118, "km2_abans": 42, "km_moderada": 7.0,
-                 "km_moderada_abans": 8.4, "km2_meteocat": 94, "creix": True, "vegades": 3}
+                 "km_moderada_abans": 8.4, "km2_meteocat": 94, "pct": 17, "pct_abans": 6, "creix": True}
             self.assertEqual(MR.apunta_creixement(c), 1)
             self.assertEqual(MR.apunta_creixement(c), 0)          # la mateixa imatge, una vegada
             self.assertEqual(MR.apunta_creixement({**c, "hora": "2026-10-17T19:20+02:00"}), 1)

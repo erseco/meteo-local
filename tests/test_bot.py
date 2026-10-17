@@ -324,11 +324,11 @@ class Resum(unittest.TestCase):
         self.assertTrue(B.text_radar_bot(d, "es", ARA).startswith(
             "Lluvia muy fuerte a 10\u00a0km al norte, que de momento no viene hacia Montflorit."))
         # La pluja que creix al voltant, com a la web.
-        d["radar"]["creixement"] = {"creix": True, "vegades": 2}
-        self.assertIn("\nLa pluja s'està formant a prop: a 15\u00a0km o menys n'hi ha el doble que fa mitja hora.",
-                      B.text_radar_bot(d, "ca", ARA))
-        self.assertIn("\nLa lluvia se está formando cerca: a 15\u00a0km o menos hay el doble que hace media hora.",
-                      B.text_radar_bot(d, "es", ARA))
+        d["radar"]["creixement"] = {"creix": True, "km2": 216, "km2_abans": 113, "pct": 31, "pct_abans": 16}
+        self.assertIn("\nLa pluja s'està formant a prop: ja ocupa el 31\u00a0% del terreny a 15\u00a0km o menys; "
+                      "fa mitja hora, el 16\u00a0%.", B.text_radar_bot(d, "ca", ARA))
+        self.assertIn("\nLa lluvia se está formando cerca: ya ocupa el 31\u00a0% del terreno a 15\u00a0km o menos; "
+                      "hace media hora, el 16\u00a0%.", B.text_radar_bot(d, "es", ARA))
         # Si la més propera és la mateixa, no es repeteix.
         d["radar"]["propera"] = {"km": 10.4, "rumb": "al nord", "mm_h": 35, "classe": 4}
         self.assertNotIn("més propera", B.text_radar_bot(d, "ca", ARA))

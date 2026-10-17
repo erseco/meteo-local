@@ -327,3 +327,15 @@ lluvia a 15 km o menos (Meteocat: 0, 42, 67, 94 y 118 km² de 18:24 a 19:00).
 La línea dice lo medido, no una hora de llegada; si anuncia la lluvia en
 casa lo dirá un mes de registro (`creixement.csv`, docs/estadistica.md),
 revisado junto con el del movimiento el 17-11-2026. Lo mismo en /radar.
+
+En la 3.132.0 la línea cuenta lo que gana la lluvia, no cuántas veces crece:
+sale si a 15 km o menos ha ganado 50 km² o más en media hora (unos 7 de cada
+100 del círculo) y dice qué parte del terreno ocupa ahora y hace media hora:
+«La pluja s'està formant a prop: ja ocupa el 31 % del terreny a 15 km o
+menys; fa mitja hora, el 16 %» (o «gens»). Juanjo, ante la regla del doble,
+que a las 19:20 no salía con 216 km² frente a 113: «no es lo mismo el doble
+de 10km² que de 216». Con las imágenes de esa tarde, la regla nueva salta
+desde las 18:36 en Meteocat (+50 km²) y desde las 18:40 en RainViewer
+(+70), sigue a las 19:00 (+145) y a las 19:20 (+103), y no salta con un paso
+de 10 a 20 km². Los 50 km² salen de una sola tarde y solo deciden cuándo se
+dice lo medido; si sirve para anunciar la lluvia lo dirá el registro.

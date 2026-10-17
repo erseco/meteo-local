@@ -58,16 +58,19 @@ class MapaIPropera(unittest.TestCase):
         r = {"rainviewer": {"hores": hores, "mm_h": [pluja(2)] * 4 + [pluja(3), pluja(4), pluja(6)]}}
         c = N.creixement(r, fila, col, km)
         self.assertEqual((c["minuts"], c["creix"]), (30, True))
-        self.assertGreater(c["km2"], 2 * c["km2_abans"])
-        self.assertEqual(c["vegades"], round(c["km2"] / c["km2_abans"]))
+        self.assertGreaterEqual(c["km2"] - c["km2_abans"], N.CREIX_GUANY_KM2)
+        # La part del cercle de 15 km (uns 707 km²), en %.
+        self.assertAlmostEqual(c["pct"], 100 * c["km2"] / 707, delta=1)
         self.assertAlmostEqual(c["km_moderada"], 3.9, delta=0.5)
-        # Poca pluja, encara que creixi: no es diu.
-        r["rainviewer"]["mm_h"][-1] = pluja(1)
-        self.assertFalse(N.creixement(r, fila, col, km)["creix"])
-        # Sense pluja abans: «fa mitja hora no n'hi havia».
+        # El doble de poca pluja no és res: de 10 a 20 km², no es diu (Juanjo, 17-10-2026).
+        r["rainviewer"]["mm_h"] = [pluja(2)] * 4 + [pluja(2), pluja(2), pluja(3)]
+        c = N.creixement(r, fila, col, km)
+        self.assertGreaterEqual(c["km2"], 2 * c["km2_abans"])
+        self.assertFalse(c["creix"])
+        # Sense pluja abans.
         r["rainviewer"]["mm_h"] = [pluja(0)] * 6 + [pluja(5)]
         c = N.creixement(r, fila, col, km)
-        self.assertEqual((c["km2_abans"], c["creix"], c["vegades"]), (0, True, None))
+        self.assertEqual((c["km2_abans"], c["pct_abans"], c["creix"]), (0, 0, True))
         # Sense la imatge de fa mitja hora, res.
         self.assertIsNone(N.creixement({"rainviewer": {"hores": hores[-2:], "mm_h": [pluja(2)] * 2}}, fila, col, km))
 

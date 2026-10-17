@@ -613,13 +613,15 @@ class Web(unittest.TestCase):
         self.assertEqual(self.avalua(ara, f"textRadar({json.dumps(forta)}, false)"),
                          ["a-prop", "Pluja molt forta a 10\u00a0km al nord, que de moment no ve cap aquí"])
         # La pluja que creix al voltant (17-10-2026).
-        c = {"creixement": {"creix": True, "vegades": 3}}
+        c = {"creixement": {"creix": True, "km2": 216, "km2_abans": 113, "pct": 31, "pct_abans": 16}}
         self.assertEqual(self.avalua(ara, f"textCreixement({json.dumps(c)})"),
-                         "La pluja s’està formant a prop: a 15\u00a0km o menys n’hi ha el triple que fa mitja hora.")
-        c["creixement"]["vegades"] = None
+                         "La pluja s’està formant a prop: ja ocupa el 31\u00a0% del terreny a 15\u00a0km o menys; "
+                         "fa mitja hora, el 16\u00a0%.")
+        c["creixement"].update(km2=52, km2_abans=0, pct=7, pct_abans=0)
         self.assertEqual(self.avalua(ara, f"textCreixement({json.dumps(c)})"),
-                         "La pluja s’està formant a prop: a 15\u00a0km o menys, fa mitja hora no n’hi havia.")
-        self.assertIsNone(self.avalua(ara, 'textCreixement({"creixement": {"creix": false, "vegades": 3}})'))
+                         "La pluja s’està formant a prop: ja ocupa el 7\u00a0% del terreny a 15\u00a0km o menys; "
+                         "fa mitja hora, gens.")
+        self.assertIsNone(self.avalua(ara, 'textCreixement({"creixement": {"creix": false, "pct": 3}})'))
         # Sense dada (dades d'abans), com sempre.
         self.assertEqual(self.avalua(ara, 'textRadar({"arriba": "2026-10-08T19:00"}, true)'),
                          ["arriba", "Pluja a sobre", False])
