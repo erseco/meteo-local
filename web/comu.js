@@ -819,7 +819,10 @@ function avisosAemet(dades) {
   return (dades.avisos || []).filter((a) => !a.cobert);
 }
 
-function blocAvisos(dades, ara = new Date()) {
+// plegat: a la portada, sempre plegat en carregar-la (Juanjo, 17-10-2026:
+// «los avisos activos de la portada siempre colapsados»); les línies curtes ja
+// diuen quins són. Si la persona l'obre, queda obert mentre no canviïn.
+function blocAvisos(dades, { ara = new Date(), plegat = false } = {}) {
   const aemet = avisosAemet(dades);
   const perills = [...blocPlans(dades.plans, dades.smp), ...blocSmp(dades.smp, dades.plans),
     ...(aemet.length ? blocAvisosAemet(aemet, ara) : []),
@@ -836,7 +839,7 @@ function blocAvisos(dades, ara = new Date()) {
   resum.append(element('h2', 'seccio', T`Avisos actius (${curts.length})`));
   plec.append(resum, ...perills.map((i) => ambDetall(i, hrefDe(i))),
     ...talls.map((i) => ambDetall(i, 'consultes.html#llum')));
-  plec.open = obertAvisos(empremta, curts.some((c) => nivellDe(c) === 'vermell'));
+  plec.open = obertAvisos(empremta, curts.some((c) => nivellDe(c) === 'vermell'), plegat);
   if (plec.open) marcaAvisosVistos(empremta);
   plec.addEventListener('toggle', () => {
     PLEC_AVISOS = { empremta, obert: plec.open };
@@ -869,8 +872,9 @@ function marcaAvisosVistos(empremta) {
   try { localStorage.setItem(CLAU_AVISOS_VISTOS, empremta); } catch (e) { /* sense memòria, cada vegada desplegat */ }
 }
 
-function obertAvisos(empremta, vermell) {
+function obertAvisos(empremta, vermell, plegat = false) {
   if (PLEC_AVISOS && PLEC_AVISOS.empremta === empremta) return PLEC_AVISOS.obert;
+  if (plegat) return false;
   return vermell || avisosVistos() !== empremta;
 }
 

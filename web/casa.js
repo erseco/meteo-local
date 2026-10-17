@@ -782,7 +782,7 @@ let DADES_AVISOS = null;
 function pintaAvisos(dades) {
   const avisos = $('avisos');
   avisos.querySelector('.avisos-actius')?.remove();
-  const actius = blocAvisos(dades);
+  const actius = blocAvisos(dades, { plegat: true });
   if (actius) avisos.prepend(actius);
 }
 function repintaAvisos() {

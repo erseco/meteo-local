@@ -99,3 +99,15 @@ el resumen del día.
   si falta.
 - axe-core, sin incidencias en la portada (catalán y castellano) y «Si surts»,
   desplegado y plegado.
+
+## Cambio del 17-10-2026 (3.118.0): en la portada, siempre plegado
+
+Juanjo: «los avisos activos de la portada siempre colapsados». En «El temps»,
+«Avisos actius» se abre plegado siempre, también la primera vez, cuando cambia
+el conjunto y con un aviso rojo: plegado ya muestra una línea por aviso con la
+franja de su nivel, así que se ve cuáles hay sin tocar nada. Si la persona lo
+abre, queda abierto en esa página mientras los avisos no cambien.
+`blocAvisos(dades, { plegat: true })` en `casa.js`; «Si surts» sigue con la
+regla de arriba (se despliega solo con algo nuevo o rojo). Validación:
+Chromium y Firefox con los avisos del momento (Meteocat en rojo): la portada
+plegada al cargar, «Si surts» desplegada; prueba en `tests/test_perills.py`.
