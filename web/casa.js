@@ -243,12 +243,18 @@ function resumTram(t) {
   return sum;
 }
 
-function blocAra(casa, radarDades, vent, veines, hores) {
+// «Ara» i la resta del dia en una sola targeta, sense repetir res (Juanjo,
+// 17-10-2026: «las tarjetas ara y avui deberían juntarse y simplificarlas…
+// sin repetirse arriba y abajo»; ADR 0074): a dalt, el que es mesura ara; a
+// sota, el resum d'avui (el de «Consultes › Avui», sense el títol), amb el que
+// falta per a la pluja dins la seva línia, i el radar, si diu alguna cosa.
+function blocAra(casa, radarDades, vent, veines, hores, resum) {
   const sec = element('section', 'decisio targeta ara');
-  sec.setAttribute('aria-label', T`El temps ara a ${LLOC}`);
+  sec.setAttribute('aria-label', T`El temps avui a ${LLOC}`);
   // Sense l'hora de la mesura: la línia «Actualitzat a les…» va al peu de la
   // targeta, i dues hores juntes semblaven un error (Juanjo, 16-10-2026; ADR 0094).
-  sec.append(element('h2', 'data', T`Ara a ${LLOC}`));
+  const dia = new Date().toLocaleDateString(IDIOMA.codi === 'es' ? 'es-ES' : 'ca-ES', { weekday: 'long' });
+  sec.append(element('h2', 'data', T`Avui, ${dia}, a ${LLOC}`));
   const temp = element('p', 'veredicte');
   const termometre = icona('i-thermometer');
   termometre.classList.add('vehicle');
@@ -288,12 +294,45 @@ function blocAra(casa, radarDades, vent, veines, hores) {
   if (casa.pressio != null) menys.push(textPressio(casa));
   sec.append(element('p', 'ara-menys', menys.join(' · ')));
   const radar = blocRadar(radarDades, plou, hores);
-  if (radar) sec.append(radar);
-  // Si no plou i el radar no la veu arribar, quan la dona la previsió.
+  // Si no plou i el radar no la veu arribar, quant falta segons la previsió.
   const radarDiu = radar && radar.matches('.arriba, .possible');
-  const prevista = !plou && !radarDiu && liniaPlujaPrevista(hores);
-  if (prevista) sec.append(prevista);
+  const comptePluja = !plou && !radarDiu;
+  if (resum) {
+    const linies = pintaResum(resum).slice(1);
+    if (linies.length) {
+      const cos = element('div', 'resta-dia');
+      cos.append(...ambDetalls(linies));
+      if (comptePluja) posaComptePluja(cos, hores);
+      sec.append(cos);
+    }
+  } else if (comptePluja) {
+    const prevista = liniaPlujaPrevista(hores);
+    if (prevista) sec.append(prevista);
+  }
+  if (radar) sec.append(radar);
   return sec;
+}
+
+// Quant falta per a la pluja, a la línia de la pluja del resum: «Possible
+// pluja de 17 a 19 h (…). Comença d'aquí a unes 4 hores.» Si avui no en
+// preveu però en vindrà abans de 24 hores, la línia «Sense pluja prevista»
+// diu quan.
+const LINIA_PLUJA = /^(Possible pluja|Pluja|Posible lluvia|Lluvia|Aquesta nit|Esta noche)\b/;
+const LINIA_SECA = /^(Sense pluja|Sin lluvia)/;
+function posaComptePluja(cos, hores, ara = new Date()) {
+  const fins = new Date(ara.getTime() + 24 * 3600e3);
+  const f = (hores || []).find((x) => new Date(x.hora) > ara && new Date(x.hora) < fins && plujaHora(x));
+  if (!f) return;
+  const files = [...cos.querySelectorAll('.resum-linia')];
+  const text = (fila) => (fila.lastElementChild && fila.lastElementChild.textContent || '').trim();
+  const pluja = files.find((fila) => LINIA_PLUJA.test(text(fila)));
+  if (pluja) {
+    pluja.lastElementChild.append(T(' Comença '), compte(f.hora, true), '.');
+    return;
+  }
+  const seca = files.find((fila) => LINIA_SECA.test(text(fila)));
+  const prevista = liniaPlujaPrevista(hores, ara);
+  if (seca && prevista) seca.replaceWith(prevista);
 }
 
 // «d'aquí a 25 minuts», «d'aquí a 1 h 10 min»: un element que actualitzaComptes
@@ -333,7 +372,7 @@ function liniaPlujaPrevista(hores, ara = new Date()) {
   if (!f) return null;
   const pct = f.probabilitat == null ? null : Math.round(f.probabilitat * 100);
   const segura = plujaHora(f) === 'pluja';
-  const p = element('p', `pluja-prevista${segura ? ' segura' : ''}`);
+  const p = element('p', `resum-linia pluja-prevista${segura ? ' segura' : ''}`);
   const text = element('span');
   text.append(segura ? T('Pluja prevista ') : T('Possible pluja '), compte(f.hora, true),
     T`, cap a les ${new Date(f.hora).getHours()}\u00a0h` + (pct == null ? '' : ` (${pct}\u00a0%)`) + '.');
@@ -352,14 +391,22 @@ function liniaPlujaPrevista(hores, ara = new Date()) {
 const LINIA_FORA = /^(⟦[a-z-]+⟧ ?)?(Ara mateix|Ahora mismo|Roba |Ropa )/;
 const liniaFora = (l) => LINIA_FORA.test(l) || LINIA_PERILL.test(l);
 
-function textosResum(dades) {
-  const textos = (dades.consultes || {})[IDIOMA.codi === 'es' ? 'es' : 'ca'] || {};
-  const claus = new Date(dades.generat).getHours() >= HORA_DEMA ? ['avui', 'dema'] : ['avui'];
-  return claus.filter((c) => textos[c]).map((c) => textos[c].split('\n').filter((l) => !liniaFora(l)).join('\n'));
+function textResum(dades, clau) {
+  const text = ((dades.consultes || {})[IDIOMA.codi === 'es' ? 'es' : 'ca'] || {})[clau];
+  return text ? text.split('\n').filter((l) => !liniaFora(l)).join('\n') : null;
 }
 
-function blocsResum(dades) {
-  const blocs = textosResum(dades).map((text) => {
+function textosResum(dades) {
+  const claus = new Date(dades.generat).getHours() >= HORA_DEMA ? ['avui', 'dema'] : ['avui'];
+  return claus.map((c) => textResum(dades, c)).filter(Boolean);
+}
+
+// Les targetes del resum que no van dins «Ara»: la de demà, des de HORA_DEMA,
+// i la d'avui si no hi ha dades d'ara.
+function blocsResum(dades, ambAvui) {
+  const claus = (new Date(dades.generat).getHours() >= HORA_DEMA ? ['avui', 'dema'] : ['avui'])
+    .filter((c) => c !== 'avui' || ambAvui);
+  const blocs = claus.map((c) => textResum(dades, c)).filter(Boolean).map((text) => {
     const sec = element('section', 'targeta resum-dia');
     sec.append(...ambDetalls(pintaResum(text)));
     return sec;
@@ -771,7 +818,8 @@ function pinta(dades) {
     const m = dades.models;
     avisos.append(element('p', 'avis', T`Avui els models no veuen aquesta pluja: en les darreres ${m.hores} hores han caigut ${coma(m.mesurada_mm)}\u00a0mm a Montflorit i en preveien ${coma(m.prevista_mm)}. Les primeres hores de la taula parteixen del que mesura l\u2019estació; per a la resta, fes més cas dels avisos.`));
   }
-  const ara = dades.ara_casa && blocAra(dades.ara_casa, dades.radar, dades.vent, dades.veines, dades.hores);
+  const ara = dades.ara_casa && blocAra(dades.ara_casa, dades.radar, dades.vent, dades.veines, dades.hores,
+    textResum(dades, 'avui'));
   if (ara) {
     ara.append(HORARI);
     cont.append(ara);
@@ -779,7 +827,7 @@ function pinta(dades) {
     cont.append(HORARI);
   }
   if (OFERTA_AVISOS) cont.append(OFERTA_AVISOS);
-  const resum = blocsResum(dades);
+  const resum = blocsResum(dades, !ara);
   cont.append(...resum);
   const previsio = dades.hores && taula(dades.hores, dades.temperatura_mesurada, dades.riscos, dades.sol);
   if (previsio) {

@@ -189,3 +189,29 @@ la pestaña al fondo el navegador congela la página. La página vuelve a leer
 `avisos.json` cada vez que vuelve a estar a la vista (`visibilitychange`),
 además de al cargar, cada 5 minutos y al llegar un aviso. Comprobado en
 Chromium y Firefox con un suceso nuevo añadido con la página abierta.
+
+## Cambio del 17-10-2026 (3.117.0): «Ara» y «Avui», una sola tarjeta
+
+Juanjo: «la tarjetas ara y avui deberían juntarse y simplificarlas. Que
+salgan lo de ahora y la prevision para el resto del dia junto, sin repetirse
+arriba y abajo. la tarjeta del radar que ahora no sale saldrá debajo». Se
+repetían el título («Ara a Montflorit» y «Avui, dissabte, a Montflorit») y la
+lluvia: la línea de cuánto falta (3.116.0) daba la hora y la probabilidad que
+la línea del resumen ya decía.
+
+Ahora la tarjeta se titula «Avui, dissabte, a Montflorit». Arriba, lo que se
+mide (temperatura, lluvia, viento, humedad y presión); debajo de una línea
+fina, el resumen de «Consultes › Avui» sin el título, con los mismos filtros
+de antes: sin «Ara mateix», ni ropa y paraguas, ni las líneas de peligro, que
+están en «Avisos actius». La única línea de aviso que queda es la de los
+trenes. Cuánto falta para la lluvia va al final de su línea («… Comença d'aquí
+a unes 4 hores.»), y si hoy no se espera pero llega antes de 24 horas, la
+línea «Sense pluja prevista» se sustituye por la de la previsión. Si el radar
+ya da la llegada en minutos, la línea no lleva cuenta. El recuadro del radar,
+cuando sale, va al final, encima de «Actualitzat a les…». Desde HORA_DEMA,
+«Previsió per a demà» sigue en su tarjeta, debajo; sin datos de ahora, el
+resumen de hoy sale en la suya, como antes.
+
+Validación: Chromium y Firefox a 390 px, en catalán y castellano, con los
+datos del momento, con el radar simulado (lluvia a 23 minutos) y con la hora
+simulada a las 18:35 (tarjeta de mañana aparte); Juanjo lo vio en el móvil.

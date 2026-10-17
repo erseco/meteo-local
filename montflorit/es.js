@@ -143,8 +143,6 @@ var IDIOMA = {
     "Pressió {0}\u00a0hPa": "Presión {0}\u00a0hPa",
     "{0}, estable": "{0}, estable",
     "{0}, {1}{2} ({3}{4} en 3\u00a0h)": "{0}, {1}{2} ({3}{4} en 3\u00a0h)",
-    "El temps ara a {0}": "El tiempo ahora en {0}",
-    "Ara a {0}": "Ahora en {0}",
     // «Avisos actius» plegat (ADR 0094).
     "Avisos actius ({0})": "Avisos activos ({0})",
     "Protecció Civil: pla {0} ({1}) en {2}": "Protección Civil: plan {0} ({1}) en {2}",
@@ -361,6 +359,9 @@ var IDIOMA = {
     "d’aquí a {0}\u00a0h": "dentro de {0}\u00a0h",
     "Pluja prevista ": "Lluvia prevista ",
     "Possible pluja ": "Posible lluvia ",
+    " Comença ": " Empieza ",
+    "El temps avui a {0}": "El tiempo hoy en {0}",
+    "Avui, {0}, a {1}": "Hoy, {0}, en {1}",
     ", cap a les {0}\u00a0h": ", hacia las {0}\u00a0h",
     "Dia anterior": "Día anterior",
     "Dia següent": "Día siguiente",

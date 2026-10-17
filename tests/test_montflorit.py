@@ -258,7 +258,7 @@ class Castella(unittest.TestCase):
 
     def test_el_catala_no_canvia_sense_diccionari(self):
         self.assertEqual(js("IDIOMA.codi"), "es")
-        self.assertEqual(js("T`Ara a ${'Montflorit'}`"), "Ahora en Montflorit")
+        self.assertEqual(js("T`Avui, ${'dilluns'}, a ${'Montflorit'}`"), "Hoy, dilluns, en Montflorit")
         self.assertEqual(js("T('Un text que no hi és')"), "Un text que no hi és")
         # En castellà, la fase sempre amb «de».
         self.assertEqual(js("deFase(TD('emergència'))"), "de emergencia")
@@ -287,6 +287,14 @@ class Castella(unittest.TestCase):
                             ".map((x) => typeof x === 'string' ? x : x.textContent).join('')"),
                          "Lluvia dentro de 1\u00a0h 15\u00a0min (hacia las\u00a011:15)")
         self.assertEqual(js("TD('al nord-est')"), "el nordeste")
+        # «Ara» i la resta del dia en una targeta (17-10-2026): la línia de la pluja del resum porta
+        # el que falta, i la de «sense pluja», si en vindrà abans de 24 hores, diu quan.
+        self.assertEqual(js("['Lluvia de 14 a 15 h.', 'Posible lluvia de 17 a 19 h.', 'Esta noche: lluvia de 2 a 4 h.',"
+                            " 'Temperatura de aquí a medianoche: 20 °C.'].map((l) => LINIA_PLUJA.test(l))"),
+                         [True, True, True, False])
+        self.assertEqual(js("['Sin lluvia prevista.', 'Sense pluja prevista.'].map((l) => LINIA_SECA.test(l))"), [True, True])
+        self.assertEqual(js("textResum({consultes: {es: {avui: '<b>Hoy</b>\\n⟦i-sun⟧ Ahora mismo: 20 °C.\\nSin lluvia prevista.'}}}, 'avui')"),
+                         "<b>Hoy</b>\nSin lluvia prevista.")
         # Juanjo, 12-10-2026 (ADR 0074): sin «Modo normal» ni «Modo vigilancia»; el «?»
         # de la línea de actualización explica cada cuánto se actualiza.
         explicacio = ("La página se actualiza cada 15 minutos, y cada 6 cuando hay un aviso de Meteocat o de AEMET, un plan de "

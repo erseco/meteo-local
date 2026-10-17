@@ -914,6 +914,14 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .targeta.resum-dia { border-left: 1px solid var(--vora); margin-top: .8rem; line-height: 1.5; overflow-wrap: anywhere; }
 .resum-dia p { margin: 0; }
 .resum-dia .resum-linia:first-child { margin-bottom: .2rem; }
+/* «Ara» i la resta del dia en una targeta (Juanjo, 17-10-2026): el resum
+   d'avui, sense títol, separat del que es mesura per una línia fina. */
+.resta-dia { margin-top: .7rem; padding-top: .7rem; border-top: 1px solid var(--vora); line-height: 1.5; overflow-wrap: anywhere; }
+.resta-dia p { margin: 0; }
+.resta-dia .resum-linia:first-child { display: grid; }
+.resta-dia .resum-linia + .resum-linia { margin-top: .45rem; }
+.resta-dia .pluja-prevista { display: grid; font-size: inherit; }
+.resta-dia .pluja-prevista svg { margin-top: .15rem; }
 
 /* Al mòbil, les pàgines en una barra fixa a baix, com a les aplicacions, i
    sense la línia de sota el títol: dalt hi queda el que es vol veure en obrir
