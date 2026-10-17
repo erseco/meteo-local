@@ -102,7 +102,7 @@ class Web(unittest.TestCase):
         ]
         self.assertEqual(
             self.text("2026-10-05T16:41:00+02:00", avisos),
-            "Avís groc de l’AEMET per pluja i tempestes al Vallès: avui fins a les 20:00; "
+            "AEMET: avís groc per pluja i tempestes al Vallès: avui fins a les 20:00; "
             "demà de 09:00 a 18:00 i de 22:00 a mitjanit.")
 
     def test_tipus_i_nivells_diferents(self):
@@ -113,9 +113,9 @@ class Web(unittest.TestCase):
         ]
         self.assertEqual(
             self.text("2026-10-05T16:41:00+02:00", avisos),
-            "Avís taronja de l’AEMET per pluja al Vallès: avui de 18:00 a mitjanit. "
-            "Avís groc de l’AEMET per tempestes al Vallès: fins demà a les 12:00. "
-            "Avís groc de l’AEMET per pluja al Vallès: dimecres d’11:00 a 14:00.")
+            "AEMET: avís taronja per pluja al Vallès: avui de 18:00 a mitjanit. "
+            "AEMET: avís groc per tempestes al Vallès: fins demà a les 12:00. "
+            "AEMET: avís groc per pluja al Vallès: dimecres d’11:00 a 14:00.")
 
     def test_franges_seguides_i_acabades(self):
         # Dues franges que es toquen fan una sola; la que ja ha acabat no surt.
@@ -126,7 +126,7 @@ class Web(unittest.TestCase):
         ]
         self.assertEqual(
             self.text("2026-10-05T16:41:00+02:00", avisos),
-            "Avís groc de l’AEMET per pluja al Vallès: avui de 18:00 a 23:00.")
+            "AEMET: avís groc per pluja al Vallès: avui de 18:00 a 23:00.")
 
     def test_fase_de_proteccio_civil_amb_apostrof(self):
         # «d’alerta» i «d’emergència», però «de prealerta» (abans sortia «d’prealerta»).
@@ -807,7 +807,7 @@ class Web(unittest.TestCase):
         self.assertEqual(d("Trens de Cerdanyola:  R4 amb incidències."), "consultes.html#trens")
         self.assertEqual(d(" Trenes de Cerdanyola sin incidencias."), "consultes.html#trens")
         self.assertEqual(d(" Avís groc de l'AEMET per pluja al Vallès fins a les 20:00."), "perill.html")
-        self.assertEqual(d("Aviso amarillo de la AEMET por lluvia en el Vallès hasta las 20:00."), "perill.html")
+        self.assertEqual(d("AEMET: aviso amarillo por lluvia en el Vallès hasta las 20:00."), "perill.html")
         self.assertIsNone(d("Sense pluja prevista."))
         self.assertIsNone(d("Temperatura d'aquí a mitjanit: entre 13 °C i 23 °C."))
 
@@ -832,13 +832,13 @@ class Web(unittest.TestCase):
                     {"nivell": "groc", "tipus": ["pluja"], "font": "meteocat"}])
         self.assertEqual(self.avalua(ara, f"[textPerillCurt(avisHora({json.dumps(dos)})), textPerill(avisHora({json.dumps(dos)})), avisHora({json.dumps(dos)}).nivell]"),
                          ["Perill alt: pluja · Avís groc: tempestes",
-                          "Perill alt de Meteocat per pluja; Avís groc de l’AEMET per tempestes", "taronja"])
+                          "Meteocat: perill alt per pluja; AEMET: avís groc per tempestes", "taronja"])
         # El text del tram: Meteocat en grau de perill; i, en passar-hi el ratolí, d'on surt (ADR 0093).
         p = {"nivell": "taronja", "noms": ["pluja", "tempestes"], "fonts": "meteocataemet",
              "perFont": [["meteocat", ["pluja"]], ["aemet", ["tempestes"]]]}
         self.assertEqual(self.avalua(ara, f"[textPerillCurt({json.dumps(p)}), textPerill({json.dumps(p)})]"),
                          ["Perill alt: pluja · Avís taronja: tempestes",
-                          "Perill alt de Meteocat per pluja; Avís taronja de l’AEMET per tempestes"])
+                          "Meteocat: perill alt per pluja; AEMET: avís taronja per tempestes"])
         self.assertIsNone(self.avalua(ara, f"perillTram({json.dumps([f(7)])})"))
 
     def test_en_obrir_la_web_marxen_les_notificacions(self):

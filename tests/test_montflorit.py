@@ -271,9 +271,9 @@ class Castella(unittest.TestCase):
                   {"inicio": "2026-10-07T22:00:00+02:00", "fin": "2026-10-07T23:59:59+02:00", "tipo": "pluja", "nivel": "taronja"},
                   {"inicio": "2026-10-06T22:00:00+02:00", "fin": "2026-10-07T00:59:59+02:00", "tipo": "pluja", "nivel": "vermell"}]
         self.assertEqual(js(f"textAvisos({json.dumps(avisos)})"),
-                         "Aviso rojo de la AEMET por lluvia en el Vallès: hoy de 22:00 hasta mañana a la 01:00. "
-                         "Aviso naranja de la AEMET por lluvia en el Vallès: mañana de 09:00 a 18:00 y de 22:00 a medianoche. "
-                         "Aviso amarillo de la AEMET por lluvia y tormentas en el Vallès: hoy hasta las 20:00.")
+                         "AEMET: aviso rojo por lluvia en el Vallès: hoy de 22:00 hasta mañana a la 01:00. "
+                         "AEMET: aviso naranja por lluvia en el Vallès: mañana de 09:00 a 18:00 y de 22:00 a medianoche. "
+                         "AEMET: aviso amarillo por lluvia y tormentas en el Vallès: hoy hasta las 20:00.")
         self.assertEqual(js("textFranja(new Date('2026-10-06T08:00:00+02:00'), new Date('2026-10-09T06:00:00+02:00'), new Date())"),
                          "hasta el viernes a las 06:00")
 

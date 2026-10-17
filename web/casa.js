@@ -120,8 +120,8 @@ function origenTempesta(files) {
   const avis = files.flatMap((f) => (f.avisos || []).filter((a) => (a.tipus || []).includes('tempestes')))[0];
   const font = avis && (avis.font === 'meteocat' ? 'Meteocat' : 'AEMET');
   const parts = [];
-  if (font === 'AEMET') parts.push(T`Avís ${TD(avis.nivell)} de l\u2019AEMET per tempestes`);
-  else if (font) parts.push(T`Perill ${GRAU_METEOCAT()[avis.nivell]} de Meteocat per tempestes`);
+  if (font === 'AEMET') parts.push(T`AEMET: avís ${TD(avis.nivell)} per tempestes`);
+  else if (font) parts.push(T`Meteocat: perill ${GRAU_METEOCAT()[avis.nivell]} per tempestes`);
   if (files.some((f) => f.codi >= 95)) parts.push(T('Els models preveuen tempesta'));
   return parts.join('; ');
 }

@@ -298,8 +298,8 @@ def per_fenomen(avisos):
         nca, nes = NOM_FENOMEN["ca"].get(f, f), NOM_FENOMEN["es"].get(f, f)
         res.append({"fenomen": f, "nivell": n,
                     "dies": {d: [list(x) for x in junta(sorted(fr))] for d, fr in sorted(g["dies"].items())},
-                    "ca": f"Avís de perill {GRAU['ca'][n]} de Meteocat per {nca} al {nom}",
-                    "es": f"Aviso de peligro {GRAU['es'][n]} de Meteocat por {nes} en el {nom}"})
+                    "ca": f"Meteocat: avís de perill {GRAU['ca'][n]} per {nca} al {nom}",
+                    "es": f"Meteocat: aviso de peligro {GRAU['es'][n]} por {nes} en el {nom}"})
     return res
 
 

@@ -159,3 +159,22 @@ tramo plegado y se oculta al desplegarlo: entonces lo dicen la barra de
 color de cada hora y el borde del tramo. Desde la 3.114.2, también la del
 fenómeno destacado («tempesta»): desplegado queda el resumen normal, sin
 avisos («que solo quede el resumen normal, sin avisos»).
+
+## Quién avisa, lo primero de todo (17-10-2026)
+
+Una persona recibió el aviso de Meteocat, cuya segunda línea empezaba por
+«Intensitat de pluja en 30 minuts», y creyó que la app anunciaba lluvia en
+30 minutos (Juanjo: «quizás habría que identificar claramente el origen del
+mensaje»; y «aplícalo a todos los avisos, también los de la app»). Desde la
+3.115.0 todos los avisos empiezan por quién avisa, también en la
+notificación y en «Perill», aunque el título se corte: «Meteocat:»,
+«AEMET:», «Protecció Civil:», «Bombers:», «e-distribució:» y, en los que
+calcula la app (lluvia inminente, riera, peligro propio), «Temps a
+Montflorit:», que dicen además «Calculat per aquesta aplicació, no oficial»
+(antes, «aquesta web»). En las líneas de Meteocat, primero qué es y luego el
+nombre oficial entre comillas: «🟠 Perill alt per «Intensitat de pluja en 30
+minuts»: …». El nivel ya no va entre paréntesis en el título de los avisos
+propios (lo dice el círculo), y la lluvia inminente lleva 🌧️. Lo mismo en el
+resumen del día, «Avisos actius» y la franja de la gráfica
+(«Meteocat: perill alt per pluja; AEMET: avís groc per tempestes»). Las
+fichas ya guardadas en «Perill» conservan su título.

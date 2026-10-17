@@ -172,7 +172,7 @@ class Resum(unittest.TestCase):
         r = B.resum(dades(), "ca", ARA)
         self.assertIn("Ara mateix: 16 °C, no plou.", r)
         self.assertIn("Possible pluja de 12 a 15 h (probabilitat fins al 40 %).", r)
-        self.assertIn("Avís groc de l'AEMET per tempestes al Vallès fins a les 20:00.", r)
+        self.assertIn("AEMET: avís groc per tempestes al Vallès fins a les 20:00.", r)
         self.assertIn("Trens de Cerdanyola: 🔴 R4 sense trens.", r)
         self.assertIn("Posible lluvia de 12 a 15 h", B.resum(dades(), "es", ARA))
 
@@ -251,12 +251,12 @@ class Resum(unittest.TestCase):
         d = {"avisos": [{"inicio": f"{ahir}T23:00:00+02:00", "fin": f"{migdia.date()}T13:59:59+02:00",
                          "nivel": "taronja", "tipo": "pluja", "zona": "Prelitoral de Barcelona"}]}
         self.assertEqual(B.text_avisos_aemet(d, "es", migdia.date(), migdia),
-                         ["🟠 Aviso naranja de la AEMET por lluvia en el Vallès hasta las 14:00."])
+                         ["🟠 AEMET: aviso naranja por lluvia en el Vallès hasta las 14:00."])
         self.assertEqual(B.text_avisos_aemet(d, "ca", dema, migdia), [])
         # I el de demà que comença avui a la nit també compta per a demà.
         d = {"avisos": [{"inicio": f"{migdia.date()}T22:00:00+02:00", "fin": f"{dema}T05:59:59+02:00",
                          "nivel": "groc", "tipo": "vent", "zona": "Prelitoral de Barcelona"}]}
-        self.assertEqual(B.text_avisos_aemet(d, "ca", dema, migdia), ["🟡 Avís groc de l'AEMET per vent al Vallès de 22:00 a 06:00."])
+        self.assertEqual(B.text_avisos_aemet(d, "ca", dema, migdia), ["🟡 AEMET: avís groc per vent al Vallès de 22:00 a 06:00."])
 
     def test_a_les_20_la_de_dema(self):
         vespre = ARA.replace(hour=20)
@@ -267,7 +267,7 @@ class Resum(unittest.TestCase):
         self.assertTrue(r.startswith("<b>Previsió per a demà, dijous, a Montflorit</b> (fins a les 20 h)"))
         self.assertIn("Temperatura: entre ", r)
         self.assertIn("Possible pluja de 12 a 15 h (probabilitat fins al 40 %).", r)
-        self.assertIn("Avís groc de l'AEMET per pluja al Vallès de 10:00 a 20:00.", r)
+        self.assertIn("AEMET: avís groc per pluja al Vallès de 10:00 a 20:00.", r)
         self.assertNotIn("Ara mateix", r)
         self.assertNotIn("Trens", r)
         self.assertNotIn("Aquesta nit", r)
@@ -542,7 +542,7 @@ class Consultes(unittest.TestCase):
         json.dump(d, open(os.path.join(self.dir.name, "montflorit.json"), "w"))
         subs = {"7": {"idioma": "ca", "avisos": [], "resum": None}}
         r = self.ordre("/avisos_actius", subs)
-        self.assertIn("<b>Bombers</b>\n🔥 Incendi forestal a Sant Cugat del Vallès, a 3,2 km de Montflorit", r)
+        self.assertIn("<b>Bombers</b>\n🔥 Bombers: incendi forestal a Sant Cugat del Vallès, a 3,2 km de Montflorit", r)
         self.assertIn("<b>Pla Alfa</b>\n🔴 Nivell 4 avui a Cerdanyola", r)
         self.assertNotIn("nivell 2", r)
         self.assertNotIn("Avisos actius", r)             # sense títol: l'ordre ja diu què és
@@ -604,7 +604,7 @@ class Consultes(unittest.TestCase):
         perill = lambda sal, m: [a for a in AB.decideix(estat, sal, ARA + dt.timedelta(minutes=m)) if a["tipus"] == "perill"]
         self.assertEqual(perill({"avisos": [], "plans": [pla]}, 0), [])
         nous = perill({"avisos": [aemet], "plans": [pla]}, 6)
-        self.assertEqual(nous[0]["ca"].splitlines()[0], "🟡 <b>Avís groc de l'AEMET per pluja al Vallès</b>")
+        self.assertEqual(nous[0]["ca"].splitlines()[0], "🟡 <b>AEMET: avís groc per pluja al Vallès</b>")
         self.assertEqual(perill({"avisos": [aemet], "plans": [pla]}, 12), [])          # una sola vegada
         nous = perill({"avisos": [dict(aemet, nivel="taronja")], "plans": [dict(pla, fase="alerta")]}, 18)
         self.assertEqual([a["nivell"] for a in nous], ["taronja", "pc"])
@@ -753,8 +753,8 @@ class AvisosPublics(unittest.TestCase):
         for i, index in enumerate([38, 30, 10, 5, 5, 5, 5, 5, 5]):
             nous += AB.decideix(estat, {"riera": riera(index)}, ARA + dt.timedelta(minutes=30 * i))
         self.assertEqual([(a["nivell"], a["id"].split(":")[-1]) for a in nous], [("atencio", "atencio"), ("fi", "fi")])
-        self.assertTrue(nous[0]["ca"].startswith("🟠 <b>Atenció: possible desbordament"))
-        self.assertTrue(nous[1]["ca"].startswith("🟢 <b>Riera de Sant Cugat: ja no hi ha risc de desbordament</b>"))
+        self.assertTrue(nous[0]["ca"].startswith("🟠 <b>Temps a Montflorit: possible desbordament"))
+        self.assertTrue(nous[1]["ca"].startswith("🟢 <b>Temps a Montflorit: ja no hi ha risc de desbordament de la riera de Sant Cugat</b>"))
         self.assertIn("ya no hay riesgo de desbordamiento", nous[1]["es"])
         self.assertIn("Fa 3 hores que no plou fort a Sant Cugat", nous[1]["ca"])   # curt, sense la nota (ADR 0076)
         self.assertEqual(nous[0]["tipus"], nous[1]["tipus"], "riera")
@@ -774,7 +774,7 @@ class AvisosPublics(unittest.TestCase):
                  "capcalera": None}
         nous = AB.decideix(estat, {"riera": riera}, ARA)
         self.assertEqual(nous[0]["nivell"], "perill")
-        self.assertTrue(nous[0]["ca"].startswith("🔴 <b>Perill de desbordament de la riera de Sant Cugat a Montflorit</b>"))
+        self.assertTrue(nous[0]["ca"].startswith("🔴 <b>Temps a Montflorit: perill de desbordament de la riera de Sant Cugat</b>"))
         self.assertIn("Aviso en pruebas, orientativo y no oficial", nous[0]["es"])
         self.assertEqual(AB.decideix(estat, {"riera": riera}, ARA + dt.timedelta(minutes=15)), [])
 
@@ -784,7 +784,7 @@ class AvisosPublics(unittest.TestCase):
              "text": "Vent fort previst: ratxes de fins a 75 km/h, avui de 15 a 16 h."}
         nous = AB.decideix({}, {"riscos": [r]}, ARA)
         self.assertIn("Viento fuerte previsto: rachas de hasta 75 km/h, hoy de 15 a 16 h.", nous[0]["es"])
-        self.assertTrue(nous[0]["es"].startswith("🟡 <b>Aviso de peligro en Montflorit (amarillo): viento fuerte</b>"))
+        self.assertTrue(nous[0]["es"].startswith("🟡 <b>Temps a Montflorit: aviso de peligro por viento fuerte en el barrio</b>"))
 
     def test_pluja_amb_el_radar(self):
         # El radar en directe que ha donat l'avís: enllaç a Telegram; a la
@@ -802,7 +802,7 @@ class AvisosPublics(unittest.TestCase):
         with unittest.mock.patch.object(AB.PA, "falta_min", return_value=1):
             t = AB.text_pluja(salida("meteocat"), ARA)
         self.assertEqual(t["url"], "https://www.meteo.cat/observacions/radar")
-        self.assertIn("Pluja imminent", t["ca"])
+        self.assertIn("Temps a Montflorit: pluja imminent", t["ca"])
 
     def test_el_radar_en_directe_igual_a_tot_arreu(self):
         casa_js = open(os.path.join(ARREL, "web", "casa.js"), encoding="utf-8").read()
@@ -843,7 +843,7 @@ class AvisosPublics(unittest.TestCase):
         self.assertEqual(AB.decideix(estat, dades, ARA + dt.timedelta(hours=1)), [])
         fi = AB.decideix(estat, dades, ARA + dt.timedelta(hours=3))
         self.assertEqual([(a["tipus"], a["nivell"]) for a in fi], [("perill", "fi")])
-        self.assertTrue(fi[0]["ca"].startswith("🟢 <b>Ja no hi ha cap situació de perill a Montflorit</b>"))
+        self.assertTrue(fi[0]["ca"].startswith("🟢 <b>Temps a Montflorit: ja no hi ha cap situació de perill al barri</b>"))
         self.assertEqual(AB.decideix(estat, dades, ARA + dt.timedelta(hours=4)), [])
         # Sense previsió no es pot saber: no es dona per acabat.
         estat = {}

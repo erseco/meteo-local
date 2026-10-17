@@ -83,14 +83,14 @@ class Llum(unittest.TestCase):
         self.assertEqual(passa([]), [])                       # la primera vegada, només s'apunta
         nous = passa([tall, petit], 6)
         self.assertEqual(len(nous), 1)                        # el d'un client no s'anuncia
-        self.assertTrue(nous[0]["ca"].startswith("🔌 <b>Tall de llum a Montflorit: Carrer de Sant Jeroni (carrer probable)</b>"))
+        self.assertTrue(nous[0]["ca"].startswith("🔌 <b>e-distribució: tall de llum a Montflorit, Carrer de Sant Jeroni (carrer probable)</b>"))
         self.assertIn("Els carrers són una estimació", nous[0]["ca"])
         self.assertIn("&amp;level=15", nous[0]["ca"])
         self.assertNotIn("episodi", nous[0])                  # no va a «Perill»
         self.assertEqual(passa([tall], 12), [])
         self.assertEqual(AB.decideix(estat, {"llum": None}, ARA), [])   # e-distribució no respon: res
         fi = passa([], 18)
-        self.assertTrue(fi[0]["ca"].startswith("🟢 <b>Tall de llum a Montflorit, Carrer de Sant Jeroni (carrer probable): ja no consta</b>"))
+        self.assertTrue(fi[0]["ca"].startswith("🟢 <b>e-distribució: tall de llum a Montflorit, Carrer de Sant Jeroni (carrer probable): ja no consta</b>"))
 
     def test_prova_diaria(self):
         bona = lambda url, p: ({"fields": [{"name": n} for n in LL.CAMPS_NECESSARIS]} if p == {"f": "json"}

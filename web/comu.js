@@ -493,7 +493,7 @@ function frasesAvisos(avisos, ara = new Date()) {
         }
       }
       const quan = dies.map((d) => d.parts.join(T(' i '))).join('; ');
-      return { nivell, tipus: tipusDe[clau], titol: T`Avís ${TD(nivell)} de l’AEMET per ${tipus} al Vallès`, quan };
+      return { nivell, tipus: tipusDe[clau], titol: T`AEMET: avís ${TD(nivell)} per ${tipus} al Vallès`, quan };
     });
 }
 
@@ -568,7 +568,7 @@ const FITXA_ALFA = 'perill.html#pla-alfa';
 
 // Les línies d'alerta del resum del dia (bot.linies_perill_dia), amb la
 // marca del nivell o la icona al davant.
-const LINIA_PERILL = /^(⟦[^⟧]+⟧ ?|\S+ )?(Avís|Aviso|Protecció Civil|Protección Civil|Perill de|Peligro de|Incendi|Incendio|Pla Alfa|Plan Alfa)[ :]|no (é|e)s oficial\)/;
+const LINIA_PERILL = /^(⟦[^⟧]+⟧ ?|\S+ )?(Avís|Aviso|Protecció Civil|Protección Civil|Perill de|Peligro de|Incendi|Incendio|Pla Alfa|Plan Alfa|Meteocat|AEMET|Bombers|Temps a Montflorit)[ :]|no (é|e)s oficial\)|\(no oficial\)/;
 
 function fitxaDeLinia(text) {
   const pla = /Protecci(ó|ón) Civil/.test(text) && text.match(/\(([A-Z]+)\)/);
@@ -792,10 +792,11 @@ function blocRiscos(riscos) {
   caixa.setAttribute('aria-label', T('Risc previst'));
   caixa.dataset.detall = fitxaPerill((h) => h.clau === 'propi');
   caixa.dataset.clau = 'risc:' + riscos.map((r) => `${r.clau}:${r.nivell}`).join(',');
-  caixa.dataset.curt = T`Risc ${TD(pitjor)} calculat per aquesta web` + ': '
+  // Qui avisa, primer (Juanjo, 17-10-2026).
+  caixa.dataset.curt = T`Temps a Montflorit: risc ${TD(pitjor)} (no oficial)` + ': '
     + riscos.map((r) => `${NOM_RISC()[r.tipus] || r.tipus} (${String(r.valor).replace('.', ',')} ${r.unitat})`).join(', ') + '.';
   const titol = element('p', 'titol-risc');
-  titol.append(icona('i-triangle-alert'), T`Risc ${TD(pitjor)}`);
+  titol.append(icona('i-triangle-alert'), T`Temps a Montflorit: risc ${TD(pitjor)}`);
   caixa.append(titol);
   const llista = element('ul');
   for (const r of riscos) {

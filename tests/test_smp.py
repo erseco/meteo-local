@@ -172,10 +172,10 @@ class Smp(unittest.TestCase):
         nous = passa([p30, p3h], 6)
         self.assertEqual(len(nous), 1)                                       # els dos de pluja, un sol avís
         self.assertEqual(nous[0]["ca"].splitlines()[0],
-                         "🟠 <b>Avís de perill alt de Meteocat per pluja al Vallès Occidental</b>")
-        self.assertIn("\n🟠 «Intensitat de pluja en 30 minuts»: perill alt, dissabte 17 de 12 a 24 h "
+                         "🟠 <b>Meteocat: avís de perill alt per pluja al Vallès Occidental</b>")
+        self.assertIn("\n🟠 Perill alt per «Intensitat de pluja en 30 minuts»: dissabte 17 de 12 a 24 h "
                       "(Intensitat > 20 mm / 30 minuts).", nous[0]["ca"])
-        self.assertIn("\n🟡 «Intensitat de pluja en 3 hores»: perill moderat", nous[0]["ca"])
+        self.assertIn("\n🟡 Perill moderat per «Intensitat de pluja en 3 hores»", nous[0]["ca"])
         self.assertEqual(nous[0]["nivell"], "alt")
         episodi = nous[0]["episodi"]
         self.assertEqual(passa([dict(p30, emissio="2026-10-17T07:00Z"), p3h], 12), [])   # nova emissió igual
@@ -183,28 +183,28 @@ class Smp(unittest.TestCase):
         self.assertEqual(passa([dict(p30, perill=2), p3h], 24), [])           # baixa: res
         puja = passa([dict(p30, perill=5), p3h], 30)
         self.assertEqual(puja[0]["ca"].splitlines()[0],
-                         "🔴 <b>Actualització: Meteocat puja a perill molt alt per pluja al Vallès Occidental</b>")
+                         "🔴 <b>Meteocat: actualització, puja a perill molt alt per pluja al Vallès Occidental</b>")
         self.assertEqual(puja[0]["episodi"], episodi)                         # la mateixa fitxa a «Perill»
         amplia = passa([dict(p30, perill=5, dies={**dissabte, "2026-10-18": [(0, 6)]})], 36)
-        self.assertIn("Actualització: Meteocat amplia l'avís de perill molt alt per pluja", amplia[0]["ca"])
+        self.assertIn("Meteocat: actualització, amplia l'avís de perill molt alt per pluja", amplia[0]["ca"])
         vent = passa([dict(p30, perill=5, dies={**dissabte, "2026-10-18": [(0, 6)]}),
                       av("Ratxa màxima de vent", 1, dissabte)], 42)
-        self.assertIn("Actualització: Meteocat avisa també de perill moderat per vent", vent[0]["ca"])
+        self.assertIn("Meteocat: actualització, avisa també de perill moderat per vent", vent[0]["ca"])
         self.assertEqual(vent[0]["nivell"], "maxim")                          # el color, el pitjor dels vigents
         obs = passa([dict(p30, perill=5, dies={**dissabte, "2026-10-18": [(0, 6)]}), av("Ratxa màxima de vent", 1, dissabte),
                      av("Intensitat de pluja", 3, {"2026-10-17": [(15, 17)]}, "observacio")], 48)
         self.assertIn("Meteocat: s'observa perill alt per pluja al Vallès Occidental", obs[0]["ca"])
-        self.assertIn("«Intensitat de pluja»: observat ara, perill alt", obs[0]["ca"])
+        self.assertIn("Observat ara, perill alt per «Intensitat de pluja»", obs[0]["ca"])
         # Si no hi ha lectura, res; quan ja no en queda cap (passada la mitja hora), el final.
         self.assertEqual(AB.decideix(estat, {"smp": None}, AHORA + dt.timedelta(minutes=54)), [])
         self.assertEqual(passa([], 60), [])
         fi = passa([], 90)
-        self.assertEqual(fi[0]["ca"], "🟢 <b>Meteocat ja no té cap avís de perill per al Vallès Occidental</b>")
+        self.assertEqual(fi[0]["ca"], "🟢 <b>Meteocat: ja no hi ha cap avís de perill per al Vallès Occidental</b>")
         self.assertEqual((fi[0]["nivell"], fi[0]["episodi"]), ("fi", episodi))
         self.assertEqual(passa([], 96), [])
         # Un de nou després, un episodi nou.
         torna = passa([p3h], 102)
-        self.assertTrue(torna[0]["ca"].startswith("🟡 <b>Avís de perill moderat de Meteocat per pluja"))
+        self.assertTrue(torna[0]["ca"].startswith("🟡 <b>Meteocat: avís de perill moderat per pluja"))
         self.assertNotEqual(torna[0]["episodi"], episodi)
 
     def test_l_estat_d_abans_avisa_el_que_hi_ha(self):

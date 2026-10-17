@@ -215,9 +215,10 @@ function textPerill(p) {
   return perFonts(p).map(([font, noms, nv = p.nivell]) => {
     const que = noms.join(T(' i '));
     const nivell = TD(nv);
-    if (font === 'meteocat') return T`Perill ${GRAU_METEOCAT()[nv]} de Meteocat per ${que}`;
-    if (font === 'web') return T`Avís ${nivell} d\u2019aquesta web: ${que}`;
-    return T`Avís ${nivell} de l\u2019AEMET per ${que}`;
+    // Qui avisa, primer (Juanjo, 17-10-2026).
+    if (font === 'meteocat') return T`Meteocat: perill ${GRAU_METEOCAT()[nv]} per ${que}`;
+    if (font === 'web') return T`Temps a Montflorit: avís ${nivell} per ${que} (no oficial)`;
+    return T`AEMET: avís ${nivell} per ${que}`;
   }).join('; ');
 }
 
@@ -225,7 +226,7 @@ function textPerill(p) {
 // o de diversos nivells, juntes, del nivell més alt al més baix. Amb ambFont,
 // també d'on surt cada un, «Perill alt (Meteocat): pluja» (la franja de la
 // gràfica; Juanjo, 17-10-2026: «añade el origen: meteocat, aemet, etc»).
-const NOM_FONT = () => ({ meteocat: 'Meteocat', aemet: 'AEMET', web: T('aquesta web') });
+const NOM_FONT = () => ({ meteocat: 'Meteocat', aemet: 'AEMET', web: T('aquesta aplicació') });
 function partsPerill(p, ambQue = true, ambFont = false) {
   const parts = new Map();
   for (const [font, noms, nv = p.nivell] of perFonts(p)) {

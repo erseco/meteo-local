@@ -751,11 +751,11 @@ def text_avisos_aemet(dades, idioma, dia, moment):
             nom = {"vermell": "rojo", "taronja": "naranja", "groc": "amarillo"}[nivell]
             que = " y ".join(TIPUS_AEMET_ES.get(x, x) for x in tipus)
             quan = f"hasta las {fi}" if dia == moment.date() else f"de {ini} a {fi}"
-            res.append(f"{CERCLE_AVIS[nivell]} Aviso {nom} de la AEMET por {que} en el Vallès {quan}.")
+            res.append(f"{CERCLE_AVIS[nivell]} AEMET: aviso {nom} por {que} en el Vallès {quan}.")
         else:
             quan = f"fins a les {fi}" if dia == moment.date() else f"de {ini} a {fi}"
             que = " i ".join(TIPUS_AEMET_CA.get(x, x) for x in tipus)
-            res.append(f"{CERCLE_AVIS[nivell]} Avís {nivell} de l'AEMET per {que} al Vallès {quan}.")
+            res.append(f"{CERCLE_AVIS[nivell]} AEMET: avís {nivell} per {que} al Vallès {quan}.")
     return res
 
 
@@ -828,9 +828,13 @@ def linies_perill_dia(dades, idioma, dia, moment):
                   <= dt.datetime.fromisoformat(r["fins"]).date())]
     propis = linies_riscos(riscos, idioma, moment)
     if propis:
-        nota = (" (lo calcula Temps a Montflorit: no es oficial)" if es else
-                " (ho calcula Temps a Montflorit: no és oficial)")
-        res += [x[:-1] + nota + "." if x.endswith(".") else x + nota for x in propis]
+        # Qui avisa, primer, com als avisos (Juanjo, 17-10-2026).
+        nota = " (no oficial)" if es else " (no oficial)"
+        for x in propis:
+            icona, _, text = x.partition(" ") if x[:1] and not x[:1].isalnum() else ("", "", x)
+            text = "Temps a Montflorit: " + text[:1].lower() + text[1:]
+            text = text[:-1] + nota + "." if text.endswith(".") else text + nota
+            res.append(amb_icona(icona, text))
     return res
 
 
@@ -1438,8 +1442,8 @@ def blocs_entorn(entorn, idioma):
         lloc = ((f"dentro del Parque de Collserola ({i['municipi']})" if es else
                  f"dins del Parc de Collserola ({i['municipi']})") if i.get("collserola") else
                 (f"en {i['municipi']}" if es else f"a {i['municipi']}"))
-        focs.append(amb_icona("🔥", html.escape(f"Incendio forestal {lloc}{dist}, desde las {h}." if es
-                                                else f"Incendi forestal {lloc}{dist}, des de les {h}.", quote=False)))
+        focs.append(amb_icona("🔥", html.escape(f"Bombers: incendio forestal {lloc}{dist}, desde las {h}." if es
+                                                else f"Bombers: incendi forestal {lloc}{dist}, des de les {h}.", quote=False)))
     if focs:
         blocs.append(("Bombers", focs + [enllac(BOMBERS, "Mapa")]))
     alfa = entorn.get("pla_alfa") or {}
