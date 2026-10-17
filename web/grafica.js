@@ -325,8 +325,20 @@ function grafica(hores) {
   const files = (hores || []).filter((f) => new Date(f.fins) > ara && f.temperatura != null);
   if (files.length < 6) return null;
   HORES_GRAFICA = hores;
-  return figuraGrafica(files,
+  const fig = figuraGrafica(files,
     T('Gràfica de la previsió: perill, cel, temperatura i probabilitat de pluja. Les mateixes dades són a les taules de sota.'));
+  // La de la portada fa servir les hores triades a «Opcions» (dibuixaGrafica).
+  fig._portada = true;
+  return fig;
+}
+
+// Les hores de la gràfica de la portada: les que s'han triat a «Opcions»
+// (Juanjo, 17-10-2026: «lo que se decida en la vista ampliada se conserva
+// para la vista normal»), si n'hi ha prou; si no, totes.
+function horesPortada() {
+  const tram = llegeixOpcionsGrafica().tram;
+  const triades = tram && tram !== 'tot' ? horesVista(tram) : [];
+  return triades.length >= 3 ? triades : horesVista('tot');
 }
 
 function figuraGrafica(files, peu) {
@@ -358,6 +370,7 @@ function graficaDia(hores, riscos, dia, ara = new Date()) {
 }
 
 function dibuixaGrafica(fig) {
+  if (fig._portada) fig._files = horesPortada();
   const files = fig._files;
   // A la vista gran: més alçada i, si es tria, el vent (vistaGrafica).
   const opcions = fig._opcions || {};
@@ -437,6 +450,11 @@ function dibuixaGrafica(fig) {
   // 17-10-2026): com el vent, la tria de la vista en gran val per a totes;
   // per defecte, no.
   const ambAlta = (opcions.gran ? opcions.alta : opcions.alta ?? altaTriada()) && files.some((f) => f.dif_alta != null);
+  // I la de la part baixa (la de l'estació, vora la riera), que es pot treure
+  // per a qui no la necessita (Juanjo, 17-10-2026); per defecte, sí.
+  const ambBaixa = opcions.gran ? opcions.baixa !== false : opcions.baixa ?? baixaTriada();
+  // La xifra de sota cada icona: la de baix; sense, la de dalt.
+  const tempXifra = (f) => (ambBaixa ? f.temperatura : ambAlta ? f.temperatura + (f.dif_alta || 0) : null);
   const yVent = yPluja + hPluja + (hVent ? 12 : 0);
   const baix = hVent ? yVent + hVent : yPluja + hPluja;
   const yEix = baix + 16;
@@ -513,26 +531,32 @@ function dibuixaGrafica(fig) {
       const ic = svg('use', { href: '#' + c[1], x: cx - mida / 2, y: yCel + (hCel - mida) / 2, width: mida, height: mida, class: 'g-cel' });
       g.append(ic);
       const mig = files[Math.floor((i + j - 1) / 2)];
-      g.append(svg('text', { class: 'g-xifra', x: cx, y: yXifra, 'text-anchor': 'middle' }, `${Math.round(mig.temperatura)}°`));
+      if (tempXifra(mig) != null) {
+        g.append(svg('text', { class: 'g-xifra', x: cx, y: yXifra, 'text-anchor': 'middle' }, `${Math.round(tempXifra(mig))}°`));
+      }
     }
     i = j;
   }
 
   // La temperatura, primer el farciment (darrere de les barres) i després la
   // línia (davant), sense xifres: són sota el cel.
-  const temps = files.map((f) => f.temperatura);
+  const baixes = files.map((f) => f.temperatura);
+  const temps = ambBaixa ? baixes : [];
   const altes = ambAlta ? files.map((f) => f.temperatura + (f.dif_alta || 0)) : [];
+  const ambTemp = ambBaixa || ambAlta;
   // La màxima toca la ratlla del sostre de la pluja, que porta a l'esquerra
   // la seva xifra: una sola ratlla per al màxim de les dues escales (Juanjo,
   // 17-10-2026: «la temperatura debe llegar al máximo de la lluvia y poner
   // esa temperatura máxima a la izquierda»). Amb la part alta, la més alta
   // de les dues, i si és la de dalt, ho diu.
-  const tMax = Math.max(...temps, ...altes);
-  const maxAlta = altes.length && Math.max(...altes) > Math.max(...temps);
-  const tMin = Math.min(Math.floor(Math.min(...temps, ...altes)) - 1, tMax - 2);
+  const escala = ambTemp ? [...temps, ...altes] : baixes;
+  const tMax = Math.max(...escala);
+  const maxAlta = ambAlta && (!ambBaixa || Math.max(...altes) > Math.max(...temps));
+  const tMin = Math.min(Math.floor(Math.min(...escala)) - 1, tMax - 2);
   const ySostre = yPluja + 14;
   const yT = (t) => yTemp + hTemp - ((t - tMin) / (tMax - tMin)) * (yTemp + hTemp - ySostre);
-  const punts = files.map((f, i) => [x(i) + col / 2, yT(f.temperatura)]);
+  // El farciment, sota la corba de baix o, sense, sota la de dalt.
+  const punts = files.map((f, i) => [x(i) + col / 2, yT(ambBaixa || !ambAlta ? f.temperatura : altes[i])]);
   const corba = corbaSuau(punts);
   const base = yPluja + hPluja;
   const idGrad = 'g-temp-grad';
@@ -541,8 +565,10 @@ function dibuixaGrafica(fig) {
   grad.append(svg('stop', { offset: 0, class: 'g-grad-dalt' }), svg('stop', { offset: 1, class: 'g-grad-baix' }));
   defs.append(grad);
   g.append(defs);
-  g.append(svg('path', { class: 'g-temp-area', fill: `url(#${idGrad})`,
-    d: `${corba} L${punts[n - 1][0].toFixed(1)},${base} L${punts[0][0].toFixed(1)},${base} Z` }));
+  if (ambTemp) {
+    g.append(svg('path', { class: 'g-temp-area', fill: `url(#${idGrad})`,
+      d: `${corba} L${punts[n - 1][0].toFixed(1)},${base} L${punts[0][0].toFixed(1)},${base} Z` }));
+  }
 
   // La pluja: una barra per hora, tan alta com els mil·límetres; plena si és
   // probable (del 50 % amunt) i clara si només és possible (del 20 %), els
@@ -563,15 +589,19 @@ function dibuixaGrafica(fig) {
       x: x(i) + col * 0.15, y, width: col * 0.7, height: base - y }));
   });
   // Una vora del color del fons, perquè la línia es vegi damunt de les barres.
-  g.append(svg('path', { class: 'g-temp-vora', d: corba }));
-  g.append(svg('path', { class: 'g-temp', d: corba }));
+  if (ambBaixa) {
+    g.append(svg('path', { class: 'g-temp-vora', d: corba }));
+    g.append(svg('path', { class: 'g-temp', d: corba }));
+  }
   if (ambAlta) {
     const corbaAlta = corbaSuau(files.map((f, i) => [x(i) + col / 2, yT(altes[i])]));
     g.append(svg('path', { class: 'g-temp-vora', d: corbaAlta }), svg('path', { class: 'g-alta', d: corbaAlta }));
   }
   if (ambBarres) g.append(svg('text', { class: 'g-mm g-sostre-xifra', x: W - 2, y: ySostre - 3, 'text-anchor': 'end' }, `${sostre}\u00a0mm`));
-  g.append(svg('text', { class: 'g-mm g-sostre-xifra g-sostre-temp', x: 2, y: ySostre - 3 },
-    maxAlta ? T`${Math.round(tMax)}\u00a0°C (part alta)` : `${Math.round(tMax)}\u00a0°C`));
+  if (ambTemp) {
+    g.append(svg('text', { class: 'g-mm g-sostre-xifra g-sostre-temp', x: 2, y: ySostre - 3 },
+      maxAlta ? T`${Math.round(tMax)}\u00a0°C (part alta)` : `${Math.round(tMax)}\u00a0°C`));
+  }
 
   // El vent i les ratxes, en km/h: una ratlla a dalt amb la xifra de l'escala,
   // de 10 en 10 (20 com a mínim, perquè un dia calmat no sembli de vent).
@@ -717,7 +747,8 @@ function dibuixaGrafica(fig) {
   // Una clau per cosa, sense explicacions entre parèntesis (Juanjo, 16-10-2026:
   // «es un galimatías»); què vol dir l'alçada ja ho diuen els mm de la barra.
   // Cada clau de pluja, només si n'hi ha (Juanjo, 16-10-2026).
-  ll.append(clau('m-temp', T('Temperatura')));
+  // Amb les dues, cadascuna pel seu nom; amb una, «Temperatura» o «Part alta».
+  if (ambBaixa) ll.append(clau('m-temp', ambAlta ? T('Part baixa') : T('Temperatura')));
   if (ambAlta) ll.append(clau('m-alta', T('Part alta')));
   const plujes = files.map((f) => plujaGrafica(f));
   // La probabilitat en xifres: «probable» i «possible» no es distingeixen
@@ -753,6 +784,7 @@ function dibuixaGrafica(fig) {
 const CLAU_GRAFICA = 'meteo.grafica.2';
 const ambVentTriat = () => llegeixOpcionsGrafica().vent !== false;
 const altaTriada = () => llegeixOpcionsGrafica().alta === true;
+const baixaTriada = () => llegeixOpcionsGrafica().baixa !== false;
 
 function horesVista(tram) {
   const ara = new Date();
@@ -806,6 +838,9 @@ function vistaGrafica() {
   vent.type = 'button';
   vent.append(icona('i-wind'), T('Vent'));
   const ambVent = HORES_GRAFICA.some((f) => f.vent != null);
+  const baixa = element('button', 'vg-opcio');
+  baixa.type = 'button';
+  baixa.append(icona('i-waves'), T('Part baixa'));
   const alta = element('button', 'vg-opcio');
   alta.type = 'button';
   alta.append(icona('i-mountain'), T('Part alta'));
@@ -817,8 +852,10 @@ function vistaGrafica() {
     for (const b of tramsBotons.children) b.setAttribute('aria-pressed', String(b.dataset.tram === opcions.tram));
     vent.setAttribute('aria-pressed', String(opcions.vent));
     alta.setAttribute('aria-pressed', String(Boolean(opcions.alta)));
+    baixa.setAttribute('aria-pressed', String(opcions.baixa !== false));
     fig._files = horesVista(opcions.tram);
-    fig._opcions = { gran: true, vent: ambVent && opcions.vent, alta: ambDifAlta && Boolean(opcions.alta) };
+    fig._opcions = { gran: true, vent: ambVent && opcions.vent, alta: ambDifAlta && Boolean(opcions.alta),
+      baixa: opcions.baixa !== false };
     fig._amaga?.();
     dibuixaGrafica(fig);
   };
@@ -831,9 +868,11 @@ function vistaGrafica() {
   }
   vent.addEventListener('click', () => { opcions.vent = !opcions.vent; desa(); dibuixa(); });
   alta.addEventListener('click', () => { opcions.alta = !opcions.alta; desa(); dibuixa(); });
+  baixa.addEventListener('click', () => { opcions.baixa = opcions.baixa === false; desa(); dibuixa(); });
   const barra = element('div', 'vg-opcions');
   barra.append(tramsBotons);
   if (ambVent) barra.append(vent);
+  barra.append(baixa);
   if (ambDifAlta) barra.append(alta);
 
   dlg.append(cap, barra, fig);

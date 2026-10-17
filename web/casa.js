@@ -581,14 +581,16 @@ function taula(hores, mesurada, riscos, sol) {
   });
   const graf = grafica(hores);
   const botons = element('div', 'cap-previsio-botons');
-  // La gràfica en gran, amb les seves opcions (Juanjo, 17-10-2026).
+  // La gràfica en gran, amb les seves opcions, que valen per a tota la web
+  // (Juanjo, 17-10-2026: «no me gusta esa doble flecha… o un botón de
+  // configuración… decide tú»): «Opcions», amb la icona d'ajustos de Lucide.
   if (graf) {
     const amplia = element('button', 'boto-tot');
     amplia.type = 'button';
-    amplia.title = T('Amplia la gràfica');
-    amplia.setAttribute('aria-label', T('Amplia la gràfica'));
+    amplia.title = T('Opcions de la gràfica');
+    amplia.setAttribute('aria-label', T('Opcions de la gràfica'));
     // Al mòbil, només la icona: amb el text, els dos botons no caben al costat del títol.
-    amplia.append(icona('i-maximize-2'), element('span', 'text-amplia', T('Amplia')));
+    amplia.append(icona('i-sliders-horizontal'), element('span', 'text-amplia', T('Opcions')));
     amplia.addEventListener('click', vistaGrafica);
     botons.append(amplia);
   }

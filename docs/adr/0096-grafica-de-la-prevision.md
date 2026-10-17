@@ -147,6 +147,20 @@ siempre en la hora en curso.
   con el límite de tres filas.
 - **La imagen para Telegram y los avisos** sale de esta misma gráfica (ADR
   0098).
+- **«Opcions», que valen para toda la web** (3.108.0; Juanjo, 17-10-2026:
+  «no me gusta esa doble flecha… o un botón de configuración… decide tú
+  cómo hacerlo, que sea fácil de entender y útil», «lo que se decida en la
+  vista ampliada se conserva para la vista normal… en toda la web» y «que
+  se pueda desactivar la temperatura de la parte baja del barrio, para el
+  que no la necesite»): el botón pasa a «Opcions», con el icono de ajustes
+  (`sliders-horizontal` de Lucide), porque lo que hace sobre todo es
+  configurar la gráfica. Lo que se elige allí se recuerda en el dispositivo
+  y vale para todas las gráficas: las horas, también en la portada (si el
+  tramo elegido tiene menos de 3 horas, todas); el viento; y las dos
+  temperaturas, «Part baixa» (la de la estación, junto a la riera; por
+  defecto, sí) y «Part alta» (por defecto, no). Sin la de abajo, las cifras
+  bajo los iconos y el relleno son los de arriba; sin ninguna, no hay
+  curva. En «Consultes» las horas son las de la ficha.
 - **La máxima toca la raya del techo** (3.107.0; Juanjo, 17-10-2026: «la
   temperatura debe llegar al máximo de la lluvia y poner esa temperatura
   máxima a la izquierda, así la misma línea indica el máximo de lluvia (por
