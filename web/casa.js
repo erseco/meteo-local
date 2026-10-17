@@ -327,7 +327,12 @@ function posaComptePluja(cos, hores, ara = new Date()) {
   const text = (fila) => (fila.lastElementChild && fila.lastElementChild.textContent || '').trim();
   const pluja = files.find((fila) => LINIA_PLUJA.test(text(fila)));
   if (pluja) {
-    pluja.lastElementChild.append(T(' Comença '), compte(f.hora, true), '.');
+    // Destacat en una etiqueta del color de la pluja, com la de la part alta
+    // (Juanjo, 17-10-2026: «quisiera que se destacase algo… decide tú»; un
+    // destacat amb color, no amb negreta).
+    const etiqueta = element('span', 'comenca-pluja');
+    etiqueta.append(T('Comença '), compte(f.hora, true));
+    pluja.lastElementChild.append(' ', etiqueta);
     return;
   }
   const seca = files.find((fila) => LINIA_SECA.test(text(fila)));
@@ -374,7 +379,9 @@ function liniaPlujaPrevista(hores, ara = new Date()) {
   const segura = plujaHora(f) === 'pluja';
   const p = element('p', `resum-linia pluja-prevista${segura ? ' segura' : ''}`);
   const text = element('span');
-  text.append(segura ? T('Pluja prevista ') : T('Possible pluja '), compte(f.hora, true),
+  const etiqueta = element('span', 'comenca-pluja');
+  etiqueta.append(compte(f.hora, true));
+  text.append(segura ? T('Pluja prevista ') : T('Possible pluja '), etiqueta,
     T`, cap a les ${new Date(f.hora).getHours()}\u00a0h` + (pct == null ? '' : ` (${pct}\u00a0%)`) + '.');
   p.append(icona('i-cloud-rain'), text);
   return p;

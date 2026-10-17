@@ -170,3 +170,9 @@ debe salir». Desde la 3.116.0, en «Ara» de la portada:
    hores, cap a les 17 h (25 %)»; desde el 50 %, «Pluja prevista».
 
 /ara del bot dice lo mismo, sin la cuenta en directo.
+
+Destacado (17-10-2026, 3.123.0): Juanjo pidió destacar «Comença d'aquí a
+unes 3 hores» («quizás en negrita? decide tu»). Va en una etiqueta del color
+de la lluvia, como la de la parte alta, porque ya había pedido destacar con
+un recurso visual y no con negrita; también la cuenta de la línea «Possible
+pluja d'aquí a…» cuando hoy no llueve.

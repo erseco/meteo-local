@@ -1051,7 +1051,12 @@ function vistaGrafica() {
   if (ambDifAlta) barra.append(alta);
   barra.append(encerta);
 
-  dlg.append(cap, navega, barra, antelacio, fig, encertEl);
+  // Dalt, què es veu; a sota, la navegació en el temps junta, el dia i
+  // l'antelació, en una fila si hi caben (Juanjo, 17-10-2026: «así la
+  // navegación temporal queda junta»).
+  const temps = element('div', 'vg-temps');
+  temps.append(navega, antelacio);
+  dlg.append(cap, barra, temps, fig, encertEl);
   // Un toc fora de la finestra la tanca, com Esc.
   dlg.addEventListener('click', (e) => {
     if (e.target !== dlg) return;

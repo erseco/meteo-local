@@ -82,3 +82,13 @@ cada hora la previsión publicada con lo que mostraba la web (`mostrat` de
 - Con el registro real del NAS: 14 días, 187 horas con las dos cosas,
   0,87 °C de error; 3 horas con lluvia prevista. En Chromium, Firefox y
   WebKit, escritorio y móvil: navegar hasta el 4 de octubre y volver.
+
+## Cambio del 17-10-2026 (3.123.0): la navegación en el tiempo, junta
+
+Juanjo, ante la vista con «Com encerta» (día ‹ ›, luego los botones de la
+vista y luego la antelación): «la antelacion no debería ir a continuación de
+HOY? … asi la navegación temporal queda junta. O quizás los botones que ahora
+hay enmedio pasarlos arriba, decide tu». Las dos cosas: arriba, los botones
+que eligen qué se ve (horas, viento, partes, «Com encerta»); debajo, el día y
+la antelación en un mismo bloque (`.vg-temps`), en una fila si caben (en el
+ordenador) y, si no, una debajo de la otra (en el móvil).

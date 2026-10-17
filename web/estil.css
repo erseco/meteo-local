@@ -927,6 +927,9 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .resta-dia .resum-linia + .resum-linia { margin-top: .45rem; }
 .resta-dia .pluja-prevista { display: grid; font-size: inherit; }
 .resta-dia .pluja-prevista svg { margin-top: .15rem; }
+/* Quant falta per a la pluja, en una etiqueta del color de la pluja (casa.js). */
+.comenca-pluja { background: var(--c-aigua-fons); color: var(--c-aigua); border-radius: .7rem; padding: .05rem .5rem;
+  font-size: .92em; white-space: nowrap; }
 
 /* Al mòbil, les pàgines en una barra fixa a baix, com a les aplicacions, i
    sense la línia de sota el títol: dalt hi queda el que es vol veure en obrir
@@ -1086,7 +1089,7 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .vg-cap { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
 .vg-cap h2 { margin: 0; font-size: 1.15rem; }
 .vg-accions { display: flex; gap: .5rem; }
-.vg-opcions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: .6rem 0 .8rem; }
+.vg-opcions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: .6rem 0; }
 .vg-trams { display: inline-flex; border: 1px solid var(--vora); border-radius: 999px; overflow: hidden; }
 .vg-trams .vg-opcio { border: none; border-radius: 0; }
 .vg-trams .vg-opcio + .vg-opcio { border-left: 1px solid var(--vora); }
@@ -1114,7 +1117,7 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .grafica .g-alta { fill: none; stroke: var(--alta-text); stroke-width: 2; stroke-dasharray: 6 4; stroke-linecap: round; }
 .g-clau .m-alta { width: 1rem; height: 0; border-top: 2px dashed var(--alta-text); }
 /* L'historial i l'encert de la vista en gran (grafica.js, ADR 0099). */
-.vg-dia { display: flex; align-items: center; gap: .5rem; margin: .6rem 0 0; }
+.vg-dia { display: flex; align-items: center; gap: .5rem; }
 .vg-dia[hidden], .vg-dia [hidden] { display: none; }
 .vg-dia .boto-icona { width: 2.25rem; height: 2.25rem; }
 .vg-dia .boto-icona:disabled { opacity: .35; cursor: default; }
@@ -1127,8 +1130,11 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .grafica .g-ara { stroke: var(--text); stroke-opacity: .55; stroke-width: 1.5; }
 .g-clau .m-prev { width: 1rem; height: 0; border-top: 2px dotted color-mix(in srgb, var(--c-maxima) 55%, transparent); }
 .vg-opcions [hidden], .vg-trams[hidden] { display: none; }
-.vg-antelacio { display: flex; align-items: center; gap: .5rem; margin: 0 0 .6rem; font-size: .9rem; color: var(--suau); }
+.vg-antelacio { display: flex; align-items: center; gap: .5rem; font-size: .9rem; color: var(--suau); }
 .vg-antelacio[hidden] { display: none; }
+/* El dia i l'antelació, junts: en una fila si hi caben (grafica.js, vistaGrafica). */
+.vg-temps { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.4rem; }
+.vg-temps:has(> :not([hidden])) { margin: 0 0 .6rem; }
 .vg-antelacio .boto-icona { width: 2rem; height: 2rem; }
 .vg-antelacio .boto-icona:disabled { opacity: .35; cursor: default; }
 .vg-nom-antelacio { font-weight: 600; color: var(--text); min-width: 2.5rem; text-align: center; }

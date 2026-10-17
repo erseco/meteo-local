@@ -359,7 +359,7 @@ var IDIOMA = {
     "d’aquí a {0}\u00a0h": "dentro de {0}\u00a0h",
     "Pluja prevista ": "Lluvia prevista ",
     "Possible pluja ": "Posible lluvia ",
-    " Comença ": " Empieza ",
+    "Comença ": "Empieza ",
     "actualitzat {0} {1}": "actualizado {0} {1}",
     "publicat {0} {1}": "publicado {0} {1}",
     "ahir": "ayer",
