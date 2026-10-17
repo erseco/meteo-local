@@ -1086,3 +1086,8 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 @media (max-width: 600px) {
   .vista-grafica { width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); padding: .6rem .6rem .8rem; }
 }
+/* La càmera de la gràfica a «Consultes» (grafica.js, botoImatge): al final de la llegenda. */
+.g-llegenda .g-imatge { margin-left: auto; display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem;
+  border: 1px solid var(--vora); border-radius: .5rem; background: var(--superficie); color: var(--text); cursor: pointer; }
+.g-llegenda .g-imatge svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.visor .visor-nota { margin: .6rem 0 0; color: #fff; font-size: .95rem; text-align: center; }

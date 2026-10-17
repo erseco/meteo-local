@@ -36,6 +36,22 @@ texto. En IONOS no hay navegador; en el NAS, tampoco había.
   secas, que haría dudar del aviso oficial de la franja. Sin fuentes: o
   todas o ninguna, y las de cada aviso ya están en la franja. En la web no:
   la página ya lo dice.
+- **La imagen también desde la web y la app** (3.103.0; Juanjo, 17-10-2026:
+  «se puede añadir a la gráfica una captura? … incluiría la misma
+  información que la de telegram»): una cámara (`camera` de Lucide; el
+  icono de compartir ya era el del enlace) en la vista en grande, delante de
+  compartir el enlace y la X, y al final de la leyenda en «Avui» y «Demà» de
+  «Consultes». La imagen la hace el navegador con lo que se ve (las horas
+  elegidas, el viento, los colores del tema) y los mismos créditos:
+  `svgDeLaGrafica` copia los estilos calculados, los iconos, la leyenda y
+  los créditos a un SVG aparte y un canvas lo pasa a PNG, sin servidores ni
+  bibliotecas. En el móvil, el menú de compartir con la imagen; en el
+  ordenador se copia al portapapeles («no quiero que se baje, quiero que se
+  copie la imagen»), pedido dentro del mismo clic con la imagen aún por
+  hacer, porque Safari no deja copiar después de esperar. Si no se puede
+  copiar, la imagen en una ventana para copiarla a mano. Comprobado: en
+  Chromium el portapapeles contiene el PNG; Firefox, por Juanjo en su
+  equipo («va perfectamente»); WebKit confirma la copia.
 - **Solo la parte de la que habla el resumen** (`graficaDia`, la misma que
   «Consultes»): la de hoy, de ahora a medianoche (resúmenes de la mañana y
   /resum); la de mañana, de las 18 h de hoy (la noche, como `bot.resum`) al

@@ -518,6 +518,7 @@ function mapaTall(t, m) {
 let assenyalada = !OPCIONS.some(([c]) => c === location.hash.slice(1));
 function pinta(dades) {
   DADES = dades;
+  GENERAT_GRAFICA = dades.generat;
   // Dades de fa massa: només l'avís i on mirar (ADR 0031).
   const velles = dadesVelles(dades);
   $('opcions').hidden = velles;

@@ -312,7 +312,10 @@ function graficaDia(hores, riscos, dia, ara = new Date()) {
     && new Date(f.hora) < fins && f.temperatura != null);
   if (files.length < 3) return null;
   for (const f of files) f.riscos_hora = riscosHora(f, riscos, ara);
-  return figuraGrafica(files, T('Gràfica de la previsió hora a hora: perill, cel, temperatura i probabilitat de pluja.'));
+  const fig = figuraGrafica(files, T('Gràfica de la previsió hora a hora: perill, cel, temperatura i probabilitat de pluja.'));
+  // A «Consultes», la càmera al final de la llegenda (botoImatge).
+  fig._botoImatge = true;
+  return fig;
 }
 
 function dibuixaGrafica(fig) {
@@ -696,6 +699,7 @@ function dibuixaGrafica(fig) {
   if (intenses.includes('torrencial')) ll.append(clau('m-pluja torrencial', T('Pluja torrencial')));
   if (hVent) ll.append(clau('m-vent', T('Vent')), clau('m-ratxa', T('Ratxes')));
   ll.append(clau('m-nit', T('Nit')));
+  if (fig._botoImatge) ll.append(botoImatge(fig, 'g-imatge'));
   fig.append(ll);
 }
 
@@ -727,10 +731,12 @@ function vistaGrafica() {
   const cap = element('div', 'vg-cap');
   const titol = element('h2', null, T('Previsió'));
   titol.id = 'vg-titol';
+  const fig = figuraGrafica([], T('Gràfica de la previsió hora a hora: perill, cel, temperatura i probabilitat de pluja.'));
+  fig.classList.add('gran');
   const comparteixBoto = element('button', 'boto-icona');
   comparteixBoto.type = 'button';
-  comparteixBoto.title = T('Comparteix la gràfica');
-  comparteixBoto.setAttribute('aria-label', T('Comparteix la gràfica'));
+  comparteixBoto.title = T('Comparteix l’enllaç de la gràfica');
+  comparteixBoto.setAttribute('aria-label', T('Comparteix l’enllaç de la gràfica'));
   comparteixBoto.append(icona('i-share-2'));
   comparteixBoto.addEventListener('click', () => comparteix());
   // Tancar: la X de sempre, a dalt a la dreta (icona «x» de Lucide).
@@ -741,7 +747,7 @@ function vistaGrafica() {
   tanca.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
   tanca.addEventListener('click', () => dlg.close());
   const accions = element('div', 'vg-accions');
-  accions.append(comparteixBoto, tanca);
+  accions.append(botoImatge(fig, 'boto-icona'), comparteixBoto, tanca);
   cap.append(titol, accions);
 
   // Les opcions: quines hores (només les que tenen prou hores) i el vent.
@@ -755,8 +761,6 @@ function vistaGrafica() {
   vent.type = 'button';
   vent.append(icona('i-wind'), T('Vent'));
   const ambVent = HORES_GRAFICA.some((f) => f.vent != null);
-  const fig = figuraGrafica([], T('Gràfica de la previsió hora a hora: perill, cel, temperatura i probabilitat de pluja.'));
-  fig.classList.add('gran');
   const desa = () => {
     try { localStorage.setItem(CLAU_GRAFICA, JSON.stringify(opcions)); } catch (_) {}
   };
@@ -806,6 +810,218 @@ function obreGraficaDeLEnllac() {
   vistaGrafica();
 }
 addEventListener('hashchange', () => { if (location.hash === '#grafica') vistaGrafica(); });
+
+// --- La gràfica com a imatge, des de la web i la app (Juanjo, 17-10-2026: «se
+// puede añadir a la gráfica una captura? … incluiría la misma información que
+// la de telegram»): el que es veu (les hores triades, el vent, els colors del
+// tema) i, a sota, els crèdits de la imatge de Telegram (grafica_imatge.py).
+// La fa el navegador: la gràfica ja és SVG; s'hi copien els estils calculats,
+// les icones, la llegenda i els crèdits, i es passa a PNG amb un canvas. Al
+// mòbil s'obre el menú de compartir amb la imatge; on no n'hi ha, es baixa. ---
+
+// L'hora de les dades de la gràfica: la posen casa.js i consultes.js.
+let GENERAT_GRAFICA = null;
+
+function creditsGrafica() {
+  const g = GENERAT_GRAFICA ? new Date(GENERAT_GRAFICA) : new Date();
+  const codi = IDIOMA.codi === 'es' ? 'es' : 'ca';
+  const dia = `${g.toLocaleDateString(codi, { weekday: 'long' })} ${g.toLocaleDateString(codi, { day: 'numeric', month: 'long' })}`;
+  const hora = g.toLocaleTimeString(codi, { hour: '2-digit', minute: '2-digit' });
+  return [T`Temps a Montflorit (Cerdanyola del Vallès) · previsió de ${dia}, ${hora} · meteo-montflorit.github.io`,
+    T('No és oficial: si l’AEMET, Meteocat o Protecció Civil donen un avís, mana el seu.')];
+}
+
+const ESTILS_SVG = ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity', 'stroke-dasharray',
+  'stroke-linecap', 'stroke-linejoin', 'opacity', 'paint-order', 'font-family', 'font-size', 'font-weight',
+  'stop-color', 'stop-opacity', 'color'];
+const VARS_ICONES = ['--ic-sol', '--ic-sol-fons', '--ic-nuvol', '--ic-nuvol-fons', '--ic-aigua', '--ic-aigua-fons',
+  '--ic-neu', '--ic-lluna', '--ic-lluna-fons'];
+
+function svgDeLaGrafica(fig) {
+  const orig = fig.querySelector('svg');
+  const caixa = fig.getBoundingClientRect();
+  const marge = 16;
+  const W = caixa.width;
+  const estil = getComputedStyle(fig);
+  const arrel = getComputedStyle(document.documentElement);
+  const fons = arrel.getPropertyValue('--superficie').trim() || '#fff';
+  const suau = arrel.getPropertyValue('--suau').trim() || '#64748b';
+  const lletra = estil.fontFamily;
+  const g = orig.cloneNode(true);
+  // Els estils calculats, element per element: fora de la pàgina no hi ha el CSS.
+  const origs = [orig, ...orig.querySelectorAll('*')];
+  [g, ...g.querySelectorAll('*')].forEach((e, i) => {
+    const c = getComputedStyle(origs[i]);
+    e.setAttribute('style', ESTILS_SVG.map((p) => `${p}:${c.getPropertyValue(p)}`).join(';'));
+  });
+  // Ni la fitxa de l'hora ni la columna marcada.
+  g.querySelector('.g-retol')?.replaceChildren();
+  // Les icones: els símbols que fa servir, amb els colors del cel.
+  const defs = document.createElementNS(SVG_NS, 'defs');
+  for (const id of new Set([...g.querySelectorAll('use')].map((u) => u.getAttribute('href')))) {
+    const s = document.querySelector(id);
+    if (s) defs.append(s.cloneNode(true));
+  }
+  g.prepend(defs);
+  g.setAttribute('style', VARS_ICONES.map((v) => `${v}:${estil.getPropertyValue(v).trim()}`).join(';'));
+  const alt = parseFloat(orig.getAttribute('height'));
+  const peca = (nom, atributs, text) => svg(nom, atributs, text);
+  const tot = document.createElementNS(SVG_NS, 'svg');
+  tot.setAttribute('xmlns', SVG_NS);
+  tot.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+  const cos = peca('g', { transform: `translate(${marge},${marge})` });
+  g.setAttribute('x', 0);
+  g.setAttribute('y', 0);
+  cos.append(g);
+  // La llegenda, on és a la pantalla: cada mostra amb el seu color i el text.
+  const ll = fig.querySelector('.g-llegenda');
+  let y = alt;
+  if (ll) {
+    const lc = getComputedStyle(ll);
+    for (const clau of ll.querySelectorAll('.g-clau')) {
+      const m = clau.firstElementChild;
+      const r = m.getBoundingClientRect();
+      const ms = getComputedStyle(m);
+      const x0 = r.left - caixa.left;
+      const y0 = r.top - caixa.top;
+      if (ms.borderTopStyle === 'dashed') {
+        cos.append(peca('line', { x1: x0, x2: x0 + r.width, y1: y0 + 1, y2: y0 + 1,
+          style: `stroke:${ms.borderTopColor};stroke-width:2;stroke-dasharray:4 3` }));
+      } else {
+        cos.append(peca('rect', { x: x0, y: y0, width: r.width, height: Math.max(r.height, 2), rx: 1,
+          style: `fill:${ms.backgroundColor};stroke:${ms.borderTopStyle === 'solid' ? ms.borderTopColor : 'none'}` }));
+      }
+      const t = [...clau.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('');
+      cos.append(peca('text', { x: x0 + r.width + 5, y: y0 + r.height / 2,
+        style: `fill:${lc.color};font-family:${lletra};font-size:${lc.fontSize};dominant-baseline:central` }, t));
+    }
+    y = ll.getBoundingClientRect().bottom - caixa.top;
+  }
+  // Els crèdits, com a la imatge de Telegram; al mòbil, partits en línies
+  // que hi càpiguen, pels « · » si es pot.
+  const mida = document.createElement('canvas').getContext('2d');
+  mida.font = `13px ${lletra}`;
+  const cap = (t) => mida.measureText(t).width <= W;
+  const linies = creditsGrafica().flatMap((l) => {
+    const res = [];
+    for (const tros of l.split(' · ')) {
+      const prova = res.length ? `${res[res.length - 1]} · ${tros}` : tros;
+      if (res.length && cap(prova)) res[res.length - 1] = prova;
+      else res.push(tros);
+    }
+    return res.flatMap((r) => {
+      if (cap(r)) return [r];
+      const parts = [];
+      for (const paraula of r.split(' ')) {
+        const prova = parts.length ? `${parts[parts.length - 1]} ${paraula}` : paraula;
+        if (parts.length && cap(prova)) parts[parts.length - 1] = prova;
+        else parts.push(paraula);
+      }
+      return parts;
+    });
+  });
+  linies.forEach((l, k) => cos.append(peca('text', { x: 0, y: y + 22 + k * 19,
+    style: `fill:${suau};font-family:${lletra};font-size:13px` }, l)));
+  const H = y + 22 + linies.length * 19 + marge;
+  tot.setAttribute('width', W + 2 * marge);
+  tot.setAttribute('height', H);
+  tot.setAttribute('viewBox', `0 0 ${W + 2 * marge} ${H}`);
+  tot.append(peca('rect', { width: W + 2 * marge, height: H, style: `fill:${fons}` }), cos);
+  return tot;
+}
+
+function pngDeLaGrafica(fig, escala = 2) {
+  const s = svgDeLaGrafica(fig);
+  const W = parseFloat(s.getAttribute('width'));
+  const H = parseFloat(s.getAttribute('height'));
+  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(s)], { type: 'image/svg+xml' }));
+  return new Promise((resol, falla) => {
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = Math.round(W * escala);
+      c.height = Math.round(H * escala);
+      const ctx = c.getContext('2d');
+      ctx.scale(escala, escala);
+      ctx.drawImage(im, 0, 0, W, H);
+      URL.revokeObjectURL(url);
+      c.toBlob((b) => (b ? resol(b) : falla(new Error('png'))), 'image/png');
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); falla(new Error('svg')); };
+    im.src = url;
+  });
+}
+
+// Al mòbil, el menú de compartir amb la imatge; on no n'hi ha (l'ordinador),
+// es copia al porta-retalls, a punt per enganxar (Juanjo, 17-10-2026: «no
+// quiero que se baje, quiero que se copie la imagen»). La còpia es demana
+// dins del mateix clic, amb la imatge encara per fer (Safari no deixa
+// copiar després d'esperar). Si el navegador no deixa copiar, la imatge en
+// una finestra, per copiar-la amb el botó dret o mantenint-la premuda.
+function nomImatge() {
+  const g = GENERAT_GRAFICA ? new Date(GENERAT_GRAFICA) : new Date();
+  const dos = (n) => String(n).padStart(2, '0');
+  return `temps-montflorit-${g.getFullYear()}-${dos(g.getMonth() + 1)}-${dos(g.getDate())}-${dos(g.getHours())}${dos(g.getMinutes())}.png`;
+}
+
+function potCompartirImatges() {
+  try {
+    return Boolean(navigator.canShare) && navigator.canShare({ files: [new File([''], 'a.png', { type: 'image/png' })] });
+  } catch (_) {
+    return false;
+  }
+}
+
+function comparteixImatge(fig) {
+  const png = pngDeLaGrafica(fig);
+  if (potCompartirImatges()) {
+    png.then((blob) => navigator.share({ files: [new File([blob], nomImatge(), { type: 'image/png' })],
+      title: 'Temps a Montflorit', text: creditsGrafica()[0] }))
+      .catch((e) => { if (e.name !== 'AbortError') mostraImatge(png); });
+    return;
+  }
+  if (navigator.clipboard && window.ClipboardItem) {
+    navigator.clipboard.write([new ClipboardItem({ 'image/png': png })])
+      .then(() => avisBreu(T('Imatge copiada')), () => mostraImatge(png));
+    return;
+  }
+  mostraImatge(png);
+}
+
+function mostraImatge(png) {
+  png.then((blob) => {
+    const visor = element('dialog', 'visor');
+    const im = element('img');
+    im.src = URL.createObjectURL(blob);
+    im.alt = T('Gràfica de la previsió hora a hora: perill, cel, temperatura i probabilitat de pluja.');
+    const tanca = element('button', 'visor-tanca');
+    tanca.type = 'button';
+    tanca.title = T('Tanca');
+    tanca.setAttribute('aria-label', T('Tanca'));
+    tanca.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+    tanca.addEventListener('click', () => visor.close());
+    visor.append(im, element('p', 'visor-nota', T('Copia la imatge amb el botó dret o mantenint-la premuda.')), tanca);
+    visor.addEventListener('click', (e) => { if (e.target === visor) visor.close(); });
+    visor.addEventListener('close', () => { URL.revokeObjectURL(im.src); visor.remove(); });
+    document.body.append(visor);
+    visor.showModal();
+  }, () => avisBreu(T('No s’ha pogut fer la imatge.')));
+}
+
+// La càmera: a la vista en gran, al costat de compartir l'enllaç; a
+// «Consultes», al final de la llegenda.
+function botoImatge(fig, classe) {
+  const b = element('button', classe);
+  b.type = 'button';
+  b.title = T('Comparteix la imatge de la gràfica');
+  b.setAttribute('aria-label', T('Comparteix la imatge de la gràfica'));
+  b.append(icona('i-camera'));
+  b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    comparteixImatge(fig);
+  });
+  return b;
+}
 
 function dibuixaGrafiques() {
   for (const fig of document.querySelectorAll('figure.grafica')) dibuixaGrafica(fig);
