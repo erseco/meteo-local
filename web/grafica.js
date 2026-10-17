@@ -255,9 +255,11 @@ function svg(nom, atributs = {}, text = null) {
   return e;
 }
 
-// L'alçada de la barra de pluja, en mil·límetres (Juanjo, 16-10-2026: «la
-// lluvia sale pequeña… aquí hay mucha»): d'arrel quadrada, perquè 1 o 2 mm no
-// desapareguin. Dalt de tot, l'esglaó que cobreix la pluja més forta de la
+// L'alçada de la barra de pluja, en mil·límetres, proporcional al sostre
+// rotulat (Juanjo, 17-10-2026: amb 3,7 mm i el sostre a 10 mm, la barra
+// arribava al 61 % i no al 37 %: era d'arrel quadrada, perquè 1 o 2 mm no
+// desapareguessin; amb el sostre per esglaons, 1 mm ja és el 10 %, i les
+// barres baixes tenen 3 px com a mínim). Dalt de tot, l'esglaó que cobreix la pluja més forta de la
 // gràfica, 10 mm com a mínim: les barres omplen més l'espai (Juanjo,
 // 17-10-2026: «las columnas me parecen cortas… no sería mejor una escala
 // variable?»), però en esglaons fixos i amb el sostre rotulat, perquè un dia
@@ -268,7 +270,7 @@ const sostrePluja = (files) => {
   const max = Math.max(0, ...files.filter((f) => plujaGrafica(f)).map((f) => f.pluja_mm || 0));
   return MM_ESGLAONS.find((e) => max <= e) || MM_ESGLAONS[MM_ESGLAONS.length - 1];
 };
-const alcadaPluja = (mm, sostre) => Math.min(1, Math.sqrt(Math.max(0, mm) / sostre));
+const alcadaPluja = (mm, sostre) => Math.min(1, Math.max(0, mm) / sostre);
 // La pluja forta i la torrencial, amb color propi: les intensitats del manual
 // d'estil de Meteocat, les mateixes paraules que la columna «Cel» de la taula
 // (INTENSITAT_PLUJA; ADR 0043). L'avís, a la franja de dalt (Juanjo,

@@ -147,6 +147,12 @@ siempre en la hora en curso.
   con el límite de tres filas.
 - **La imagen para Telegram y los avisos** sale de esta misma gráfica (ADR
   0098).
+- **La barra de lluvia, proporcional** (3.114.1; Juanjo, 17-10-2026: «la
+  columna mayor de lluvia pone 3.7mm y debería ser más o menos 1/3 del
+  espacio que queda hasta los 10mm»): la escala de raíz cuadrada (3,7 mm
+  llegaban al 61 % del techo) pasa a lineal (37 %). Con el techo rotulado,
+  la altura se lee como proporción de esa cifra; con los escalones, 1 mm ya
+  es el 10 % de la altura, y las barras muy bajas tienen 3 px como mínimo.
 - **Los avisos de después de la gráfica** (3.114.0; Juanjo, 17-10-2026, ante
   un perill molt alt de Meteocat para el lunes que no salía en la gráfica ni
   en los tramos, que llegan a mañana a las 21 h): encima de la gráfica, una
