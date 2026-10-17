@@ -32,6 +32,7 @@ visibilidad ni niebla. El 17-10-2026, con niebla cerrada en Sabadell desde las
 """
 import csv
 import datetime as dt
+import fcntl
 import json
 import os
 import sys
@@ -161,7 +162,15 @@ def _afegeix(ruta, camps, fila):
 
 def pregunta(ara=None, casa_json=CASA_JSON):
     """Si casa está saturada y no llueve, de día, y no se ha preguntado en las
-    últimas CADA_H horas: el mensaje con los botones."""
+    últimas CADA_H horas: el mensaje con los botones. Con un candado: dos
+    pasadas a la vez mandaron la misma pregunta dos veces (17-10-2026)."""
+    os.makedirs(os.path.dirname(PREGUNTES) or ".", exist_ok=True)
+    with open(PREGUNTES + ".lock", "w") as cadenat:
+        fcntl.flock(cadenat, fcntl.LOCK_EX)
+        return _pregunta(ara, casa_json)
+
+
+def _pregunta(ara, casa_json):
     ara = ara or dt.datetime.now(P.ZONA)
     if ara.hour not in HORES_PREGUNTA:
         return None
