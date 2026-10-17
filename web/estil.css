@@ -211,7 +211,6 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .horari .ajuda-fase { margin-left: .4rem; }
 .horari .sense-tall { white-space: nowrap; }
 /* Al peu de la targeta «Ara» (ADR 0094). */
-.ara .horari { margin: .5rem 0 0; }
 .horari:empty { display: none; }
 
 .perque {
@@ -964,7 +963,10 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .resta-dia .pluja-prevista svg { margin-top: .15rem; }
 /* Quant falta per a la pluja, en una etiqueta del color de la pluja (casa.js). */
 .comenca-pluja { background: var(--c-aigua-fons); color: var(--c-aigua-text); border-radius: .7rem; padding: .05rem .5rem;
-  font-size: .92em; white-space: nowrap; }
+  font-size: .92em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+/* Amb «(29 % en aquesta hora)» ja no cap al mòbil en una línia: es parteix,
+   però no la xifra. */
+.comenca-pluja .compte { white-space: nowrap; }
 
 /* Al mòbil, les pàgines en una barra fixa a baix, com a les aplicacions, i
    sense la línia de sota el títol: dalt hi queda el que es vol veure en obrir

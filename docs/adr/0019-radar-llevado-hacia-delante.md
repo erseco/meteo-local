@@ -289,3 +289,8 @@ En la 3.127.1, la leyenda del mapa ampliado solo nombra las intensidades que
 se dibujan: el trozo de los datos (67 píxeles, unos 61 km) es algo mayor que
 el cuadro de 60 km, y la lluvia de su borde ponía «moderada» y «forta» en
 un mapa sin ninguna (visto en producción el 17-10-2026, con la 3.127.0).
+
+En la 3.128.0 la etiqueta dice de qué es la cifra: «Pot començar d'aquí a una
+hora (29 % en aquesta hora)», porque es la probabilidad de que llueva en esa
+hora (0,2 mm o más), no la de que empiece (Juanjo: «este % que indica
+exactamente?»). En el móvil la etiqueta se parte en dos líneas si no cabe.

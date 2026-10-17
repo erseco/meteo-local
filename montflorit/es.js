@@ -364,6 +364,7 @@ var IDIOMA = {
     "Possible pluja ": "Posible lluvia ",
     "Comença ": "Empieza ",
     "Pot començar ": "Puede empezar ",
+    " ({0}\u00a0% en aquesta hora)": " ({0}\u00a0% en esa hora)",
     "moviment de la pluja": "movimiento de la lluvia",
     " Va cap {0} a {1}\u00a0km/h.": " Va hacia {0} a {1}\u00a0km/h.",
     "actualitzat {0} {1}": "actualizado {0} {1}",

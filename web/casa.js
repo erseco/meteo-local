@@ -251,8 +251,8 @@ function resumTram(t) {
 function blocAra(casa, radarDades, vent, veines, hores, resum) {
   const sec = element('section', 'decisio targeta ara');
   sec.setAttribute('aria-label', T`El temps avui a ${LLOC}`);
-  // Sense l'hora de la mesura: la línia «Actualitzat a les…» va al peu de la
-  // targeta, i dues hores juntes semblaven un error (Juanjo, 16-10-2026; ADR 0094).
+  // Sense l'hora de la mesura: la de «Actualitzat a les…», a dalt, ja la diu, i
+  // dues hores juntes semblaven un error (Juanjo, 16-10-2026; ADR 0094).
   const dia = new Date().toLocaleDateString(IDIOMA.codi === 'es' ? 'es-ES' : 'ca-ES', { weekday: 'long' });
   sec.append(element('h2', 'data', T`Avui, ${dia}, a ${LLOC}`));
   const temp = element('p', 'veredicte');
@@ -332,7 +332,9 @@ function posaComptePluja(cos, hores, ara = new Date()) {
     // Amb la probabilitat, i «Pot començar» si només és possible (Juanjo,
     // 17-10-2026: el «Comença» d'una hora del 49 % ho deia massa segur).
     const etiqueta = element('span', 'comenca-pluja');
-    etiqueta.append(plujaHora(f) === 'pluja' ? T('Comença ') : T('Pot començar '), compte(f.hora, true), textPct(f));
+    // «en aquesta hora»: és la de la pluja d'aquella hora, no la de començar.
+    const pct = f.probabilitat == null ? '' : T` (${Math.round(f.probabilitat * 100)}\u00a0% en aquesta hora)`;
+    etiqueta.append(plujaHora(f) === 'pluja' ? T('Comença ') : T('Pot començar '), compte(f.hora, true), pct);
     pluja.lastElementChild.append(' ', etiqueta);
     return;
   }
@@ -1014,20 +1016,17 @@ function repintaAvisos() {
   if (DADES_AVISOS && !dadesVelles(DADES_AVISOS)) pintaAvisos(DADES_AVISOS);
 }
 
-// La línia «Actualitzat a les… · propera: …», al peu de la targeta «Ara» (ADR
-// 0094): la pàgina en té una sola hora. El node és el de casa.html; com que
-// #casa es buida a cada pintada, es torna a col·locar cada vegada.
-let HORARI = null;
-
+// La línia «Actualitzat a les… · propera: …» es queda al capdamunt, sota el
+// subtítol, com a «Si surts» i «Consultes» (Juanjo, 17-10-2026: «está oculto
+// en medio del texto… que se vea nada más entrar»; ADR 0094).
 function pinta(dades) {
   const cont = $('casa');
-  HORARI = HORARI || $('horari');
   cont.replaceChildren();
   // Dades de fa massa: només l'avís i on mirar (ADR 0031).
   if (dadesVelles(dades)) {
     $('avisos').replaceChildren();
     DADES_AVISOS = dades;
-    cont.append(blocDadesVelles(dades), HORARI);
+    cont.append(blocDadesVelles(dades));
     pintaHorari(dades);
     posaVersio(dades.versio);
     return;
@@ -1045,12 +1044,7 @@ function pinta(dades) {
   }
   const ara = dades.ara_casa && blocAra(dades.ara_casa, dades.radar, dades.vent, dades.veines, dades.hores,
     textResum(dades, 'avui'));
-  if (ara) {
-    ara.append(HORARI);
-    cont.append(ara);
-  } else {
-    cont.append(HORARI);
-  }
+  if (ara) cont.append(ara);
   if (OFERTA_AVISOS) cont.append(OFERTA_AVISOS);
   const resum = blocsResum(dades, !ara);
   cont.append(...resum);

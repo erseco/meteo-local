@@ -151,3 +151,12 @@ página sigue abierta; no se calcula hasta tener el historial, para que no
 parpadee. Validación: Chromium y Firefox, catalán y castellano, con los
 avisos del momento; primera visita con «Nou» y la siguiente sin él;
 `tests/test_perills.py` con la hora en las líneas.
+
+## Cambio del 17-10-2026 (3.128.0): «Actualitzat a les…», otra vez arriba
+
+En la portada, la línea «Actualitzat a les… · propera: …» vuelve a ir arriba,
+bajo el subtítulo y las pestañas, como en «Si surts» y «Consultes», y no al
+pie de la tarjeta «Ara». Juanjo: «está oculto en medio del texto, lo quiero
+arriba bajo el subtítulo o donde quieras pero que se vea nada más entrar».
+Ocupa una línea pequeña; los avisos siguen saliendo justo debajo. La tarjeta
+sigue sin la hora de la medida, que ya dice esa línea.
