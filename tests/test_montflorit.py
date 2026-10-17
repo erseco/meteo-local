@@ -287,6 +287,10 @@ class Castella(unittest.TestCase):
                             ".map((x) => typeof x === 'string' ? x : x.textContent).join('')"),
                          "Lluvia dentro de 1\u00a0h 15\u00a0min (hacia las\u00a011:15)")
         self.assertEqual(js("TD('al nord-est')"), "el nordeste")
+        # La pluja més propera, al requadre del radar (17-10-2026).
+        self.assertEqual(js("textPropera({km: 6.4, rumb: 'al nord-oest', classe: 2})"),
+                         "La más cercana, a 6\u00a0km al noroeste (moderada).")
+        self.assertIsNone(js("textPropera({km: 0.5, rumb: 'al nord', classe: 1})"))
         # «Ara» i la resta del dia en una targeta (17-10-2026): la línia de la pluja del resum porta
         # el que falta, i la de «sense pluja», si en vindrà abans de 24 hores, diu quan.
         self.assertEqual(js("['Lluvia de 14 a 15 h.', 'Posible lluvia de 17 a 19 h.', 'Esta noche: lluvia de 2 a 4 h.',"

@@ -449,6 +449,30 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
   background: color-mix(in srgb, var(--to) 10%, var(--superficie));
 }
 .radar-ara.possible { --to: var(--enllac); }
+.radar-ara { flex-wrap: wrap; }
+.radar-ara > div { flex: 1 1 9rem; min-width: 0; }
+.radar-propera { margin: .15rem 0 0; font-size: .92rem; }
+/* El mapa del radar (casa.js, svgMapa; Juanjo, 17-10-2026): una miniatura al
+   requadre i, en prémer-la, gran. */
+.mapa-radar-mini { flex: none; width: 5.5rem; height: 5.5rem; padding: 0; border: 1px solid var(--vora); border-radius: .4rem;
+  background: none; cursor: pointer; overflow: hidden; }
+.radar-ara .mapa-radar-mini svg { display: block; width: 100%; height: 100%; stroke: none; stroke-width: 0; fill: none; }
+.mapa-radar-svg .mapa-fons { fill: var(--superficie); }
+.mapa-radar-svg .mapa-cercle { fill: none; stroke: var(--suau); stroke-width: .15; stroke-dasharray: .8 .6; }
+.mapa-radar-svg .mapa-casa { fill: var(--text); stroke: var(--superficie); stroke-width: .35; }
+.mapa-radar-svg .mapa-poble { fill: var(--suau); }
+.mapa-radar-svg .mapa-nom { font-size: 1.7px; fill: var(--text); paint-order: stroke; stroke: var(--superficie); stroke-width: .35; }
+.mapa-radar-svg .mapa-nom-casa { font-weight: 700; }
+.mapa-radar-svg .mapa-km { font-size: 1.4px; fill: var(--suau); paint-order: stroke; stroke: var(--superficie); stroke-width: .3; }
+.mapa-radar-svg .mapa-nord { font-size: 1.8px; font-weight: 700; fill: var(--text); text-anchor: middle; }
+.mapa-radar-svg .mapa-fletxa { fill: none; stroke: var(--text); stroke-width: .25; }
+.mapa-radar .mapa-radar-caixa { width: min(92vw, 80vh, 40rem); padding: .8rem; border-radius: .6rem; background: var(--superficie);
+  color: var(--text); }
+.mapa-radar .mapa-radar-svg { display: block; width: 100%; height: auto; }
+.mapa-titol { margin: 0 2.5rem .5rem 0; font-size: .95rem; }
+.mapa-llegenda { display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin: .5rem 0 0; font-size: .9rem; }
+.mapa-clau { display: inline-flex; align-items: center; gap: .35rem; }
+.mapa-quadre { width: .9rem; height: .9rem; border-radius: .15rem; }
 .radar-ara.arriba { --to: var(--compte); background: var(--compte-fons); }
 .radar-ara svg {
   width: 1.9rem;

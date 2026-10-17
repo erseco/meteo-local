@@ -484,6 +484,54 @@ def rumb(v):
     return RUMBS[int((graus(v) + 22.5) // 45) % 8]
 
 
+# --- El mapa i la pluja més propera del requadre del radar (Juanjo,
+# 17-10-2026: «distancia de la lluvia, un mapa donde se vea montflorit y la
+# lluvia… que no sea un simple aviso de lluvia cerca»). De la mateixa imatge
+# que el «quan arriba», perquè diguin el mateix. ---
+MAPA_KM = 30                # el mapa, de 30 km al voltant de casa
+PROPERA_MAX_KM = 60         # més lluny, no es diu
+# Les franges d'intensitat de l'AEMET (mm/h): feble, moderada, forta, molt
+# forta i torrencial; per sota de PLOU_MMH, sense pluja.
+FRANGES_MMH = (2, 15, 30, 60)
+
+
+def classe(mm):
+    """0 sense pluja; 1 feble … 5 torrencial."""
+    import numpy as np
+    return np.digitize(mm, [PLOU_MMH, *FRANGES_MMH])
+
+
+def mapa(camp, fila, col, km_px, radi_km=MAPA_KM):
+    """El tros de la imatge al voltant de casa, en classes d'intensitat, una
+    xifra per píxel (fila a fila, de nord a sud): uns 4 KB. None si no hi
+    plou enlloc."""
+    n = int(math.ceil(radi_km / km_px))
+    f0, c0 = int(round(fila)), int(round(col))
+    tros = classe(camp[f0 - n:f0 + n + 1, c0 - n:c0 + n + 1])
+    if not tros.any():
+        return None
+    return {"km_px": round(km_px, 4), "n": 2 * n + 1, "fila": round(fila - (f0 - n), 2),
+            "col": round(col - (c0 - n), 2), "classes": "".join(str(int(x)) for x in tros.ravel())}
+
+
+def propera(camp, fila, col, km_px, max_km=PROPERA_MAX_KM):
+    """La pluja més propera a casa: a quants km, cap a on i quina intensitat
+    hi té el radar. None si no n'hi ha a max_km o menys."""
+    import numpy as np
+    yy, xx = np.ogrid[:camp.shape[0], :camp.shape[1]]
+    dist = np.hypot((yy - fila) * km_px, (xx - col) * km_px)
+    pluja = camp >= PLOU_MMH
+    if not pluja.any():
+        return None
+    d = np.where(pluja, dist, np.inf)
+    f, c = np.unravel_index(np.argmin(d), d.shape)
+    if d[f, c] > max_km:
+        return None
+    angle = math.degrees(math.atan2(c - col, -(f - fila))) % 360
+    return {"km": round(float(d[f, c]), 1), "rumb": RUMBS[int((angle + 22.5) // 45) % 8],
+            "mm_h": round(float(camp[f, c]), 1), "classe": int(classe(camp[f, c]))}
+
+
 def en_tram(nc, lloc, ini, fin, minim_min=0):
     """Lluvia esperada (mm) y probabilidad de lluvia entre ini y fin según la
     serie del lugar, o None si el tramo queda fuera del horizonte o cubre

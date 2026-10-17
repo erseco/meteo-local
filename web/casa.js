@@ -483,10 +483,14 @@ function blocRadar(r, plou, hores) {
     p.append(marca);
   }
   cos.append(p);
+  // La pluja més propera, si no és a sobre (Juanjo, 17-10-2026).
+  const propera = textPropera(r.propera);
+  if (propera) cos.append(element('p', 'radar-propera', propera));
   // La font i l'hora de la imatge, com demana Meteocat per reutilitzar-la,
-  // amb l'enllaç al radar en directe (Juanjo, 08-10-2026).
+  // amb l'enllaç al radar en directe (Juanjo, 08-10-2026). Sense moviment
+  // (menys d'1 km/h), no es diu cap on va: «a 0 km/h» no vol dir res.
   const font = r.imatge === 'rainviewer' ? 'RainViewer' : 'Meteocat';
-  const mov = r.cap_a ? T` \u00b7 va cap ${TD(r.cap_a)} a ${r.velocitat_kmh}\u00a0km/h` : '';
+  const mov = r.cap_a && r.velocitat_kmh >= 1 ? T` \u00b7 va cap ${TD(r.cap_a)} a ${r.velocitat_kmh}\u00a0km/h` : '';
   const detall = element('p', 'radar-detall');
   const [abans, despres] = T`Radar de ${font} de les ${horaCurta(r.hora)}${mov}`.split(font);
   const enllac = element('a', null, font);
@@ -496,7 +500,129 @@ function blocRadar(r, plou, hores) {
   detall.append(abans, enllac, despres);
   cos.append(detall);
   caixa.append(cos);
+  if (r.mapa) caixa.append(miniaturaMapa(r, font));
   return caixa;
+}
+
+// --- El mapa del radar (Juanjo, 17-10-2026: «un mapa donde se vea
+// montflorit y la lluvia (puede ser estático…)»): el tros de la imatge que
+// porten les dades (nowcast.mapa), 30 km al voltant, dibuixat aquí, sense
+// demanar res a cap servidor de mapes. Cercles cada 10 km, el nord i unes
+// quantes poblacions per situar-se. Una miniatura al requadre i, en prémer-la,
+// gran. ---
+const NOM_INTENSITAT = () => [null, T('feble'), T('moderada'), T('forta'), T('molt forta'), T('torrencial')];
+const COLOR_INTENSITAT = [null, '#93c5fd', '#2563eb', '#facc15', '#f97316', '#dc2626'];
+// Les poblacions, en km des de Montflorit (est i nord), i on va el nom: a la
+// dreta o, perquè no en tapi cap altre ni surti del mapa, a l'esquerra («e»)
+// o a sota («s»).
+const POBLES = [['Terrassa', -10.6, 9.1], ['Sabadell', -2.1, 6.8], ['Sant Cugat', -4.1, -1.1, 's'],
+  ['Barcelona', 2.8, -10.5], ['Badalona', 9.4, -3.6], ['Granollers', 12.7, 14.0], ['Mataró', 25.8, 6.2, 'e'],
+  ['Martorell', -17.0, -0.8]];
+const LLOC_NOM = { e: [-0.9, 0.6, 'end'], s: [0, 2.3, 'middle'] };
+const CERCLES_KM = [10, 20, 30];
+
+// «a 6 km al nord-oest (moderada)»; en castellà, «al noroeste».
+function textPropera(p) {
+  if (!p || p.km < 1) return null;
+  const rumb = IDIOMA.codi === 'es' ? `al ${TD(p.rumb).replace(/^el /, '')}` : p.rumb;
+  return T`La més propera, a ${Math.round(p.km)}\u00a0km ${rumb} (${NOM_INTENSITAT()[p.classe] || T('feble')}).`;
+}
+
+function svgMapa(m, gran) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const nou = (tag, at = {}) => {
+    const e = document.createElementNS(ns, tag);
+    for (const [k, v] of Object.entries(at)) e.setAttribute(k, v);
+    return e;
+  };
+  const R = CERCLES_KM[CERCLES_KM.length - 1];
+  const svg = nou('svg', { viewBox: `${-R} ${-R} ${2 * R} ${2 * R}`, class: 'mapa-radar-svg', role: 'img' });
+  svg.append(nou('rect', { x: -R, y: -R, width: 2 * R, height: 2 * R, class: 'mapa-fons' }));
+  // La pluja: un camí per intensitat, un quadrat per píxel.
+  const k = m.km_px;
+  const camins = COLOR_INTENSITAT.map(() => []);
+  for (let i = 0; i < m.n; i++) {
+    for (let j = 0; j < m.n; j++) {
+      const c = +m.classes[i * m.n + j];
+      if (!c) continue;
+      // En píxels del radar, i el grup escalat a km: sense arrodoniments
+      // que deixin ratlles entre quadrats, que se solapen una mica.
+      const x = j - m.col;
+      const y = i - m.fila;
+      if (Math.abs(x * k) > R || Math.abs(y * k) > R) continue;
+      camins[c].push(`M${x.toFixed(2)} ${y.toFixed(2)}h1.04v1.04h-1.04z`);
+    }
+  }
+  const pluja = nou('g', { transform: `scale(${k})` });
+  camins.forEach((d, c) => { if (d.length) pluja.append(nou('path', { d: d.join(''), fill: COLOR_INTENSITAT[c] })); });
+  svg.append(pluja);
+  for (const km of CERCLES_KM) svg.append(nou('circle', { cx: 0, cy: 0, r: km, class: 'mapa-cercle' }));
+  if (gran) {
+    for (const km of CERCLES_KM) {
+      const t = nou('text', { x: 0.6, y: -km - 0.6, class: 'mapa-km' });
+      t.textContent = `${km} km`;
+      svg.append(t);
+    }
+    for (const [nom, x, y, on] of POBLES) {
+      svg.append(nou('circle', { cx: x, cy: -y, r: 0.45, class: 'mapa-poble' }));
+      const [dx, dy, ancora] = LLOC_NOM[on] || [0.9, 0.6, 'start'];
+      const t = nou('text', { x: x + dx, y: -y + dy, class: 'mapa-nom', 'text-anchor': ancora });
+      t.textContent = nom;
+      svg.append(t);
+    }
+    const n = nou('text', { x: R - 2.2, y: -R + 3.6, class: 'mapa-nord' });
+    n.textContent = 'N';
+    svg.append(nou('path', { d: `M${R - 1.6} ${-R + 8.4}l0 -3.2m-1 1l1 -1.2l1 1.2`, class: 'mapa-fletxa' }), n);
+  }
+  svg.append(nou('circle', { cx: 0, cy: 0, r: gran ? 0.9 : 1.6, class: 'mapa-casa' }));
+  if (gran) {
+    const t = nou('text', { x: 1.4, y: -1.2, class: 'mapa-nom mapa-nom-casa' });
+    t.textContent = LLOC;
+    svg.append(t);
+  }
+  return svg;
+}
+
+function miniaturaMapa(r, font) {
+  const b = element('button', 'mapa-radar-mini');
+  b.type = 'button';
+  b.title = T('Amplia el mapa del radar');
+  b.setAttribute('aria-label', T('Amplia el mapa del radar'));
+  b.append(svgMapa(r.mapa, false));
+  b.addEventListener('click', () => obreMapa(r, font));
+  return b;
+}
+
+function obreMapa(r, font) {
+  const visor = element('dialog', 'visor mapa-radar');
+  const caixa = element('div', 'mapa-radar-caixa');
+  const svg = svgMapa(r.mapa, true);
+  const titol = T`Radar de ${font} de les ${horaCurta(r.hora)}`;
+  svg.setAttribute('aria-label', T`${titol}: la pluja al voltant de ${LLOC}, amb cercles cada 10 km.`);
+  const llegenda = element('p', 'mapa-llegenda');
+  const presents = new Set(r.mapa.classes);
+  NOM_INTENSITAT().forEach((nom, c) => {
+    if (!nom || !presents.has(String(c))) return;
+    const s = element('span', 'mapa-clau');
+    const q = element('span', 'mapa-quadre');
+    q.style.background = COLOR_INTENSITAT[c];
+    s.append(q, nom);
+    llegenda.append(s);
+  });
+  caixa.append(element('p', 'mapa-titol', `${titol} \u00b7 ${T('cercles cada 10 km')}`), svg, llegenda);
+  const tanca = element('button', 'visor-tanca');
+  tanca.type = 'button';
+  tanca.title = T('Tanca');
+  tanca.setAttribute('aria-label', T('Tanca'));
+  tanca.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  tanca.addEventListener('click', () => visor.close());
+  visor.append(caixa, tanca);
+  visor.setAttribute('aria-label', titol);
+  visor.addEventListener('click', (e) => { if (e.target === visor) visor.close(); });
+  visor.addEventListener('close', () => visor.remove());
+  document.body.append(visor);
+  visor.showModal();
+  tanca.focus();
 }
 
 

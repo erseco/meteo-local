@@ -299,6 +299,19 @@ class Resum(unittest.TestCase):
         d["ara_casa"].update(intensitat=0, plou=False)
         self.assertTrue(B.text_radar_bot(d, "ca", ARA).startswith("No s'acosta pluja a Montflorit en 2 hores."))
 
+    def test_radar_pluja_propera_i_sense_moviment(self):
+        # 17-10-2026: la pluja més propera, i sense «a 0 km/h».
+        d = dades()
+        d["radar"] = {"hora": ARA.isoformat(timespec="minutes"), "imatge": "meteocat", "arriba": None, "possible": None,
+                      "cap_a": "al sud-oest", "velocitat_kmh": 0,
+                      "propera": {"km": 6.4, "rumb": "al nord-oest", "mm_h": 3, "classe": 2}}
+        self.assertIn("\nLa més propera, a 6\u00a0km al nord-oest (moderada).\n", B.text_radar_bot(d, "ca", ARA))
+        self.assertIn("\nLa más cercana, a 6\u00a0km al noroeste (moderada).\n", B.text_radar_bot(d, "es", ARA))
+        self.assertNotIn("km/h", B.text_radar_bot(d, "ca", ARA))
+        d["radar"].update(velocitat_kmh=12, propera={"km": 0.4, "rumb": "al nord", "mm_h": 3, "classe": 2})
+        self.assertIn("va cap al sud-oest a 12\u00a0km/h", B.text_radar_bot(d, "ca", ARA))
+        self.assertNotIn("més propera", B.text_radar_bot(d, "ca", ARA))   # a sobre, no
+
     def test_pluja_aquesta_nit(self):
         # El 08-10-2026 deia «Esta noche: posible de 20 a 23 h»: hi faltava la pluja.
         vespre = ARA.replace(hour=20)

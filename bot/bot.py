@@ -1358,9 +1358,17 @@ def text_radar_bot(dades, idioma, moment):
         que = (f"Puede llegar lluvia a Montflorit hacia las {h(r['possible'])}." if idioma == "es" else f"Pot arribar pluja a Montflorit cap a les {h(r['possible'])}.")
     else:
         que = "No se acerca lluvia a Montflorit en 2 horas." if idioma == "es" else "No s'acosta pluja a Montflorit en 2 hores."
+    # La pluja més propera, si no és a sobre, com a la web (17-10-2026).
+    p = r.get("propera")
+    if p and p.get("km", 0) >= 1:
+        noms = INTENSITAT_RADAR[idioma]
+        cap = ("al " + DIRECCIO_ES.get(p["rumb"], p["rumb"]).removeprefix("el ")) if es else p["rumb"]
+        que += (f"\nLa más cercana, a {round(p['km'])}\u00a0km {cap} ({noms[p.get('classe') or 1]})." if es
+                else f"\nLa més propera, a {round(p['km'])}\u00a0km {cap} ({noms[p.get('classe') or 1]}).")
     font = "RainViewer" if r.get("imatge") == "rainviewer" else "Meteocat"
     mov = ""
-    if r.get("cap_a"):
+    # Sense moviment (menys d'1 km/h), no es diu cap on va.
+    if r.get("cap_a") and (r.get("velocitat_kmh") or 0) >= 1:
         mov = (f" · va hacia {DIRECCIO_ES.get(r['cap_a'], r['cap_a'])} a {r['velocitat_kmh']}\u00a0km/h" if idioma == "es"
                else f" · va cap {r['cap_a']} a {r['velocitat_kmh']}\u00a0km/h")
     detall = (f"Radar de {font} de las {h(r['hora'])}{mov}." if idioma == "es" else f"Radar de {font} de les {h(r['hora'])}{mov}.")
@@ -1369,6 +1377,9 @@ def text_radar_bot(dades, idioma, moment):
     return f"{que}\n{detall}\n{vist}: {enllac}"
 
 
+# Les franges d'intensitat de l'AEMET, com nowcast.FRANGES_MMH (la 0, sense pluja).
+INTENSITAT_RADAR = {"ca": [None, "feble", "moderada", "forta", "molt forta", "torrencial"],
+                    "es": [None, "débil", "moderada", "fuerte", "muy fuerte", "torrencial"]}
 FASE_ES = {"prealerta": "prealerta", "alerta": "alerta", "emergència": "emergencia"}
 PLA_ES = {"d'inundacions": "de inundaciones", "de vent": "de viento", "de neu": "de nieve",
           "per onada de calor": "por ola de calor", "per onada de fred": "por ola de frío",

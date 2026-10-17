@@ -22,6 +22,32 @@ def camp(centre, radi=15, mmh=10.0):
     return np.where((yy - centre[0]) ** 2 + (xx - centre[1]) ** 2 <= radi ** 2, mmh, 0.0)
 
 
+class MapaIPropera(unittest.TestCase):
+    # El requadre del radar (17-10-2026): la pluja més propera i el tros del mapa, de la mateixa imatge.
+    def test_propera_i_mapa(self):
+        camp = np.zeros((N.MIDA, N.MIDA))
+        fila, col, km = 384.3, 384.6, 0.9
+        self.assertIsNone(N.propera(camp, fila, col, km))
+        self.assertIsNone(N.mapa(camp, fila, col, km))
+        camp[374, 384] = 1.0          # feble, uns 9 km al nord
+        camp[384, 395] = 20.0         # forta, uns 9,4 km a l'est
+        p = N.propera(camp, fila, col, km)
+        self.assertEqual((p["rumb"], p["classe"]), ("al nord", 1))
+        self.assertAlmostEqual(p["km"], 9.3, delta=0.2)
+        self.assertEqual([int(N.classe(x)) for x in (0.4, 0.5, 2, 15, 30, 60)], [0, 1, 2, 3, 4, 5])
+        m = N.mapa(camp, fila, col, km)
+        self.assertEqual(len(m["classes"]), m["n"] ** 2)
+        n0 = (m["n"] - 1) // 2
+        f0, c0 = 384 - n0, 385 - n0        # on comença el tros
+        self.assertEqual(m["classes"][(374 - f0) * m["n"] + (384 - c0)], "1")
+        self.assertEqual(m["classes"][(384 - f0) * m["n"] + (395 - c0)], "3")
+        self.assertAlmostEqual(m["fila"], fila - f0)
+        # Més lluny de PROPERA_MAX_KM, no es diu.
+        lluny = np.zeros((N.MIDA, N.MIDA))
+        lluny[384, 384 + 70] = 5
+        self.assertIsNone(N.propera(lluny, fila, col, km))
+
+
 class Conversions(unittest.TestCase):
     def test_marshall_palmer(self):
         self.assertAlmostEqual(float(N.mm_h(np.array(23.0))), 1.0, delta=0.1)   # 23 dBZ ≈ 1 mm/h

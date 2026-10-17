@@ -688,6 +688,8 @@ def recoger(anterior=None):
             salida["radar"][clau] = t and t.isoformat(timespec="minutes")
         # Cómo sería al llegar, para el aviso de antes de llover (ADR 0022).
         salida["radar"]["arriba_mm_h"] = N.intensitat_arribada(nc, "casa")
+        # El mapa i la pluja més propera, per al requadre del radar (17-10-2026).
+        salida["radar"]["mapa"], salida["radar"]["propera"] = radar.get("mapa"), radar.get("propera")
         # A qué hora pararía, «en entrenament» en la página (fi_pluja.py, ADR 0049).
         try:
             salida["radar"].update(FP.fi_radar(nc, P.AHORA, salida["radar"]["arriba"]) or {})

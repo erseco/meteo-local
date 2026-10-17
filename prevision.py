@@ -328,7 +328,8 @@ def radar():
     res = {"hora": hora.isoformat(), "imatge": origen,
            "km_lluvia": round(float(dist[lluvia].min()), 1) if lluvia.any() else None,
            "km2_50km_ahora": round(float((lluvia & cerca).sum() * r["km_px"] ** 2)),
-           "km2_50km_antes": None, "nowcast": N.resum(r), "a_prop": {}}
+           "km2_50km_antes": None, "nowcast": N.resum(r), "a_prop": {},
+           "mapa": N.mapa(ara, fila, col, r["km_px"]), "propera": N.propera(ara, fila, col, r["km_px"])}
     # Los píxeles con lluvia a RADAR_AVISO_KM o menos en cada radar, para
     # seguir los ecos sueltos que encienden el modo aviso sin lluvia (registre.py).
     mc, rv = r.get("meteocat") or {}, r.get("rainviewer")

@@ -176,3 +176,34 @@ unes 3 hores» («quizás en negrita? decide tu»). Va en una etiqueta del color
 de la lluvia, como la de la parte alta, porque ya había pedido destacar con
 un recurso visual y no con negrita; también la cuenta de la línea «Possible
 pluja d'aquí a…» cuando hoy no llueve.
+
+## Cambio del 17-10-2026 (3.126.0): distancia, mapa y sin «a 0 km/h»
+
+Juanjo, ante un recuadro que solo decía «Pluja a sobre»: «aqui se puede poner
+más informacion? por ejemplo distancia de la lluvia, un mapa donde se vea
+montflorit y la lluvia (puede ser estatico…) … solo si se puede facilmente y
+sin complicar más la visualizacion de la web». De la misma imagen de radar con
+que se calcula cuándo llega (`prevision.radar`), el NAS añade a `radar`:
+
+- `propera`: la lluvia más cercana que llega al suelo (`PLOU_MMH`), a 60 km o
+  menos: distancia, rumbo y clase de intensidad. La web y /radar del bot
+  dicen «La més propera, a 6 km al nord-oest (moderada).», salvo si está a
+  menos de 1 km (ya es «Pluja a sobre»).
+- `mapa`: el trozo de la imagen de 30 km alrededor de casa, una cifra por
+  píxel (0 sin lluvia; 1-5, las franjas de intensidad de AEMET en mm/h:
+  débil, moderada, fuerte, muy fuerte y torrencial), unos 4,5 KB; None si no
+  llueve en ese cuadro. La web lo dibuja en SVG (`svgMapa`): una miniatura a
+  la derecha del texto del recuadro (debajo si no cabe) que se amplía al
+  pulsarla, con círculos cada 10 km, el norte, ocho poblaciones de
+  referencia, la leyenda de las intensidades presentes y la hora y la fuente
+  de la imagen. Sin servidores de mapas: la privacidad no cambia.
+
+Además, sin movimiento (menos de 1 km/h) ya no se dice hacia dónde va: «va
+cap al sud-oest a 0 km/h» no significaba nada (web y bot).
+
+Las franjas de AEMET (2, 15, 30 y 60 mm/h) no coinciden con las del aviso
+de lluvia en unos minutos (`pluja_arriba.intensitat`: 1 y 4 mm/h); queda por
+decidir si se igualan. Validación: con la imagen real de RainViewer
+desplazada para poner la lluvia cerca, en Chromium y Firefox, 320, 390 y
+1280 px, claro y oscuro, catalán y castellano; pruebas de `propera`, `mapa`,
+`textPropera` y /radar.
