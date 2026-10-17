@@ -147,6 +147,16 @@ siempre en la hora en curso.
   con el límite de tres filas.
 - **La imagen para Telegram y los avisos** sale de esta misma gráfica (ADR
   0098).
+- **El techo de la lluvia, por escalones** (3.101.1; Juanjo, 17-10-2026: «las
+  columnas me parecen cortas» y «no sería mejor una escala variable?»): en
+  lugar de 40 mm siempre, el primer escalón de 10, 20, 40, 80 o 160 mm que
+  cubre la lluvia más fuerte de la gráfica, nunca menos de 10 mm, con una
+  raya fina arriba y su cifra («10 mm»), como la del viento. Una escala que
+  se ajustara justo al máximo haría que 1 mm pareciera una tromba; con los
+  escalones, la llovizna sigue viéndose pequeña y el naranja y el rojo
+  siguen avisando de la fuerte y la torrencial. Con los datos del 17-10, los
+  6,9 mm de la noche pasan del 41 % al 83 % de la altura. La cifra de mm que
+  no cabe sin pisar otra ya no se escribe: sale en la ficha de la hora.
 - **SVG dibujado desde `casa.js`**, sin bibliotecas ni conexiones externas,
   con el ancho real de la pantalla (se redibuja al cambiar de tamaño) para que
   el texto no se encoja en el móvil, y con los colores del tema claro y

@@ -217,11 +217,19 @@ function svg(nom, atributs = {}, text = null) {
 }
 
 // L'alçada de la barra de pluja, en mil·límetres (Juanjo, 16-10-2026: «la
-// lluvia sale pequeña… aquí hay mucha»): escala fixa, perquè un dia de
-// plovisqueig no sembli un diluvi, i d'arrel quadrada, perquè 1 o 2 mm no
-// desapareguin. Dalt de tot, 40 mm en una hora (el llindar taronja de la web).
-const MM_DALT = 40;
-const alcadaPluja = (mm) => Math.min(1, Math.sqrt(Math.max(0, mm) / MM_DALT));
+// lluvia sale pequeña… aquí hay mucha»): d'arrel quadrada, perquè 1 o 2 mm no
+// desapareguin. Dalt de tot, l'esglaó que cobreix la pluja més forta de la
+// gràfica, 10 mm com a mínim: les barres omplen més l'espai (Juanjo,
+// 17-10-2026: «las columnas me parecen cortas… no sería mejor una escala
+// variable?»), però en esglaons fixos i amb el sostre rotulat, perquè un dia
+// de plovisqueig no sembli un diluvi. Del 40 amunt (el llindar taronja),
+// també el color ho diu.
+const MM_ESGLAONS = [10, 20, 40, 80, 160];
+const sostrePluja = (files) => {
+  const max = Math.max(0, ...files.filter((f) => plujaGrafica(f)).map((f) => f.pluja_mm || 0));
+  return MM_ESGLAONS.find((e) => max <= e) || MM_ESGLAONS[MM_ESGLAONS.length - 1];
+};
+const alcadaPluja = (mm, sostre) => Math.min(1, Math.sqrt(Math.max(0, mm) / sostre));
 // La pluja forta i la torrencial, amb color propi: les intensitats del manual
 // d'estil de Meteocat, les mateixes paraules que la columna «Cel» de la taula
 // (INTENSITAT_PLUJA; ADR 0043). L'avís, a la franja de dalt (Juanjo,
@@ -508,7 +516,11 @@ function dibuixaGrafica(fig) {
   // mateixos llindars que el cel de la taula. Per sota, cap barra.
   g.append(svg('line', { class: 'g-base', x1: 0, x2: W, y1: base, y2: base }));
   // Dalt de tot queda lloc per a la xifra dels mm.
-  const dalt = (f) => yPluja + hPluja - Math.max(3, alcadaPluja(f.pluja_mm || 0) * (hPluja - 14));
+  const sostre = sostrePluja(files);
+  const dalt = (f) => yPluja + hPluja - Math.max(3, alcadaPluja(f.pluja_mm || 0, sostre) * (hPluja - 14));
+  // El sostre, una ratlla fina amb la seva xifra, com la del vent; només si plou.
+  const ambBarres = files.some((f) => plujaGrafica(f));
+  if (ambBarres) g.append(svg('line', { class: 'g-sostre', x1: 0, x2: W, y1: yPluja + 14, y2: yPluja + 14 }));
   files.forEach((f, i) => {
     const pluja = plujaGrafica(f);
     if (!pluja) return;
@@ -520,6 +532,7 @@ function dibuixaGrafica(fig) {
   // Una vora del color del fons, perquè la línia es vegi damunt de les barres.
   g.append(svg('path', { class: 'g-temp-vora', d: corba }));
   g.append(svg('path', { class: 'g-temp', d: corba }));
+  if (ambBarres) g.append(svg('text', { class: 'g-mm g-sostre-xifra', x: W - 2, y: yPluja + 11, 'text-anchor': 'end' }, `${sostre}\u00a0mm`));
 
   // El vent i les ratxes, en km/h: una ratlla a dalt amb la xifra de l'escala,
   // de 10 en 10 (20 com a mínim, perquè un dia calmat no sembli de vent).
@@ -540,9 +553,10 @@ function dibuixaGrafica(fig) {
 
   // Els mil·límetres, només on la pluja és més forta de cada episodi, a sobre
   // de la barra; si hi ha una xifra de temperatura, a dins de la barra o al
-  // costat, on no se superposi.
-  const xifres = [...g.querySelectorAll('.g-xifra')].map((t) => t.getBBox());
-  const xoca = (b) => xifres.some((c) => b.x < c.x + c.width && c.x < b.x + b.width && b.y < c.y + c.height && c.y < b.y + b.height);
+  // costat, on no se superposi. Si no hi cap sense trepitjar cap altra xifra
+  // (al mòbil, dos episodis seguits), no s'escriu: surt a la fitxa de l'hora.
+  const xifres = [...g.querySelectorAll('.g-xifra, .g-sostre-xifra')].map((t) => t.getBBox());
+  const xoca = (b) => xifres.some((c) => b.x < c.x + c.width + 4 && c.x < b.x + b.width + 4 && b.y < c.y + c.height && c.y < b.y + b.height);
   files.forEach((f, i) => {
     const mm = f.pluja_mm || 0;
     if (mm < 0.5 || !plujaHora(f)) return;
@@ -554,11 +568,13 @@ function dibuixaGrafica(fig) {
     const cx = x(i) + col / 2;
     const llarg = t.getComputedTextLength();
     const llocs = [[cx, dalt(f) - 4], [cx, dalt(f) + 14], [cx - llarg / 2 - col, dalt(f) + 4], [cx + llarg / 2 + col, dalt(f) + 4]];
-    for (const [lx, ly] of llocs) {
+    const lloc = llocs.find(([lx, ly]) => {
       t.setAttribute('x', Math.min(Math.max(lx, llarg / 2 + 1), W - llarg / 2 - 1));
       t.setAttribute('y', ly);
-      if (!xoca(t.getBBox())) break;
-    }
+      return !xoca(t.getBBox());
+    });
+    if (lloc) xifres.push(t.getBBox());
+    else t.remove();
   });
 
   // L'eix: «Ara» a l'esquerra i les hores en punt, cada 3 h (o 2).
