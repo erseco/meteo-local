@@ -85,7 +85,7 @@ T = {
         "resum": "Previsió del dia, al matí, a les:", "no": "Cap", "h": "{} h",
         "nit": "A les 21 h, la previsió de demà",
         "baixa": "Fet: s'han esborrat les teves dades i ja no rebràs res. Amb /start pots tornar-hi.",
-        "ajuda": ("/avisos tria què reps · /resum la previsió d'avui · /dema la de demà · /ara el temps ara · "
+        "ajuda": ("/avisos tria què reps · /avui la previsió d'avui · /dema la de demà · /ara el temps ara · "
                   "/radar el radar ara · /sol el sol · /aire la qualitat de l'aire · /pollen el pol·len · /trens els trens · "
                   "/transit el trànsit · /llum els talls de llum · /avisos_actius els avisos oficials · "
                   "/baixa deixa de rebre'n i esborra les teves dades"),
@@ -112,7 +112,7 @@ T = {
         "resum": "Previsión del día, por la mañana, a las:", "no": "Ninguna", "h": "{} h",
         "nit": "A las 21 h, la previsión de mañana",
         "baixa": "Hecho: se han borrado tus datos y ya no recibirás nada. Con /start puedes volver.",
-        "ajuda": ("/avisos elige qué recibes · /resum la previsión de hoy · /dema la de mañana · /ara el tiempo ahora · "
+        "ajuda": ("/avisos elige qué recibes · /avui la previsión de hoy · /dema la de mañana · /ara el tiempo ahora · "
                   "/radar el radar ahora · /sol el sol · /aire la calidad del aire · /pollen el polen · /trens los trenes · "
                   "/transit el tráfico · /llum los cortes de luz · /avisos_actius los avisos oficiales · "
                   "/baixa deja de recibir y borra tus datos"),
@@ -501,10 +501,58 @@ def text_ara_bot(dades, idioma, moment):
     mesura = hora and dt.datetime.fromisoformat(hora)
     if mesura and moment - mesura > dt.timedelta(hours=DADES_VELLES_H):
         return t["velles_ara"].format(mesura.strftime("%H:%M"))
-    text = text_ara(dades, idioma, "Montflorit", moment)
+    text = text_ara(dades, idioma, "", moment)
     if not text:
         return t["ajuda"]
-    return text + (t["mesura"].format(mesura.strftime("%H:%M")) if mesura else "")
+    # Com la targeta «Ara» de la web, en el mateix ordre (Juanjo, 17-10-2026:
+    # «en el de /ara da muy poca información»), i l'hora de la mesura a la
+    # capçalera, no enganxada al final.
+    es = idioma == "es"
+    c = dades.get("ara_casa") or {}
+    cap = "<b>Ahora en Montflorit</b>" if es else "<b>Ara a Montflorit</b>"
+    linies = [cap + (t["mesura"].format(mesura.strftime("%H:%M")) if mesura else ""),
+              text.replace("Ahora mismo: ", "").replace("Ara mateix: ", "")]
+    alta = c.get("dif_alta")
+    if alta is not None and abs(alta) >= 0.5:
+        r = int(math.copysign(math.floor(abs(alta) + 0.5), alta))
+        linies.append(f"En la parte alta, {abs(r)} °C {'más' if r > 0 else 'menos'}." if es
+                      else f"A la part alta, {abs(r)} °C {'més' if r > 0 else 'menys'}.")
+    r = dades.get("radar") or {}
+    if r.get("arriba") or r.get("possible") or (plou_ara(dades) and r.get("fi")):
+        linies.append(amb_icona("🌧️", text_radar_bot(dades, idioma, moment).split("\n")[0]))
+    if c.get("pluja_avui") is not None:
+        mm = f"{c['pluja_avui']:.1f}".replace(".", ",").replace(",0", "")
+        linies.append(amb_icona("🌧️", f"Lluvia de hoy: {mm} mm." if es else f"Pluja d'avui: {mm} mm."))
+    v = dades.get("vent") or {}
+    if v.get("mitja") is not None:
+        ratxa = (f", rachas de {round(v['ratxa'])} km/h" if es else f", ratxes de {round(v['ratxa'])} km/h") \
+            if v.get("ratxa") is not None else ""
+        linies.append(amb_icona("💨", f"{'Viento' if es else 'Vent'}: {round(v['mitja'])} km/h{ratxa}."))
+    altres = []
+    if c.get("humitat") is not None:
+        altres.append(f"{'Humedad' if es else 'Humitat'} {round(c['humitat'])} %")
+    if c.get("pressio") is not None:
+        p = f"{'presión' if es else 'pressió'} {round(c['pressio'])} hPa"
+        d = c.get("pressio_3h")
+        if d is not None:
+            if abs(d) < 1:
+                p += ", estable"
+            else:
+                p += (", subiendo" if d > 0 else ", bajando") if es else (", pujant" if d > 0 else ", baixant")
+                if abs(d) >= 3.6:
+                    p += " rápido" if es else " ràpid"
+        altres.append(p)
+    if altres:
+        linies.append(amb_icona("💧", " · ".join(altres) + "."))
+    # Els avisos, només si n'hi ha: quants i on es miren, amb el color del primer.
+    perills = linies_perill_dia(dades, idioma, moment.date(), moment)
+    if perills:
+        marca_ = perills[0].split(" ", 1)[0]
+        n = len(perills)
+        quants = (f"{n} avisos activos" if n > 1 else "1 aviso activo") if es else \
+            (f"{n} avisos actius" if n > 1 else "1 avís actiu")
+        linies.append(f"{marca_} {quants}: /avisos_actius")
+    return "\n".join(linies)
 
 
 DIES = {"ca": ("dilluns", "dimarts", "dimecres", "dijous", "divendres", "dissabte", "diumenge"),
@@ -1430,7 +1478,7 @@ def linies_riscos(riscos, idioma, moment):
 # no existeix compta com «altres», sense guardar què s'ha escrit.
 
 COMPTADOR = os.path.join(BASE, "comptador.json")
-ORDRES = ("/start", "/avisos", "/menu", "/resum", "/dema", "/ara", "/radar", "/sol", "/aire", "/pollen", "/trens",
+ORDRES = ("/start", "/avisos", "/menu", "/avui", "/resum", "/dema", "/ara", "/radar", "/sol", "/aire", "/pollen", "/trens",
           "/transit", "/llum", "/avisos_actius", "/baixa")
 COMPTADOR_DIES = 400
 
@@ -1619,7 +1667,7 @@ def atén(api, subs, update, estat=None):
         envia(api, chat, T[idioma]["baixa"])
         return
     nou = chat not in subs
-    if nou and ordre not in ("/start", "/avisos", "/menu", "/resum", "/ara") + CONSULTES:
+    if nou and ordre not in ("/start", "/avisos", "/menu", "/avui", "/resum", "/ara") + CONSULTES:
         # Quien escribe cualquier cosa sin haber empezado solo recibe la ayuda.
         envia(api, chat, T[nou_subscriptor(m.get("from", {}))["idioma"]]["ajuda"])
         return
@@ -1631,13 +1679,15 @@ def atén(api, subs, update, estat=None):
         envia(api, chat, (t["inici"] + " " if nou else "") + t["menu"], teclat(sub))
     elif ordre in ("/avisos", "/menu"):
         envia(api, chat, t["menu"], teclat(sub))
-    elif ordre == "/resum":
+    # /avui des del 17-10-2026 (Juanjo: «sería más lógico poner /avui»); /resum
+    # continua funcionant per a qui ja el fa servir, però ja no s'anuncia.
+    elif ordre in ("/avui", "/resum"):
         moment = ara()
         envia_resum(api, chat, resum(llegeix(os.path.join(DADES, "montflorit.json"), {}), sub["idioma"], moment, avui=True, telegram=True),
                     imatge_resum(sub["idioma"], moment, avui=True))
     elif ordre == "/ara":
         dades = llegeix(os.path.join(DADES, "montflorit.json"), {})
-        envia(api, chat, text_ara_bot(dades, sub["idioma"], ara()) + "\n" + WEB)
+        envia(api, chat, text_ara_bot(dades, sub["idioma"], ara()) + "\n" + WEB, html=True)
     elif ordre == "/dema":
         moment = ara()
         envia_resum(api, chat, resum(llegeix(os.path.join(DADES, "montflorit.json"), {}), sub["idioma"], moment, dema=True, telegram=True),

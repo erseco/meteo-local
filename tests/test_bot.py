@@ -348,8 +348,9 @@ class Resum(unittest.TestCase):
         # Auditoría del 07-10-2026: /ara contestaba con medidas de hace horas.
         d = dades()
         d["ara_casa"]["hora"] = (ARA - dt.timedelta(minutes=9)).isoformat(timespec="minutes")
-        self.assertEqual(B.text_ara_bot(d, "ca", ARA), "Ara mateix a Montflorit: 16 °C, no plou. (mesura de les 06:51)")
-        self.assertEqual(B.text_ara_bot(d, "es", ARA), "Ahora mismo en Montflorit: 16 °C, no llueve. (medida de las 06:51)")
+        self.assertTrue(B.text_ara_bot(d, "ca", ARA).startswith("<b>Ara a Montflorit</b> (mesura de les 06:51)\n"))
+        self.assertTrue(B.text_ara_bot(d, "es", ARA).startswith("<b>Ahora en Montflorit</b> (medida de las 06:51)\n"))
+        self.assertIn("16 °C, no plou.", B.text_ara_bot(d, "ca", ARA))
         vell = dades(ARA - dt.timedelta(hours=3))
         self.assertIn("ara no puc dir el temps que fa", B.text_ara_bot(vell, "ca", ARA))
         self.assertIn("ahora no puedo decir el tiempo que hace", B.text_ara_bot(vell, "es", ARA))
@@ -1119,3 +1120,27 @@ class PeuDeTelegram(unittest.TestCase):
         self.assertTrue(B.resum(d, "es", ARA, avui=True, telegram=True).endswith(f"Previsión de las 07:00. La de cada momento, en {B.WEB}"))
         # Fora de Telegram (notificacions i «Consultes»), l'enllaç sol, com abans.
         self.assertTrue(B.resum(d, "ca", ARA, avui=True).endswith("\n" + B.WEB))
+
+
+class AraComLaWeb(unittest.TestCase):
+    """/ara amb les dades de la targeta «Ara» de la web (Juanjo, 17-10-2026)."""
+
+    def test_totes_les_dades_i_els_avisos(self):
+        d = dades()
+        d["ara_casa"].update(hora=ARA.isoformat(timespec="minutes"), humitat=88, pressio=1012.4, pressio_3h=-1.4,
+                             pluja_avui=2.35, dif_alta=1.2)
+        d["vent"] = {"mitja": 6.2, "ratxa": 18.4}
+        t = B.text_ara_bot(d, "ca", ARA)
+        self.assertEqual(t.split("\n")[0], "<b>Ara a Montflorit</b> (mesura de les 07:00)")
+        for tros in ("16 °C, no plou.", "A la part alta, 1 °C més.", "Pluja d'avui: 2,4 mm.", "Vent: 6 km/h, ratxes de 18 km/h.",
+                     "Humitat 88 % · pressió 1012 hPa, baixant.", "1 avís actiu: /avisos_actius"):
+            self.assertIn(tros, t)
+        es = B.text_ara_bot(d, "es", ARA)
+        for tros in ("En la parte alta, 1 °C más.", "Lluvia de hoy: 2,4 mm.", "Viento: 6 km/h, rachas de 18 km/h.",
+                     "Humedad 88 % · presión 1012 hPa, bajando.", "1 aviso activo: /avisos_actius"):
+            self.assertIn(tros, es)
+
+    def test_avui_i_resum_fan_el_mateix(self):
+        self.assertIn("/avui", B.ORDRES)
+        self.assertIn("/resum", B.ORDRES)
+        self.assertIn("/avui la previsió d'avui", B.T["ca"]["ajuda"])

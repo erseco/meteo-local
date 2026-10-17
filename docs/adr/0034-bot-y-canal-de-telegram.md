@@ -87,6 +87,17 @@ internet en casa, que suele llegar con las tormentas.
   canal vea una versión distinta, y dos canales por idioma eran más
   mantenimiento para un mensaje al día. Quien quiera el castellano lo tiene en
   el bot, que toma el idioma de su Telegram.
+- **/avui y un /ara completo** (3.104.0; Juanjo, 17-10-2026: «sería más
+  lógico poner /avui al de hoy en lugar de resum. Además en el de /ara da muy
+  poca información y la línea final debe salir en una línea nueva»): /avui da
+  la previsión de hoy y es la que anuncian el menú, la ayuda y la página
+  «Telegram»; /resum sigue funcionando, sin anunciarse, para quien ya la usa.
+  /ara dice lo mismo que la tarjeta «Ara» de la web y en su orden: la
+  cabecera con la hora de la medida (antes iba pegada al final de la frase),
+  la temperatura y si llueve, la parte alta (si difiere 1 °C o más), el
+  radar (solo si viene lluvia), la lluvia de hoy, el viento con rachas, la
+  humedad y la presión con su tendencia, y, si hay avisos activos, cuántos
+  con el color del primero y /avisos_actius.
 - **De cuándo es y dónde está la de ahora** (3.102.2; Juanjo, 17-10-2026:
   «para obtener la previsión actualizada en cada momento hay que visitar
   url… creo que esto solo hace falta en telegram»): los resúmenes del bot y

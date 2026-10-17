@@ -33,7 +33,7 @@ def crida(metode, **p):
 # hi cap sencer i amaga /avisos (Juanjo, 08-10-2026).
 NOM = "Bot Temps a Montflorit"
 TEXTOS = {
-    "ca": ([("avisos", "Tria quins avisos reps"), ("resum", "La previsió d'avui"), ("dema", "La previsió de demà"),
+    "ca": ([("avisos", "Tria quins avisos reps"), ("avui", "La previsió d'avui"), ("dema", "La previsió de demà"),
             ("ara", "El temps ara"), ("radar", "El radar ara"), ("sol", "El sol i l'índex UV"),
             ("aire", "La qualitat de l'aire"), ("pollen", "El pol·len de la setmana"), ("trens", "Els trens de Cerdanyola"),
             ("transit", "El trànsit a menys de 5 km"), ("llum", "Talls de llum al barri"),
@@ -42,7 +42,7 @@ TEXTOS = {
            "riera de Sant Cugat (en proves), perill per pluja o vent, pluja a punt de començar, talls de llum del barri i la previsió diària; "
            "i li pots preguntar pel sol, l'aire, el pol·len, els trens, el trànsit i els talls de llum. Orientatiu, no oficial. Si no vols triar res, hi ha el Canal Temps a Montflorit: @TempsMontflorit.",
            "Bot personal: tria quins avisos del temps a Montflorit vols rebre."),
-    "es": ([("avisos", "Elige qué avisos recibes"), ("resum", "La previsión de hoy"), ("dema", "La previsión de mañana"),
+    "es": ([("avisos", "Elige qué avisos recibes"), ("avui", "La previsión de hoy"), ("dema", "La previsión de mañana"),
             ("ara", "El tiempo ahora"), ("radar", "El radar ahora"), ("sol", "El sol y el índice UV"),
             ("aire", "La calidad del aire"), ("pollen", "El polen de la semana"), ("trens", "Los trenes de Cerdanyola"),
             ("transit", "El tráfico a menos de 5 km"), ("llum", "Cortes de luz en el barrio"),
