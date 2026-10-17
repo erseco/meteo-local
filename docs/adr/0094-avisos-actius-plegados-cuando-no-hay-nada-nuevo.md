@@ -111,3 +111,15 @@ abre, queda abierto en esa página mientras los avisos no cambien.
 regla de arriba (se despliega solo con algo nuevo o rojo). Validación:
 Chromium y Firefox con los avisos del momento (Meteocat en rojo): la portada
 plegada al cargar, «Si surts» desplegada; prueba en `tests/test_perills.py`.
+
+## Cambio del 17-10-2026 (3.120.0): en la portada, sin desplegable
+
+Juanjo: «en avisos activos quita lo de desplegar, que muestre la información
+como sale ahora plegado y al pulsar lleva al detalle del aviso, es para
+simplificar la pagina inicial». En «El temps», «Avisos actius» es ahora el
+título con el número y una línea corta por aviso, con la franja de su nivel;
+cada línea lleva a la ficha de su aviso en «Perill», donde está el texto
+entero, el comunicado y el «?» de la fase. Sustituye al «siempre plegado» de
+la 3.118.0: `blocAvisos(dades, { curts: true })`. «Si surts» sigue con el
+desplegable y la regla de arriba. Validación: Chromium y Firefox, en catalán
+y castellano, con los avisos del momento; cada línea lleva a su ficha.

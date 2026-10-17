@@ -111,7 +111,7 @@ class Perills(unittest.TestCase):
         if not shutil.which("node"):
             self.skipTest("cal Node")
         # Les dues pàgines fan servir el mateix bloc, sense afegir-hi ni treure'n res.
-        for pagina, crida in (("casa.js", "blocAvisos(dades, { plegat: true })"), ("sortir.js", "blocAvisos(DADES)")):
+        for pagina, crida in (("casa.js", "blocAvisos(dades, { curts: true })"), ("sortir.js", "blocAvisos(DADES)")):
             with open(os.path.join(ARREL, "web", pagina), encoding="utf-8") as f:
                 self.assertIn(crida, f.read(), pagina)
         # Les línies d'alerta del resum del dia (bot i «Consultes»), sense la marca del nivell.
@@ -124,7 +124,7 @@ class Perills(unittest.TestCase):
         # Plegat, una línia per avís: tampoc no se'n pot deixar cap (ADR 0094).
         self.assertTots(r["curts"], "ca", B.TIPUS_PERILL, "«Avisos actius» plegat")
         # Es desplega la primera vegada i quan canvia el conjunt; si no, plegat; vermell, sempre obert.
-        self.assertEqual(r["plec"], [True, False, True, True, False], "quan es desplega «Avisos actius» (a la portada, mai sol)")
+        self.assertEqual(r["plec"], [True, False, True, True, "h2"], "quan es desplega «Avisos actius» (a la portada, sense desplegable)")
         # Cada alerta porta a la seva fitxa de «Perill», perquè s'hi destaqui
         # (Juanjo, 16-10-2026: «con este enlace no me sale el resalte»): a
         # «Avisos actius» i a les línies del resum.
@@ -197,7 +197,7 @@ ctx.__mes = { ...ctx.__pocs, riscos: [{ ...dades.riscos[0], nivell: 'taronja' }]
 ctx.__vermell = { ...ctx.__pocs, entorn: dades.entorn };
 const obert = (nom) => vm.runInContext(`blocAvisos(${nom}).fills[0].open`, ctx);
 const plec = [obert('__pocs'), obert('__pocs'), obert('__mes'), obert('__vermell'),
-  vm.runInContext('blocAvisos(__vermell, { plegat: true }).fills[0].open', ctx)];
+  vm.runInContext('blocAvisos(__vermell, { curts: true }).fills[0].tag', ctx)];
 console.log(JSON.stringify({ text: bloc.textContent, curts: bloc.fills[1].textContent, detalls: detalls(bloc),
   sensePla, linies: liniesFitxa, plec }));
 """
