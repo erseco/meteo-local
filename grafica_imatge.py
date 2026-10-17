@@ -17,6 +17,8 @@ son recientes; si falta alguna, el resumen sale solo con texto.
 
   python3 grafica_imatge.py montflorit.json CARPETA   las cuatro, en CARPETA
 """
+import datetime as dt
+import html as html_mod
 import json
 import os
 import re
@@ -49,6 +51,30 @@ def chromium():
     return None
 
 
+DIES = {"ca": ["dilluns", "dimarts", "dimecres", "dijous", "divendres", "dissabte", "diumenge"],
+        "es": ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]}
+MESOS = {"ca": ["gener", "febrer", "març", "abril", "maig", "juny", "juliol", "agost", "setembre", "octubre",
+                "novembre", "desembre"],
+         "es": ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre",
+                "noviembre", "diciembre"]}
+
+
+def credits(dades, idioma):
+    """Las dos líneas de debajo (Juanjo, 17-10-2026: «si alguien la copia y la
+    pega no sale la web… breve pero suficiente para saber lo que es»): qué es,
+    de dónde, de cuándo y dónde verla; y que lo oficial manda, con la frase de
+    «Perill»."""
+    g = dt.datetime.fromisoformat(dades["generat"])
+    mes = MESOS[idioma][g.month - 1]
+    if idioma == "es":
+        quan = f"previsión del {DIES['es'][g.weekday()]} {g.day} de {mes}, {g:%H:%M}"
+        avis = "No es oficial: si la AEMET, Meteocat o Protección Civil dan un aviso, manda el suyo."
+    else:
+        quan = f"previsió de {DIES['ca'][g.weekday()]} {g.day} {'d’' if mes[0] in 'ao' else 'de '}{mes}, {g:%H:%M}"
+        avis = "No és oficial: si l’AEMET, Meteocat o Protecció Civil donen un avís, mana el seu."
+    return (f"Temps a Montflorit (Cerdanyola del Vallès) · {quan} · meteo-montflorit.github.io", avis)
+
+
 def pagina(dades, dia, idioma):
     """La página que dibuja solo la gráfica, con todo dentro: también los
     iconos del cielo, que son símbolos de la página de la web (casa.html)."""
@@ -63,6 +89,7 @@ def pagina(dades, dia, idioma):
 body {{ margin: 0; padding: 0; max-width: none; background: #fff; width: {AMPLE + 2 * MARGE}px; }}
 main {{ padding: {MARGE}px; max-width: none; margin: 0; }}
 .grafica {{ margin: 0; padding: 0; border: none; background: #fff; }}
+.credits {{ margin: 10px 0 0; color: #475569; font-size: 13px; line-height: 1.45; }}
 </style></head>
 <body>{icones}<main id="lloc"></main>
 {es}<script>{llegeix(WEB, 'comu.js')}</script>
@@ -74,6 +101,7 @@ if (fig) {{
   fig._opcions = {{ gran: true }};
   document.getElementById('lloc').append(fig);
   dibuixaGrafica(fig);
+  document.getElementById('lloc').insertAdjacentHTML('beforeend', {json.dumps('<p class="credits">' + '<br>'.join(html_mod.escape(l) for l in credits(dades, idioma)) + '</p>')});
   document.body.dataset.fet = '1';
 }}
 </script></body></html>

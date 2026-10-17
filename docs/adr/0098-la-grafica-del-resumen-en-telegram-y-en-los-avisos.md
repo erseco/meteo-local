@@ -25,6 +25,17 @@ texto. En IONOS no hay navegador; en el NAS, tampoco había.
   separarse. Se descartó redibujarla en Python (dos dibujos que acabarían
   distintos). El contenedor lleva ahora `chromium` y la letra Roboto
   (`fonts-roboto-unhinted`), unos 300 MB más de disco.
+- **Créditos en la imagen** (3.102.1; Juanjo, 17-10-2026: «si alguien la
+  copia y la pega no sale la web… breve pero suficiente para saber lo que
+  es»): dos líneas en gris debajo de la leyenda. «Temps a Montflorit
+  (Cerdanyola del Vallès) · previsió de dissabte 17 d’octubre, 07:21 ·
+  meteo-montflorit.github.io»: qué es, de dónde, de cuándo (una previsión
+  reenviada al día siguiente no puede pasar por la de ese día) y dónde
+  verla. Y la frase de «Perill», «No és oficial: si l’AEMET, Meteocat o
+  Protecció Civil donen un avís, mana el seu», en lugar de un «no oficial» a
+  secas, que haría dudar del aviso oficial de la franja. Sin fuentes: o
+  todas o ninguna, y las de cada aviso ya están en la franja. En la web no:
+  la página ya lo dice.
 - **Solo la parte de la que habla el resumen** (`graficaDia`, la misma que
   «Consultes»): la de hoy, de ahora a medianoche (resúmenes de la mañana y
   /resum); la de mañana, de las 18 h de hoy (la noche, como `bot.resum`) al
