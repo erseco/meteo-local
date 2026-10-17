@@ -786,7 +786,7 @@ def linies_perill_dia(dades, idioma, dia, moment):
     return res
 
 
-def resum(dades, idioma, moment, dema=False, avui=False):
+def resum(dades, idioma, moment, dema=False, avui=False, telegram=False):
     """La previsión en pocas líneas, con los datos públicos: hasta las 18 h,
     el tiempo ahora y el resto del día; desde las 18 h, la de mañana. Con la
     ropa para ir a pie (text_roba)."""
@@ -852,7 +852,17 @@ def resum(dades, idioma, moment, dema=False, avui=False):
     # detrás, el paraguas.
     roba = " ".join(x for x in (roba, paraigua) if x) or None
     text = "\n".join(x for x in linies if x)
-    return text + (f"\n\n{roba}" if roba else "") + "\n" + WEB
+    return text + (f"\n\n{roba}" if roba else "") + "\n" + (peu_telegram(generat, idioma) if telegram else WEB)
+
+
+def peu_telegram(generat, idioma):
+    """A Telegram el missatge queda al xat i es llegeix hores després: de quan
+    són les dades (les de la imatge) i on hi ha la d'ara (Juanjo, 17-10-2026:
+    «para obtener la previsión actualizada en cada momento hay que visitar
+    url»). Les notificacions obren la web en tocar-les i «Consultes» ja hi és."""
+    if idioma == "es":
+        return f"Previsión de las {generat:%H:%M}. La de cada momento, en {WEB}"
+    return f"Previsió de les {generat:%H:%M}. La de cada moment, a {WEB}"
 
 
 def text_trens_resum(dades, idioma):
@@ -1623,14 +1633,14 @@ def atén(api, subs, update, estat=None):
         envia(api, chat, t["menu"], teclat(sub))
     elif ordre == "/resum":
         moment = ara()
-        envia_resum(api, chat, resum(llegeix(os.path.join(DADES, "montflorit.json"), {}), sub["idioma"], moment, avui=True),
+        envia_resum(api, chat, resum(llegeix(os.path.join(DADES, "montflorit.json"), {}), sub["idioma"], moment, avui=True, telegram=True),
                     imatge_resum(sub["idioma"], moment, avui=True))
     elif ordre == "/ara":
         dades = llegeix(os.path.join(DADES, "montflorit.json"), {})
         envia(api, chat, text_ara_bot(dades, sub["idioma"], ara()) + "\n" + WEB)
     elif ordre == "/dema":
         moment = ara()
-        envia_resum(api, chat, resum(llegeix(os.path.join(DADES, "montflorit.json"), {}), sub["idioma"], moment, dema=True),
+        envia_resum(api, chat, resum(llegeix(os.path.join(DADES, "montflorit.json"), {}), sub["idioma"], moment, dema=True, telegram=True),
                     imatge_resum(sub["idioma"], moment, dema=True))
     elif ordre in CONSULTES:
         dades = llegeix(os.path.join(DADES, "montflorit.json"), {})
@@ -1747,7 +1757,7 @@ def reparteix(api, subs, estat, moment):
         dades = llegeix(os.path.join(DADES, "montflorit.json"), {})
         try:
             # El canal, solo en catalán (Juanjo, 08-10-2026).
-            envia_resum(api, CANAL, resum(dades, "ca", moment), imatge_resum("ca", moment))
+            envia_resum(api, CANAL, resum(dades, "ca", moment, telegram=True), imatge_resum("ca", moment))
             canal[hora] = avui
         except Exception as ex:
             registra(f"el resumen del canal de las {hora} h no ha entrado: {ex}")
@@ -1762,7 +1772,7 @@ def reparteix(api, subs, estat, moment):
                 continue
             dades = dades or llegeix(os.path.join(DADES, "montflorit.json"), {})
             try:
-                envia_resum(api, chat, resum(dades, sub["idioma"], moment), imatge_resum(sub["idioma"], moment))
+                envia_resum(api, chat, resum(dades, sub["idioma"], moment, telegram=True), imatge_resum(sub["idioma"], moment))
                 resums[chat] = {**fets, hora: avui}
             except Bloquejat:
                 treu(subs, estat, chat, "bloqueig")

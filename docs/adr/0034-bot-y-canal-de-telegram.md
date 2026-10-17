@@ -87,6 +87,14 @@ internet en casa, que suele llegar con las tormentas.
   canal vea una versión distinta, y dos canales por idioma eran más
   mantenimiento para un mensaje al día. Quien quiera el castellano lo tiene en
   el bot, que toma el idioma de su Telegram.
+- **De cuándo es y dónde está la de ahora** (3.102.2; Juanjo, 17-10-2026:
+  «para obtener la previsión actualizada en cada momento hay que visitar
+  url… creo que esto solo hace falta en telegram»): los resúmenes del bot y
+  del canal acaban con «Previsió de les 07:27. La de cada moment, a
+  https://meteo-montflorit.github.io/», con la hora de los datos (la misma
+  de la imagen, ADR 0098), no la del envío. Se descartó «en tot moment»: la
+  web se pone al día cada 15 o 6 minutos. Las notificaciones abren la web al
+  tocarlas y «Consultes» está dentro de ella: siguen con el enlace solo.
 - **El paraguas, detrás de la ropa** (3.102.0; Juanjo, 17-10-2026: «si hoy
   va a llover, por qué no recomienda paraguas?»): «Paraigua de 18 a 0 h.»,
   con las horas de la línea de la lluvia (desde el 20 %, el «si surts, porta

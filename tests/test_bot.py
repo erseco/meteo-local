@@ -1109,3 +1109,13 @@ class Paraigua(unittest.TestCase):
         dia = self.hores([0.5, 0.5, 0, 0], dt.datetime(2026, 10, 18, 6))
         self.assertEqual(B.text_paraigua(dia, "ca", nit), "Paraigua aquesta nit i de 6 a 8 h.")
         self.assertEqual(B.text_paraigua(self.hores([0, 0], dt.datetime(2026, 10, 18, 6)), "es", nit), "Paraguas esta noche.")
+
+
+class PeuDeTelegram(unittest.TestCase):
+    def test_hora_de_les_dades_i_la_web(self):
+        d = dades()
+        t = B.resum(d, "ca", ARA, avui=True, telegram=True)
+        self.assertTrue(t.endswith(f"Previsió de les 07:00. La de cada moment, a {B.WEB}"), t[-120:])
+        self.assertTrue(B.resum(d, "es", ARA, avui=True, telegram=True).endswith(f"Previsión de las 07:00. La de cada momento, en {B.WEB}"))
+        # Fora de Telegram (notificacions i «Consultes»), l'enllaç sol, com abans.
+        self.assertTrue(B.resum(d, "ca", ARA, avui=True).endswith("\n" + B.WEB))
