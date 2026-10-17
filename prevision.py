@@ -331,12 +331,14 @@ def radar():
            "km2_50km_ahora": round(float((lluvia & cerca).sum() * r["km_px"] ** 2)),
            "km2_50km_antes": None, "nowcast": N.resum(r), "a_prop": {},
            "mapa": N.mapa(ara, fila, col, r["km_px"]), "propera": N.propera(ara, fila, col, r["km_px"]),
-           "forta": N.forta(ara, fila, col, r["km_px"])}
+           "forta": N.forta(ara, fila, col, r["km_px"]),
+           "creixement": N.creixement(r, fila, col, r["km_px"])}
     # El registro del movimiento, para comprobar en un mes si acierta (moviment_registre.py).
-    try:
-        MR.apunta(r, res["nowcast"])
-    except Exception as ex:
-        print(f"moviment_registre: {ex}", file=sys.stderr)
+    for apunta, arg in ((MR.apunta, (r, res["nowcast"])), (MR.apunta_creixement, (res["creixement"],))):
+        try:
+            apunta(*arg)
+        except Exception as ex:
+            print(f"moviment_registre: {ex}", file=sys.stderr)
     # Los píxeles con lluvia a RADAR_AVISO_KM o menos en cada radar, para
     # seguir los ecos sueltos que encienden el modo aviso sin lluvia (registre.py).
     mc, rv = r.get("meteocat") or {}, r.get("rainviewer")

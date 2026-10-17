@@ -495,9 +495,11 @@ function plujaPrevistaAviat(hores, ara = new Date()) {
 function blocRadar(r, plou, hores) {
   const t = textRadar(r, plou);
   if (!t) return null;
-  if (t[0] === 'res' && !plujaPrevistaAviat(hores)) return null;
+  const creix = textCreixement(r);
+  if (t[0] === 'res' && !creix && !plujaPrevistaAviat(hores)) return null;
   const [estat, text, proves] = t;
-  const caixa = element('div', `radar-ara ${estat}`);
+  // Si la pluja creix al voltant, en blau com «pot arribar» (17-10-2026).
+  const caixa = element('div', `radar-ara ${estat === 'res' && creix ? 'a-prop' : estat}`);
   caixa.append(icona('i-radar'));
   const cos = element('div');
   const p = element('p', 'radar-text');
@@ -508,6 +510,7 @@ function blocRadar(r, plou, hores) {
     p.append(marca);
   }
   cos.append(p);
+  if (creix && (estat === 'res' || estat === 'a-prop')) cos.append(element('p', 'radar-propera', creix));
   // Si la previsió en dona i el radar no en veu venir, la mateixa hora i
   // probabilitat que l'etiqueta «Comença…», perquè es llegeixin juntes. Si
   // el radar veu pluja a 15 km o menys, no és «pluja que el radar encara no
@@ -565,6 +568,19 @@ const POBLES = [['Terrassa', -10.6, 9.1], ['Sabadell', -2.1, 6.8], ['Sant Cugat'
   ['Martorell', -17.0, -0.8]];
 const LLOC_NOM = { e: [-0.9, 0.6, 'end'], s: [0, 2.3, 'middle'] };
 const CERCLES_KM = [10, 20, 30];
+
+// La pluja que creix al voltant de casa, el que es mesura i prou: quanta n'hi
+// ha a 15 km o menys respecte de fa mitja hora, al mateix radar (nowcast.
+// creixement). El moviment només desplaça la imatge, i el 17-10-2026 la
+// tempesta es formava cada cop més a prop (Juanjo: «no se trata solo de la
+// direccion de la lluvia sino de hacia donde crece»).
+function textCreixement(r) {
+  const c = r && r.creixement;
+  if (!c || !c.creix) return null;
+  if (!c.vegades) return T('La pluja s’està formant a prop: a 15\u00a0km o menys, fa mitja hora no n’hi havia.');
+  const quant = c.vegades === 2 ? T('el doble') : c.vegades === 3 ? T('el triple') : T`${c.vegades} vegades més`;
+  return T`La pluja s’està formant a prop: a 15\u00a0km o menys n’hi ha ${quant} que fa mitja hora.`;
+}
 
 // «al nord-oest»; en castellà, «al noroeste».
 function textRumb(rumb) {

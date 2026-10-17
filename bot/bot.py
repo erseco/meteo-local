@@ -1368,6 +1368,18 @@ def text_radar_bot(dades, idioma, moment):
         # (Juanjo, 17-10-2026: «son mensajes contrarios» amb la previsió).
         que = ("El radar no ve lluvia que venga hacia Montflorit." if idioma == "es"
                else "El radar no veu pluja que vingui cap a Montflorit.")
+    # Si la pluja creix al voltant, com a la web (17-10-2026): només si no
+    # plou ni arriba.
+    c = r.get("creixement") or {}
+    if c.get("creix") and not plou and not r.get("arriba") and not r.get("possible"):
+        n = c.get("vegades")
+        if not n:
+            que += ("\nLa lluvia se está formando cerca: a 15\u00a0km o menos, hace media hora no había." if es
+                    else "\nLa pluja s'està formant a prop: a 15\u00a0km o menys, fa mitja hora no n'hi havia.")
+        else:
+            q = {2: ("el doble", "el doble"), 3: ("el triple", "el triple")}.get(n, (f"{n} veces más", f"{n} vegades més"))
+            que += (f"\nLa lluvia se está formando cerca: a 15\u00a0km o menos hay {q[0]} que hace media hora." if es
+                    else f"\nLa pluja s'està formant a prop: a 15\u00a0km o menys n'hi ha {q[1]} que fa mitja hora.")
     # La pluja més propera, si no és a sobre, com a la web (17-10-2026), i si
     # no és la mateixa que la forta que ja s'ha dit.
     p = r.get("propera")

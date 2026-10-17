@@ -17,6 +17,12 @@ nada más a nadie (las imágenes son las que ya se han bajado):
   de ahora, en el círculo de 50 km: el índice de acierto (CSI, aciertos entre
   aciertos, fallos y falsas alarmas) del movimiento y el de dejarla quieta.
   Una fila por comparación en registre/moviment.csv.
+- `apunta_creixement(c)` (también desde prevision.radar): cuánta lluvia hay a
+  15 km o menos de casa en la última imagen de RainViewer y en la de 30
+  minutos antes, y a qué distancia está la moderada, una fila por imagen en
+  registre/creixement.csv. Para comprobar con la lluvia medida en casa si la
+  lluvia que crece alrededor anuncia la de casa (Juanjo, 17-10-2026: «no se
+  trata solo de la direccion de la lluvia sino de hacia donde crece»).
 - `resum`: el CSI medio del movimiento y de dejarla quieta, por antelación y
   por de dónde sale el movimiento, en cuántos casos gana cada uno y, para las
   horas con movimiento, cuánto se aparta del viento a 700 hPa (unos 3.000 m,
@@ -37,6 +43,8 @@ import nowcast as N
 
 REGISTRE = os.environ.get("REGISTRE_DIR", "/estat/registre")
 FITXER = os.path.join(REGISTRE, "moviment.csv")
+FITXER_CREIX = os.path.join(REGISTRE, "creixement.csv")
+CAMPS_CREIX = ["emes", "minuts", "km2", "km2_abans", "km_moderada", "km_moderada_abans", "km2_meteocat", "creix"]
 TROSSOS = os.path.join(os.path.dirname(REGISTRE), "moviment")
 CAMPS = ["emes", "radar", "antelacio_min", "font_moviment", "kmh", "graus",
          "csi_moviment", "csi_quieta", "px_vista", "px_prevista", "px_quieta"]
@@ -135,6 +143,25 @@ def apunta(r, nc, ara=None):
             w.writerows(files)
     neteja(ara)
     return len(files)
+
+
+def apunta_creixement(c):
+    """Una fila per imatge de RainViewer (la mateixa imatge en diverses
+    passades, una sola vegada). Només al NAS."""
+    if not c or not os.path.isdir(REGISTRE):
+        return 0
+    nou = not os.path.exists(FITXER_CREIX)
+    if not nou:
+        with open(FITXER_CREIX, encoding="utf-8") as f:
+            darrera = f.readlines()[-1]
+        if darrera.startswith(c["hora"] + ","):
+            return 0
+    with open(FITXER_CREIX, "a", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, CAMPS_CREIX, extrasaction="ignore")
+        if nou:
+            w.writeheader()
+        w.writerow({**c, "emes": c["hora"], "creix": int(bool(c["creix"]))})
+    return 1
 
 
 _avaluats = None

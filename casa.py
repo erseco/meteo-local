@@ -693,6 +693,8 @@ def recoger(anterior=None):
         salida["radar"]["mapa"], salida["radar"]["propera"] = radar.get("mapa"), radar.get("propera")
         # La pluja forta o més a 15 km o menys, per al titular (17-10-2026).
         salida["radar"]["forta"] = radar.get("forta")
+        # Si la pluja creix al voltant de casa (17-10-2026).
+        salida["radar"]["creixement"] = radar.get("creixement")
         # A qué hora pararía, «en entrenament» en la página (fi_pluja.py, ADR 0049).
         try:
             salida["radar"].update(FP.fi_radar(nc, P.AHORA, salida["radar"]["arriba"]) or {})

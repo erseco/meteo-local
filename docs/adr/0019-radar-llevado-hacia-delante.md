@@ -311,3 +311,19 @@ si es el mismo punto que el titular. Lo mismo en /radar del bot. Esa tarde
 el registro del movimiento daba más acierto a dejar la lluvia quieta que a
 moverla (20 comparaciones, una sola tarde): las tormentas crecían más que se
 desplazaban, y por eso el texto no promete que pasen de largo.
+
+En la 3.131.0, el recuadro dice también cuándo la lluvia crece alrededor de
+casa: «La pluja s'està formant a prop: a 15 km o menys n'hi ha el triple que
+fa mitja hora» (o «fa mitja hora no n'hi havia»), en azul, con al menos 20
+km² con lluvia a 15 km o menos en la última imagen de RainViewer y el doble
+que en la de 30 minutos antes (`nowcast.creixement`, del mismo radar). Juanjo,
+viendo la tormenta acercarse imagen a imagen aunque el movimiento la llevaba
+de largo: «no se trata solo de la direccion de la lluvia sino de hacia donde
+crece». Con las imágenes de esa tarde, la distancia de la lluvia más cercana
+saltaba de 3 a 27 km y volvía a 7 (píxeles sueltos), y la tormenta fuerte no
+se acercó sino que se formó: a las 18:24 la más cercana estaba a 28 km y a
+las 18:30 había una a 8 km. Lo que creció sin parar fue la superficie con
+lluvia a 15 km o menos (Meteocat: 0, 42, 67, 94 y 118 km² de 18:24 a 19:00).
+La línea dice lo medido, no una hora de llegada; si anuncia la lluvia en
+casa lo dirá un mes de registro (`creixement.csv`, docs/estadistica.md),
+revisado junto con el del movimiento el 17-11-2026. Lo mismo en /radar.

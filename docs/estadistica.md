@@ -493,6 +493,19 @@ movimiento, en cuántos casos gana cada uno y cuánto se aparta la dirección de
 viento a 700 hPa de Open-Meteo. Con un mes de datos se decidirá si hay que
 revisar el método.
 
+El movimiento solo desplaza la imagen: no ve la lluvia que crece o se forma
+cada vez más cerca, como la tormenta del 17-10-2026, que pasó de 0 a 118 km²
+a 15 km o menos de casa en media hora sin acercarse. Desde ese día se
+registra también, para cada imagen de RainViewer (`creixement.csv`), la
+superficie con lluvia (0,5 mm/h o más) a 15 km o menos, $`A_t`$, la de 30
+minutos antes, $`A_{t-30}`$, y la distancia de la lluvia moderada (2 mm/h o
+más) en las dos. La página solo dice lo medido («n'hi ha el triple que fa
+mitja hora») cuando $`A_t \ge 20`$ km² y $`A_t \ge 2\,A_{t-30}`$. Con un mes
+de datos se comprobará, con regresión logística y validación con días que el
+modelo no ha visto, si $`A_t`$, $`A_t / A_{t-30}`$ y esas distancias
+anuncian lluvia en casa en la hora siguiente; solo si la mejora es segura
+pasarán a dar una hora de llegada.
+
 ### Hacia delante
 
 Para cada lugar (casa y el centro de la cuenca de la riera) y cada 5 minutos

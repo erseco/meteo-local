@@ -65,3 +65,21 @@ class Registre(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Creixement(unittest.TestCase):
+    def test_una_fila_per_imatge(self):
+        with tempfile.TemporaryDirectory() as d:
+            os.environ["REGISTRE_DIR"] = d
+            import moviment_registre
+            MR = importlib.reload(moviment_registre)
+            c = {"hora": "2026-10-17T19:10+02:00", "minuts": 30, "km2": 118, "km2_abans": 42, "km_moderada": 7.0,
+                 "km_moderada_abans": 8.4, "km2_meteocat": 94, "creix": True, "vegades": 3}
+            self.assertEqual(MR.apunta_creixement(c), 1)
+            self.assertEqual(MR.apunta_creixement(c), 0)          # la mateixa imatge, una vegada
+            self.assertEqual(MR.apunta_creixement({**c, "hora": "2026-10-17T19:20+02:00"}), 1)
+            with open(MR.FITXER_CREIX) as f:
+                files = list(csv.DictReader(f))
+            self.assertEqual([(x["emes"], x["km2"], x["creix"]) for x in files],
+                             [("2026-10-17T19:10+02:00", "118", "1"), ("2026-10-17T19:20+02:00", "118", "1")])
+            self.assertEqual(MR.apunta_creixement(None), 0)

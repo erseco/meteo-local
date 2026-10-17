@@ -47,6 +47,30 @@ class MapaIPropera(unittest.TestCase):
         lluny[384, 384 + 70] = 5
         self.assertIsNone(N.propera(lluny, fila, col, km))
 
+    def test_creixement(self):
+        # 17-10-2026: la tempesta es formava cada cop més a prop, sense moure's cap aquí.
+        fila, col, km = 384.3, 384.6, 0.9
+        T1 = dt.datetime(2026, 10, 17, 19, 10).astimezone()
+        hores = [T1 - dt.timedelta(minutes=10 * k) for k in range(6, -1, -1)]
+
+        def pluja(radi):
+            return camp((374, 384), radi, 5.0) if radi else np.zeros((N.MIDA, N.MIDA))
+        r = {"rainviewer": {"hores": hores, "mm_h": [pluja(2)] * 4 + [pluja(3), pluja(4), pluja(6)]}}
+        c = N.creixement(r, fila, col, km)
+        self.assertEqual((c["minuts"], c["creix"]), (30, True))
+        self.assertGreater(c["km2"], 2 * c["km2_abans"])
+        self.assertEqual(c["vegades"], round(c["km2"] / c["km2_abans"]))
+        self.assertAlmostEqual(c["km_moderada"], 3.9, delta=0.5)
+        # Poca pluja, encara que creixi: no es diu.
+        r["rainviewer"]["mm_h"][-1] = pluja(1)
+        self.assertFalse(N.creixement(r, fila, col, km)["creix"])
+        # Sense pluja abans: «fa mitja hora no n'hi havia».
+        r["rainviewer"]["mm_h"] = [pluja(0)] * 6 + [pluja(5)]
+        c = N.creixement(r, fila, col, km)
+        self.assertEqual((c["km2_abans"], c["creix"], c["vegades"]), (0, True, None))
+        # Sense la imatge de fa mitja hora, res.
+        self.assertIsNone(N.creixement({"rainviewer": {"hores": hores[-2:], "mm_h": [pluja(2)] * 2}}, fila, col, km))
+
     def test_forta(self):
         # 17-10-2026: amb trons i una tempesta a 10 km, el requadre només deia
         # «la més propera, feble».

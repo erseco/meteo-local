@@ -498,6 +498,11 @@ MAPA_KM = 30                # el mapa, de 30 km al voltant de casa
 PROPERA_MAX_KM = 60         # més lluny, no es diu
 FORTA_KM = 15               # la pluja forta o més, fins aquí (forta())
 FORTA_CLASSE = 3            # forta
+CREIX_KM = 15               # creixement(): la pluja d'aquí al voltant
+CREIX_MIN = 30              # comparada amb la de fa 30 minuts, del mateix radar
+CREIX_MARGE_MIN = 5
+CREIX_MIN_KM2 = 20          # perquè es digui: almenys 20 km² ara…
+CREIX_VEGADES = 2           # …i el doble que abans (o abans res)
 # Les franges d'intensitat de l'AEMET (mm/h): feble, moderada, forta, molt
 # forta i torrencial; per sota de PLOU_MMH, sense pluja.
 FRANGES_MMH = (2, 15, 30, 60)
@@ -557,6 +562,46 @@ def forta(camp, fila, col, km_px, max_km=FORTA_KM):
     f, c = np.unravel_index(np.argmin(d), d.shape)
     angle = math.degrees(math.atan2(c - col, -(f - fila))) % 360
     return {"km": round(float(d[f, c]), 1), "rumb": RUMBS[int((angle + 22.5) // 45) % 8], "classe": maxim}
+
+
+def creixement(r, fila, col, km_px):
+    """Si la pluja creix al voltant de casa: els km² amb pluja (PLOU_MMH o
+    més) a CREIX_KM o menys a la darrera imatge de RainViewer i a la de fa
+    CREIX_MIN minuts, que porta la mateixa lectura, i la distància de la pluja
+    moderada o més a totes dues. El moviment només desplaça la imatge; el
+    17-10-2026 la tempesta no s'acostava sinó que es formava cada cop més a
+    prop (Juanjo: «no se trata solo de la direccion de la lluvia sino de hacia
+    donde crece»). «creix» diu si el requadre ho ha de dir; si ajuda a
+    preveure la pluja a casa, ho dirà el registre (moviment_registre.py).
+    None sense les dues imatges."""
+    import numpy as np
+    rv = r.get("rainviewer")
+    if not rv or len(rv["mm_h"]) < 2:
+        return None
+    t1 = rv["hores"][-1]
+    j = min(range(len(rv["hores"]) - 1), key=lambda i: abs((t1 - rv["hores"][i]).total_seconds() / 60 - CREIX_MIN))
+    minuts = round((t1 - rv["hores"][j]).total_seconds() / 60)
+    if abs(minuts - CREIX_MIN) > CREIX_MARGE_MIN:
+        return None
+    yy, xx = np.ogrid[:MIDA, :MIDA]
+    dist = np.hypot((yy - fila) * km_px, (xx - col) * km_px)
+    a_prop = dist <= CREIX_KM
+
+    def km2(camp):
+        return round(float(((camp >= PLOU_MMH) & a_prop).sum() * km_px ** 2))
+
+    def km_moderada(camp):
+        m = camp >= FRANGES_MMH[0]
+        return round(float(dist[m].min()), 1) if m.any() else None
+
+    ara, abans = km2(rv["mm_h"][-1]), km2(rv["mm_h"][j])
+    mc = (r.get("meteocat") or {}).get("mm_h")
+    return {"radar": "rainviewer", "hora": t1.isoformat(timespec="minutes"), "minuts": minuts,
+            "km2": ara, "km2_abans": abans,
+            "km_moderada": km_moderada(rv["mm_h"][-1]), "km_moderada_abans": km_moderada(rv["mm_h"][j]),
+            "km2_meteocat": None if mc is None else km2(mc),
+            "creix": ara >= CREIX_MIN_KM2 and ara >= CREIX_VEGADES * abans,
+            "vegades": round(ara / abans) if abans else None}
 
 
 def en_tram(nc, lloc, ini, fin, minim_min=0):
