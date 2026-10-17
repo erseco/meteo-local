@@ -230,3 +230,10 @@ propusieron dos y aprobó los dos («de acuerdo, hazlo así»):
   plan INUNCAT y dos de agosto) en Chromium, Firefox y WebKit, escritorio,
   móvil y tableta, claro y oscuro, en catalán y castellano; axe-core sin
   incidencias en «Perill» y en «El temps».
+
+## Los últimos 30 días, plegados (17-10-2026)
+
+Juanjo: «en la pestaña perill, els últims 30 dies han de estar plegados,
+ahora mismo hay demasiada información». Desde la 3.113.2, bajo el título
+«Últims 30 dies» va un desplegable cerrado con el número de situaciones,
+como los meses de antes; un enlace a una de sus fichas lo abre.

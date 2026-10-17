@@ -242,8 +242,16 @@ function pinta(dades, ara = new Date()) {
   peces.push(...prealerta);
   if (!actius.length && !alfa && !prealerta.length) peces.push(element('p', 'nota', T('Ara no hi ha cap situació de perill.')));
   peces.push(element('h2', 'seccio', T`Últims ${DIES_RECENTS} dies`));
-  if (recents.length) peces.push(...recents.map((e) => fitxa(e, ara)));
-  else peces.push(element('p', 'nota', T`Cap situació de perill acabada en els últims ${DIES_RECENTS} dies.`));
+  // Plegats, com els mesos d'abans (Juanjo, 17-10-2026: «els últims 30 dies
+  // han de estar plegados, ahora mismo hay demasiada información»); un enllaç
+  // a una de les seves fitxes l'obre (vesA).
+  if (recents.length) {
+    const plec = element('details', 'mes-perill');
+    const n = recents.length;
+    plec.append(element('summary', null, n === 1 ? T('1 situació') : T`${n} situacions`),
+      ...recents.map((e) => fitxa(e, ara)));
+    peces.push(plec);
+  } else peces.push(element('p', 'nota', T`Cap situació de perill acabada en els últims ${DIES_RECENTS} dies.`));
   // Els mesos d'abans, plegats, del més recent al més antic.
   const mesos = new Map();
   for (const e of antics) {
