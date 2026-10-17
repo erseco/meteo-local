@@ -978,7 +978,7 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .tram-hores summary .perill-tram svg { color: var(--text); }
 /* Desplegat, el perill ja el diuen la barra de cada hora i el color del costat:
    l'etiqueta de la capçalera sobra (Juanjo, 17-10-2026: «así se simplifica»). */
-.tram-hores[open] > summary .perill-tram { display: none; }
+.tram-hores[open] > summary .perill-tram, .tram-hores[open] > summary .fenomen { display: none; }
 
 /* L'últim recurs per copiar un avís (ADR 0076): el text seleccionat. */
 .per-copiar { max-width: min(30rem, calc(100% - 2rem)); border: 1px solid var(--vora); border-radius: .6rem;
