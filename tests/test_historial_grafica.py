@@ -43,25 +43,27 @@ class Historial(unittest.TestCase):
             f.write(emissio(f"{dia}T06:03+02:00", 5) + "\n" + emissio(f"{dia}T07:03+02:00", 1) + "\n")
         self.dies = H.tots(dt.date(2026, 10, 17), reg)
 
-    def test_mesurat_i_previsio_de_les_7(self):
+    def test_mesurat_i_previsions_per_antelacio(self):
         d = next(x for x in self.dies if x["dia"] == "2026-10-16")
-        self.assertEqual(d["previsio_de"], "2026-10-16T07:03+02:00")
         self.assertEqual(len(d["hores"]), 24)
         f = d["hores"][9]                                  # de 9 a 10
-        self.assertEqual((f["hora"], f["temperatura"], f["prev"]["temperatura"]), ("2026-10-16T09:00", 15.0, 16.0))
-        self.assertNotIn("prev", d["hores"][3])            # abans de les 7, cap previsió
+        self.assertEqual((f["hora"], f["temperatura"]), ("2026-10-16T09:00", 15.0))
+        # La de les 7:03, 2 h abans (16 °C); la de les 6:03, 3 h abans (20 °C).
+        self.assertEqual(f["prev"]["2"][0], 16.0)
+        self.assertEqual(f["prev"]["3"][0], 20.0)
+        self.assertNotIn("prev", d["hores"][3])            # cap publicació abans de les 3
 
-    def test_encert(self):
+    def test_encert_per_antelacio(self):
         e = next(x for x in self.dies if x["dia"] == "2026-10-16")["encert"]
-        # 1 °C d'error a totes les hores amb previsió (de 7 a mitjanit: 17).
-        self.assertEqual(e["temperatura"], {"error": 1.0, "hores": 17})
-        # Deia pluja a les 19, 20 i 21 (fins 20, 21, 22): va ploure a dues (fins 20 i 21).
-        self.assertEqual(e["pluja"]["plou"], [2, 3])
-        self.assertEqual(e["pluja"]["sec"], [14, 14])
+        # Amb 1 h: l'hora de les 7 amb la de les 6:03 (5 °C d'error) i la de les 8
+        # amb la de les 7:03 (1 °C). Cada publicació dona una hora per antelació.
+        self.assertEqual(e["1"]["temperatura"], {"error": 3.0, "hores": 2})
+        self.assertEqual(e["2"]["temperatura"]["hores"], 2)
         i = H.index(self.dies, dt.date(2026, 10, 17))
-        self.assertEqual(i["encert"]["darrers"]["temperatura"]["hores"], 17)
-        self.assertEqual(list(i["encert"]["mesos"]), ["2026-10"])
+        self.assertEqual(i["encert"]["2"]["darrers"]["temperatura"]["hores"], 2)
+        self.assertEqual(list(i["encert"]["2"]["mesos"]), ["2026-10"])
         self.assertIn("2026-10-17", i["dies"])
+        self.assertEqual(sorted(map(int, i["encert"])), list(range(1, 24)))
 
     def test_el_dia_del_canvi_d_hora_te_25_hores(self):
         self.assertEqual(len(H.hores_del_dia(dt.date(2026, 10, 25))), 25)

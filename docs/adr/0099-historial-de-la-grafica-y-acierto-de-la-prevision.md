@@ -49,6 +49,22 @@ cada hora la previsión publicada con lo que mostraba la web (`mostrat` de
   solo lo medido. Se recuerda en el dispositivo y solo afecta a la vista en
   grande.
 
+- **La antelación, de 1 a 23 horas** (3.113.0; Juanjo, 17-10-2026: «la de
+  las 7 está muy lejos de las horas de la tarde y noche… si elijo 1h, me
+  salga la gráfica con lo que se predijo 1h antes de cada hora y con el
+  error, lo mismo con 2h, etc»): en lugar de la previsión de las 7, el
+  historial guarda para cada hora lo que mostraba la web en la publicación
+  de N horas antes de que empezara (N de 1 a 23: cada publicación cubre 24
+  horas, contando la que ya ha empezado), y el acierto para cada N. Con
+  «Com encerta», un selector «Antelació ‹ 1 h ›» elige N (por defecto 1 h,
+  se recuerda); la curva punteada y el texto son los de esa antelación. Con
+  los datos del 5 al 17-10: 0,7 °C de error con 1 h, 0,8 con 3 h, 1,0 con
+  6 y 12 h. Unos 14 KB por día.
+- **Desmarcar «Com encerta» vuelve a hoy** con la previsión de siempre, y
+  las flechas de los días pasados solo salen con el botón activo (Juanjo:
+  «si se desmarca el botón com encerta … debe volver al día de hoy y
+  mostrar la predicción estándar»).
+
 ## Riesgos
 
 - La franja de avisos no sale en los días pasados: el historial de avisos

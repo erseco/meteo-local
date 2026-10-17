@@ -4,23 +4,28 @@
 17-10-2026: «que se pueda ir hacia atrás sin límite» y «algún índice o
 indicador de lo buena que es la predicción… con el tiempo debería mejorar»).
 
-Para cada día, hora a hora, lo medido en Montflorit y lo que decía la
-previsión de las 7 de ese día (la del resumen de la mañana):
+Para cada día, hora a hora, lo medido en Montflorit y lo que decía la web de
+1 a 24 horas antes (Juanjo, 17-10-2026: «si elijo 1h, me salga la gráfica
+con lo que se predijo 1h antes de cada hora y con el error, lo mismo con
+2h, etc, hasta 24»):
 
 - Lo medido: la temperatura de la estación de casa (estacio-casa.csv) y la
   lluvia de la hora como la cuenta el aprendizaje (aprenentatge.observada:
   casa, las vecinas que cuentan y, para las horas secas, Meteocat). Si no se
   sabe si llovió, None.
 - Lo previsto: lo que mostraba la web (`mostrat` de casa-AAAA-MM.jsonl, que
-  apunta cada hora la previsión publicada) en la primera publicación de las
-  7 de ese día; si falta, la última desde las 5. Cubre de las 7 a medianoche.
+  apunta cada hora la previsión publicada) en la publicación de unas N horas
+  antes del comienzo de la hora (entre N h y media antes y N h y media menos
+  media hora), para N de 1 a 23 (cada publicación cubre 24 horas, contando la que ya ha
+  empezado): `prev` = {"N": [temperatura, probabilidad]}.
 
-El acierto, sobre las horas con las dos cosas:
+El acierto, para cada antelación, sobre las horas con las dos cosas:
 - Temperatura: el error medio absoluto (°C).
 - Lluvia: de las horas en que decía 50 % o más, en cuántas llovió; de las
   que decía menos del 20 %, en cuántas no llovió. Es la comprobación de
   calibración de una probabilidad, contada en casos.
-Los últimos 30 días, los 30 anteriores (para ver si mejora) y por meses.
+Los últimos 30 días, los 30 anteriores (para ver si mejora) y por meses,
+para cada antelación.
 
 Archivos para la web (los sube publica.sh a IONOS):
   historial.json              los días que hay y el acierto
@@ -40,7 +45,9 @@ import prevision as P
 
 REGISTRE = A.REGISTRE
 PRIMER_DIA = dt.date(2026, 10, 4)       # el primero con la estación de casa en el registro
-HORA_PREVISIO = 7
+# Cada publicació porta les 24 hores següents, comptant la que ja ha començat:
+# com a molt, 23 hores abans del començament d'una hora.
+ANTELACIONS = range(1, 24)
 PROB_PLOU = 0.5                          # «plourà», como en la web (PROB_PLUJA)
 PROB_SEC = 0.2                           # «no plourà», por debajo de «possible pluja»
 DIES_FINESTRA = 30
@@ -75,20 +82,23 @@ def emissions(registre=None):
     return res
 
 
-def previsio_del_mati(dia, emes):
-    """(emes, {fins: mostrat}) de la previsión de las 7 del día: la primera de
-    las 7; si no hay, la última desde las 5. None si no hay ninguna."""
-    del_dia = sorted(k for k in emes if dt.datetime.fromisoformat(k).date() == dia)
-    hora = lambda k: dt.datetime.fromisoformat(k).hour
-    de_les_7 = [k for k in del_dia if hora(k) == HORA_PREVISIO]
-    abans = [k for k in del_dia if 5 <= hora(k) < HORA_PREVISIO]
-    k = de_les_7[0] if de_les_7 else (abans[-1] if abans else None)
-    return (k, emes[k]) if k else None
+def per_hora(emes):
+    """{fins: {N: mostrat}}: para cada hora, lo que decía la publicación de
+    unas N horas antes de que empezara (la más reciente de las que caen entre
+    N h y media y N h menos media hora antes)."""
+    res = {}
+    for k in sorted(emes):
+        t = dt.datetime.fromisoformat(k)
+        for fins, m in emes[k].items():
+            ini = dt.datetime.fromisoformat(fins).replace(tzinfo=t.tzinfo) - dt.timedelta(hours=1)
+            n = round((ini - t).total_seconds() / 3600)
+            if n in ANTELACIONS:
+                res.setdefault(fins, {})[n] = m
+    return res
 
 
-def un_dia(dia, casa, meteocat, veines, emes):
-    """El día, para la web: {dia, previsio_de, hores: [...], encert}."""
-    prev = previsio_del_mati(dia, emes)
+def un_dia(dia, casa, meteocat, veines, previstes):
+    """El día, para la web: {dia, hores: [...], encert: {N: …}}."""
     files = []
     for hora, fins in hores_del_dia(dia):
         t = A._num((casa.get(fins) or {}).get("temperatura"))
@@ -96,20 +106,27 @@ def un_dia(dia, casa, meteocat, veines, emes):
         f = {"hora": hora, "fins": fins, "mesura": True,
              "temperatura": None if t is None else round(t, 1),
              "pluja_mm": None if mm is None else round(mm, 1)}
-        p = prev and prev[1].get(fins)
+        p = previstes.get(fins)
         if p:
-            f["prev"] = {k: p.get(k) for k in ("temperatura", "probabilitat", "pluja_mm")}
+            f["prev"] = {str(n): [m.get("temperatura"), m.get("probabilitat")] for n, m in sorted(p.items())}
         files.append(f)
-    return {"dia": dia.isoformat(), "previsio_de": prev and prev[0], "hores": files, "encert": encert(files)}
+    return {"dia": dia.isoformat(), "hores": files,
+            "encert": {str(n): encert(files, n) for n in ANTELACIONS}}
 
 
-def encert(files):
-    """El acierto de unas horas: {temperatura: {error, hores}, pluja: {plou: [sí, de], sec: [sí, de]}}."""
-    errors = [abs(f["temperatura"] - f["prev"]["temperatura"]) for f in files
-              if f.get("prev") and f["temperatura"] is not None and f["prev"].get("temperatura") is not None]
+def _prev(f, n):
+    """(temperatura, probabilidad) que decía la web n horas antes."""
+    v = (f.get("prev") or {}).get(str(n))
+    return (v[0], v[1]) if v else (None, None)
+
+
+def encert(files, n):
+    """El acierto con n horas de antelación: {temperatura: {error, hores}, pluja: {plou: [sí, de], sec: [sí, de]}}."""
+    errors = [abs(f["temperatura"] - _prev(f, n)[0]) for f in files
+              if f["temperatura"] is not None and _prev(f, n)[0] is not None]
     plou, sec = [0, 0], [0, 0]
     for f in files:
-        p = (f.get("prev") or {}).get("probabilitat")
+        p = _prev(f, n)[1]
         if p is None or f["pluja_mm"] is None:
             continue
         mullat = f["pluja_mm"] >= C.UMBRAL_MM
@@ -138,10 +155,10 @@ def tots(avui=None, registre=None):
         A.REGISTRE = registre
     casa = A._llegeix("estacio-casa.csv")
     meteocat, veines = A._meteocat(), A._veines()
-    emes = emissions(registre)
+    previstes = per_hora(emissions(registre))
     dies, d = [], PRIMER_DIA
     while d <= avui:
-        dies.append(un_dia(d, casa, meteocat, veines, emes))
+        dies.append(un_dia(d, casa, meteocat, veines, previstes))
         d += dt.timedelta(days=1)
     return dies
 
@@ -151,17 +168,21 @@ def index(dies, avui):
     de los 30 anteriores y de cada mes, con los mínimos para darlo."""
     complets = [d for d in dies if d["dia"] < avui.isoformat()]
     fi = avui
-    finestra = lambda ini, fi_: [d["encert"] for d in complets if ini.isoformat() <= d["dia"] < fi_.isoformat()]
-    mesos = {}
-    for d in complets:
-        mesos.setdefault(d["dia"][:7], []).append(d["encert"])
+
+    def per_antelacio(n):
+        finestra = lambda ini, fi_: [d["encert"][str(n)] for d in complets
+                                     if ini.isoformat() <= d["dia"] < fi_.isoformat()]
+        mesos = {}
+        for d in complets:
+            mesos.setdefault(d["dia"][:7], []).append(d["encert"][str(n)])
+        return {"darrers": suma(finestra(fi - dt.timedelta(days=DIES_FINESTRA), fi)),
+                "anteriors": suma(finestra(fi - dt.timedelta(days=2 * DIES_FINESTRA),
+                                           fi - dt.timedelta(days=DIES_FINESTRA))),
+                "mesos": {m: suma(e) for m, e in sorted(mesos.items())}}
     return {"generat": dt.datetime.now(P.ZONA).isoformat(timespec="minutes"),
             "dies": [d["dia"] for d in dies],
             "minims": {"temperatura_hores": MIN_HORES_TEMP, "pluja_casos": MIN_CASOS_PLUJA},
-            "encert": {"darrers": suma(finestra(fi - dt.timedelta(days=DIES_FINESTRA), fi)),
-                       "anteriors": suma(finestra(fi - dt.timedelta(days=2 * DIES_FINESTRA),
-                                                  fi - dt.timedelta(days=DIES_FINESTRA))),
-                       "mesos": {m: suma(e) for m, e in sorted(mesos.items())}}}
+            "encert": {str(n): per_antelacio(n) for n in ANTELACIONS}}
 
 
 def fes(carpeta, ultims=None, avui=None, registre=None):

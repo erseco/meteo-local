@@ -781,7 +781,10 @@ function dibuixaGrafica(fig) {
   // Cada clau de pluja, només si n'hi ha (Juanjo, 16-10-2026).
   // Amb les dues, cadascuna pel seu nom; amb una, «Temperatura» o «Part alta».
   if (ambBaixa) ll.append(clau('m-temp', ambAlta ? T('Part baixa') : T('Temperatura')));
-  if (ambPrev) ll.append(clau('m-prev', T('Previsió de les 7')));
+  if (ambPrev) {
+    const a = opcions.antelacio || 1;
+    ll.append(clau('m-prev', T`Previsió ${a}\u00a0h abans`));
+  }
   if (ambAlta) ll.append(clau('m-alta', T('Part alta')));
   const plujes = files.map((f) => plujaGrafica(f));
   // La probabilitat en xifres: «probable» i «possible» no es distingeixen
@@ -882,6 +885,29 @@ function vistaGrafica() {
   tornaAvui.type = 'button';
   navega.append(enrere, nomDia, endavant, tornaAvui);
   const encertEl = element('div', 'vg-encert');
+  // L'antelació de la previsió que es compara, d'1 a 23 h (Juanjo,
+  // 17-10-2026: «si elijo 1h, me salga la gráfica con lo que se predijo 1h
+  // antes de cada hora y con el error, lo mismo con 2h, etc»); amb «Com encerta».
+  const ANTELACIO_MAX = 23;
+  const antelacio = element('div', 'vg-antelacio');
+  const menys = element('button', 'boto-icona');
+  menys.type = 'button';
+  menys.title = T('Menys antelació');
+  menys.setAttribute('aria-label', T('Menys antelació'));
+  menys.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
+  const mes = element('button', 'boto-icona');
+  mes.type = 'button';
+  mes.title = T('Més antelació');
+  mes.setAttribute('aria-label', T('Més antelació'));
+  mes.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
+  const nomAntelacio = element('span', 'vg-nom-antelacio');
+  antelacio.append(element('span', null, T('Antelació')), menys, nomAntelacio, mes);
+  // Les hores passades, amb la previsió de l'antelació triada.
+  const ambAntelacio = (files, a) => files.map((f) => {
+    const v = f.prev && f.prev[String(a)];
+    const { prev, ...resta } = f;
+    return v ? { ...resta, prev: { temperatura: v[0], probabilitat: v[1] } } : resta;
+  });
   const avuiIso = () => {
     const a = new Date();
     return `${a.getFullYear()}-${String(a.getMonth() + 1).padStart(2, '0')}-${String(a.getDate()).padStart(2, '0')}`;
@@ -926,12 +952,18 @@ function vistaGrafica() {
     alta.setAttribute('aria-pressed', String(Boolean(opcions.alta)));
     baixa.setAttribute('aria-pressed', String(opcions.baixa !== false));
     encerta.setAttribute('aria-pressed', String(Boolean(opcions.passat)));
+    const a = Math.min(ANTELACIO_MAX, Math.max(1, opcions.antelacio || 1));
+    antelacio.hidden = !opcions.passat;
+    menys.disabled = a <= 1;
+    mes.disabled = a >= ANTELACIO_MAX;
+    nomAntelacio.textContent = `${a}\u00a0h`;
     const llista = passats();
     const pos = dia ? llista.indexOf(dia) : llista.length;
     enrere.disabled = pos <= 0;
     endavant.disabled = !dia;
     tornaAvui.hidden = !dia;
-    navega.hidden = !llista.length;
+    // Els dies passats, només amb «Com encerta».
+    navega.hidden = !llista.length || !opcions.passat;
     titol.textContent = dia ? T('Historial') : T('Previsió');
     // Als dies passats, només el botó del passat.
     for (const b of barra.children) b.hidden = Boolean(dia) && b !== encerta;
@@ -943,9 +975,9 @@ function vistaGrafica() {
       nomDia.textContent = d.toLocaleDateString(codi, { weekday: 'long', day: 'numeric', month: 'long' });
       const dades = await llegeixDia(dia);
       // Sense «Com encerta», només el que es va mesurar.
-      fig._files = dades ? (opcions.passat ? dades.hores : dades.hores.map(({ prev, ...f }) => f)) : [];
-      fig._opcions = { gran: true, baixa: true };
-      encertEl.replaceChildren(...(opcions.passat ? textEncertDia(dades) : []));
+      fig._files = dades ? (opcions.passat ? ambAntelacio(dades.hores, a) : dades.hores.map(({ prev, ...f }) => f)) : [];
+      fig._opcions = { gran: true, baixa: true, antelacio: a };
+      encertEl.replaceChildren(...(opcions.passat ? textEncertDia(dades, a) : []));
     } else {
       nomDia.textContent = T('Avui');
       let files = horesVista(opcions.tram);
@@ -954,13 +986,13 @@ function vistaGrafica() {
       if (opcions.passat && opcions.tram !== 'dema' && files.length) {
         const avui = index && index.dies.includes(avuiIso()) ? await llegeixDia(avuiIso()) : null;
         const ini = new Date(files[0].hora);
-        const passades = ((avui && avui.hores) || []).filter((f) => new Date(f.fins) <= ini);
+        const passades = ambAntelacio(((avui && avui.hores) || []).filter((f) => new Date(f.fins) <= ini), a);
         files = [...passades, ...files];
       }
       fig._files = files;
       fig._opcions = { gran: true, vent: ambVent && opcions.vent, alta: ambDifAlta && Boolean(opcions.alta),
-        baixa: opcions.baixa !== false };
-      encertEl.replaceChildren(...(opcions.passat ? textEncert(index) : []));
+        baixa: opcions.baixa !== false, antelacio: a };
+      encertEl.replaceChildren(...(opcions.passat ? textEncert(index, a) : []));
     }
     dibuixaGrafica(fig);
   };
@@ -985,7 +1017,22 @@ function vistaGrafica() {
   vent.addEventListener('click', () => { opcions.vent = !opcions.vent; desa(); dibuixa(); });
   alta.addEventListener('click', () => { opcions.alta = !opcions.alta; desa(); dibuixa(); });
   baixa.addEventListener('click', () => { opcions.baixa = opcions.baixa === false; desa(); dibuixa(); });
-  encerta.addEventListener('click', () => { opcions.passat = !opcions.passat; desa(); dibuixa(); });
+  // Sense «Com encerta», de nou avui i la previsió de sempre (Juanjo,
+  // 17-10-2026: «si se desmarca el botón com encerta … debe volver al día de
+  // hoy y mostrar la predicción estándar»).
+  encerta.addEventListener('click', () => {
+    opcions.passat = !opcions.passat;
+    if (!opcions.passat) dia = null;
+    desa();
+    dibuixa();
+  });
+  const canviaAntelacio = (d) => {
+    opcions.antelacio = Math.min(ANTELACIO_MAX, Math.max(1, (opcions.antelacio || 1) + d));
+    desa();
+    dibuixa();
+  };
+  menys.addEventListener('click', () => canviaAntelacio(-1));
+  mes.addEventListener('click', () => canviaAntelacio(1));
   const barra = element('div', 'vg-opcions');
   barra.append(tramsBotons);
   if (ambVent) barra.append(vent);
@@ -993,7 +1040,7 @@ function vistaGrafica() {
   if (ambDifAlta) barra.append(alta);
   barra.append(encerta);
 
-  dlg.append(cap, navega, barra, fig, encertEl);
+  dlg.append(cap, navega, barra, antelacio, fig, encertEl);
   // Un toc fora de la finestra la tanca, com Esc.
   dlg.addEventListener('click', (e) => {
     if (e.target !== dlg) return;
@@ -1044,11 +1091,11 @@ function textPlujaEncert(p, minim) {
   return T`Pluja: quan diu que plourà (50\u00a0% o més), plou ${a} de cada 10 vegades; quan diu que no (menys del 20\u00a0%), no plou ${b} de cada 10.`;
 }
 
-function textEncert(index) {
-  if (!index || !index.encert) return [];
-  const { darrers, anteriors, mesos } = index.encert;
+function textEncert(index, a) {
+  if (!index || !index.encert || !index.encert[String(a)]) return [];
+  const { darrers, anteriors, mesos } = index.encert[String(a)];
   const m = index.minims || {};
-  const res = [element('p', 'vg-encert-titol', T('Com encerta la previsió de les 7 (darrers 30 dies)'))];
+  const res = [element('p', 'vg-encert-titol', T`Com encerta la previsió feta ${a}\u00a0h abans (darrers 30 dies)`)];
   let temp = textTemperaturaEncert(darrers.temperatura, m.temperatura_hores || 48);
   if (anteriors.temperatura.error != null && anteriors.temperatura.hores >= (m.temperatura_hores || 48)
       && darrers.temperatura.hores >= (m.temperatura_hores || 48)) {
@@ -1066,11 +1113,13 @@ function textEncert(index) {
   return res;
 }
 
-function textEncertDia(dades) {
+function textEncertDia(dades, a) {
   if (!dades) return [element('p', null, T('Aquest dia no es pot llegir.'))];
-  if (!dades.previsio_de) return [element('p', null, T('D’aquest dia no hi ha la previsió de les 7.'))];
-  const e = dades.encert;
-  const res = [element('p', 'vg-encert-titol', T('Com va encertar la previsió de les 7'))];
+  const e = dades.encert && dades.encert[String(a)];
+  if (!e || (!e.temperatura.hores && !(e.pluja.plou[1] + e.pluja.sec[1]))) {
+    return [element('p', null, T('D’aquest dia no hi ha previsions per comparar.'))];
+  }
+  const res = [element('p', 'vg-encert-titol', T`Com va encertar la previsió feta ${a}\u00a0h abans`)];
   if (e.temperatura.error != null) {
     res.push(element('p', null, T`Temperatura: s’equivoca de mitjana ${coma(e.temperatura.error)}\u00a0°C.`));
   }
