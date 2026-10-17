@@ -226,3 +226,9 @@ cabecera plegada, con la etiqueta de peligro de su color. Lo que se abre a
 mano se mantiene mientras la página está abierta (se repinta cada 6 o 15
 minutos) y no se guarda para otra visita; «Desplega-ho tot» sí se guarda,
 porque es una preferencia que no depende de la hora.
+
+**17-10-2026 (3.133.0).** En la tarjeta «Ara» con el resumen del día, la línea
+de los trenes va debajo del recuadro del radar, para que el tiempo, la lluvia
+prevista y el radar queden juntos (Juanjo: «la informacion de la lluvia mejor
+toda junta lo de los trenes ponlo debajo del radar»). Sin recuadro del radar,
+sigue en su sitio, con el resto del resumen.

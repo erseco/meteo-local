@@ -297,8 +297,15 @@ function blocAra(casa, radarDades, vent, veines, hores, resum) {
   // Si no plou i el radar no la veu arribar, quant falta segons la previsió.
   const radarDiu = radar && radar.matches('.arriba, .possible');
   const comptePluja = !plou && !radarDiu;
+  // Els trens, sota el radar: el temps i la pluja, junts (Juanjo, 17-10-2026:
+  // «la informacion de la lluvia mejor toda junta lo de los trenes ponlo
+  // debajo del radar»).
+  let trens = [];
   if (resum) {
-    const linies = pintaResum(resum).slice(1);
+    const totes = pintaResum(resum).slice(1);
+    // Sense requadre del radar, al seu lloc de sempre.
+    trens = radar ? totes.filter((f) => LINIA_TRENS.test((f.textContent || '').trim())) : [];
+    const linies = totes.filter((f) => !trens.includes(f));
     if (linies.length) {
       const cos = element('div', 'resta-dia');
       cos.append(...ambDetalls(linies));
@@ -310,6 +317,11 @@ function blocAra(casa, radarDades, vent, veines, hores, resum) {
     if (prevista) sec.append(prevista);
   }
   if (radar) sec.append(radar);
+  if (trens.length) {
+    const cos = element('div', 'resta-dia sota-radar');
+    cos.append(...ambDetalls(trens));
+    sec.append(cos);
+  }
   return sec;
 }
 
@@ -319,6 +331,7 @@ function blocAra(casa, radarDades, vent, veines, hores, resum) {
 // diu quan.
 const LINIA_PLUJA = /^(Possible pluja|Pluja|Posible lluvia|Lluvia|Aquesta nit|Esta noche)\b/;
 const LINIA_SECA = /^(Sense pluja|Sin lluvia)/;
+const LINIA_TRENS = /^(Trens|Trenes) de /;
 function posaComptePluja(cos, hores, ara = new Date()) {
   const f = primeraPluja(hores, ara);
   if (!f) return;

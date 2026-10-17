@@ -957,6 +957,7 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
    d'avui, sense títol, separat del que es mesura per una línia fina. */
 .resta-dia { margin-top: .7rem; padding-top: .7rem; border-top: 1px solid var(--vora); line-height: 1.5; overflow-wrap: anywhere; }
 .resta-dia p { margin: 0; }
+.resta-dia.sota-radar { border-top: 0; padding-top: 0; }
 .resta-dia .resum-linia:first-child { display: grid; }
 .resta-dia .resum-linia + .resum-linia { margin-top: .45rem; }
 .resta-dia .pluja-prevista { display: grid; font-size: inherit; }
