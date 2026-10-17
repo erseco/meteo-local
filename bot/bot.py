@@ -489,6 +489,27 @@ def text_ara(dades, idioma, lloc="", moment=None):
     return amb_icona(icona, f"Ara mateix{lloc and ' a ' + lloc}: {graus(t)}, {'plou' if plou else 'no plou'}.")
 
 
+def text_pluja_prevista(dades, idioma, moment):
+    """La primera hora de les 24 que venen amb pluja segons la previsió (del
+    20 %, com «possible pluja»): «Pluja prevista d'aquí a unes 6 hores, cap a
+    les 20 h (73 %).». La previsió és per hores: sense minuts."""
+    ara_n = moment.replace(tzinfo=None)
+    for f in dades.get("hores") or []:
+        ini = hora_local(f["hora"])
+        if not (ara_n < ini <= ara_n + dt.timedelta(hours=24)) or not pluja_hora(f):
+            continue
+        h = round((ini - ara_n).total_seconds() / 3600)
+        p = f.get("probabilitat")
+        pct = f" ({round(p * 100)} %)" if p is not None else ""
+        segura = p is None or p >= 0.5
+        if idioma == "es":
+            quan = "dentro de menos de una hora" if h < 1 else "dentro de una hora" if h == 1 else f"dentro de unas {h} horas"
+            return f"{'Lluvia prevista' if segura else 'Posible lluvia'} {quan}, hacia las {ini.hour} h{pct}."
+        quan = "d'aquí a menys d'una hora" if h < 1 else "d'aquí a una hora" if h == 1 else f"d'aquí a unes {h} hores"
+        return f"{'Pluja prevista' if segura else 'Possible pluja'} {quan}, cap a les {ini.hour} h{pct}."
+    return None
+
+
 def text_ara_bot(dades, idioma, moment):
     """La respuesta a /ara: como text_ara, pero con el mismo límite de edad
     que el resumen, también para la propia medida, y diciendo de qué hora es
@@ -520,6 +541,11 @@ def text_ara_bot(dades, idioma, moment):
     r = dades.get("radar") or {}
     if r.get("arriba") or r.get("possible") or (plou_ara(dades) and r.get("fi")):
         linies.append(amb_icona("🌧️", text_radar_bot(dades, idioma, moment).split("\n")[0]))
+    elif not plou_ara(dades):
+        # Si el radar no la veu, quan la dona la previsió (Juanjo, 17-10-2026).
+        prevista = text_pluja_prevista(dades, idioma, moment)
+        if prevista:
+            linies.append(amb_icona("🌧️", prevista))
     if c.get("pluja_avui") is not None:
         mm = f"{c['pluja_avui']:.1f}".replace(".", ",").replace(",0", "")
         linies.append(amb_icona("🌧️", f"Lluvia de hoy: {mm} mm." if es else f"Pluja d'avui: {mm} mm."))

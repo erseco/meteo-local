@@ -289,7 +289,56 @@ function blocAra(casa, radarDades, vent, veines, hores) {
   sec.append(element('p', 'ara-menys', menys.join(' · ')));
   const radar = blocRadar(radarDades, plou, hores);
   if (radar) sec.append(radar);
+  // Si no plou i el radar no la veu arribar, quan la dona la previsió.
+  const radarDiu = radar && radar.matches('.arriba, .possible');
+  const prevista = !plou && !radarDiu && liniaPlujaPrevista(hores);
+  if (prevista) sec.append(prevista);
   return sec;
+}
+
+// «d'aquí a 25 minuts», «d'aquí a 1 h 10 min»: un element que actualitzaComptes
+// torna a escriure cada minut, sense recarregar la pàgina.
+function compte(iso, perHores = false) {
+  const s = element('span', 'compte');
+  s.dataset.t = iso;
+  if (perHores) s.dataset.hores = '1';
+  s.textContent = textCompte(iso, perHores);
+  return s;
+}
+
+function textCompte(iso, perHores) {
+  const min = Math.max(0, Math.round((new Date(iso) - Date.now()) / 60000));
+  // La previsió és per hores: «d'aquí a unes 6 hores», sense minuts.
+  if (perHores) {
+    const h = Math.round(min / 60);
+    return h < 1 ? T('d’aquí a menys d’una hora') : h === 1 ? T('d’aquí a una hora') : T`d’aquí a unes ${h} hores`;
+  }
+  if (min < 1) return T('ara mateix');
+  if (min < 60) return min === 1 ? T('d’aquí a 1 minut') : T`d’aquí a ${min} minuts`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m ? T`d’aquí a ${h}\u00a0h ${m}\u00a0min` : T`d’aquí a ${h}\u00a0h`;
+}
+
+function actualitzaComptes() {
+  for (const s of document.querySelectorAll('.compte[data-t]')) s.textContent = textCompte(s.dataset.t, s.dataset.hores);
+}
+if (typeof setInterval === 'function') setInterval(actualitzaComptes, 30e3);
+
+// La primera hora de les 24 que venen amb pluja segons la previsió (del 20 %,
+// «possible pluja», com a la taula), amb l'hora i la probabilitat.
+function liniaPlujaPrevista(hores, ara = new Date()) {
+  const fins = new Date(ara.getTime() + 24 * 3600e3);
+  const f = (hores || []).find((x) => new Date(x.hora) > ara && new Date(x.hora) < fins && plujaHora(x));
+  if (!f) return null;
+  const pct = f.probabilitat == null ? null : Math.round(f.probabilitat * 100);
+  const segura = plujaHora(f) === 'pluja';
+  const p = element('p', `pluja-prevista${segura ? ' segura' : ''}`);
+  const text = element('span');
+  text.append(segura ? T('Pluja prevista ') : T('Possible pluja '), compte(f.hora, true),
+    T`, cap a les ${new Date(f.hora).getHours()}\u00a0h` + (pct == null ? '' : ` (${pct}\u00a0%)`) + '.');
+  p.append(icona('i-cloud-rain'), text);
+  return p;
 }
 
 // El resum del dia, el mateix de «Consultes › Avui», a sota d'«Ara»: el que es
@@ -335,10 +384,13 @@ function textRadar(r, plou) {
     return ['arriba', T('Pluja a sobre') + fi, Boolean(fi)];
   }
   if (plou) return ['arriba', T('Pluja a sobre'), false];
-  if (r.arriba) return ['arriba', T`Arribaria pluja cap a les\u00a0${horaCurta(r.arriba)}`];
+  // Quant falta, en minuts, i l'hora (Juanjo, 17-10-2026: «empezará a llover
+  // en x horas o minutos (se actualizará en tiempo real) y la hora prevista»);
+  // el compte s'actualitza sol cada minut (actualitzaComptes).
+  if (r.arriba) return ['arriba', [T('Pluja '), compte(r.arriba), T` (cap a les\u00a0${horaCurta(r.arriba)})`]];
   if (r.possible) {
     if (aviat(r.possible)) return ['possible', T('Pluja a prop: pot arribar')];
-    return ['possible', T`Pot arribar pluja cap a les\u00a0${horaCurta(r.possible)}`];
+    return ['possible', [T('Pot arribar pluja '), compte(r.possible), T` (cap a les\u00a0${horaCurta(r.possible)})`]];
   }
   return ['res', T('No s\u2019acosta pluja en 2 hores')];
 }
@@ -369,7 +421,8 @@ function blocRadar(r, plou, hores) {
   const caixa = element('div', `radar-ara ${estat}`);
   caixa.append(icona('i-radar'));
   const cos = element('div');
-  const p = element('p', 'radar-text', text);
+  const p = element('p', 'radar-text');
+  p.append(...(Array.isArray(text) ? text : [text]));
   if (proves) {
     const marca = element('span', 'en-proves', T(' (en entrenament)'));
     marca.title = T('Hora estimada amb el radar. Encara s’està entrenant amb la pluja real: pot fallar.');

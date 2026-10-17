@@ -1144,3 +1144,16 @@ class AraComLaWeb(unittest.TestCase):
         self.assertIn("/avui", B.ORDRES)
         self.assertIn("/resum", B.ORDRES)
         self.assertIn("/avui la previsió d'avui", B.T["ca"]["ajuda"])
+
+
+class PlujaPrevista(unittest.TestCase):
+    def test_quan_arriba_segons_la_previsio(self):
+        # ADR 0019: la primera hora amb un 20 % o més, sense minuts.
+        self.assertEqual(B.text_pluja_prevista(dades(), "ca", ARA),
+                         "Possible pluja d'aquí a unes 5 hores, cap a les 12 h (40 %).")
+        self.assertEqual(B.text_pluja_prevista(dades(), "es", ARA),
+                         "Posible lluvia dentro de unas 5 horas, hacia las 12 h (40 %).")
+        sec = dades()
+        for f in sec["hores"]:
+            f["probabilitat"] = 0.05
+        self.assertIsNone(B.text_pluja_prevista(sec, "ca", ARA))

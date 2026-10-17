@@ -152,3 +152,21 @@ de Meteocat, que es el que él mira.
 chubasco, coincidencia de los pares, advección vieja, llegada, alejamiento,
 niveles del trayecto y modo aviso), cálculo real de las dos páginas con
 Meteocat parado y en marcha, `probar-web` y axe-core.
+
+## Cuánto falta para la lluvia (17-10-2026)
+
+Juanjo: «cuando haya previsión de lluvia puedes añadir donde corresponda que
+empezará a llover en x horas o minutos (se actualizará en tiempo real) y la
+hora prevista?», y «luego está la previsión de los 15 minutos, eso también
+debe salir». Desde la 3.116.0, en «Ara» de la portada:
+
+1. Si llueve, como antes: «Pluja a sobre · pararia cap a les…».
+2. Si el radar la ve llegar (hasta unas 2 horas, también la del aviso de los
+   15 minutos), en minutos y con la hora: «Pluja d’aquí a 24 minuts (cap a les
+   11:50)»; la cuenta se actualiza sola cada 30 segundos, sin recargar.
+3. Si no, la primera hora de las 24 siguientes con lluvia según la previsión
+   (desde el 20 %, «possible pluja», como en la tabla), por horas y sin
+   minutos, porque la previsión es horaria: «Possible pluja d’aquí a unes 6
+   hores, cap a les 17 h (25 %)»; desde el 50 %, «Pluja prevista».
+
+/ara del bot dice lo mismo, sin la cuenta en directo.
