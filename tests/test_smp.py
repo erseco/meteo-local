@@ -86,18 +86,18 @@ class Smp(unittest.TestCase):
                                 "es": "Meteocat no tiene ningún aviso de peligro para el Vallès Occidental "
                                       "(datos de las 19:00)."}])
 
-    def test_al_costat_del_pla(self):
+    def test_a_part_del_pla(self):
         s = smp.llegeix(lambda url: pagina(EPISODIS), AHORA)
         pla = {"pla": "INUNCAT", "nom": "d'inundacions", "fase": "alerta"}
         d = {"generat": AHORA.isoformat(), "plans": [pla], "smp": s}
         r = B.text_avisos_actius(d, "ca", AHORA)
-        self.assertIn("🟠 Pla d'inundacions (INUNCAT) en fase d'alerta.\n🟠 Meteocat: avís de perill alt", r)
-        # A l'avís del pla nou, també.
-        t = AB.text_pla(pla, smp=s)
-        self.assertIn("\n🟠 Meteocat: avís de perill alt per «Intensitat de pluja»", t["ca"])
-        self.assertIn("\n🟠 Meteocat: aviso de peligro alto", t["es"])
-        # Sense lectura de Meteocat, res.
+        # Meteocat, en el seu bloc, separat de Protecció Civil (Juanjo, 17-10-2026).
+        self.assertIn("🟠 Pla d'inundacions (INUNCAT) en fase d'alerta.\n\n", r)
+        self.assertIn("🟠 Meteocat: avís de perill alt", r)
+        self.assertLess(r.index("Pla d'inundacions"), r.index("Meteocat: avís"))
+        # L'avís del pla nou no porta els de Meteocat, que tenen el seu.
         self.assertNotIn("Meteocat", AB.text_pla(pla)["ca"])
+        self.assertNotIn("Meteocat", AB.text_pla(pla)["es"])
         self.assertNotIn("Meteocat", B.text_avisos_actius({**d, "smp": None}, "ca", AHORA))
 
     def test_sense_pla_surt_sol(self):

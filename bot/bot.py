@@ -1405,11 +1405,10 @@ def text_avisos_actius(dades, idioma, moment):
         if p.get("comunicat"):
             linia += " " + enllac(p["comunicat"], "Comunicado (PDF)" if es else "Comunicat (PDF)")
         blocs.append(("Protección Civil" if es else "Protecció Civil", [linia]))
-    # Si Meteocat té avís per a la comarca: el pla no diu quina zona abasta (ADR 0067).
-    if blocs and dades.get("smp"):
-        blocs[-1][1].extend(linies_smp(dades["smp"], idioma))
-    # Sense pla, els avisos de Meteocat que hi hagi, sols (ADR 0071).
-    elif dades.get("smp"):
+    # Els avisos de Meteocat, en el seu bloc, també amb un pla: són d'un altre
+    # organisme (Juanjo, 17-10-2026: «separalos de proteccion civil porque son
+    # avisos aparte»; ADR 0071).
+    if dades.get("smp"):
         smp = {"linies": [l for l in dades["smp"].get("linies") or [] if l.get("nivell") != "nul"]}
         if smp["linies"]:
             blocs.append(("Meteocat", linies_smp(smp, idioma)))

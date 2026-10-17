@@ -92,3 +92,18 @@ Contra meteo.cat real el 10-10-2026 a las 19:25: lee la lista (vacía) y da
 «Meteocat no té cap avís de perill per al Vallès Occidental». En la web, con
 un plan y un aviso simulados, `probar-web` en Chromium y Firefox, escritorio
 y móvil, catalán y castellano.
+
+## Cambio del 17-10-2026 (3.119.0): Meteocat, aparte de Protecció Civil
+
+Juanjo: «si pulso en un aviso de meteocat me sale proteccion civil, separalos
+de proteccion civil porque son avisos aparte». Con un plan activo, los avisos
+de Meteocat iban dentro del bloque del plan en «Avisos actius» desplegado, y
+la línea entera llevaba a la ficha del plan. Ahora van siempre aparte, con
+un plan o sin él, como ya estaba sin plan (ADR 0071): cada uno con la franja
+de su grado y el enlace a su ficha de «Perill», detrás de Protecció Civil.
+Lo mismo en /avisos_actius del bot (bloque «Meteocat» propio) y en el aviso
+de un plan nuevo, que ya no lleva las líneas de Meteocat, porque Meteocat
+tiene sus propios avisos (`decideix_smp`). Se quitan `liniesSmp` (web) y
+`text_smp` (avisos_bot.py). Validación: Chromium y Firefox con los avisos
+del momento (INUNCAT en alerta y tres de Meteocat), «El temps» y «Si surts»,
+en catalán y castellano; `tests/test_smp.py`.

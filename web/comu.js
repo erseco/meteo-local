@@ -531,15 +531,6 @@ function deFase(fase) {
   return /^[aeiouàèéíòóúh]/i.test(fase) ? `d’${fase}` : `de ${fase}`;
 }
 
-// Si Meteocat té avís de perill per a la comarca (ADR 0067): els plans no
-// diuen quina zona abasten. Els textos vénen fets a les dades (smp.py), amb
-// el meteor i el llindar com els publica Meteocat.
-function liniesSmp(smp) {
-  if (!smp || !smp.linies) return [];
-  const es = IDIOMA.codi.startsWith('es');
-  return smp.linies.map((l) => element('span', 'smp-linia', es ? l.es : l.ca));
-}
-
 // L'adreça de la fitxa d'un pla a «Perill»: en prealerta, una de fixa per
 // pla (perill.js); si ha avisat, la del seu episodi a l'historial.
 function idPla(p) {
@@ -586,8 +577,10 @@ function fitxaDeLinia(text) {
   return 'perill.html';
 }
 
-// Els plans de Protecció Civil, un element per pla, del color de la fase.
-function blocPlans(plans, smp) {
+// Els plans de Protecció Civil, un element per pla, del color de la fase. Els
+// avisos de Meteocat, a part, amb la seva franja i la seva fitxa (Juanjo,
+// 17-10-2026: «separalos de proteccion civil porque son avisos aparte»).
+function blocPlans(plans) {
   return (plans || []).map((p) => {
     const item = element('p', `avis-item ${COLOR_FASE[p.fase] || 'vermell'}`);
     item.setAttribute('aria-label', T('Avís de Protecció Civil'));
@@ -603,7 +596,6 @@ function blocPlans(plans, smp) {
     // El comunicat en PDF, a la fitxa de «Perill», on porta la línia (ADR 0075):
     // la de l'historial si el pla ha avisat (alerta o emergència) o, en
     // prealerta, la que «Perill» fa a «Ara» (ADR 0091).
-    item.append(...liniesSmp(smp));
     item.dataset.detall = `perill.html#${fitxaDelPla(p)}`;
     return item;
   });
@@ -654,12 +646,13 @@ function blocEntorn(entorn) {
   return items;
 }
 
-// Els avisos de Meteocat sense cap pla a la vista, un per línia, del color
-// del seu grau (ADR 0071); amb pla, ja surten al costat del pla (ADR 0067).
+// Els avisos de Meteocat, un per línia, del color del seu grau (ADR 0071),
+// sempre a part dels plans de Protecció Civil, que són avisos d'un altre
+// organisme (Juanjo, 17-10-2026; abans anaven dins del pla, ADR 0067).
 const COLOR_SMP = { mig: 'groc', alt: 'taronja', maxim: 'vermell' };
 
-function blocSmp(smp, plans) {
-  if ((plans || []).length || !smp) return [];
+function blocSmp(smp) {
+  if (!smp) return [];
   const es = IDIOMA.codi.startsWith('es');
   return (smp.linies || []).filter((l) => COLOR_SMP[l.nivell]).map((l) => {
     const item = element('p', `avis-item ${COLOR_SMP[l.nivell]}`);
@@ -812,7 +805,7 @@ function blocRiscos(riscos) {
 
 // Totes les alertes de perill, juntes i en el mateix ordre a cada pàgina
 // (Juanjo, 16-10-2026: «las alertas de peligro deben ir siempre juntas»; ADR
-// 0093): Protecció Civil (amb Meteocat al costat), Meteocat, l'AEMET del que
+// 0093): Protecció Civil, Meteocat, l'AEMET del que
 // Meteocat no cobreix, la riera, els incendis i el Pla Alfa i el temps extrem
 // d'aquesta web. tests/test_perills.py comprova que no en falta cap.
 function avisosAemet(dades) {
@@ -824,7 +817,7 @@ function avisosAemet(dades) {
 // diuen quins són. Si la persona l'obre, queda obert mentre no canviïn.
 function blocAvisos(dades, { ara = new Date(), plegat = false } = {}) {
   const aemet = avisosAemet(dades);
-  const perills = [...blocPlans(dades.plans, dades.smp), ...blocSmp(dades.smp, dades.plans),
+  const perills = [...blocPlans(dades.plans), ...blocSmp(dades.smp),
     ...(aemet.length ? blocAvisosAemet(aemet, ara) : []),
     ...blocRiera(HISTORIAL_PERILL, ara), ...blocEntorn(dades.entorn), blocRiscos(dades.riscos)].filter(Boolean);
   const talls = blocLlum(dades.llum, ara);
