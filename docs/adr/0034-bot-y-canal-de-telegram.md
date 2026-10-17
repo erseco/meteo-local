@@ -87,6 +87,13 @@ internet en casa, que suele llegar con las tormentas.
   canal vea una versión distinta, y dos canales por idioma eran más
   mantenimiento para un mensaje al día. Quien quiera el castellano lo tiene en
   el bot, que toma el idioma de su Telegram.
+- **El paraguas, detrás de la ropa** (3.102.0; Juanjo, 17-10-2026: «si hoy
+  va a llover, por qué no recomienda paraguas?»): «Paraigua de 18 a 0 h.»,
+  con las horas de la línea de la lluvia (desde el 20 %, el «si surts, porta
+  paraigua» de la web). En la de mañana, la noche delante y sin horas, que
+  ya están en su línea: «Paraigua aquesta nit, de 6 a 15 h i de 18 a 21 h.».
+  Sin lluvia, nada. Sale en el bot, el canal, las notificaciones y
+  «Consultes»; la portada no lleva la línea de la ropa.
 - **Ropa en la previsión** (Juanjo, 07-10-2026: que la indique «para todo el
   día», también en la de las 20 h para el día siguiente): la de ir a pie, con
   los tramos de «Si surts» (ADR 0029) y el viento previsto, entre las 7 y las

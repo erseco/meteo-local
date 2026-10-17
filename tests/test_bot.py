@@ -1089,3 +1089,23 @@ class GraficaDelResum(unittest.TestCase):
         api = Api()
         B.envia_resum(api, 1, "Avui", None)
         self.assertEqual([m for m, _ in api.enviats], ["sendMessage"])
+
+
+class Paraigua(unittest.TestCase):
+    """El paraigua, darrere de la roba, amb les hores de la línia de la pluja."""
+
+    def hores(self, probs, inici):
+        return [{"hora": (inici + dt.timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M"), "probabilitat": p, "pluja_mm": 1}
+                for i, p in enumerate(probs)]
+
+    def test_les_hores_de_la_pluja(self):
+        h = self.hores([0, 0.3, 0.6, 0, 0, 0.2], dt.datetime(2026, 10, 17, 15))
+        self.assertEqual(B.text_paraigua(h, "ca"), "Paraigua de 16 a 18 h i de 20 a 21 h.")
+        self.assertEqual(B.text_paraigua(h, "es"), "Paraguas de 16 a 18 h y de 20 a 21 h.")
+        self.assertIsNone(B.text_paraigua(self.hores([0, 0.1], dt.datetime(2026, 10, 17, 15)), "ca"))
+
+    def test_dema_amb_la_nit_davant(self):
+        nit = self.hores([0.8, 0.8], dt.datetime(2026, 10, 17, 22))
+        dia = self.hores([0.5, 0.5, 0, 0], dt.datetime(2026, 10, 18, 6))
+        self.assertEqual(B.text_paraigua(dia, "ca", nit), "Paraigua aquesta nit i de 6 a 8 h.")
+        self.assertEqual(B.text_paraigua(self.hores([0, 0], dt.datetime(2026, 10, 18, 6)), "es", nit), "Paraguas esta noche.")

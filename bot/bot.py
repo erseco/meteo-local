@@ -528,6 +528,23 @@ def text_franges(pluges, idioma):
     return "; ".join(parts)
 
 
+def text_paraigua(hores, idioma, nit=None):
+    """«Paraigua de 18 a 0 h.», a continuació de la roba per anar a peu, amb
+    les mateixes hores que la línia de la pluja (des del 20 %, el «si surts,
+    porta paraigua» de la web). Sense pluja, res (Juanjo, 17-10-2026: «si hoy
+    va a llover, por qué no recomienda paraguas?»). La de demà, amb la nit
+    davant i sense hores («Paraigua aquesta nit i de 6 a 15 h.»): les hores de
+    la nit ja són a la seva línia, i «de 18 a 15 h» no s'entenia."""
+    trams = [f"de {a.hour} a {b.hour} h" for a, b, _ in franges(hores)]
+    if nit and franges(nit):
+        trams.insert(0, "esta noche" if idioma == "es" else "aquesta nit")
+    if not trams:
+        return None
+    i = " y " if idioma == "es" else " i "
+    hores_txt = trams[0] if len(trams) == 1 else ", ".join(trams[:-1]) + i + trams[-1]
+    return ("Paraguas " if idioma == "es" else "Paraigua ") + hores_txt + "."
+
+
 def text_pluja(tram, idioma, icona=True):
     """Sense pluja, sense icona: la línia destaca només quan n'hi ha (ADR 0065)."""
     pluges = franges(tram)
@@ -805,6 +822,7 @@ def resum(dades, idioma, moment, dema=False, avui=False):
         linies.append(text_temperatura(dia, idioma, "Temperatura", compara_temp(dades, dia), "avui"))
         linies.append(text_pluja(dia, idioma))
         roba = text_roba(dia, idioma)
+        paraigua = text_paraigua(dia, idioma, nit)
         linies += linies_perill_dia(dades, idioma, dema, moment)
     else:
         fi_dia = ara_n.replace(hour=23, minute=59)
@@ -819,6 +837,7 @@ def resum(dades, idioma, moment, dema=False, avui=False):
                                    else "Temperatura d'aquí a mitjanit", compara_temp(dades, tram), "ahir"),
                   text_pluja(tram, idioma)]
         roba = text_roba(tram, idioma)
+        paraigua = text_paraigua(tram, idioma)
         # De vespre, si ha de ploure abans de les 6, també la nit.
         if avui and moment.hour >= HORA_DEMA:
             fi_nit = dt.datetime.combine(moment.date() + dt.timedelta(days=1), dt.time(6))
@@ -826,9 +845,12 @@ def resum(dades, idioma, moment, dema=False, avui=False):
             if franges(nit):
                 linies.append(amb_icona(emoji_pluja(nit), ("Esta noche: " if idioma == "es" else "Aquesta nit: ")
                                         + text_franges(franges(nit), idioma) + "."))
+                paraigua = text_paraigua(tram + nit, idioma)
         linies += linies_perill_dia(dades, idioma, moment.date(), moment)
         linies.append(text_trens_resum(dades, idioma))
-    # La ropa, al final y aparte (Juanjo, 08-10-2026: «muy desordenado»).
+    # La ropa, al final y aparte (Juanjo, 08-10-2026: «muy desordenado»), y
+    # detrás, el paraguas.
+    roba = " ".join(x for x in (roba, paraigua) if x) or None
     text = "\n".join(x for x in linies if x)
     return text + (f"\n\n{roba}" if roba else "") + "\n" + WEB
 
