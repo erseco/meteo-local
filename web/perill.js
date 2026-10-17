@@ -102,6 +102,9 @@ function fitxa(e, ara) {
   } else if (fi) estat.append(element('span', 'episodi-acabat', `🟢 ${T('Acabat')}`), ' · ');
   else estat.append(element('span', 'episodi-actiu', T('Actiu ara')), ' · ');
   estat.append(quan(e, fi));
+  // L'última actualització, com a «Avisos actius» (Juanjo, 17-10-2026).
+  const pub = !fi && publicacioEpisodi(e);
+  if (pub && pub.actualitzat) estat.append(` · ${textPublicacio(pub)}`);
   art.append(cap, estat);
   const cos = nodesText(resta);
   // Els avisos que calcula aquesta web (la riera i el temps extrem) no tenen
@@ -188,12 +191,6 @@ const PROTECCIO_CIVIL = {
   ca: 'https://interior.gencat.cat/ca/arees_dactuacio/proteccio_civil/',
   es: 'https://interior.gencat.cat/es/arees_dactuacio/proteccio_civil/',
 };
-
-// «15/10/2026 10:33», l'hora local de les dades de Protecció Civil.
-function dataPla(text) {
-  const m = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/.exec(text || '');
-  return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]) : null;
-}
 
 function fitxaPla(p) {
   const art = element('article', 'avis-item episodi prealerta');

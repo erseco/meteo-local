@@ -491,6 +491,12 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .avisos-plec[open] > summary { margin-bottom: .4rem; }
 .avisos-plec[open] + .avisos-curts { display: none; }
 .avisos-curts { margin-top: .4rem; }
+/* Quan es va publicar i «Nou» (comu.js, marcaPublicacio; Juanjo, 17-10-2026):
+   l'hora, al costat del text i sense partir-se; si no hi cap, a sota. */
+.avis-item .publicat { white-space: nowrap; font-size: .85em; color: var(--suau); }
+.avis-nou { display: inline-block; margin-right: .35rem; padding: 0 .4rem; border-radius: 999px;
+  background: var(--enllac); color: var(--fons); font-size: .72rem; font-weight: 700; line-height: 1.5;
+  vertical-align: .1em; }
 .avisos-curts .avis-item + .avis-item { margin-top: .35rem; }
 .avisos-actius .avisos-mes { margin: .6rem 0 0; font-size: .92rem; }
 .avis-item { margin: 0; padding: .15rem 0 .15rem .7rem; border-left: .3rem solid var(--nivell, var(--compte)); }

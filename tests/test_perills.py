@@ -160,6 +160,8 @@ class Node_ {
     this.classList = { add() {}, remove() {}, toggle() {} }; this.attrs = {}; }
   append(...xs) { this.fills.push(...xs); }
   prepend(...xs) { this.fills.unshift(...xs); }
+  insertBefore(x, ref) { const i = this.fills.indexOf(ref); this.fills.splice(i < 0 ? this.fills.length : i, 0, x); }
+  get firstChild() { return this.fills[0]; }
   setAttribute(k, v) { this.attrs[k] = v; }
   addEventListener() {}
   querySelector() { return new Node_('x'); }

@@ -123,3 +123,31 @@ entero, el comunicado y el «?» de la fase. Sustituye al «siempre plegado» de
 la 3.118.0: `blocAvisos(dades, { curts: true })`. «Si surts» sigue con el
 desplegable y la regla de arriba. Validación: Chromium y Firefox, en catalán
 y castellano, con los avisos del momento; cada línea lleva a su ficha.
+
+## Cambio del 17-10-2026 (3.121.0): cuándo se publicó cada aviso y «Nou»
+
+Juanjo: «se podría poner en esta pagina inicial la fecha y hora de
+publicación del aviso y si tiene actualizacion se sustituye por esta, asi se
+sabe si la hemos visto antes o no», y luego «debajo no, cabe al lado, si no
+cabe entonces pasa abajo». Cada línea corta de «Avisos actius» (portada y
+«Si surts» plegado) acaba con «· publicat avui 00:09» o, si ha cambiado,
+«· actualitzat avui 11:10», en gris y en un trozo que no se parte. Lleva la
+palabra porque varias líneas ya tienen horas del fenómeno («avui de 12 a
+24 h») y una hora suelta se confundiría con ellas.
+
+La hora es la del historial de «Perill» (`inici` y `darrer` de avisos.json),
+la misma con que llegaron los avisos al móvil y a Telegram; en un plan de
+Protecció Civil, también la de su comunicado más reciente (del nombre del PDF,
+`…_202610171110.pdf`), y en un plan en prealerta, sin historial, `des_de`.
+Las líneas sin historial (cortes de luz, Pla Alfa) no llevan hora. Las fichas
+activas de «Perill» añaden «· actualitzat …» con la misma regla
+(`publicacioEpisodi`), para que digan lo mismo que la portada.
+
+«Nou», delante de la línea, en los avisos que este dispositivo no había
+mostrado al abrir la página: la clave es el aviso y su hora, así que una
+actualización vuelve a salir como nueva. Lo mostrado se guarda en
+`localStorage` (`meteo.avisos-llegits`) y la marca se mantiene mientras la
+página sigue abierta; no se calcula hasta tener el historial, para que no
+parpadee. Validación: Chromium y Firefox, catalán y castellano, con los
+avisos del momento; primera visita con «Nou» y la siguiente sin él;
+`tests/test_perills.py` con la hora en las líneas.

@@ -531,6 +531,12 @@ function deFase(fase) {
   return /^[aeiouàèéíòóúh]/i.test(fase) ? `d’${fase}` : `de ${fase}`;
 }
 
+// «15/10/2026 10:33», l'hora local de les dades de Protecció Civil.
+function dataPla(text) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/.exec(text || '');
+  return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]) : null;
+}
+
 // L'adreça de la fitxa d'un pla a «Perill»: en prealerta, una de fixa per
 // pla (perill.js); si ha avisat, la del seu episodi a l'historial.
 function idPla(p) {
@@ -597,6 +603,8 @@ function blocPlans(plans) {
     // la de l'historial si el pla ha avisat (alerta o emergència) o, en
     // prealerta, la que «Perill» fa a «Ara» (ADR 0091).
     item.dataset.detall = `perill.html#${fitxaDelPla(p)}`;
+    const des = dataPla(p.des_de);
+    if (des) item.dataset.desDe = des.toISOString();
     return item;
   });
 }
@@ -907,7 +915,77 @@ function curtsAvisos(perills, talls, smp, hrefDe, ara) {
     p.dataset.clau = i.dataset.clau || i.textContent;
     curts.push(ambDetall(p, 'consultes.html#llum'));
   }
+  const desDe = new Map(perills.filter((i) => i.dataset.desDe).map((i) => [hrefDe(i), i.dataset.desDe]));
+  marcaPublicacio(curts, desDe, ara);
   return curts;
+}
+
+// Quan es va publicar cada avís i, si s'ha actualitzat, quan (Juanjo,
+// 17-10-2026: «la fecha y hora de publicación del aviso y si tiene
+// actualizacion se sustituye por esta, asi se sabe si la hemos visto antes o
+// no»), al costat del text, en un tros que no es parteix: si no hi cap, passa
+// a la línia de sota. L'hora és la de l'historial de «Perill», la mateixa dels
+// avisos al mòbil i a Telegram; la d'un pla, també la del seu comunicat més
+// recent. I «Nou» als que aquest dispositiu encara no havia mostrat.
+const CLAU_AVISOS_LLEGITS = 'meteo.avisos-llegits';
+let LLEGITS_ABANS = null;     // els que ja s'havien mostrat en obrir la pàgina
+
+function episodiDe(href) {
+  const id = (href || '').split('#')[1];
+  return id ? (HISTORIAL_PERILL || []).find((e) => e.clau && idFitxa(e) === id) : null;
+}
+
+// L'hora del comunicat d'un pla, del nom del PDF: «…_202610171110.pdf».
+function horaComunicat(url) {
+  const m = /_(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})\.pdf$/.exec(url || '');
+  return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null;
+}
+
+function publicacioEpisodi(e) {
+  let hora = new Date(e.darrer || e.inici);
+  const comunicat = e.clau.startsWith('pla:') && horaComunicat(e.comunicat);
+  if (comunicat && comunicat > hora) hora = comunicat;
+  return { hora, actualitzat: hora > new Date(e.inici) };
+}
+
+function diaPassat(data, ara) {
+  const dies = Math.round((new Date(ara).setHours(0, 0, 0, 0) - new Date(data).setHours(0, 0, 0, 0)) / 864e5);
+  if (dies === 0) return T('avui');
+  if (dies === 1) return T('ahir');
+  const nom = new Date(data).toLocaleDateString(IDIOMA.codi, { weekday: 'long' });
+  return dies < 7 ? nom : `${nom} ${new Date(data).getDate()}`;
+}
+
+function textPublicacio(pub, ara = new Date()) {
+  const [dia, hora] = [diaPassat(pub.hora, ara), horaCurta(pub.hora)];
+  return pub.actualitzat ? T`actualitzat ${dia} ${hora}` : T`publicat ${dia} ${hora}`;
+}
+
+function llegeixLlegits() {
+  try { return JSON.parse(localStorage.getItem(CLAU_AVISOS_LLEGITS) || '[]'); } catch (e) { return []; }
+}
+
+function marcaPublicacio(curts, desDe, ara) {
+  // Sense l'historial encara no se sap l'hora: ni «Nou» ni es recorda res.
+  const ambHistorial = Array.isArray(HISTORIAL_PERILL);
+  if (ambHistorial && !LLEGITS_ABANS) LLEGITS_ABANS = new Set(llegeixLlegits());
+  const ara_ = [];
+  for (const c of curts) {
+    const href = c.dataset.href;
+    const e = episodiDe(href);
+    const pub = e ? publicacioEpisodi(e) : desDe.has(href) ? { hora: new Date(desDe.get(href)), actualitzat: false } : null;
+    if (pub) c.insertBefore(element('span', 'publicat', ` · ${textPublicacio(pub, ara)}`), c.querySelector('a.detall'));
+    if (!ambHistorial) continue;
+    const clau = `${c.dataset.clau}|${pub ? pub.hora.toISOString() : ''}`;
+    ara_.push(clau);
+    if (!LLEGITS_ABANS.has(clau)) {
+      const nou = element('span', 'avis-nou', T('Nou'));
+      c.insertBefore(nou, c.firstChild);
+    }
+  }
+  if (ambHistorial) {
+    try { localStorage.setItem(CLAU_AVISOS_LLEGITS, JSON.stringify(ara_)); } catch (e) { /* sense memòria, sempre «Nou» */ }
+  }
 }
 
 // Les línies del resum del dia (a «El temps» i a «Consultes») amb un detall
@@ -935,6 +1013,7 @@ function ambDetalls(files) {
 // dibuixa l'estil, i el «?» dels plans queda per sobre.
 function ambDetall(item, href) {
   item.classList.add('amb-detall');
+  item.dataset.href = href;
   const a = element('a', 'detall');
   a.href = href;
   const nom = ((item.querySelector && item.querySelector('strong')) || item).textContent || '';
