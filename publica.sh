@@ -60,6 +60,15 @@ if [ -n "$ESTAT_DIR" ]; then
     || echo "$(date '+%F %T')  han fallat les imatges de la gràfica: $(tr '\n' ' ' < "$dades/grafiques.err" | cut -c1-300)" >&2
   grafiques=$(cd "$dades/grafiques" 2>/dev/null && ls grafica-*.png 2>/dev/null | tr '\n' ' ' || true)
 fi
+# El historial de la gráfica y el acierto de la previsión (ADR 0099): el
+# índice y los dos últimos días (hoy cambia a cada hora; ayer se cierra a
+# medianoche). Los anteriores ya están en IONOS. Solo en el NAS, con el registro.
+historial=""
+if [ -n "$ESTAT_DIR" ]; then
+  python3 historial.py fes "$dades/historial" 2 >/dev/null 2>"$dades/historial.err" \
+    || echo "$(date '+%F %T')  ha fallat l'historial: $(tr '\n' ' ' < "$dades/historial.err" | cut -c1-300)" >&2
+  historial=$(cd "$dades/historial" 2>/dev/null && ls historial*.json 2>/dev/null | tr '\n' ' ' || true)
+fi
 
 # Los datos, a IONOS: una conexión con una clave que solo puede ejecutar
 # reserva/rep-dades.sh (la orden la fija IONOS en authorized_keys), que acepta
@@ -78,6 +87,7 @@ if [ -f "$CLAU_IONOS" ] && [ -n "${IONOS:-}" ]; then
   # se sabe si rechaza SSH o el receptor (10-10-2026).
   if tar -czf - -C "$publica" montflorit.json $([ -f "$dades/avisos.json" ] && echo "-C $dades avisos.json") \
       $([ -n "$grafiques" ] && echo "-C $dades/grafiques $grafiques") \
+      $([ -n "$historial" ] && echo "-C $dades/historial $historial") \
       | ssh -i "$CLAU_IONOS" -o BatchMode=yes -o ConnectTimeout=20 "$IONOS" 2>"$dades/ionos.err"; then
     a_ionos=1
     echo "$(date '+%F %T')  dades a IONOS"

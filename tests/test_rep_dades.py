@@ -62,6 +62,14 @@ class RepDades(unittest.TestCase):
             self.assertEqual(r.returncode, 1, nom)
         self.assertEqual(json.load(open(os.path.join(self.dir, "montflorit.json"))), {})
 
+    def test_accepta_l_historial(self):
+        # ADR 0099: l'índex i els dies, JSON; cap altre nom.
+        r = self.rep(paquet([("historial.json", b'{"dies": []}'), ("historial-2026-10-16.json", b'{"hores": []}')]))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(os.path.exists(os.path.join(self.dir, "historial-2026-10-16.json")))
+        for nom, cos in (("historial-2026-10-16.json", b"no"), ("historial-x.json", b"{}"), ("historial-2026-10-16.php", b"{}")):
+            self.assertEqual(self.rep(paquet([(nom, cos)])).returncode, 1, nom)
+
     def test_rebutja_noms_repetits_i_de_mes(self):
         r = self.rep(paquet([("montflorit.json", b"{}"), ("montflorit.json", b"{}")]))
         self.assertEqual(r.returncode, 1)

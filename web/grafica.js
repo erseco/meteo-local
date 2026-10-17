@@ -444,7 +444,8 @@ function dibuixaGrafica(fig) {
   // per a qui no la necessita (Juanjo, 17-10-2026); per defecte, sí.
   const ambBaixa = opcions.gran ? opcions.baixa !== false : opcions.baixa ?? baixaTriada();
   // La xifra de sota cada icona: la de baix; sense, la de dalt.
-  const tempXifra = (f) => (ambBaixa ? f.temperatura : ambAlta ? f.temperatura + (f.dif_alta || 0) : null);
+  const tempXifra = (f) => (f.temperatura == null ? null : ambBaixa ? f.temperatura
+    : ambAlta && !f.mesura ? f.temperatura + (f.dif_alta || 0) : null);
   const yVent = yPluja + hPluja + (hVent ? 12 : 0);
   const baix = hVent ? yVent + hVent : yPluja + hPluja;
   const yEix = baix + 16;
@@ -472,7 +473,9 @@ function dibuixaGrafica(fig) {
     const avui = new Date();
     const dies = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate())
       - new Date(avui.getFullYear(), avui.getMonth(), avui.getDate())) / 864e5);
-    return dies <= 0 ? T('Avui') : dies === 1 ? T('Demà') : T('Demà passat');
+    // Els dies de l'historial (enrere), «Ahir» o el nom del dia de la setmana.
+    if (dies < -1) return d.toLocaleDateString(IDIOMA.codi === 'es' ? 'es' : 'ca', { weekday: 'long' });
+    return dies === -1 ? T('Ahir') : dies === 0 ? T('Avui') : dies === 1 ? T('Demà') : T('Demà passat');
   };
   const mitjanits = files.map((f, i) => (i && hora(f) === 0 ? i : null)).filter((i) => i != null);
   const primer = svg('text', { class: 'g-dia', x: 2, y: yDia + 11 }, nomDia(files[0]));
@@ -530,24 +533,37 @@ function dibuixaGrafica(fig) {
 
   // La temperatura, primer el farciment (darrere de les barres) i després la
   // línia (davant), sense xifres: són sota el cel.
+  // Les hores passades (historial.py) porten la temperatura mesurada, que pot
+  // faltar, i la de la previsió de les 7 (prev), en una corba tènue; la part
+  // alta, només a les previstes.
+  const valid = (v) => v != null && !Number.isNaN(v);
   const baixes = files.map((f) => f.temperatura);
-  const temps = ambBaixa ? baixes : [];
-  const altes = ambAlta ? files.map((f) => f.temperatura + (f.dif_alta || 0)) : [];
-  const ambTemp = ambBaixa || ambAlta;
+  const temps = ambBaixa ? baixes.filter(valid) : [];
+  const altes = ambAlta ? files.map((f) => (f.mesura || f.temperatura == null ? null : f.temperatura + (f.dif_alta || 0))) : [];
+  const previstes = files.map((f) => (f.mesura && f.prev ? f.prev.temperatura : null));
+  const ambPrev = previstes.some(valid);
+  const ambTemp = (ambBaixa || ambAlta) && [...temps, ...altes].some(valid);
   // La màxima toca la ratlla del sostre de la pluja, que porta a l'esquerra
   // la seva xifra: una sola ratlla per al màxim de les dues escales (Juanjo,
   // 17-10-2026: «la temperatura debe llegar al máximo de la lluvia y poner
   // esa temperatura máxima a la izquierda»). Amb la part alta, la més alta
   // de les dues, i si és la de dalt, ho diu.
-  const escala = ambTemp ? [...temps, ...altes] : baixes;
+  const escala = [...(ambTemp ? [...temps, ...altes] : baixes), ...previstes].filter(valid);
+  if (!escala.length) escala.push(0, 1);
   const tMax = Math.max(...escala);
-  const maxAlta = ambAlta && (!ambBaixa || Math.max(...altes) > Math.max(...temps));
+  const maxAlta = ambAlta && (!ambBaixa || Math.max(...altes.filter(valid)) > Math.max(...temps));
   const tMin = Math.min(Math.floor(Math.min(...escala)) - 1, tMax - 2);
   const ySostre = yPluja + 14;
   const yT = (t) => yTemp + hTemp - ((t - tMin) / (tMax - tMin)) * (yTemp + hTemp - ySostre);
-  // El farciment, sota la corba de baix o, sense, sota la de dalt.
-  const punts = files.map((f, i) => [x(i) + col / 2, yT(ambBaixa || !ambAlta ? f.temperatura : altes[i])]);
-  const corba = corbaSuau(punts);
+  // El farciment, sota la corba de baix o, sense, sota la de dalt. Les hores
+  // sense dada, fora.
+  const corbaDe = (vals) => {
+    const p = vals.map((v, i) => [x(i) + col / 2, v]).filter(([, v]) => valid(v)).map(([a, v]) => [a, yT(v)]);
+    return p.length > 1 ? { p, d: corbaSuau(p) } : null;
+  };
+  const principal = corbaDe(ambBaixa || !ambAlta ? baixes : altes);
+  const punts = principal ? principal.p : [[0, 0], [0, 0]];
+  const corba = principal ? principal.d : '';
   const base = yPluja + hPluja;
   const idGrad = 'g-temp-grad';
   const defs = svg('defs');
@@ -555,9 +571,9 @@ function dibuixaGrafica(fig) {
   grad.append(svg('stop', { offset: 0, class: 'g-grad-dalt' }), svg('stop', { offset: 1, class: 'g-grad-baix' }));
   defs.append(grad);
   g.append(defs);
-  if (ambTemp) {
+  if (ambTemp && principal) {
     g.append(svg('path', { class: 'g-temp-area', fill: `url(#${idGrad})`,
-      d: `${corba} L${punts[n - 1][0].toFixed(1)},${base} L${punts[0][0].toFixed(1)},${base} Z` }));
+      d: `${corba} L${punts[punts.length - 1][0].toFixed(1)},${base} L${punts[0][0].toFixed(1)},${base} Z` }));
   }
 
   // La pluja: una barra per hora, tan alta com els mil·límetres; plena si és
@@ -579,13 +595,16 @@ function dibuixaGrafica(fig) {
       x: x(i) + col * 0.15, y, width: col * 0.7, height: base - y }));
   });
   // Una vora del color del fons, perquè la línia es vegi damunt de les barres.
-  if (ambBaixa) {
+  // La previsió de les 7 de les hores passades, tènue, darrere de la mesurada.
+  const prev = ambPrev && corbaDe(previstes);
+  if (prev) g.append(svg('path', { class: 'g-prev', d: prev.d }));
+  if (ambBaixa && principal) {
     g.append(svg('path', { class: 'g-temp-vora', d: corba }));
     g.append(svg('path', { class: 'g-temp', d: corba }));
   }
-  if (ambAlta) {
-    const corbaAlta = corbaSuau(files.map((f, i) => [x(i) + col / 2, yT(altes[i])]));
-    g.append(svg('path', { class: 'g-temp-vora', d: corbaAlta }), svg('path', { class: 'g-alta', d: corbaAlta }));
+  const corbaAlta = ambAlta && corbaDe(altes);
+  if (corbaAlta) {
+    g.append(svg('path', { class: 'g-temp-vora', d: corbaAlta.d }), svg('path', { class: 'g-alta', d: corbaAlta.d }));
   }
   if (ambBarres) g.append(svg('text', { class: 'g-mm g-sostre-xifra', x: W - 2, y: ySostre - 3, 'text-anchor': 'end' }, `${sostre}\u00a0mm`));
   if (ambTemp) {
@@ -638,11 +657,21 @@ function dibuixaGrafica(fig) {
 
   // L'eix: «Ara» a l'esquerra i les hores en punt, cada 3 h (o 2).
   // Si la gràfica no comença ara (la vista de demà), la primera hora.
-  const ambAra = new Date(files[0].hora) <= new Date();
+  // Amb hores passades al davant (l'historial), «Ara» on comença la previsió,
+  // amb una ratlla; un dia passat sencer no en porta.
+  const iAra = files.findIndex((f) => !f.mesura);
+  const ambAra = iAra === 0 && new Date(files[0].hora) <= new Date();
   const textAra = svg('text', { class: ambAra ? 'g-hora ara' : 'g-hora', x: 1, y: yEix }, ambAra ? T('Ara') : String(hora(files[0])));
   g.append(textAra);
   // Cap hora a sobre d'«Ara» («Ahora» és més llarg): mesurat a la pàgina.
   const finsAra = textAra.getComputedTextLength() + 14;
+  let araMig = null;
+  if (iAra > 0) {
+    g.append(svg('line', { class: 'g-ara', x1: x(iAra), x2: x(iAra), y1: yCel - 2, y2: baix }));
+    araMig = svg('text', { class: 'g-hora ara', x: x(iAra), y: yEix, 'text-anchor': 'middle' }, T('Ara'));
+    g.append(araMig);
+  }
+  const llargAra = araMig ? araMig.getComputedTextLength() / 2 + 10 : 0;
   // Una marca a cada hora: llarga i amb el número a les que toquen; curta i
   // sense número a la resta (Juanjo, 16-10-2026).
   files.forEach((f, i) => {
@@ -650,7 +679,7 @@ function dibuixaGrafica(fig) {
     const gran = hora(f) % pas === 0;
     g.append(svg('line', { class: gran ? 'g-marca' : 'g-marca petita', x1: x(i), x2: x(i),
       y1: baix, y2: baix + (gran ? 4 : 2) }));
-    if (!gran || x(i) < finsAra || x(i) > W - 8) return;
+    if (!gran || x(i) < finsAra || x(i) > W - 8 || (araMig && Math.abs(x(i) - x(iAra)) < llargAra)) return;
     g.append(svg('text', { class: 'g-hora', x: x(i), y: yEix, 'text-anchor': 'middle' }, String(hora(f))));
   });
   // Tocar una hora (o passar-hi el ratolí): una fitxa amb tota la previsió
@@ -665,6 +694,19 @@ function dibuixaGrafica(fig) {
     retol.replaceChildren();
   };
   const liniesFitxa = (f, i) => {
+    // Una hora passada: el que es va mesurar i el que deia la previsió de les 7.
+    if (f.mesura) {
+      const linies = [T`${hora(f)}\u00a0h · Mesurat`];
+      const p = f.prev || {};
+      const previst = (v, t) => (v == null ? '' : t);
+      linies.push(f.temperatura == null ? T('Temperatura: sense mesura')
+        : T`Temperatura: ${Math.round(f.temperatura)}\u00a0°C`
+          + previst(p.temperatura, T` (prevista: ${Math.round(p.temperatura ?? 0)}\u00a0°C)`));
+      const mm = (v) => (v >= 10 ? String(Math.round(v)) : v < 0.05 ? '0' : coma(Math.round(v * 10) / 10));
+      linies.push(f.pluja_mm == null ? T('Pluja: no se sap') : T`Pluja: ${mm(f.pluja_mm)}\u00a0mm`
+        + previst(p.probabilitat, T` (prevista: ${Math.round((p.probabilitat ?? 0) * 100)}\u00a0%)`));
+      return linies;
+    }
     const [textCel] = f.plou_ara ? [T('Plou ara')] : cel(f);
     const linies = [textCel ? T`${hora(f)}\u00a0h · ${textCel}` : T`${hora(f)}\u00a0h`];
     const t = Math.round(f.temperatura);
@@ -739,6 +781,7 @@ function dibuixaGrafica(fig) {
   // Cada clau de pluja, només si n'hi ha (Juanjo, 16-10-2026).
   // Amb les dues, cadascuna pel seu nom; amb una, «Temperatura» o «Part alta».
   if (ambBaixa) ll.append(clau('m-temp', ambAlta ? T('Part baixa') : T('Temperatura')));
+  if (ambPrev) ll.append(clau('m-prev', T('Previsió de les 7')));
   if (ambAlta) ll.append(clau('m-alta', T('Part alta')));
   const plujes = files.map((f) => plujaGrafica(f));
   // La probabilitat en xifres: «probable» i «possible» no es distingeixen
@@ -817,6 +860,38 @@ function vistaGrafica() {
   accions.append(botoImatge(fig, 'boto-icona'), comparteixBoto, tanca);
   cap.append(titol, accions);
 
+  // L'historial (historial.py): ‹ i › per anar dia a dia enrere, fins al
+  // primer que hi ha, i «Avui» per tornar (Juanjo, 17-10-2026: «que se pueda
+  // ir hacia atrás sin límite»). Avui, les hores passades també hi són.
+  let dia = null;
+  let index = null;
+  const dies = new Map();
+  const navega = element('div', 'vg-dia');
+  const enrere = element('button', 'boto-icona');
+  enrere.type = 'button';
+  enrere.title = T('Dia anterior');
+  enrere.setAttribute('aria-label', T('Dia anterior'));
+  enrere.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
+  const endavant = element('button', 'boto-icona');
+  endavant.type = 'button';
+  endavant.title = T('Dia següent');
+  endavant.setAttribute('aria-label', T('Dia següent'));
+  endavant.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
+  const nomDia = element('span', 'vg-nom-dia', T('Avui'));
+  const tornaAvui = element('button', 'vg-opcio', T('Avui'));
+  tornaAvui.type = 'button';
+  navega.append(enrere, nomDia, endavant, tornaAvui);
+  const encertEl = element('div', 'vg-encert');
+  const avuiIso = () => {
+    const a = new Date();
+    return `${a.getFullYear()}-${String(a.getMonth() + 1).padStart(2, '0')}-${String(a.getDate()).padStart(2, '0')}`;
+  };
+  const passats = () => ((index && index.dies) || []).filter((d) => d < avuiIso());
+  const llegeixDia = (d) => {
+    if (!dies.has(d)) dies.set(d, llegeixHistorial(`historial-${d}.json`).catch(() => null));
+    return dies.get(d);
+  };
+
   // Les opcions: quines hores (només les que tenen prou hores) i el vent.
   const tramsBotons = element('div', 'vg-trams');
   tramsBotons.setAttribute('role', 'group');
@@ -838,17 +913,57 @@ function vistaGrafica() {
   const desa = () => {
     try { localStorage.setItem(CLAU_GRAFICA, JSON.stringify(opcions)); } catch (_) {}
   };
-  const dibuixa = () => {
+  const dibuixa = async () => {
     for (const b of tramsBotons.children) b.setAttribute('aria-pressed', String(b.dataset.tram === opcions.tram));
     vent.setAttribute('aria-pressed', String(opcions.vent));
     alta.setAttribute('aria-pressed', String(Boolean(opcions.alta)));
     baixa.setAttribute('aria-pressed', String(opcions.baixa !== false));
-    fig._files = horesVista(opcions.tram);
-    fig._opcions = { gran: true, vent: ambVent && opcions.vent, alta: ambDifAlta && Boolean(opcions.alta),
-      baixa: opcions.baixa !== false };
+    const llista = passats();
+    const pos = dia ? llista.indexOf(dia) : llista.length;
+    enrere.disabled = pos <= 0;
+    endavant.disabled = !dia;
+    tornaAvui.hidden = !dia;
+    navega.hidden = !llista.length;
+    titol.textContent = dia ? T('Historial') : T('Previsió');
+    barra.hidden = Boolean(dia);
     fig._amaga?.();
+    if (dia) {
+      // Un dia passat: el que es va mesurar, sencer.
+      const d = new Date(`${dia}T12:00`);
+      const codi = IDIOMA.codi === 'es' ? 'es' : 'ca';
+      nomDia.textContent = d.toLocaleDateString(codi, { weekday: 'long', day: 'numeric', month: 'long' });
+      const dades = await llegeixDia(dia);
+      fig._files = dades ? dades.hores : [];
+      fig._opcions = { gran: true, baixa: true };
+      encertEl.replaceChildren(...textEncertDia(dades));
+    } else {
+      nomDia.textContent = T('Avui');
+      let files = horesVista(opcions.tram);
+      // Avui (o tot): davant, les hores que ja han passat avui, mesurades.
+      if (opcions.tram !== 'dema' && files.length) {
+        const avui = index && index.dies.includes(avuiIso()) ? await llegeixDia(avuiIso()) : null;
+        const ini = new Date(files[0].hora);
+        const passades = ((avui && avui.hores) || []).filter((f) => new Date(f.fins) <= ini);
+        files = [...passades, ...files];
+      }
+      fig._files = files;
+      fig._opcions = { gran: true, vent: ambVent && opcions.vent, alta: ambDifAlta && Boolean(opcions.alta),
+        baixa: opcions.baixa !== false };
+      encertEl.replaceChildren(...textEncert(index));
+    }
     dibuixaGrafica(fig);
   };
+  enrere.addEventListener('click', () => {
+    const llista = passats();
+    dia = llista[(dia ? llista.indexOf(dia) : llista.length) - 1] || dia;
+    dibuixa();
+  });
+  endavant.addEventListener('click', () => {
+    const llista = passats();
+    dia = llista[llista.indexOf(dia) + 1] || null;
+    dibuixa();
+  });
+  tornaAvui.addEventListener('click', () => { dia = null; dibuixa(); });
   for (const [clau, text] of trams) {
     const b = element('button', 'vg-opcio', text);
     b.type = 'button';
@@ -865,7 +980,7 @@ function vistaGrafica() {
   barra.append(baixa);
   if (ambDifAlta) barra.append(alta);
 
-  dlg.append(cap, barra, fig);
+  dlg.append(cap, navega, barra, fig, encertEl);
   // Un toc fora de la finestra la tanca, com Esc.
   dlg.addEventListener('click', (e) => {
     if (e.target !== dlg) return;
@@ -881,8 +996,77 @@ function vistaGrafica() {
   document.body.append(dlg);
   dlg.showModal();
   if (location.hash !== '#grafica') history.replaceState(null, '', '#grafica');
+  navega.hidden = true;
   dibuixa();
   tanca.focus();
+  // L'índex de l'historial arriba després: llavors, les fletxes i l'encert.
+  llegeixHistorial('historial.json').then((d) => { index = d; dibuixa(); }, () => {});
+}
+
+// L'historial és a IONOS, al costat de les dades; en local, al costat de la pàgina.
+function llegeixHistorial(nom) {
+  return baixa(DADES_URL + nom).catch(() => baixa(nom));
+}
+
+// --- Com encerta la previsió (Juanjo, 17-10-2026: «algún índice o indicador
+// de lo buena que es la predicción»): la de les 7 de cada dia contra el que
+// es mesura (historial.py). Dit com a conclusió, amb els casos, i només si n'hi
+// ha prou; si no, que encara n'hi ha pocs. ---
+function textTemperaturaEncert(t, minim) {
+  if (!t || t.error == null || t.hores < minim) {
+    const hores = t ? t.hores : 0;
+    return T`Temperatura: encara poques dades (${hores} hores).`;
+  }
+  return T`Temperatura: s’equivoca de mitjana ${coma(t.error)}\u00a0°C.`;
+}
+
+function textPlujaEncert(p, minim) {
+  const [plouSi, plou] = p.plou;
+  const [secSi, sec] = p.sec;
+  if (plou < minim || sec < minim) {
+    return T`Pluja: encara poques dades (${plou} hores amb pluja prevista).`;
+  }
+  const a = Math.round((plouSi / plou) * 10);
+  const b = Math.round((secSi / sec) * 10);
+  return T`Pluja: quan diu que plourà (50\u00a0% o més), plou ${a} de cada 10 vegades; quan diu que no (menys del 20\u00a0%), no plou ${b} de cada 10.`;
+}
+
+function textEncert(index) {
+  if (!index || !index.encert) return [];
+  const { darrers, anteriors, mesos } = index.encert;
+  const m = index.minims || {};
+  const res = [element('p', 'vg-encert-titol', T('Com encerta la previsió de les 7 (darrers 30 dies)'))];
+  let temp = textTemperaturaEncert(darrers.temperatura, m.temperatura_hores || 48);
+  if (anteriors.temperatura.error != null && anteriors.temperatura.hores >= (m.temperatura_hores || 48)
+      && darrers.temperatura.hores >= (m.temperatura_hores || 48)) {
+    temp += ' ' + T`Els 30 dies anteriors, ${coma(anteriors.temperatura.error)}\u00a0°C.`;
+  }
+  res.push(element('p', null, temp), element('p', null, textPlujaEncert(darrers.pluja, m.pluja_casos || 20)));
+  // Per mesos, quan n'hi ha més d'un: si millora amb el temps.
+  const llista = Object.entries(mesos || {}).filter(([, e]) => e.temperatura.error != null);
+  if (llista.length > 1) {
+    const codi = IDIOMA.codi === 'es' ? 'es' : 'ca';
+    const nom = (k) => new Date(`${k}-15T12:00`).toLocaleDateString(codi, { month: 'long', year: 'numeric' });
+    const text = llista.map(([k, e]) => `${nom(k)}, ${coma(e.temperatura.error)}\u00a0°C`).join('; ');
+    res.push(element('p', null, T`Temperatura per mesos: ${text}.`));
+  }
+  return res;
+}
+
+function textEncertDia(dades) {
+  if (!dades) return [element('p', null, T('Aquest dia no es pot llegir.'))];
+  if (!dades.previsio_de) return [element('p', null, T('D’aquest dia no hi ha la previsió de les 7.'))];
+  const e = dades.encert;
+  const res = [element('p', 'vg-encert-titol', T('Com va encertar la previsió de les 7'))];
+  if (e.temperatura.error != null) {
+    res.push(element('p', null, T`Temperatura: s’equivoca de mitjana ${coma(e.temperatura.error)}\u00a0°C.`));
+  }
+  const casos = e.pluja.plou[1] + e.pluja.sec[1];
+  if (casos) {
+    const encerts = e.pluja.plou[0] + e.pluja.sec[0];
+    res.push(element('p', null, T`Pluja: va encertar ${encerts} de ${casos} hores.`));
+  }
+  return res;
 }
 
 // Si s'ha obert l'enllaç de la gràfica (#grafica), en gran, la primera vegada.
@@ -967,7 +1151,7 @@ function svgDeLaGrafica(fig) {
       const ms = getComputedStyle(m);
       const x0 = r.left - caixa.left;
       const y0 = r.top - caixa.top;
-      if (ms.borderTopStyle === 'dashed') {
+      if (ms.borderTopStyle === 'dashed' || ms.borderTopStyle === 'dotted') {
         cos.append(peca('line', { x1: x0, x2: x0 + r.width, y1: y0 + 1, y2: y0 + 1,
           style: `stroke:${ms.borderTopColor};stroke-width:2;stroke-dasharray:4 3` }));
       } else {

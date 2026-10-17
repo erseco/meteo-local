@@ -9,7 +9,9 @@
 # Solo acepta montflorit.json y avisos.json, como archivos normales (nada de
 # enlaces, carpetas ni rutas), con JSON válido y de menos de MAX bytes, y desde
 # el 17-10-2026 las cuatro imágenes de la gráfica del resumen del día
-# (grafica-avui-ca.png…, ADR 0098), que tienen que ser PNG de verdad. Si
+# (grafica-avui-ca.png…, ADR 0098), que tienen que ser PNG de verdad, y el
+# historial de la gráfica (historial.json e historial-AAAA-MM-DD.json, ADR
+# 0099), JSON como los otros. Si
 # algo no cuadra, se rechaza el envío entero y no se toca nada: hasta la
 # auditoría del 07-10-2026 la orden extraía el tar tal cual, y un enlace
 # simbólico llamado *.json habría acabado en la carpeta pública (ADR 0038).
@@ -26,16 +28,17 @@ head -c $((MAX + 1)) > "$t/in.tgz"
 [ "$(wc -c < "$t/in.tgz")" -le "$MAX" ] || rebutja "més de $MAX bytes"
 # Cada entrada del tar: un archivo normal («-») con uno de los nombres
 # admitidos, de MAX bytes como mucho también descomprimido (el tamaño que
-# declara el tar; las imágenes, MAX_PNG), sin repetirse y no más de seis: un
+# declara el tar; las imágenes, MAX_PNG), sin repetirse y no más de doce: un
 # tar.gz de 5 KB podía traer un JSON de 5 MB (auditoría del 09-10-2026).
 MAX_PNG=600000
 tar -tzvf "$t/in.tgz" | awk -v max="$MAX" -v maxpng="$MAX_PNG" '
   { tipus = substr($1, 1, 1); nom = $NF; mida = $3 + 0; total += mida; n++
-    png = nom ~ /^grafica-(avui|dema)-(ca|es)\.png$/ }
-  tipus != "-" || (nom != "montflorit.json" && nom != "avisos.json" && !png) { print "rep-dades: rebutjat: " $0 > "/dev/stderr"; mal = 1 }
+    png = nom ~ /^grafica-(avui|dema)-(ca|es)\.png$/
+    hist = nom ~ /^historial(-20[0-9][0-9]-[01][0-9]-[0-3][0-9])?\.json$/ }
+  tipus != "-" || (nom != "montflorit.json" && nom != "avisos.json" && !png && !hist) { print "rep-dades: rebutjat: " $0 > "/dev/stderr"; mal = 1 }
   mida > (png ? maxpng : max) { print "rep-dades: rebutjat: " nom " fa " mida " bytes descomprimit" > "/dev/stderr"; mal = 1 }
   vist[nom]++ { print "rep-dades: rebutjat: " nom " repetit" > "/dev/stderr"; mal = 1 }
-  END { if (total > max || n > 6) { print "rep-dades: rebutjat: " n " entrades, " total " bytes" > "/dev/stderr"; mal = 1 }; exit mal }' || exit 1
+  END { if (total > max || n > 12) { print "rep-dades: rebutjat: " n " entrades, " total " bytes" > "/dev/stderr"; mal = 1 }; exit mal }' || exit 1
 noms=$(tar -tzf "$t/in.tgz")
 [ -n "$noms" ] || rebutja "buit"
 tar -xzf "$t/in.tgz" -C "$t" --no-same-owner --no-same-permissions $noms

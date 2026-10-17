@@ -1234,6 +1234,28 @@ todo el día, pero cambia con la hora: del 9 al 12-10-2026, entre −0,5 y
 A primera hora, $`\hat T`$ puede quedar unos 0,5 °C por debajo de la real. Con
 más días se decidirá si se calcula por franjas horarias.
 
+## 17 bis. Cómo acierta la previsión
+
+Lo que la web enseña en la vista en grande de la gráfica («Com encerta la
+previsió de les 7») y en cada día del historial (`historial.py`, ADR 0099).
+Se compara **la previsión de las 7 de cada día**, la del resumen de la
+mañana, tal como la mostraba la web (`mostrat` en `casa-AAAA-MM.jsonl`), con
+lo medido en Montflorit, en las horas de las 7 a medianoche:
+
+- **Temperatura**: el error medio absoluto,
+  $$\mathrm{EMA} = \frac{1}{N}\sum_{h=1}^{N} \lvert T^{\text{mesurada}}_h - T^{\text{prevista}}_h \rvert,$$
+  con la temperatura de la estación de casa. Se da desde 48 horas.
+- **Lluvia**: la comprobación de calibración de una probabilidad, contada en
+  casos. De las horas en que decía un 50 % o más, la fracción en que llovió
+  (0,2 mm o más, con `aprenentatge.observada`: casa, las vecinas y, para las
+  horas secas, Meteocat); de las que decía menos del 20 %, la fracción en
+  que no llovió. Las horas en que no se sabe si llovió no cuentan. Se da
+  desde 20 casos en cada sentido; con menos, «encara poques dades».
+
+Los últimos 30 días, los 30 anteriores (para ver si mejora) y la
+temperatura por meses cuando hay más de uno. La previsión de las 7 se apunta
+desde el 5 de octubre de 2026; lo medido, desde el 4.
+
 ## 18. Límites
 
 - **La lluvia es rara**: un 4 % de las horas. Las cifras del archivo se
