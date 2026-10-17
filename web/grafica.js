@@ -325,20 +325,11 @@ function grafica(hores) {
   const files = (hores || []).filter((f) => new Date(f.fins) > ara && f.temperatura != null);
   if (files.length < 6) return null;
   HORES_GRAFICA = hores;
-  const fig = figuraGrafica(files,
+  // Les hores, sempre totes: el període depèn del lloc de la gràfica, no de
+  // les «Opcions» (Juanjo, 17-10-2026: «lo que no afectará a todas las
+  // gráficas es el periodo que se visualizará»).
+  return figuraGrafica(files,
     T('Gràfica de la previsió: perill, cel, temperatura i probabilitat de pluja. Les mateixes dades són a les taules de sota.'));
-  // La de la portada fa servir les hores triades a «Opcions» (dibuixaGrafica).
-  fig._portada = true;
-  return fig;
-}
-
-// Les hores de la gràfica de la portada: les que s'han triat a «Opcions»
-// (Juanjo, 17-10-2026: «lo que se decida en la vista ampliada se conserva
-// para la vista normal»), si n'hi ha prou; si no, totes.
-function horesPortada() {
-  const tram = llegeixOpcionsGrafica().tram;
-  const triades = tram && tram !== 'tot' ? horesVista(tram) : [];
-  return triades.length >= 3 ? triades : horesVista('tot');
 }
 
 function figuraGrafica(files, peu) {
@@ -370,7 +361,6 @@ function graficaDia(hores, riscos, dia, ara = new Date()) {
 }
 
 function dibuixaGrafica(fig) {
-  if (fig._portada) fig._files = horesPortada();
   const files = fig._files;
   // A la vista gran: més alçada i, si es tria, el vent (vistaGrafica).
   const opcions = fig._opcions || {};

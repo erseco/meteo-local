@@ -155,12 +155,14 @@ siempre en la hora en curso.
   que no la necesite»): el botón pasa a «Opcions», con el icono de ajustes
   (`sliders-horizontal` de Lucide), porque lo que hace sobre todo es
   configurar la gráfica. Lo que se elige allí se recuerda en el dispositivo
-  y vale para todas las gráficas: las horas, también en la portada (si el
-  tramo elegido tiene menos de 3 horas, todas); el viento; y las dos
+  y vale para todas las gráficas: el viento y las dos
   temperaturas, «Part baixa» (la de la estación, junto a la riera; por
   defecto, sí) y «Part alta» (por defecto, no). Sin la de abajo, las cifras
   bajo los iconos y el relleno son los de arriba; sin ninguna, no hay
-  curva. En «Consultes» las horas son las de la ficha.
+  curva. Las horas no (3.108.1; «lo que no afectará a todas las gráficas es
+  el periodo que se visualizará, porque eso depende del sitio donde está la
+  gráfica»): la portada, de ahora a mañana a las 21 h; «Consultes», las de
+  su ficha; la vista en grande, las que se eligen allí.
 - **La máxima toca la raya del techo** (3.107.0; Juanjo, 17-10-2026: «la
   temperatura debe llegar al máximo de la lluvia y poner esa temperatura
   máxima a la izquierda, así la misma línea indica el máximo de lluvia (por
