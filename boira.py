@@ -18,14 +18,25 @@ visibilidad ni niebla. El 17-10-2026, con niebla cerrada en Sabadell desde las
   lluvia, que es lo que se tiene de la niebla de la riera, que muchas veces
   no llega a Sabadell (Juanjo, 17-10-2026) y que nada mide en el barrio.
   Aciertos, fallos y falsas alarmas.
+- `pregunta` y `respostes` (en cada pasada): como en el barrio nada mide la
+  visibilidad, cuando la estación de casa está saturada y no llueve, de día,
+  se pregunta a Juanjo por Telegram si ve niebla junto a la riera, con
+  botones, como mucho una vez cada 6 horas; su respuesta se apunta en
+  registre/boira-confirmacions.csv (Juanjo, 17-10-2026: «cuando los datos son
+  favorables a niebla me mandas un mensaje y yo te respondo, así hay
+  confirmación visual»). Se usa el bot de los agentes (avisar-juanjo) y se
+  leen las respuestas sin marcarlas como leídas (getUpdates sin offset), para
+  no quitar nada a quien lea el chat.
 
-  python3 boira.py apunta | resum
+  python3 boira.py apunta | resum | pregunta | respostes
 """
 import csv
 import datetime as dt
 import json
 import os
 import sys
+import urllib.parse
+import urllib.request
 
 import config as C
 import nuvols as NV
@@ -108,13 +119,109 @@ def resum():
               f"ICON l'encerta {taula['encert']}, no la veu {taula['fallada']}, en diu de més {taula['falsa_alarma']}. "
               f"Detecció {pod:.0%}, falses alarmes {far:.0%}.")
         res[nom] = taula
+    conf = _files(CONFIRMACIONS)
+    if conf:
+        si = sum(r["resposta"] == "si" for r in conf)
+        no = sum(r["resposta"] == "no" for r in conf)
+        print(f"Confirmacions de Juanjo amb casa saturada: {len(conf)} (boira {si}, sense boira {no}).")
     return res
 
 
+# --- La confirmación de Juanjo -----------------------------------------------------
+PREGUNTES = os.path.join(REGISTRE, "boira-preguntes.csv")
+CONFIRMACIONS = os.path.join(REGISTRE, "boira-confirmacions.csv")
+CONFIG_BOT = os.path.expanduser("~/.config/avisar-juanjo/config.json")
+CASA_JSON = "/estat/casa.json"
+HUMITAT_PREGUNTA = 98
+HORES_PREGUNTA = range(7, 23)
+CADA_H = 6
+RESPOSTES = {"si": "Sí, hay niebla", "no": "No hay niebla", "nose": "No lo sé"}
+
+
+def telegram(metode, **params):
+    c = json.load(open(CONFIG_BOT, encoding="utf-8"))
+    dades = urllib.parse.urlencode({k: json.dumps(v) if isinstance(v, (dict, list)) else v
+                                    for k, v in params.items()}).encode()
+    with urllib.request.urlopen(f"https://api.telegram.org/bot{c['token']}/{metode}", dades, timeout=30) as r:
+        return json.load(r).get("result"), c
+
+
+def _files(ruta):
+    return list(csv.DictReader(open(ruta, encoding="utf-8"))) if os.path.exists(ruta) else []
+
+
+def _afegeix(ruta, camps, fila):
+    nou = not os.path.exists(ruta)
+    with open(ruta, "a", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, camps)
+        if nou:
+            w.writeheader()
+        w.writerow(fila)
+
+
+def pregunta(ara=None, casa_json=CASA_JSON):
+    """Si casa está saturada y no llueve, de día, y no se ha preguntado en las
+    últimas CADA_H horas: el mensaje con los botones."""
+    ara = ara or dt.datetime.now(P.ZONA)
+    if ara.hour not in HORES_PREGUNTA:
+        return None
+    c = (json.load(open(casa_json, encoding="utf-8")).get("ara_casa") or {})
+    hum = c.get("humitat_estacio", c.get("humitat"))
+    if hum is None or hum < HUMITAT_PREGUNTA or c.get("plou"):
+        return None
+    ultima = _files(PREGUNTES)[-1:]
+    if ultima and ara - dt.datetime.fromisoformat(ultima[0]["t"]) < dt.timedelta(hours=CADA_H):
+        return None
+    sabadell = ""
+    try:
+        obs = NV.llegeix(P.get)
+        if NV.boira_ara(obs, ara):
+            sabadell = " El aeropuerto de Sabadell da niebla."
+    except Exception:
+        pass
+    text = (f"¿Hay niebla junto a la riera ahora? La estación de casa marca un {round(hum)} % de humedad "
+            f"y no llueve.{sabadell} Con tu respuesta se comprueba si la previsión acierta la niebla.")
+    teclat = {"inline_keyboard": [[{"text": t, "callback_data": f"boira:{k}"} for k, t in RESPOSTES.items()]]}
+    r, cfg = telegram("sendMessage", chat_id=json.load(open(CONFIG_BOT))["chat_id"], text=text, reply_markup=teclat)
+    _afegeix(PREGUNTES, ["t", "missatge", "humitat", "sabadell"],
+             {"t": ara.isoformat(timespec="minutes"), "missatge": r["message_id"], "humitat": hum,
+              "sabadell": int(bool(sabadell))})
+    return r["message_id"]
+
+
+def respostes():
+    """Las respuestas a los botones, una vez cada una, en boira-confirmacions.csv."""
+    preguntes = {int(p["missatge"]): p for p in _files(PREGUNTES)}
+    if not preguntes:
+        return 0
+    fetes = {int(r["missatge"]) for r in _files(CONFIRMACIONS)}
+    updates, cfg = telegram("getUpdates", allowed_updates=["callback_query"])
+    n = 0
+    for u in updates or []:
+        q = u.get("callback_query") or {}
+        m = (q.get("message") or {}).get("message_id")
+        dada = q.get("data") or ""
+        if not dada.startswith("boira:") or m not in preguntes or m in fetes \
+                or str((q.get("from") or {}).get("id")) != str(cfg["chat_id"]):
+            continue
+        clau = dada.split(":", 1)[1]
+        p = preguntes[m]
+        _afegeix(CONFIRMACIONS, ["missatge", "pregunta", "resposta", "humitat", "sabadell"],
+                 {"missatge": m, "pregunta": p["t"], "resposta": clau, "humitat": p["humitat"],
+                  "sabadell": p["sabadell"]})
+        fetes.add(m)
+        n += 1
+        try:
+            telegram("answerCallbackQuery", callback_query_id=q["id"], text="Apuntado, gracias")
+            telegram("editMessageReplyMarkup", chat_id=cfg["chat_id"], message_id=m,
+                     reply_markup={"inline_keyboard": [[{"text": f"Apuntado: {RESPOSTES.get(clau, clau)}",
+                                                         "callback_data": "boira:fet"}]]})
+        except Exception:
+            pass
+    return n
+
+
 if __name__ == "__main__":
-    if len(sys.argv) != 2 or sys.argv[1] not in ("apunta", "resum"):
+    if len(sys.argv) != 2 or sys.argv[1] not in ("apunta", "resum", "pregunta", "respostes"):
         sys.exit(__doc__)
-    if sys.argv[1] == "apunta":
-        apunta()
-    else:
-        resum()
+    {"apunta": apunta, "resum": resum, "pregunta": pregunta, "respostes": respostes}[sys.argv[1]]()

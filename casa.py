@@ -733,7 +733,10 @@ def recoger(anterior=None):
     # de Sabadell, si además la estación de casa está saturada. AROME, de
     # donde sale el tipo de tiempo de cada hora, no da niebla (17-10-2026).
     try:
-        humitat = (salida.get("ara_casa") or {}).get("humitat")
+        # La de l'estació de casa, vora la riera, no la del barri (17-10-2026: amb
+        # boira, el barri donava el 96 % i casa el 99 %).
+        ara_casa = salida.get("ara_casa") or {}
+        humitat = ara_casa.get("humitat_estacio", ara_casa.get("humitat"))
         if salida["hores"] and NV.boira_ara(metars, P.AHORA) and humitat is not None and humitat >= C.HUMITAT_BOIRA:
             salida["hores"][0].update(codi=45, boira_observada=True)
     except Exception as ex:

@@ -353,6 +353,7 @@ var IDIOMA = {
     "Dia anterior": "Día anterior",
     "Dia següent": "Día siguiente",
     "Historial": "Historial",
+    "Com encerta": "Cómo acierta",
     "Ahir": "Ayer",
     "{0}\u00a0h · Mesurat": "{0}\u00a0h · Medido",
     "Temperatura: sense mesura": "Temperatura: sin medida",

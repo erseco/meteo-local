@@ -909,6 +909,13 @@ function vistaGrafica() {
   const alta = element('button', 'vg-opcio');
   alta.type = 'button';
   alta.append(icona('i-mountain'), T('Part alta'));
+  // El passat (les hores d'avui ja passades, la previsió de les 7 i l'encert),
+  // només amb aquest botó: per defecte, la previsió sola, sense barrejar-la
+  // (Juanjo, 17-10-2026: «debe salir como antes, la estimación pasada hazla
+  // a través de un botón que la active»).
+  const encerta = element('button', 'vg-opcio');
+  encerta.type = 'button';
+  encerta.append(icona('i-target'), T('Com encerta'));
   const ambDifAlta = HORES_GRAFICA.some((f) => f.dif_alta != null);
   const desa = () => {
     try { localStorage.setItem(CLAU_GRAFICA, JSON.stringify(opcions)); } catch (_) {}
@@ -918,6 +925,7 @@ function vistaGrafica() {
     vent.setAttribute('aria-pressed', String(opcions.vent));
     alta.setAttribute('aria-pressed', String(Boolean(opcions.alta)));
     baixa.setAttribute('aria-pressed', String(opcions.baixa !== false));
+    encerta.setAttribute('aria-pressed', String(Boolean(opcions.passat)));
     const llista = passats();
     const pos = dia ? llista.indexOf(dia) : llista.length;
     enrere.disabled = pos <= 0;
@@ -925,7 +933,8 @@ function vistaGrafica() {
     tornaAvui.hidden = !dia;
     navega.hidden = !llista.length;
     titol.textContent = dia ? T('Historial') : T('Previsió');
-    barra.hidden = Boolean(dia);
+    // Als dies passats, només el botó del passat.
+    for (const b of barra.children) b.hidden = Boolean(dia) && b !== encerta;
     fig._amaga?.();
     if (dia) {
       // Un dia passat: el que es va mesurar, sencer.
@@ -933,14 +942,16 @@ function vistaGrafica() {
       const codi = IDIOMA.codi === 'es' ? 'es' : 'ca';
       nomDia.textContent = d.toLocaleDateString(codi, { weekday: 'long', day: 'numeric', month: 'long' });
       const dades = await llegeixDia(dia);
-      fig._files = dades ? dades.hores : [];
+      // Sense «Com encerta», només el que es va mesurar.
+      fig._files = dades ? (opcions.passat ? dades.hores : dades.hores.map(({ prev, ...f }) => f)) : [];
       fig._opcions = { gran: true, baixa: true };
-      encertEl.replaceChildren(...textEncertDia(dades));
+      encertEl.replaceChildren(...(opcions.passat ? textEncertDia(dades) : []));
     } else {
       nomDia.textContent = T('Avui');
       let files = horesVista(opcions.tram);
-      // Avui (o tot): davant, les hores que ja han passat avui, mesurades.
-      if (opcions.tram !== 'dema' && files.length) {
+      // Avui (o tot), amb «Com encerta»: davant, les hores que ja han passat
+      // avui, mesurades, amb la previsió de les 7.
+      if (opcions.passat && opcions.tram !== 'dema' && files.length) {
         const avui = index && index.dies.includes(avuiIso()) ? await llegeixDia(avuiIso()) : null;
         const ini = new Date(files[0].hora);
         const passades = ((avui && avui.hores) || []).filter((f) => new Date(f.fins) <= ini);
@@ -949,7 +960,7 @@ function vistaGrafica() {
       fig._files = files;
       fig._opcions = { gran: true, vent: ambVent && opcions.vent, alta: ambDifAlta && Boolean(opcions.alta),
         baixa: opcions.baixa !== false };
-      encertEl.replaceChildren(...textEncert(index));
+      encertEl.replaceChildren(...(opcions.passat ? textEncert(index) : []));
     }
     dibuixaGrafica(fig);
   };
@@ -974,11 +985,13 @@ function vistaGrafica() {
   vent.addEventListener('click', () => { opcions.vent = !opcions.vent; desa(); dibuixa(); });
   alta.addEventListener('click', () => { opcions.alta = !opcions.alta; desa(); dibuixa(); });
   baixa.addEventListener('click', () => { opcions.baixa = opcions.baixa === false; desa(); dibuixa(); });
+  encerta.addEventListener('click', () => { opcions.passat = !opcions.passat; desa(); dibuixa(); });
   const barra = element('div', 'vg-opcions');
   barra.append(tramsBotons);
   if (ambVent) barra.append(vent);
   barra.append(baixa);
   if (ambDifAlta) barra.append(alta);
+  barra.append(encerta);
 
   dlg.append(cap, navega, barra, fig, encertEl);
   // Un toc fora de la finestra la tanca, com Esc.

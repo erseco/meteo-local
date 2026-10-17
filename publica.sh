@@ -64,6 +64,12 @@ fi
 # usarlo (boira.py, ADR 0100); una vez por hora como mucho.
 [ -z "$ESTAT_DIR" ] || python3 boira.py apunta >/dev/null 2>&1 \
   || echo "$(date '+%F %T')  ha fallat la vigilància de la boira" >&2
+# Y, como en el barrio nada mide la visibilidad, la pregunta a Juanjo si casa
+# está saturada, y sus respuestas (ADR 0100). Después de casa.json.
+if [ -n "$ESTAT_DIR" ]; then
+  python3 boira.py respostes >/dev/null 2>&1 || echo "$(date '+%F %T')  han fallat les respostes de la boira" >&2
+  python3 boira.py pregunta >/dev/null 2>&1 || echo "$(date '+%F %T')  ha fallat la pregunta de la boira" >&2
+fi
 # El historial de la gráfica y el acierto de la previsión (ADR 0099): el
 # índice y los dos últimos días (hoy cambia a cada hora; ayer se cierra a
 # medianoche). Los anteriores ya están en IONOS. Solo en el NAS, con el registro.

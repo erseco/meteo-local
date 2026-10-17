@@ -39,6 +39,16 @@ cada hora la previsión publicada con lo que mostraba la web (`mostrat` de
   meses cuando hay más de uno. Con pocos datos (menos de 48 horas, menos de
   20 casos), «encara poques dades». En cada día pasado, su propio acierto.
 
+- **Solo con el botón «Com encerta»** (3.112.0; Juanjo, 17-10-2026: «ahora
+  sale ya con la estimación pasada. No, debe salir como antes, la estimación
+  pasada hazla a través de un botón que la active, así no se mezcla con los
+  datos de predicción actuales»): por defecto la vista enseña la previsión
+  sola, como antes. Con «Com encerta» (icono de diana), hoy añade delante
+  las horas pasadas, y en todos los días la previsión de las 7 punteada y el
+  acierto. Las flechas siguen a la vista: un día pasado sin el botón enseña
+  solo lo medido. Se recuerda en el dispositivo y solo afecta a la vista en
+  grande.
+
 ## Riesgos
 
 - La franja de avisos no sale en los días pasados: el historial de avisos

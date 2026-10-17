@@ -31,3 +31,52 @@ class Boira(unittest.TestCase):
         self.assertTrue(B.observada("FG VV002", 99))
         self.assertFalse(B.observada("FG VV002", 85))
         self.assertFalse(B.observada("BR", 100))
+
+
+class Confirmacio(unittest.TestCase):
+    """La pregunta a Juanjo quan casa és saturada i la seva resposta (ADR 0100)."""
+
+    def setUp(self):
+        import json
+        import tempfile
+        self.dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.dir.cleanup)
+        B.PREGUNTES = os.path.join(self.dir.name, "p.csv")
+        B.CONFIRMACIONS = os.path.join(self.dir.name, "c.csv")
+        B.CONFIG_BOT = os.path.join(self.dir.name, "bot.json")
+        json.dump({"token": "x", "chat_id": 7}, open(B.CONFIG_BOT, "w"))
+        self.casa = os.path.join(self.dir.name, "casa.json")
+        self.crides = []
+
+        def telegram(metode, **p):
+            self.crides.append((metode, p))
+            if metode == "sendMessage":
+                return {"message_id": 41}, {"chat_id": 7}
+            if metode == "getUpdates":
+                return [{"callback_query": {"id": "q", "data": "boira:si", "from": {"id": 7},
+                                            "message": {"message_id": 41}}}], {"chat_id": 7}
+            return True, {"chat_id": 7}
+        B.telegram = telegram
+        self.nv = NV.llegeix
+        NV.llegeix = lambda get: []
+        self.addCleanup(setattr, NV, "llegeix", self.nv)
+
+    def casa_amb(self, hum, plou=False):
+        import json
+        json.dump({"ara_casa": {"humitat_estacio": hum, "plou": plou}}, open(self.casa, "w"))
+
+    def test_pregunta_una_vegada_i_apunta_la_resposta(self):
+        self.casa_amb(99)
+        self.assertEqual(B.pregunta(ARA, self.casa), 41)
+        self.assertIsNone(B.pregunta(ARA + dt.timedelta(hours=1), self.casa))     # no fins d'aquí a 6 h
+        self.assertEqual(B.respostes(), 1)
+        self.assertEqual(B.respostes(), 0)                                        # una sola vegada
+        self.assertIn("answerCallbackQuery", [m for m, _ in self.crides])
+
+    def test_no_pregunta_si_no_toca(self):
+        self.casa_amb(90)
+        self.assertIsNone(B.pregunta(ARA, self.casa))
+        self.casa_amb(99, plou=True)
+        self.assertIsNone(B.pregunta(ARA, self.casa))
+        self.casa_amb(99)
+        self.assertIsNone(B.pregunta(ARA.replace(hour=3), self.casa))              # de nit no

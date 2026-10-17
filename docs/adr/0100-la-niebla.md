@@ -29,6 +29,18 @@ que muchas veces tiene niebla ella sola, no en Sabadell».
   no) y la estación de casa está saturada (`C.HUMITAT_BOIRA`, 97 %). Es una
   observación oficial; la humedad de casa evita decirlo cuando Montflorit
   está seco.
+- **La humedad, la de la estación de casa** (3.112.0): junto a la riera, no
+  la media del barrio. A las 10 h del 17-10 la del barrio daba el 96 % y la
+  de casa el 99 %, con niebla.
+- **La confirmación de Juanjo** (3.112.0; «cuando los datos son favorables
+  a niebla me mandas un mensaje y yo te respondo, así hay confirmación
+  visual»): con casa al 98 % o más y sin lluvia, de 7 a 23 h y como mucho
+  una vez cada 6 horas, el bot de los agentes le pregunta si ve niebla
+  junto a la riera, con botones (sí, no, no lo sé); la respuesta se apunta
+  en `registre/boira-confirmacions.csv`, y el mensaje cambia a «Apuntado».
+  Las respuestas se leen sin marcarlas como leídas, para no quitar nada a
+  quien lea ese chat. Servirá para ajustar una regla de la riera con la
+  humedad, la temperatura y el viento.
 - **La niebla de la riera sola** no se dice todavía: en el barrio no hay nada
   que mida la visibilidad, y la humedad sola no basta. Del 4 al 17-10-2026,
   99 de 315 horas tenían en casa el 98 % o más y la temperatura a medio grado
