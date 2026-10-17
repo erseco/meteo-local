@@ -55,6 +55,12 @@ texto. En IONOS no hay navegador; en el NAS, tampoco había.
 - **Con el viento** (3.105.0; Juanjo, 17-10-2026: «aporta información útil
   con poco cambio del gráfico»): las imágenes llevan la capa del viento,
   media y rachas, como la vista en grande con «Vent».
+- **La parte alta, cuando importa** (3.109.0; Juanjo, 17-10-2026: «en
+  telegram valdría la pena poner la parte alta?»): la curva discontinua de
+  la parte alta sale en la imagen solo si en alguna hora del tramo la
+  diferencia redondeada llega a 2 °C, el mismo umbral que el «X graus més
+  que ahir» del resumen (la previsión se equivoca en torno a un grado); por
+  debajo, las dos curvas casi se tocan y serían ruido en el móvil.
 - **Solo la parte de la que habla el resumen** (`graficaDia`, la misma que
   «Consultes»): la de hoy, de ahora a medianoche (resúmenes de la mañana y
   /resum); la de mañana, de las 18 h de hoy (la noche, como `bot.resum`) al

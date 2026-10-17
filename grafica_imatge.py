@@ -100,7 +100,12 @@ const fig = graficaDia(dades.hores, dades.riscos, {json.dumps(dia)});
 if (fig) {{
   // Amb el vent (Juanjo, 17-10-2026: «aporta información útil con poco cambio
   // del gráfico»).
-  fig._opcions = {{ gran: true, vent: true }};
+  // La part alta, només si en alguna hora s'allunya 2 °C o més de la de baix:
+  // per sota, les dues corbes gairebé es toquen i la previsió ja s'equivoca
+  // en un grau (Juanjo, 17-10-2026: «en telegram valdría la pena poner la
+  // parte alta?»; el mateix llindar que COMPARA_MIN del bot).
+  const alta = fig._files.some((f) => Math.abs(arrodoneixAlta(f.dif_alta)) >= 2);
+  fig._opcions = {{ gran: true, vent: true, alta }};
   // Sense la càmera de «Consultes»: en una imatge no serveix (Juanjo, 17-10-2026).
   fig._botoImatge = false;
   document.getElementById('lloc').append(fig);
