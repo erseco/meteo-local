@@ -56,6 +56,13 @@ prepara() {
   fi
 }
 
+# Las respuestas de Juanjo a la pregunta de la niebla, cada minuto, para que
+# el mensaje diga enseguida que se han apuntado (boira.py, ADR 0100). Sin
+# preguntas pendientes, no hace nada.
+respostes_boira() {
+  (cd "$REPO" && python3 boira.py respostes >/dev/null 2>&1) || true
+}
+
 # Los avisos privados que Telegram no aceptó, mientras tengan sentido.
 reintenta_avisos() {
   [ -s "$ESTAT_DIR/avisos-pendents.jsonl" ] || return 0
@@ -136,6 +143,7 @@ while true; do
     verificacion || registro "la verificación de las $(hora_verificacion) ha fallado: se repetirá mañana"
   fi
   [ -d "$REPO/.git" ] && reintenta_avisos
+  [ -d "$REPO/.git" ] && respostes_boira
   # La copia del registro, una vez al día a partir de HORA_COPIA.
   if [ -f "$REPO/nas/copia-registre.sh" ] && [[ "$ahora" > "$HORA_COPIA" || "$ahora" = "$HORA_COPIA" ]] \
       && [ "$(cat "$ESTAT_DIR/copia-feta" 2>/dev/null)" != "$(date +%F)" ]; then

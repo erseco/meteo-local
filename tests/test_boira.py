@@ -69,8 +69,11 @@ class Confirmacio(unittest.TestCase):
         self.casa_amb(99)
         self.assertEqual(B.pregunta(ARA, self.casa), 41)
         self.assertIsNone(B.pregunta(ARA + dt.timedelta(hours=1), self.casa))     # no fins d'aquí a 6 h
-        self.assertEqual(B.respostes(), 1)
-        self.assertEqual(B.respostes(), 0)                                        # una sola vegada
+        self.assertEqual(B.respostes(ARA), 1)
+        self.assertEqual(B.respostes(ARA), 0)                                     # una sola vegada
+        # El missatge diu el que s'ha apuntat abans de respondre el toc.
+        metodes = [m for m, _ in self.crides]
+        self.assertLess(metodes.index("editMessageReplyMarkup"), metodes.index("answerCallbackQuery"))
         self.assertIn("answerCallbackQuery", [m for m, _ in self.crides])
 
     def test_no_pregunta_si_no_toca(self):

@@ -37,7 +37,11 @@ que muchas veces tiene niebla ella sola, no en Sabadell».
   visual»): con casa al 98 % o más y sin lluvia, de 7 a 23 h y como mucho
   una vez cada 6 horas, el bot de los agentes le pregunta si ve niebla
   junto a la riera, con botones (sí, no, no lo sé); la respuesta se apunta
-  en `registre/boira-confirmacions.csv`, y el mensaje cambia a «Apuntado».
+  en `registre/boira-confirmacions.csv`, y el mensaje cambia a «Apuntado: …».
+  Las respuestas se miran cada minuto desde el reloj del NAS (3.112.2): antes
+  solo en cada publicación, y el toque llegaba tarde para Telegram, que lo
+  rechazaba, y el mensaje no cambiaba (Juanjo, 17-10-2026: «si se repiten
+  dame confirmación de que mi respuesta se ha registrado»).
   Las respuestas se leen sin marcarlas como leídas, para no quitar nada a
   quien lea ese chat. Servirá para ajustar una regla de la riera con la
   humedad, la temperatura y el viento.

@@ -198,12 +198,16 @@ def _pregunta(ara, casa_json):
     return r["message_id"]
 
 
-def respostes():
+def respostes(ara=None):
     """Las respuestas a los botones, una vez cada una, en boira-confirmacions.csv."""
     preguntes = {int(p["missatge"]): p for p in _files(PREGUNTES)}
-    if not preguntes:
-        return 0
     fetes = {int(r["missatge"]) for r in _files(CONFIRMACIONS)}
+    # Només si n'hi ha alguna de les darreres 24 hores sense resposta: el
+    # rellotge ho mira cada minut, perquè la confirmació arribi de seguida.
+    ara = ara or dt.datetime.now(P.ZONA)
+    if not any(m not in fetes and ara - dt.datetime.fromisoformat(p["t"]) < dt.timedelta(hours=24)
+               for m, p in preguntes.items()):
+        return 0
     updates, cfg = telegram("getUpdates", allowed_updates=["callback_query"])
     n = 0
     for u in updates or []:
@@ -220,11 +224,17 @@ def respostes():
                   "sabadell": p["sabadell"]})
         fetes.add(m)
         n += 1
+        # Primer, el missatge diu què s'ha apuntat: és la confirmació que es
+        # veu. Després, el toc; si ha passat massa estona, Telegram ja no
+        # l'accepta, i abans això deixava el missatge sense canviar (17-10-2026).
         try:
-            telegram("answerCallbackQuery", callback_query_id=q["id"], text="Apuntado, gracias")
             telegram("editMessageReplyMarkup", chat_id=cfg["chat_id"], message_id=m,
                      reply_markup={"inline_keyboard": [[{"text": f"Apuntado: {RESPOSTES.get(clau, clau)}",
                                                          "callback_data": "boira:fet"}]]})
+        except Exception:
+            pass
+        try:
+            telegram("answerCallbackQuery", callback_query_id=q["id"], text="Apuntado, gracias")
         except Exception:
             pass
     return n
