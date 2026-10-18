@@ -1189,10 +1189,11 @@ function elementsPlujaEncert(p, minim = 0) {
   return text ? [element('p', null, text)] : [];
 }
 
-// Els mm previstos i els mesurats, sumats a les hores que tenen les dues
-// coses (historial.py; Juanjo, 18-10-2026).
+// Els mm esperats (probabilitat per mil·límetres de cada hora, ADR 0103) i
+// els mesurats, sumats a les hores que tenen les dues coses (historial.py;
+// Juanjo, 18-10-2026).
 function textMmEncert(m) {
-  return T`Quantitat de pluja: en preveia ${coma(m.previst)}\u00a0mm i en van caure ${coma(m.mesurat)}.`;
+  return T`Pluja esperada (probabilitat per quantitat de cada hora): en preveia ${coma(m.previst)}\u00a0mm i en van caure ${coma(m.mesurat)}.`;
 }
 
 // El període que es compta, amb les dates: «darrers 30 dies» només quan n'hi ha 30.

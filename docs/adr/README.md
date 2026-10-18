@@ -104,5 +104,6 @@
 | [0100](0100-la-niebla.md) | La niebla | en curso |
 | [0101](0101-coherencia-de-lo-que-dice-la-web.md) | Coherencia de lo que dice la web: un solo estado de la lluvia, reglas fijas y un revisor con IA | aceptado |
 | [0102](0102-una-sola-verdad-de-la-lluvia-observada.md) | Una sola verdad de la lluvia observada | aceptado |
+| [0103](0103-la-cantidad-de-lluvia-maximo-por-hora-y-esperada-en-los-totales.md) | La cantidad de lluvia: el máximo de modelos por hora y la esperada en los totales | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

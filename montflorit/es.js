@@ -436,7 +436,7 @@ var IDIOMA = {
     "Els darrers 30 dies.": "Los últimos 30 días.",
     "Des del {0} fins ara ({1} dies).": "Desde el {0} hasta ahora ({1} días).",
     "Com encerta la previsió feta {0}\u00a0h abans": "Cómo acierta la previsión hecha {0}\u00a0h antes",
-    "Quantitat de pluja: en preveia {0}\u00a0mm i en van caure {1}.": "Cantidad de lluvia: preveía {0}\u00a0mm y cayeron {1}.",
+    "Pluja esperada (probabilitat per quantitat de cada hora): en preveia {0}\u00a0mm i en van caure {1}.": "Lluvia esperada (probabilidad por cantidad de cada hora): preveía {0}\u00a0mm y cayeron {1}.",
     "Encara són poques hores per treure\u2019n conclusions.": "Aún son pocas horas para sacar conclusiones.",
     "Pluja: {0}.": "Lluvia: {0}.",
     "Pluja: quan deia cada probabilitat, en quantes hores va ploure.": "Lluvia: cuando decía cada probabilidad, en cuántas horas llovió.",

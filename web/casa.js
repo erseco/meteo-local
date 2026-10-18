@@ -134,6 +134,14 @@ function perillTram(files) {
   return delNivellMesAlt(files.flatMap(elementsPerill));
 }
 
+// La probabilitat d'una hora per a la quantitat esperada: 1 si ja plou; sense
+// probabilitat (previsió vella), 1 si el model dona pluja i 0 si no.
+function probHora(f) {
+  if (f.plou_ara) return 1;
+  if (f.probabilitat == null) return (f.pluja_mm || 0) >= 0.2 ? 1 : 0;
+  return f.probabilitat;
+}
+
 function resumTrams(hores, ara, mesurada) {
   const grups = [];
   for (const f of hores || []) {
@@ -177,7 +185,10 @@ function resumTrams(hores, ara, mesurada) {
       cel: celTram(g.files, g.nom === 'Nit'),
       plou: g.files.some((f) => plujaHora(f) !== null),
       prob: Math.max(...g.files.map((f) => f.probabilitat || 0)),
-      mm: g.files.reduce((s, f) => s + (f.pluja_mm || 0), 0),
+      // La quantitat esperada del tram: la probabilitat de cada hora pels seus
+      // mil·límetres (que són «si plou»). Sumar els mil·límetres de totes les
+      // hores donava el doble del que queia (arxiu 2024-2026, ADR 0103).
+      mm: g.files.reduce((s, f) => s + probHora(f) * (f.pluja_mm || 0), 0),
       tMin: temps.length ? Math.min(...temps) : null, tMax: temps.length ? Math.max(...temps) : null,
       // Quant més fa a la part alta: la màxima de dia i la mínima de nit.
       difAlta: temps.length ? (g.nom === 'Nit' ? Math.min(...alta) - Math.min(...temps)

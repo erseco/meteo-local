@@ -220,7 +220,8 @@ class Web(unittest.TestCase):
         # Juanjo, 09-10-2026: la pluja, només si va a ploure (alguna hora amb un 20 % o més).
         self.assertEqual([t["plou"] for t in r], [False, True, False, True])
         self.assertEqual([f[0] for f in r[1]["fenomens"]], ["tempesta", "pluja forta", "ratxes de 75\u00a0km/h"])
-        self.assertEqual(r[1]["mm"], 57)
+        # La quantitat del tram és l'esperada: 0,8·45 + 6·0,3·2 (ADR 0103); abans, la suma, 57.
+        self.assertAlmostEqual(r[1]["mm"], 39.6)
         self.assertEqual([f[0] for f in r[2]["fenomens"]], ["neu", "glaçada"])
         # A la nit, surten la nit i els trams de demà.
         r = self.avalua("2026-10-08T22:30:00+02:00", f"resumTrams({json.dumps(hores)}, new Date())")

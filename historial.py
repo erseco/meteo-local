@@ -33,8 +33,10 @@ El acierto, para cada antelación, sobre las horas con las dos cosas:
   probabilidad es buena, la fracción de horas con lluvia se parece a lo que
   decía. Es la comprobación de calibración de una probabilidad, contada en
   casos. Se conservan `plou` y `sec` (50 % o más; menos del 20 %) de los
-  archivos anteriores. Y los milímetros: los previstos y los medidos, sumados
-  en las horas que tienen los dos.
+  archivos anteriores. Y los milímetros: la lluvia esperada (la probabilidad
+  de cada hora por sus milímetros, que son «si llueve»; desde la 3.143.0,
+  ADR 0103) y la medida, sumadas en las horas que tienen las dos. Sumar los
+  milímetros tal cual daba el doble de lo que caía (archivo 2024-2026).
 Los últimos 30 días, los 30 anteriores (para ver si mejora) y por meses,
 para cada antelación.
 
@@ -73,11 +75,11 @@ MIN_HORES_TEMP = 48                      # para dar el error de la temperatura
 MIN_CASOS_PLUJA = 20                     # para dar el acierto de la lluvia (en cada sentido)
 # El formato de los días: si cambia, se rehacen todos, no solo los últimos
 # (3.137.0: los mm previstos; 3.141.0: la temperatura del tramo, el sol y las
-# franjas), y lo apunta en el registro. Por tandas: IONOS
+# franjas; 3.143.0: los mm esperados), y lo apunta en el registro. Por tandas: IONOS
 # acepta como mucho 12 archivos por envío (reserva/rep-dades.sh, ADR 0057), y
 # todos de golpe se rechazaron (18-10-2026, 22 archivos). Con los 2 días de
 # siempre, el índice, los datos y las 4 imágenes, caben 3 más por pasada.
-FORMAT = 3
+FORMAT = 4
 REFER_PER_PASSADA = 3
 
 
@@ -186,7 +188,9 @@ def encert(files, n):
         fr[0] += 1
         fr[1] += mullat
         fr[2] = round(fr[2] + p, 3)
-    mm = [(_prev(f, n)[2], f["pluja_mm"]) for f in files if _prev(f, n)[2] is not None and f["pluja_mm"] is not None]
+    # Los mm esperados: probabilidad por mm (1 si ya llovía, que la web da como 100 %).
+    mm = [((_prev(f, n)[1] if _prev(f, n)[1] is not None else 1.0) * _prev(f, n)[2], f["pluja_mm"])
+          for f in files if _prev(f, n)[2] is not None and f["pluja_mm"] is not None]
     return {"temperatura": {"error": round(sum(errors) / len(errors), 2) if errors else None, "hores": len(errors)},
             "pluja": {"plou": plou, "sec": sec, "franges": franges},
             "mm": {"previst": round(sum(p for p, _ in mm), 1), "mesurat": round(sum(m for _, m in mm), 1),

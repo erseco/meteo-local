@@ -592,7 +592,9 @@ Para cada hora, en este orden (`casa.py`, `previsio`):
    ninguno, el de Météo-France que Open-Meteo da por defecto. Un solo modelo
    puede fallar: la mañana del 05-10-2026 AROME daba 0,0 mm mientras en
    Montflorit caían más de 20 mm/h. **La regresión da la probabilidad, no los
-   milímetros.**
+   milímetros.** Son los milímetros *si llueve* en esa hora (así lo dice la
+   leyenda), y el archivo 2024-2026 respalda el máximo como esa cantidad
+   condicional (apartado 6 bis, ADR 0103).
 3. **Temperatura** corregida (apartado 3), media de los dos extremos de la
    hora.
 4. **Persistencia**, en las cuatro primeras horas: si en la última hora han
@@ -615,6 +617,54 @@ tramo del día, a las 7, las 14 o las 21 h, así que tiene entre 24 y 38 filas:
 de la corrección de temperatura vale como un día, porque
 $`\min(t/24, 1) = 1`$ (apartado 18). El registro con que se aprende y el riesgo
 propio (apartado 11) usan solo las 24 primeras horas.
+
+### 6 bis. La cantidad: lo que dice el archivo (ADR 0103)
+
+La evaluación del 18-10-2026 señaló que el máximo de modelos sobreestima la
+lluvia (en octubre, 88 mm previstos a 1 hora por 20 caídos). Se comprobó con
+el archivo de 2024-2026 (94.380 horas-estación, 3.622 con lluvia, apartado
+2.1), con la probabilidad calculada en semanas que el modelo no había visto:
+
+| A corto plazo | Horas | Medido | Máximo de modelos | Media de modelos |
+|---|---:|---:|---:|---:|
+| Horas con lluvia (0,2 mm o más) | 1.825 | 3.898 mm | 3.787 mm | 2.334 mm |
+| Horas con 50 % o más que llovieron | 727 | 2.252 mm | 2.994 mm | |
+| Horas con menos del 20 % que llovieron | 605 | 828 mm | 161 mm | |
+| Todas las horas | 47.676 | 3.962 mm | 6.720 mm | 3.826 mm |
+
+**Por hora, si llueve, el máximo no sesga** (2,07 mm por hora frente a 2,14
+medidos); la media de los tres modelos se queda un 40 % corta, y una
+regresión ridge sobre los modelos reduce el error absoluto pero aplana los
+extremos (da 2 mm cuando caen 19). En las horas en que la página dice 50 % o
+más, el máximo se pasa un tercio; en las de menos del 20 %, la lluvia que
+cae es la que ningún modelo ve y nada la recupera. Un día antes, el máximo
+se queda un tercio corto en las horas con lluvia. Por eso **el máximo se
+mantiene como cantidad de cada hora**: es la que mejor distingue una hora de
+chubasco de una de llovizna y la única que no rebaja la lluvia fuerte.
+
+**El exceso estaba en las sumas.** Sumar los milímetros de todas las horas
+de un tramo suma cantidades «si llueve» de horas en las que no va a llover.
+Por tramos del día (mañana, tarde y noche) en los que la página ponía el
+paraguas (alguna hora con 20 % o más), a corto plazo:
+
+| Total del tramo | Previsto | Medido | Error medio por tramo | Correlación |
+|---|---:|---:|---:|---:|
+| Suma de todas las horas (hasta la 3.142) | 6.360 mm | 3.644 mm | 10,1 mm | 0,64 |
+| Suma de las horas con 20 % o más | 5.838 mm | 3.644 mm | 9,4 mm | 0,64 |
+| Suma de las horas con 50 % o más | 4.026 mm | 3.644 mm | 7,5 mm | 0,65 |
+| **Esperada: probabilidad por milímetros de cada hora** | **3.796 mm** | 3.644 mm | **6,8 mm** | **0,67** |
+
+Un día antes la esperada da 2.600 mm por 3.440 medidos (error medio 6,6 mm
+frente a 9,4 de la suma), corta por la lluvia que los modelos no ven con esa
+antelación. Desde la 3.143.0 **el total de cada tramo y el del acierto son
+la cantidad esperada**,
+$$\text{mm}_{\text{tram}} = \sum_{h} p_h \cdot \text{mm}_h,$$
+con $`p_h = 1`$ en la hora en que ya llueve. No se añade un «hasta X mm»: el
+máximo de modelos no es un escenario alto (queda por debajo de lo medido en
+la mitad de las horas con lluvia a corto plazo y en dos tercios un día antes).
+«Si surts» sigue usando para el coche la suma de los máximos en 3 horas
+(«fins a X mm»), como escenario prudente frente a los umbrales de Meteocat
+(apartado 14).
 
 **Lo que no cambia la estadística.** Los avisos de la AEMET y los planes de
 Protección Civil se muestran tal cual, encima de la tabla y en cada hora. Si se adopta el modelo con los avisos (ADR 0097), el aviso
@@ -646,7 +696,8 @@ Meteocat (ADR 0043):
 a 7) va en la cabecera de cada desplegable. El cielo es la media de las nubes
 de sus horas, o niebla si la hay en más de la mitad. Le siguen la temperatura
 mínima y máxima y, solo si alguna hora llega al 20 %, el paraguas con la
-probabilidad máxima y los milímetros sumados si llegan a 1. Solo cuando se
+probabilidad máxima y la cantidad esperada del tramo (la probabilidad de cada
+hora por sus milímetros, apartado 6 bis) si llega a 1 mm. Solo cuando se
 dan, y en color ámbar, se añaden tormenta, lluvia forta (40 mm en una hora) o torrencial (80),
 rachas de 70 km/h, calor de 36 °C, helada (0 °C o menos) y nieve (0,1 cm o más
 en el tramo). Las rachas y el calor son los umbrales amarillos del apartado
@@ -1341,8 +1392,9 @@ con lo medido en Montflorit:
   cada franja se parece a la media anunciada. Las horas en que no se sabe si
   llovió no cuentan. Con menos de 20 horas de 50 % o más, «encara poques
   hores».
-- **Cantidad**: los milímetros previstos y los medidos, sumados en las horas
-  que tienen los dos.
+- **Cantidad**: la lluvia esperada (la probabilidad de cada hora por sus
+  milímetros, apartado 6 bis) y la medida, sumadas en las horas que tienen
+  las dos.
 
 Los últimos 30 días, los 30 anteriores (para ver si mejora) y la
 temperatura por meses cuando hay más de uno. Las previsiones se apuntan

@@ -169,3 +169,7 @@ las horas con sol, las franjas y su suma con días sin ellas) y la vista con
 «Com encerta» con el historial real, en Chromium y Firefox, escritorio y
 móvil.
 
+## Cambio del 18-10-2026 (3.143.0): los milímetros esperados
+
+La cantidad que se compara con lo medido es la esperada, la probabilidad de cada hora por sus milímetros, no la suma de los milímetros «si llueve» de todas las horas, que daba el doble de lo que caía en el archivo 2024-2026 (`FORMAT` 4; motivo y cifras en el ADR 0103).
+
