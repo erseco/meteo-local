@@ -36,10 +36,9 @@ import fcntl
 import json
 import os
 import sys
-import urllib.parse
-import urllib.request
 
 import config as C
+import confirmacio as CF
 import nuvols as NV
 import prevision as P
 
@@ -120,7 +119,7 @@ def resum():
               f"ICON l'encerta {taula['encert']}, no la veu {taula['fallada']}, en diu de més {taula['falsa_alarma']}. "
               f"Detecció {pod:.0%}, falses alarmes {far:.0%}.")
         res[nom] = taula
-    conf = _files(CONFIRMACIONS)
+    conf = CF.files(CONFIRMACIONS)
     if conf:
         si = sum(r["resposta"] == "si" for r in conf)
         no = sum(r["resposta"] == "no" for r in conf)
@@ -131,7 +130,7 @@ def resum():
 # --- La confirmación de Juanjo -----------------------------------------------------
 PREGUNTES = os.path.join(REGISTRE, "boira-preguntes.csv")
 CONFIRMACIONS = os.path.join(REGISTRE, "boira-confirmacions.csv")
-CONFIG_BOT = os.path.expanduser("~/.config/avisar-juanjo/config.json")
+CONFIG_BOT = CF.CONFIG_BOT
 CASA_JSON = "/estat/casa.json"
 HUMITAT_PREGUNTA = 98
 HORES_PREGUNTA = range(7, 23)
@@ -140,24 +139,7 @@ RESPOSTES = {"si": "Sí, hay niebla", "no": "No hay niebla", "nose": "No lo sé"
 
 
 def telegram(metode, **params):
-    c = json.load(open(CONFIG_BOT, encoding="utf-8"))
-    dades = urllib.parse.urlencode({k: json.dumps(v) if isinstance(v, (dict, list)) else v
-                                    for k, v in params.items()}).encode()
-    with urllib.request.urlopen(f"https://api.telegram.org/bot{c['token']}/{metode}", dades, timeout=30) as r:
-        return json.load(r).get("result"), c
-
-
-def _files(ruta):
-    return list(csv.DictReader(open(ruta, encoding="utf-8"))) if os.path.exists(ruta) else []
-
-
-def _afegeix(ruta, camps, fila):
-    nou = not os.path.exists(ruta)
-    with open(ruta, "a", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, camps)
-        if nou:
-            w.writeheader()
-        w.writerow(fila)
+    return CF.telegram(metode, CONFIG_BOT, **params)
 
 
 def pregunta(ara=None, casa_json=CASA_JSON):
@@ -178,7 +160,7 @@ def _pregunta(ara, casa_json):
     hum = c.get("humitat_estacio", c.get("humitat"))
     if hum is None or hum < HUMITAT_PREGUNTA or c.get("plou"):
         return None
-    ultima = _files(PREGUNTES)[-1:]
+    ultima = CF.files(PREGUNTES)[-1:]
     if ultima and ara - dt.datetime.fromisoformat(ultima[0]["t"]) < dt.timedelta(hours=CADA_H):
         return None
     sabadell = ""
@@ -192,7 +174,7 @@ def _pregunta(ara, casa_json):
             f"y no llueve.{sabadell} Con tu respuesta se comprueba si la previsión acierta la niebla.")
     teclat = {"inline_keyboard": [[{"text": t, "callback_data": f"boira:{k}"} for k, t in RESPOSTES.items()]]}
     r, cfg = telegram("sendMessage", chat_id=json.load(open(CONFIG_BOT))["chat_id"], text=text, reply_markup=teclat)
-    _afegeix(PREGUNTES, ["t", "missatge", "humitat", "sabadell"],
+    CF.afegeix(PREGUNTES, ["t", "missatge", "humitat", "sabadell"],
              {"t": ara.isoformat(timespec="minutes"), "missatge": r["message_id"], "humitat": hum,
               "sabadell": int(bool(sabadell))})
     return r["message_id"]
@@ -200,44 +182,8 @@ def _pregunta(ara, casa_json):
 
 def respostes(ara=None):
     """Las respuestas a los botones, una vez cada una, en boira-confirmacions.csv."""
-    preguntes = {int(p["missatge"]): p for p in _files(PREGUNTES)}
-    fetes = {int(r["missatge"]) for r in _files(CONFIRMACIONS)}
-    # Només si n'hi ha alguna de les darreres 24 hores sense resposta: el
-    # rellotge ho mira cada minut, perquè la confirmació arribi de seguida.
-    ara = ara or dt.datetime.now(P.ZONA)
-    if not any(m not in fetes and ara - dt.datetime.fromisoformat(p["t"]) < dt.timedelta(hours=24)
-               for m, p in preguntes.items()):
-        return 0
-    updates, cfg = telegram("getUpdates", allowed_updates=["callback_query"])
-    n = 0
-    for u in updates or []:
-        q = u.get("callback_query") or {}
-        m = (q.get("message") or {}).get("message_id")
-        dada = q.get("data") or ""
-        if not dada.startswith("boira:") or m not in preguntes or m in fetes \
-                or str((q.get("from") or {}).get("id")) != str(cfg["chat_id"]):
-            continue
-        clau = dada.split(":", 1)[1]
-        p = preguntes[m]
-        _afegeix(CONFIRMACIONS, ["missatge", "pregunta", "resposta", "humitat", "sabadell"],
-                 {"missatge": m, "pregunta": p["t"], "resposta": clau, "humitat": p["humitat"],
-                  "sabadell": p["sabadell"]})
-        fetes.add(m)
-        n += 1
-        # Primer, el missatge diu què s'ha apuntat: és la confirmació que es
-        # veu. Després, el toc; si ha passat massa estona, Telegram ja no
-        # l'accepta, i abans això deixava el missatge sense canviar (17-10-2026).
-        try:
-            telegram("editMessageReplyMarkup", chat_id=cfg["chat_id"], message_id=m,
-                     reply_markup={"inline_keyboard": [[{"text": f"Apuntado: {RESPOSTES.get(clau, clau)}",
-                                                         "callback_data": "boira:fet"}]]})
-        except Exception:
-            pass
-        try:
-            telegram("answerCallbackQuery", callback_query_id=q["id"], text="Apuntado, gracias")
-        except Exception:
-            pass
-    return n
+    return CF.respostes("boira", PREGUNTES, CONFIRMACIONS, RESPOSTES, ["humitat", "sabadell"], telegram,
+                        ara or dt.datetime.now(P.ZONA))
 
 
 if __name__ == "__main__":

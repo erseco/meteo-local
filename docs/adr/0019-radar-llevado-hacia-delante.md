@@ -369,3 +369,30 @@ lluvia que llega desde `PROB_ATENCION` (20 %), decía «El radar no veu pluja
 que vingui cap aquí». Ahora la probabilidad y los milímetros del radar solo
 cuentan si su probabilidad llega a ese umbral. Solo rebaja casos dudosos: en
 el registro de octubre, 1 de las 36 horas marcadas por el radar (ADR 0101).
+
+## Cambio del 18-10-2026 (3.140.0): el plugim que solo ve el radar
+
+A las 18:45 empezaba a lloviznar en casa y la web decía «El radar no veu pluja
+que vingui cap aquí», con el radar de Meteocat pintando lluvia sobre el
+barrio. Los dos radares la veían: 31 píxeles del Meteocat y 27 de RainViewer a
+3 km o menos de casa, el más cercano a 400 m, todos de 0,1 a 0,4 mm/h, por
+debajo de la lluvia que cuenta (`nowcast.PLOU_MMH`, 0,5 mm/h); las estaciones,
+0 mm, porque el pluviómetro no recoge la llovizna. Con el registro de ecos
+cercanos (1.756 pasadas desde el 10-10): sin nada a 3 km, llueve en las
+estaciones en la hora siguiente el 2 % de las veces; con pocos píxeles
+débiles, el 3 % (los ecos sueltos del 10-10); con muchos en un solo radar, el
+28 %; con muchos en los dos, 4 pasadas, todas de este episodio.
+
+Ahora, si los dos radares ven 15 píxeles débiles o más a 3 km o menos
+(`casa.plugim_radar`, `config.PLUGIM_PX` y `PLUGIM_KM`) y ninguna estación mide
+lluvia, el estado de la lluvia (ADR 0101) lleva `plugim`: el recuadro del radar
+dice «El radar veu pluja molt feble a sobre (plugim), que les estacions no
+mesuren», «Ara» dice «Plugim segons el radar» en vez de «No plou», y lo mismo
+/ara y /radar del bot. No cambia la previsión ni los avisos. Como con la
+niebla (ADR 0100), se pregunta a Juanjo por Telegram si llueve en casa, con
+botones, de 7 a 22 h y como mucho cada 3 horas (`plugim.py`); sus respuestas,
+en `registre/plugim-confirmacions.csv`, dirán si la señal acierta lo bastante
+para usarla en la previsión, junto con los ecos cercanos, a partir del
+07-11-2026. La pregunta y la lectura de respuestas de la niebla y del plugim
+comparten `confirmacio.py`. Pruebas: `tests/test_plugim.py`, `test_web.py` y
+`test_bot.py`; la portada, en Chromium, Firefox y WebKit con una simulación.

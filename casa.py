@@ -163,6 +163,17 @@ def llueve_ahora_en(casa, veines=None):
     return bool(casa and casa.get("plou")) or WU.plou_a_les_veines(veines)
 
 
+def plugim_radar(a_prop):
+    """Els ecos febles de cada radar a sobre del barri (per sota de
+    nowcast.PLOU_MMH, a C.PLUGIM_KM o menys de casa) i si diuen plugim: tots
+    dos radars amb C.PLUGIM_PX píxels o més. None sense els dos radars."""
+    px = {nom: sum(1 for km, _, mm in (r or {}).get("px") or [] if km <= C.PLUGIM_KM and mm < N.PLOU_MMH)
+          for nom, r in (a_prop or {}).items()}
+    if not {"meteocat", "rainviewer"} <= px.keys():
+        return None
+    return {**px, "si": all(px[n] >= C.PLUGIM_PX for n in ("meteocat", "rainviewer"))}
+
+
 def estat_pluja(radar, plou, ahora):
     """El estado único de la lluvia de ahora (ADR 0101), del que sale todo lo
     que la web y el bot dicen de ella. Cada bloque lo decidía con sus datos y
@@ -173,7 +184,10 @@ def estat_pluja(radar, plou, ahora):
     - radar_sobre: el radar la pone encima (llegada en 5 minutos o menos, o ya
       pasada: la imagen llega con retraso), pero ninguna estación la mide;
     - arriba / possible: el radar la ve venir (50 % / 20 %);
-    - no: nada de lo anterior."""
+    - no: nada de lo anterior; con «plugim» si los dos radares ven ecos
+      débiles extendidos sobre el barrio (plugim_radar), que el pluviómetro
+      no recoge. No cambia la previsión ni los avisos: se dice y se pregunta
+      a Juanjo para comprobarlo (plugim.py)."""
     r = radar or {}
     t = lambda k: dt.datetime.fromisoformat(r[k]) if r.get(k) else None  # noqa: E731
     arriba, possible = t("arriba"), t("possible")
@@ -187,7 +201,10 @@ def estat_pluja(radar, plou, ahora):
         estat, font = "possible", "radar"
     else:
         estat, font = "no", None
-    return {"estat": estat, "font": font, **{k: r.get(k) for k in ("arriba", "possible", "fi", "sense_fi")}}
+    res = {"estat": estat, "font": font, **{k: r.get(k) for k in ("arriba", "possible", "fi", "sense_fi")}}
+    if estat == "no" and (r.get("plugim") or {}).get("si"):
+        res.update(plugim=True, font="radar")
+    return res
 
 
 def ajusta_hores(hores, pluja, ahora):
@@ -746,6 +763,8 @@ def recoger(anterior=None):
     # Els graus, per a la fletxa del mapa (17-10-2026).
     salida["radar"] = nc and {k: nc.get(k) for k in ("hora", "imatge", "moviment", "velocitat_kmh", "cap_a", "graus")}
     if nc:
+        # Els ecos febles a sobre del barri, per dir plugim (estat_pluja).
+        salida["radar"]["plugim"] = plugim_radar(radar.get("a_prop"))
         # Cuándo llegaría: probable (50 %) o, si no, posible (20 %).
         for clau, prob in (("arriba", 0.5), ("possible", C.PROB_ATENCION)):
             t = N.arribada(nc, "casa", prob)

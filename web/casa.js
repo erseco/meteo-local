@@ -282,9 +282,14 @@ function blocAra(casa, radarDades, vent, veines, hores, resum) {
   const plou = !!casa.plou || (veines || []).some((v) => v.plou && v.compta);
   const intensitat = (casa.plou && casa.intensitat) || 0;
   const llista = element('ul', 'dades-ara');
-  llista.append(!plou ? dada('i-umbrella-off', T('No plou'))
-    : intensitat ? dada('i-umbrella', T`Plou: ${coma(intensitat)} mm/h`)
-      : dada('i-umbrella', T('Plou')));
+  // Plugim que només veu el radar (els dos, estès a sobre del barri): el
+  // pluviòmetre no el recull, però «No plou» es contradiria amb el requadre
+  // del radar (Juanjo, 18-10-2026; ADR 0019).
+  const plugim = !plou && radarDades && radarDades.pluja && radarDades.pluja.plugim;
+  llista.append(plugim ? dada('i-cloud-drizzle', T('Plugim segons el radar'))
+    : !plou ? dada('i-umbrella-off', T('No plou'))
+      : intensitat ? dada('i-umbrella', T`Plou: ${coma(intensitat)} mm/h`)
+        : dada('i-umbrella', T('Plou')));
   // «Plou» amb «0 mm avui» es contradiu: si plou i encara no se n'ha recollit
   // (la mediana del barri, casa.consens), només «Plou» (inventari del 18-10-2026).
   if (!plou || casa.pluja_avui) llista.append(dada('i-cloud-rain', T`${coma(casa.pluja_avui || 0)} mm avui`));
@@ -498,6 +503,12 @@ function textRadar(r, plou) {
   if (r.possible) {
     if (aviat(r.possible)) return ['possible', T('Pluja a prop: pot arribar')];
     return ['possible', [T('Pot arribar pluja '), compte(r.possible), T` (cap a les\u00a0${horaCurta(r.possible)})`]];
+  }
+  // Ecos febles estesos a sobre del barri als dos radars: plugim, que les
+  // estacions no recullen (Juanjo, 18-10-2026: «el radar de la web dice que no
+  // se ve lluvia, en el de meteocat sí y realmente acaba de empezar a llover»).
+  if (estat === 'no' && r.pluja && r.pluja.plugim) {
+    return ['possible', T('El radar veu pluja molt feble a sobre (plugim), que les estacions no mesuren')];
   }
   // Pluja forta o més a 15 km o menys que no ve cap aquí: es diu al titular,
   // amb el color de «pot arribar» (Juanjo, 17-10-2026, amb trons i el radar

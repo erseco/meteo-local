@@ -71,6 +71,9 @@ fi
 if [ -n "$ESTAT_DIR" ]; then
   python3 boira.py respostes >/dev/null 2>&1 || echo "$(date '+%F %T')  han fallat les respostes de la boira" >&2
   python3 boira.py pregunta >/dev/null 2>&1 || echo "$(date '+%F %T')  ha fallat la pregunta de la boira" >&2
+  # El mateix amb el plugim que només veu el radar (plugim.py, ADR 0019).
+  python3 plugim.py respostes >/dev/null 2>&1 || echo "$(date '+%F %T')  han fallat les respostes del plugim" >&2
+  python3 plugim.py pregunta >/dev/null 2>&1 || echo "$(date '+%F %T')  ha fallat la pregunta del plugim" >&2
 fi
 # El historial de la gráfica y el acierto de la previsión (ADR 0099): el
 # índice y los dos últimos días (hoy cambia a cada hora; ayer se cierra a

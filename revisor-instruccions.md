@@ -48,6 +48,11 @@ inclúyelas si son reales, explicando por qué.
   de una sola estación va en los campos `…_estacio`. «Plou» basta con que
   llueva en una de ellas, así que puede llover con una mediana de 0: no es
   un error.
+- «Plugim segons el radar» (`pluja_ara.plugim`) sale cuando los dos radares
+  ven ecos débiles extendidos sobre el barrio y ninguna estación mide lluvia:
+  el pluviómetro no recoge la llovizna. No es una contradicción que las
+  estaciones marquen 0 mm, ni que la tabla y la previsión no lo tengan en
+  cuenta (aún no se usa en la previsión, ADR 0019).
 - Meteocat manda sobre AEMET en el mismo fenómeno; AEMET sale para lo que
   Meteocat no cubre.
 - Los textos oficiales (nombres de meteoros, umbrales, avisos de Renfe y FGC)

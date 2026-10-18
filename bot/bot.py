@@ -500,9 +500,13 @@ def text_ara(dades, idioma, lloc="", moment=None):
     # contradeia (inventari del 18-10-2026).
     icona = marca("i-umbrella") if plou else (f and (marca("i-cloud") if icona_cel(f) in ORDRE_PLUJA
                                                      else emoji_cel(f)))
+    # Plugim que només veu el radar, com a la web (Juanjo, 18-10-2026; ADR 0019).
+    plugim = not plou and (dades.get("pluja_ara") or {}).get("plugim")
     if idioma == "es":
-        return amb_icona(icona, f"Ahora mismo{lloc and ' en ' + lloc}: {graus(t)}, {'llueve' if plou else 'no llueve'}.")
-    return amb_icona(icona, f"Ara mateix{lloc and ' a ' + lloc}: {graus(t)}, {'plou' if plou else 'no plou'}.")
+        que = "llueve" if plou else "llovizna según el radar" if plugim else "no llueve"
+        return amb_icona(icona, f"Ahora mismo{lloc and ' en ' + lloc}: {graus(t)}, {que}.")
+    que = "plou" if plou else "plugim segons el radar" if plugim else "no plou"
+    return amb_icona(icona, f"Ara mateix{lloc and ' a ' + lloc}: {graus(t)}, {que}.")
 
 
 def text_pluja_prevista(dades, idioma, moment):
@@ -1385,6 +1389,10 @@ def text_radar_bot(dades, idioma, moment):
         elif r.get("sense_fi"):
             que += (" No acaba en 2 horas (en entrenamiento: puede fallar)." if es
                     else " No s'acaba en 2 hores (en entrenament: pot fallar).")
+    elif estat == "no" and (dades.get("pluja_ara") or {}).get("plugim"):
+        # Ecos febles estesos a sobre als dos radars, com a la web (18-10-2026).
+        que = ("El radar ve lluvia muy débil encima de Montflorit (llovizna), que las estaciones no miden." if es
+               else "El radar veu pluja molt feble a sobre de Montflorit (plugim), que les estacions no mesuren.")
     elif r.get("arriba"):
         que = (f"Llegaría lluvia a Montflorit hacia las {h(r['arriba'])}." if idioma == "es" else f"Arribaria pluja a Montflorit cap a les {h(r['arriba'])}.")
     elif r.get("possible"):

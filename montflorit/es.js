@@ -210,6 +210,8 @@ var IDIOMA = {
     "Hora estimada amb el radar. Encara s\u2019està entrenant amb la pluja real: pot fallar.": "Hora estimada con el radar. Todavía se está entrenando con la lluvia real: puede fallar.",
     "Pluja a prop: pot arribar": "Lluvia cerca: puede llegar",
     "El radar no veu pluja que vingui cap aquí": "El radar no ve lluvia que venga hacia aquí",
+    "El radar veu pluja molt feble a sobre (plugim), que les estacions no mesuren": "El radar ve lluvia muy débil encima (llovizna), que las estaciones no miden",
+    "Plugim segons el radar": "Llovizna según el radar",
     "La previsió en dona ": "La previsión la da ",
     "La previsió en dona per a aquesta hora": "La previsión la da para esta hora",
     "{0}: seria pluja que es formi a prop, que el radar encara no veu.": "{0}: sería lluvia que se forme cerca, que el radar aún no ve.",

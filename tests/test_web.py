@@ -685,6 +685,10 @@ class Web(unittest.TestCase):
         # (Juanjo, 18-10-2026), també si en veu venir més tard.
         self.assertEqual(self.avalua(ara, 'textRadar({"arriba": null, "possible": null, "fi": null, "sense_fi": false}, true)'),
                          ["arriba", "Pluja a sobre segons les estacions del barri · el radar no la veu", False, True])
+        # Plugim als dos radars, sense pluja mesurada (Juanjo, 18-10-2026).
+        plugim = {"arriba": None, "possible": None, "pluja": {"estat": "no", "plugim": True}}
+        self.assertEqual(self.avalua(ara, f"textRadar({json.dumps(plugim)}, false)"),
+                         ["possible", "El radar veu pluja molt feble a sobre (plugim), que les estacions no mesuren"])
         mes_tard = {"arriba": "2026-10-08T19:30", "sense_fi": True, "pluja": {"estat": "plou"}}
         self.assertEqual(self.avalua(ara, f"textRadar({json.dumps(mes_tard)}, true)")[1],
                          "Pluja a sobre segons les estacions del barri · el radar no la veu")

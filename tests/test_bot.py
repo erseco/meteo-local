@@ -320,6 +320,14 @@ class Resum(unittest.TestCase):
             "Lluvia encima de Montflorit según las estaciones del barrio; el radar no la ve.\n"))
         d["ara_casa"].update(intensitat=0, plou=False)
         self.assertTrue(B.text_radar_bot(d, "ca", ARA).startswith("El radar no veu pluja que vingui cap a Montflorit."))
+        # Plugim que només veu el radar, com a la web (18-10-2026).
+        d["pluja_ara"] = {"estat": "no", "plugim": True}
+        self.assertTrue(B.text_radar_bot(d, "ca", ARA).startswith(
+            "El radar veu pluja molt feble a sobre de Montflorit (plugim), que les estacions no mesuren."))
+        self.assertTrue(B.text_radar_bot(d, "es", ARA).startswith(
+            "El radar ve lluvia muy débil encima de Montflorit (llovizna), que las estaciones no miden."))
+        self.assertIn("plugim segons el radar.", B.text_ara(d, "ca"))
+        self.assertIn("llovizna según el radar.", B.text_ara(d, "es"))
 
     def test_radar_pluja_propera_i_sense_moviment(self):
         # 17-10-2026: la pluja més propera, i sense «a 0 km/h».

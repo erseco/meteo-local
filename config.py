@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.139.1"
+VERSION = "3.140.0"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -82,6 +82,13 @@ INTERVALO_CASA_MIN = 15
 MODO_AVISO_INTERVALO_MIN = 6
 MODO_AVISO_DESFASE_MIN = 3
 RADAR_AVISO_KM = 15
+# Plugim segons el radar (ADR 0019; Juanjo, 18-10-2026, amb plugim a casa i la
+# web dient «el radar no veu pluja»): els ecos per sota de la pluja que compta
+# (nowcast.PLOU_MMH) només diuen plugim si són estesos a sobre del barri i els
+# veuen els dos radars, PLUGIM_PX píxels o més a PLUGIM_KM o menys de casa en
+# cadascun. Un píxel solt de la franja més baixa és soroll (10-10-2026).
+PLUGIM_KM = 3
+PLUGIM_PX = 15
 
 # A qué hora el reloj del NAS (nas/reloj.sh) rellena las horas que falten de
 # la estación de casa (registre.py estacio) y la página aprende de sus

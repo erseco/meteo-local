@@ -65,6 +65,8 @@ prepara() {
 # preguntas pendientes, no hace nada.
 respostes_boira() {
   (cd "$REPO" && python3 boira.py respostes >/dev/null 2>&1) || true
+  # Y las del plugim que solo ve el radar (plugim.py, ADR 0019).
+  (cd "$REPO" && python3 plugim.py respostes >/dev/null 2>&1) || true
 }
 
 # Los avisos privados que Telegram no aceptó, mientras tengan sentido.
