@@ -865,6 +865,19 @@ def aemet_que_inclou(clau, vigents):
     return None
 
 
+def posa_fins(e, fins):
+    """El final nuevo de una ficha. Si AEMET la alarga, se guarda el que tenía
+    al publicarse (`allargat_de`): su texto dice ese final y la ficha tiene que
+    decir que lo ha alargado (revisor, 18-10-2026: «fins a mitjanit» con final
+    a las 03:59; ADR 0101)."""
+    vell = e.get("fins")
+    if not fins or fins == vell:
+        return
+    if vell and e["clau"].startswith("aemet:") and dt.datetime.fromisoformat(fins) > dt.datetime.fromisoformat(vell):
+        e.setdefault("allargat_de", vell)
+    e["fins"] = fins
+
+
 def tanca_aemet(h, vigents, ahora):
     """Las fichas de AEMET al día con lo que publica AEMET ahora (Juanjo,
     17-10-2026: «Perill» enseñaba como activos dos avisos que AEMET ya había
@@ -880,8 +893,7 @@ def tanca_aemet(h, vigents, ahora):
             continue
         v = vigents.get(e["clau"])
         if v:
-            if v["fin"] != e.get("fins"):
-                e["fins"] = v["fin"]
+            posa_fins(e, v["fin"])
             continue
         if e.get("fins") and dt.datetime.fromisoformat(e["fins"]) <= ahora:
             continue        # ja ha acabat a la seva hora
@@ -922,7 +934,8 @@ def historial(estat, nous, ahora, anterior=None):
             if rang(a.get("nivell")) >= rang(obert.get("nivell")):
                 obert["nivell"] = a.get("nivell")
             obert.update(ca=a["ca"], es=a["es"], darrer=a["hora"],
-                         **{k: a[k] for k in ("enllac", "fins", "comenca") if a.get(k)})
+                         **{k: a[k] for k in ("enllac", "comenca") if a.get(k)})
+            posa_fins(obert, a.get("fins"))
         else:
             h.append({"clau": ep, "tipus": a["tipus"], "inici": a["hora"], "nivell": a.get("nivell"),
                       "ca": a["ca"], "es": a["es"], **{k: a[k] for k in ("enllac", "fins", "comenca") if a.get(k)}})

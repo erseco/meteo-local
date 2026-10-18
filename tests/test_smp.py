@@ -345,6 +345,8 @@ class Smp(unittest.TestCase):
                                    "aemet:pluja:2026-10-17T12:00:00+02:00": {"fin": fi, "cobert": True}}}
         h = {e["clau"]: e for e in AB.historial(estat, [], AHORA)}
         self.assertEqual(h[avui_t]["fins"], fi)                        # allargat
+        self.assertEqual(h[avui_t]["allargat_de"], "2026-10-17T23:59:59+02:00")   # la fitxa ho diu
+        self.assertNotIn("allargat_de", h[dema_t])
         self.assertNotIn("fi", h[avui_t])
         self.assertEqual(h[dema_t]["fi_ca"], AB.INCLOS["ca"])          # dins del d'avui
         self.assertEqual(h[dema_t]["substituit_per"], {"clau": avui_t, "inici": hora})

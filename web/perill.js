@@ -88,7 +88,13 @@ function fitxa(e, ara) {
   titol.append(...nodesLinia(primera));
   const cap = element('div', 'episodi-cap');
   const textFi = fi && (e[`fi_${idiomaText()}`] || e.fi_ca);
-  const compartit = textCompartit([primera, ...resta, ...(textFi ? trossos(textFi) : [])]);
+  // El text diu el final amb què es va publicar; si l'AEMET l'ha allargat,
+  // la fitxa ho diu sota la primera línia, la de quan dura (revisor,
+  // 18-10-2026; ADR 0101).
+  const allargat = e.allargat_de && e.fins && new Date(e.fins) > new Date(e.allargat_de);
+  const linies = allargat ? [...resta.slice(0, 1), ...trossos(T`L’AEMET l’ha allargat fins a ${moment(e.fins)}.`),
+    ...resta.slice(1)] : resta;
+  const compartit = textCompartit([primera, ...linies, ...(textFi ? trossos(textFi) : [])]);
   cap.append(titol, botoCompartir(art.id, primera.map((t) => t.t).join('').trim(), compartit));
   const estat = element('p', 'episodi-quan');
   if (fi && e.substituit_per) {
@@ -112,7 +118,7 @@ function fitxa(e, ara) {
   const pub = !fi && publicacioEpisodi(e);
   if (pub && pub.actualitzat) estat.append(` · ${textPublicacio(pub)}`);
   art.append(cap, estat);
-  const cos = nodesText(resta);
+  const cos = nodesText(linies);
   // Els avisos que calcula aquesta web (la riera i el temps extrem) no tenen
   // cap font oficial on ampliar-los: porten a «Com funciona», on s'expliquen
   // amb paraules corrents, no a la metodologia (Juanjo, 12-10-2026; ADR 0076).

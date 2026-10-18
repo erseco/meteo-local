@@ -199,3 +199,17 @@ Ahora dice «Hi compta la pluja de l'última hora al barri, encara que ja hagi
 parat», y «Com funciona», «Si ha plogut a l'última hora…» en vez de «Si ja
 plou». La parte alta redondeada («1 °C més» con 0,5) era la regla de Juanjo
 del 13-10-2026 y se le explica al revisor.
+
+## Cambio del 18-10-2026 (3.138.2): la ficha alargada por AEMET
+
+El revisor encontró en el historial de «Perill» la ficha de tormentas del
+17-10 con «fins a mitjanit» en el texto y final a las 03:59 del 18. La hora
+era la buena: AEMET juntó en ese aviso el del día siguiente de 0 a 4 h y lo
+alargó (`tanca_aemet`); el texto es el que publicó al principio. No era un
+desfase de zona horaria, como suponía el revisor. Juanjo aprobó que la ficha
+lo diga en vez de enseñar al revisor a callarlo: al alargarse, la ficha guarda
+el final con que se publicó (`allargat_de`) y, debajo de la línea de cuándo
+dura, dice «L'AEMET l'ha allargat fins a dg. 18/10, 03:59», también en el
+texto que se comparte. La ficha del 17-10 se completó a mano en el estado del
+NAS. Los mensajes de Telegram y del navegador no cambian: se enviaron con el
+final que tenían.
