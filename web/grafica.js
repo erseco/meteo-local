@@ -584,10 +584,13 @@ function dibuixaGrafica(fig) {
   // mateixos llindars que el cel de la taula. Per sota, cap barra.
   g.append(svg('line', { class: 'g-base', x1: 0, x2: W, y1: base, y2: base }));
   // Dalt de tot queda lloc per a la xifra dels mm.
-  const sostre = sostrePluja(files);
+  // La pluja prevista de les hores passades (Com encerta) també cap a l'escala.
+  const plujaPrevista = (f) => (f.mesura && f.prev && f.prev.mm > 0 ? f.prev.mm : 0);
+  const ambPrevMm = files.some((f) => plujaPrevista(f) > 0);
+  const sostre = sostrePluja([...files, ...files.filter(plujaPrevista).map((f) => ({ pluja_mm: plujaPrevista(f), probabilitat: 1 }))]);
   const dalt = (f) => yPluja + hPluja - Math.max(3, alcadaPluja(f.pluja_mm || 0, sostre) * (hPluja - 14));
   // El sostre, una ratlla fina amb la seva xifra, com la del vent; només si plou.
-  const ambBarres = files.some((f) => plujaGrafica(f));
+  const ambBarres = files.some((f) => plujaGrafica(f)) || ambPrevMm;
   g.append(svg('line', { class: 'g-sostre', x1: 0, x2: W, y1: ySostre, y2: ySostre }));
   files.forEach((f, i) => {
     const pluja = plujaGrafica(f);
@@ -596,6 +599,15 @@ function dibuixaGrafica(fig) {
     const intensa = intensitatPluja(f.pluja_mm || 0);
     g.append(svg('rect', { class: `g-pluja ${pluja === 'pluja' ? 'segura' : pluja}${intensa ? ' ' + intensa : ''}`,
       x: x(i) + col * 0.15, y, width: col * 0.7, height: base - y }));
+  });
+  // Els mm que deia la previsió de les hores passades, amb «Com encerta»: una
+  // vora puntejada a la seva alçada, damunt de la barra del que va ploure
+  // (Juanjo, 18-10-2026: «quiero incluir los mm de lluvia predichos»).
+  files.forEach((f, i) => {
+    const mm = plujaPrevista(f);
+    if (!mm) return;
+    const y = yPluja + hPluja - Math.max(3, alcadaPluja(mm, sostre) * (hPluja - 14));
+    g.append(svg('rect', { class: 'g-pluja-prev', x: x(i) + col * 0.15, y, width: col * 0.7, height: base - y }));
   });
   // Una vora del color del fons, perquè la línia es vegi damunt de les barres.
   // La previsió de les 7 de les hores passades, tènue, darrere de la mesurada.
@@ -706,8 +718,9 @@ function dibuixaGrafica(fig) {
         : T`Temperatura: ${Math.round(f.temperatura)}\u00a0°C`
           + previst(p.temperatura, T` (prevista: ${Math.round(p.temperatura ?? 0)}\u00a0°C)`));
       const mm = (v) => (v >= 10 ? String(Math.round(v)) : v < 0.05 ? '0' : coma(Math.round(v * 10) / 10));
+      const mmPrevist = p.mm == null ? '' : T`, ${mm(p.mm)}\u00a0mm`;
       linies.push(f.pluja_mm == null ? T('Pluja: no se sap') : T`Pluja: ${mm(f.pluja_mm)}\u00a0mm`
-        + previst(p.probabilitat, T` (prevista: ${Math.round((p.probabilitat ?? 0) * 100)}\u00a0%)`));
+        + previst(p.probabilitat, T` (prevista: ${Math.round((p.probabilitat ?? 0) * 100)}\u00a0%${mmPrevist})`));
       return linies;
     }
     const [textCel] = f.plou_ara ? [T('Plou ara')] : cel(f);
@@ -789,6 +802,7 @@ function dibuixaGrafica(fig) {
     ll.append(clau('m-prev', T`Previsió ${a}\u00a0h abans`));
   }
   if (ambAlta) ll.append(clau('m-alta', T('Part alta')));
+  if (ambPrevMm) ll.append(clau('m-pluja-prev', T`Pluja prevista ${opcions.antelacio || 1}\u00a0h abans`));
   const plujes = files.map((f) => plujaGrafica(f));
   // La probabilitat en xifres: «probable» i «possible» no es distingeixen
   // (Juanjo, 16-10-2026: «entre lluvia probable y puede llover no hay
@@ -917,7 +931,8 @@ function vistaGrafica() {
   const ambAntelacio = (files, a) => files.map((f) => {
     const v = f.prev && f.prev[String(a)];
     const { prev, ...resta } = f;
-    return v ? { ...resta, prev: { temperatura: v[0], probabilitat: v[1] } } : resta;
+    // Els mm, des de la 3.137.0 (els dies d'abans no en porten).
+    return v ? { ...resta, prev: { temperatura: v[0], probabilitat: v[1], mm: v[2] ?? null } } : resta;
   });
   const avuiIso = () => {
     const a = new Date();
@@ -1096,28 +1111,61 @@ function textTemperaturaEncert(t, minim) {
   return T`Temperatura: s’equivoca de mitjana ${coma(t.error)}\u00a0°C.`;
 }
 
-function textPlujaEncert(p, minim) {
+// La pluja, en recompte i igual al resum i al dia: de les hores en què deia
+// que plouria (50 % o més), quantes van ploure; de les que deia que no (menys
+// del 20 %), quantes van ploure. Abans el dia sumava els encerts de les dues
+// i semblava bo encara que fallés tota la pluja (Juanjo, 18-10-2026).
+function partPluja(n, plogudes, plou) {
+  const passa = plogudes ? (n === 1 ? T('va ploure') : T`en va ploure ${plogudes}`)
+    : (n === 1 ? T('no va ploure') : T('no en va ploure cap'));
+  if (plou) {
+    return n === 1 ? T`de l’hora en què deia que plouria (50\u00a0% o més), ${passa}`
+      : T`de les ${n} hores en què deia que plouria (50\u00a0% o més), ${passa}`;
+  }
+  return n === 1 ? T`de l’hora en què deia que no (menys del 20\u00a0%), ${passa}`
+    : T`de les ${n} en què deia que no (menys del 20\u00a0%), ${passa}`;
+}
+
+function textPlujaEncert(p, minim = 0) {
   const [plouSi, plou] = p.plou;
   const [secSi, sec] = p.sec;
-  if (plou < minim || sec < minim) {
-    return T`Pluja: encara poques dades (${plou} hores amb pluja prevista).`;
-  }
-  const a = Math.round((plouSi / plou) * 10);
-  const b = Math.round((secSi / sec) * 10);
-  return T`Pluja: quan diu que plourà (50\u00a0% o més), plou ${a} de cada 10 vegades; quan diu que no (menys del 20\u00a0%), no plou ${b} de cada 10.`;
+  const parts = [];
+  if (plou) parts.push(partPluja(plou, plouSi, true));
+  if (sec) parts.push(partPluja(sec, sec - secSi, false));
+  if (!parts.length) return null;
+  const text = T`Pluja: ${parts.join('; ')}.`;
+  return plou < minim ? `${text} ${T('Encara són poques hores per treure’n conclusions.')}` : text;
+}
+
+// Els mm previstos i els mesurats, sumats a les hores que tenen les dues
+// coses (historial.py; Juanjo, 18-10-2026).
+function textMmEncert(m) {
+  return T`Quantitat de pluja: en preveia ${coma(m.previst)}\u00a0mm i en van caure ${coma(m.mesurat)}.`;
+}
+
+// El període que es compta, amb les dates: «darrers 30 dies» només quan n'hi ha 30.
+function textPeriode(periode) {
+  if (!periode || periode.dies >= 30) return T('Els darrers 30 dies.');
+  const codi = IDIOMA.codi === 'es' ? 'es' : 'ca';
+  const data = new Date(`${periode.des_de}T12:00`).toLocaleDateString(codi, { day: 'numeric', month: 'long' });
+  return T`Des del ${data} fins ara (${periode.dies} dies).`;
 }
 
 function textEncert(index, a) {
   if (!index || !index.encert || !index.encert[String(a)]) return [];
   const { darrers, anteriors, mesos } = index.encert[String(a)];
   const m = index.minims || {};
-  const res = [element('p', 'vg-encert-titol', T`Com encerta la previsió feta ${a}\u00a0h abans (darrers 30 dies)`)];
+  const res = [element('p', 'vg-encert-titol', T`Com encerta la previsió feta ${a}\u00a0h abans`),
+    element('p', null, textPeriode(index.periode))];
   let temp = textTemperaturaEncert(darrers.temperatura, m.temperatura_hores || 48);
   if (anteriors.temperatura.error != null && anteriors.temperatura.hores >= (m.temperatura_hores || 48)
       && darrers.temperatura.hores >= (m.temperatura_hores || 48)) {
     temp += ' ' + T`Els 30 dies anteriors, ${coma(anteriors.temperatura.error)}\u00a0°C.`;
   }
-  res.push(element('p', null, temp), element('p', null, textPlujaEncert(darrers.pluja, m.pluja_casos || 20)));
+  res.push(element('p', null, temp));
+  const pluja = textPlujaEncert(darrers.pluja, m.pluja_casos || 20);
+  if (pluja) res.push(element('p', null, pluja));
+  if (darrers.mm && darrers.mm.hores) res.push(element('p', null, textMmEncert(darrers.mm)));
   // Per mesos, quan n'hi ha més d'un: si millora amb el temps.
   const llista = Object.entries(mesos || {}).filter(([, e]) => e.temperatura.error != null);
   if (llista.length > 1) {
@@ -1139,11 +1187,9 @@ function textEncertDia(dades, a) {
   if (e.temperatura.error != null) {
     res.push(element('p', null, T`Temperatura: s’equivoca de mitjana ${coma(e.temperatura.error)}\u00a0°C.`));
   }
-  const casos = e.pluja.plou[1] + e.pluja.sec[1];
-  if (casos) {
-    const encerts = e.pluja.plou[0] + e.pluja.sec[0];
-    res.push(element('p', null, T`Pluja: va encertar ${encerts} de ${casos} hores.`));
-  }
+  const pluja = textPlujaEncert(e.pluja);
+  if (pluja) res.push(element('p', null, pluja));
+  if (e.mm && e.mm.hores) res.push(element('p', null, textMmEncert(e.mm)));
   return res;
 }
 

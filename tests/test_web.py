@@ -603,6 +603,23 @@ class Web(unittest.TestCase):
         self.assertEqual((float(m.group(1)), float(m.group(2))),
                          (C.RISC_LLINDARS["ratxa"][0], C.RISC_LLINDARS["calor"][0]))
 
+    def test_com_encerta_amb_recompte(self):
+        # 18-10-2026: el dia sumava els encerts de pluja i de sec («23 de 24») encara
+        # que fallés tota la pluja; ara, com el resum, quantes van ploure de cada.
+        ara = "2026-10-18T10:00:00+02:00"
+        dia = self.avalua(ara, "textPlujaEncert({plou: [0, 4], sec: [19, 19]})", "casa.js")
+        self.assertEqual(dia, "Pluja: de les 4 hores en què deia que plouria (50\u00a0% o més), no en va ploure cap; "
+                              "de les 19 en què deia que no (menys del 20\u00a0%), no en va ploure cap.")
+        resum = self.avalua(ara, "textPlujaEncert({plou: [5, 15], sec: [200, 203]}, 20)", "casa.js")
+        self.assertTrue(resum.startswith("Pluja: de les 15 hores en què deia que plouria (50\u00a0% o més), en va ploure 5; "
+                                         "de les 203 en què deia que no (menys del 20\u00a0%), en va ploure 3."))
+        self.assertTrue(resum.endswith("Encara són poques hores per treure’n conclusions."))
+        self.assertEqual(self.avalua(ara, "textPlujaEncert({plou: [1, 1], sec: [0, 0]})", "casa.js"),
+                         "Pluja: de l’hora en què deia que plouria (50\u00a0% o més), va ploure.")
+        self.assertEqual(self.avalua(ara, "textPeriode({des_de: '2026-10-04', dies: 15})", "casa.js"),
+                         "Des del 4 d’octubre fins ara (15 dies).")
+        self.assertEqual(self.avalua(ara, "textPeriode({des_de: '2026-09-19', dies: 30})", "casa.js"), "Els darrers 30 dies.")
+
     def test_meteocat_agrupat_per_fenomen(self):
         # 18-10-2026: «Avisos actius (3)» i, desplegat, 4 línies (dos meteors de la pluja).
         expr = ("element = (t, c, x) => ({ className: c, fills: x ? [x] : [], dataset: {},"

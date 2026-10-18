@@ -92,3 +92,38 @@ hay enmedio pasarlos arriba, decide tu». Las dos cosas: arriba, los botones
 que eligen qué se ve (horas, viento, partes, «Com encerta»); debajo, el día y
 la antelación en un mismo bloque (`.vg-temps`), en una fila si caben (en el
 ordenador) y, si no, una debajo de la otra (en el móvil).
+
+## Cambio del 18-10-2026 (3.137.0): los milímetros previstos
+
+Juanjo: «en la sección com encerta quiero incluir los mm de lluvia
+predichos». El historial guarda también los milímetros que mostraba la web
+(`prev` = [temperatura, probabilidad, mm]) y, para cada antelación, la suma
+de los previstos y de los medidos en las horas que tienen los dos (`mm`). Con
+«Com encerta», la gráfica dibuja los previstos como una barra de contorno
+discontinuo junto a la de lo que llovió (con su clave en la leyenda), la ficha
+de cada hora pasada dice «prevista: 30 %, 0,8 mm», y el texto de debajo da los
+totales del día o de los últimos 30 días. Los milímetros previstos son los de
+la tabla, el máximo de los modelos finos: el 17-10-2026 la previsión de 2 h
+antes sumaba 17,2 mm y no llovió nada en el barrio.
+
+Como cada publicación solo reescribe los dos últimos días, `historial.py`
+lleva un número de formato (`FORMAT`, apuntado en
+`registre/historial-format`): si cambia, la pasada siguiente rehace todos los
+días. Los días se pueden leer igual sin los milímetros (dos valores en
+`prev`). Validación: `tests/test_historial_grafica.py`; el historial real
+del NAS generado aparte, y la vista con «Com encerta» en Chromium y Firefox.
+
+Y los textos, más claros (Juanjo: «no me queda claro todo esto. es el resumen
+del mes? por qué dice que hay 7 horas de lluvia prevista?»):
+
+- El resumen de la vista de hoy cuenta también las horas de hoy ya pasadas
+  (antes, solo los días acabados) y dice el periodo con fechas («Des del 4
+  d'octubre fins ara (15 dies)»; «Els darrers 30 dies» solo cuando hay 30).
+- La lluvia, en recuento y igual en el resumen y en cada día: «de les 12
+  hores en què deia que plouria (50 % o més), en va ploure 5; de les 206 en
+  què deia que no (menys del 20 %), en va ploure 1», con el aviso de que aún
+  son pocas si no llegan a 20. El día sumaba antes los aciertos de las dos
+  cosas («va encertar 23 de 24 hores») y parecía bueno aunque fallara toda la
+  lluvia.
+- Los milímetros, como cantidad: «Quantitat de pluja: en preveia 78,5 mm i
+  en van caure 18,7».

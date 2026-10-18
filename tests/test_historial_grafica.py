@@ -58,9 +58,14 @@ class Historial(unittest.TestCase):
         # Amb 1 h: l'hora de les 7 amb la de les 6:03 (5 °C d'error) i la de les 8
         # amb la de les 7:03 (1 °C). Cada publicació dona una hora per antelació.
         self.assertEqual(e["1"]["temperatura"], {"error": 3.0, "hores": 2})
+        # Els mm previstos i els mesurats, a les mateixes hores (18-10-2026).
+        self.assertEqual(e["1"]["mm"], {"previst": 2.0, "mesurat": 0.0, "hores": 2})
+        f = next(x for x in self.dies if x["dia"] == "2026-10-16")["hores"][9]
+        self.assertEqual(f["prev"]["2"][2], 1.0)
         self.assertEqual(e["2"]["temperatura"]["hores"], 2)
         i = H.index(self.dies, dt.date(2026, 10, 17))
         self.assertEqual(i["encert"]["2"]["darrers"]["temperatura"]["hores"], 2)
+        self.assertEqual(i["encert"]["2"]["darrers"]["mm"]["hores"], 2)
         self.assertEqual(list(i["encert"]["2"]["mesos"]), ["2026-10"])
         self.assertIn("2026-10-17", i["dies"])
         self.assertEqual(sorted(map(int, i["encert"])), list(range(1, 24)))

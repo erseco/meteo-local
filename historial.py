@@ -17,13 +17,15 @@ con lo que se predijo 1h antes de cada hora y con el error, lo mismo con
   apunta cada hora la previsión publicada) en la publicación de unas N horas
   antes del comienzo de la hora (entre N h y media antes y N h y media menos
   media hora), para N de 1 a 23 (cada publicación cubre 24 horas, contando la que ya ha
-  empezado): `prev` = {"N": [temperatura, probabilidad]}.
+  empezado): `prev` = {"N": [temperatura, probabilidad, mm]} (los mm, desde la
+  3.137.0: Juanjo, 18-10-2026, «quiero incluir los mm de lluvia predichos»).
 
 El acierto, para cada antelación, sobre las horas con las dos cosas:
 - Temperatura: el error medio absoluto (°C).
 - Lluvia: de las horas en que decía 50 % o más, en cuántas llovió; de las
   que decía menos del 20 %, en cuántas no llovió. Es la comprobación de
-  calibración de una probabilidad, contada en casos.
+  calibración de una probabilidad, contada en casos. Y los milímetros: los
+  previstos y los medidos, sumados en las horas que tienen los dos.
 Los últimos 30 días, los 30 anteriores (para ver si mejora) y por meses,
 para cada antelación.
 
@@ -53,6 +55,9 @@ PROB_SEC = 0.2                           # «no plourà», por debajo de «possi
 DIES_FINESTRA = 30
 MIN_HORES_TEMP = 48                      # para dar el error de la temperatura
 MIN_CASOS_PLUJA = 20                     # para dar el acierto de la lluvia (en cada sentido)
+# El formato de los días: si cambia, la pasada siguiente los rehace todos, no
+# solo los últimos (3.137.0: los mm previstos), y lo apunta en el registro.
+FORMAT = 2
 
 
 def hores_del_dia(dia):
@@ -108,16 +113,17 @@ def un_dia(dia, casa, meteocat, veines, previstes):
              "pluja_mm": None if mm is None else round(mm, 1)}
         p = previstes.get(fins)
         if p:
-            f["prev"] = {str(n): [m.get("temperatura"), m.get("probabilitat")] for n, m in sorted(p.items())}
+            f["prev"] = {str(n): [m.get("temperatura"), m.get("probabilitat"), m.get("pluja_mm")]
+                         for n, m in sorted(p.items())}
         files.append(f)
     return {"dia": dia.isoformat(), "hores": files,
             "encert": {str(n): encert(files, n) for n in ANTELACIONS}}
 
 
 def _prev(f, n):
-    """(temperatura, probabilidad) que decía la web n horas antes."""
+    """(temperatura, probabilidad, mm) que decía la web n horas antes."""
     v = (f.get("prev") or {}).get(str(n))
-    return (v[0], v[1]) if v else (None, None)
+    return (v[0], v[1], v[2] if len(v) > 2 else None) if v else (None, None, None)
 
 
 def encert(files, n):
@@ -134,8 +140,11 @@ def encert(files, n):
             plou = [plou[0] + mullat, plou[1] + 1]
         elif p < PROB_SEC:
             sec = [sec[0] + (not mullat), sec[1] + 1]
+    mm = [(_prev(f, n)[2], f["pluja_mm"]) for f in files if _prev(f, n)[2] is not None and f["pluja_mm"] is not None]
     return {"temperatura": {"error": round(sum(errors) / len(errors), 2) if errors else None, "hores": len(errors)},
-            "pluja": {"plou": plou, "sec": sec}}
+            "pluja": {"plou": plou, "sec": sec},
+            "mm": {"previst": round(sum(p for p, _ in mm), 1), "mesurat": round(sum(m for _, m in mm), 1),
+                   "hores": len(mm)}}
 
 
 def suma(encerts):
@@ -144,8 +153,11 @@ def suma(encerts):
     err = sum((e["temperatura"]["error"] or 0) * e["temperatura"]["hores"] for e in encerts)
     plou = [sum(e["pluja"]["plou"][i] for e in encerts) for i in (0, 1)]
     sec = [sum(e["pluja"]["sec"][i] for e in encerts) for i in (0, 1)]
+    mms = [e["mm"] for e in encerts if e.get("mm")]
     return {"temperatura": {"error": round(err / hores, 2) if hores else None, "hores": hores},
-            "pluja": {"plou": plou, "sec": sec}}
+            "pluja": {"plou": plou, "sec": sec},
+            "mm": {"previst": round(sum(m["previst"] for m in mms), 1), "mesurat": round(sum(m["mesurat"] for m in mms), 1),
+                   "hores": sum(m["hores"] for m in mms)}}
 
 
 def tots(avui=None, registre=None):
@@ -165,9 +177,13 @@ def tots(avui=None, registre=None):
 
 def index(dies, avui):
     """historial.json: los días que hay y el acierto de los últimos 30 días,
-    de los 30 anteriores y de cada mes, con los mínimos para darlo."""
-    complets = [d for d in dies if d["dia"] < avui.isoformat()]
-    fi = avui
+    de los 30 anteriores y de cada mes, con los mínimos para darlo. Hoy
+    también, con sus horas ya pasadas (las que faltan no tienen medida): así
+    cuadra con la gráfica (Juanjo, 18-10-2026: «entre ayer y hoy ha habido
+    más»). `periode`: desde qué día cuenta la ventana y cuántos días son."""
+    complets = [d for d in dies if d["dia"] <= avui.isoformat()]
+    fi = avui + dt.timedelta(days=1)
+    des_de = max(PRIMER_DIA, fi - dt.timedelta(days=DIES_FINESTRA))
 
     def per_antelacio(n):
         finestra = lambda ini, fi_: [d["encert"][str(n)] for d in complets
@@ -182,6 +198,7 @@ def index(dies, avui):
     return {"generat": dt.datetime.now(P.ZONA).isoformat(timespec="minutes"),
             "dies": [d["dia"] for d in dies],
             "minims": {"temperatura_hores": MIN_HORES_TEMP, "pluja_casos": MIN_CASOS_PLUJA},
+            "periode": {"des_de": des_de.isoformat(), "dies": (fi - des_de).days},
             "encert": {str(n): per_antelacio(n) for n in ANTELACIONS}}
 
 
@@ -194,10 +211,24 @@ def fes(carpeta, ultims=None, avui=None, registre=None):
     escriu = lambda nom, dades: json.dump(dades, open(os.path.join(carpeta, nom), "w", encoding="utf-8"),
                                           ensure_ascii=False, separators=(",", ":"))
     escriu("historial.json", index(dies, avui))
+    marca = os.path.join(registre or A.REGISTRE, "historial-format")
+    try:
+        with open(marca) as f:
+            vell = f.read().strip() != str(FORMAT)
+    except OSError:
+        vell = True
+    if vell:
+        ultims = None
     for d in dies[-ultims:] if ultims else dies:
         nom = f"historial-{d['dia']}.json"
         escriu(nom, d)
         noms.append(nom)
+    if vell:
+        try:
+            with open(marca, "w") as f:
+                f.write(str(FORMAT))
+        except OSError:
+            pass
     return noms
 
 
