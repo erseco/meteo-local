@@ -292,6 +292,28 @@ def per_hora(ini, fin, smp):
     return [{"nivell": n, "tipus": sorted(t), "font": "meteocat"} for n, t in res.items()]
 
 
+def pendents(avisos, ahora):
+    """Els avisos amb només les hores que queden, des de l'hora en curs; sense
+    cap hora per davant, l'avís no hi és. Meteocat manté a l'avís vigent les
+    franges ja passades: el diumenge 18-10-2026 la fitxa de «Perill» encara
+    deia «Observat ara» i les hores del dissabte (Juanjo: «no está una parte
+    ya pasada?»)."""
+    ara = ahora.astimezone()
+    avui, h = ara.date().isoformat(), ara.hour
+    res = []
+    for a in avisos:
+        dies = {}
+        for dia, franges in a["dies"].items():
+            if dia < avui:
+                continue
+            fr = [(max(i, h), fi) if dia == avui else (i, fi) for i, fi in franges if dia > avui or fi > h]
+            if fr:
+                dies[dia] = fr
+        if dies:
+            res.append({**a, "dies": dies})
+    return res
+
+
 def per_fenomen(avisos, ahora=None):
     """Un element per fenomen i nivell, el resum que surt a la previsió del dia
     (ADR 0093): {fenomen, nivell, dies (les hores d'aquest nivell), ca, es}.
@@ -300,15 +322,13 @@ def per_fenomen(avisos, ahora=None):
     un dilluns en groc), i sense franges repetides («de 0 a 24 h i de 12 a
     24 h»). Amb ahora, sense les hores ja passades: és el resum del que ve."""
     rang = {"mig": 1, "alt": 2, "maxim": 3}
-    passat = ahora and f"{ahora.astimezone().date().isoformat()}:{ahora.astimezone().hour:02d}"
+    if ahora:
+        avisos = pendents(avisos, ahora)
     hores_f = {}
     for a in avisos:
         n = nivell(a["perill"])
         h = hores_f.setdefault(fenomen(a["meteor"]), {})
         for hora in hores_avis(a):
-            d, hh = hora.split(":")
-            if passat and f"{d}:{int(hh):02d}" < passat:
-                continue
             if rang[n] > rang.get(h.get(hora), 0):
                 h[hora] = n
     nom = C.SMP_COMARCA_NOM
@@ -330,11 +350,12 @@ def per_fenomen(avisos, ahora=None):
 
 
 def llegeix(get, ahora):
-    """Lo que se publica: {hora, avisos (los de la comarca), linies (los textos),
-    fenomens (el resumen por fenómeno)}."""
+    """Lo que se publica: {hora, avisos (los de la comarca, enteros), linies (los
+    textos, solo con lo que queda), fenomens (el resumen por fenómeno)}."""
     avisos = de_la_comarca(episodis(get(URL)))
     hora = ahora.strftime("%H:%M")
-    return {"hora": ahora.isoformat(timespec="minutes"), "avisos": avisos, "linies": textos(avisos, hora),
+    return {"hora": ahora.isoformat(timespec="minutes"), "avisos": avisos,
+            "linies": textos(pendents(avisos, ahora), hora),
             "fenomens": per_fenomen(avisos, ahora)}
 
 

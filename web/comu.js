@@ -820,10 +820,13 @@ function avisosAemet(dades) {
   return (dades.avisos || []).filter((a) => !a.cobert);
 }
 
-// curts: a la portada, només les línies curtes, sense desplegable; cadascuna
-// porta a la fitxa del seu avís (Juanjo, 17-10-2026: «quita lo de desplegar,
-// que muestre la información como sale ahora plegado y al pulsar lleva al
-// detalle del aviso, es para simplificar la pagina inicial»).
+// curts: a la portada, només les línies curtes; cadascuna porta a la fitxa
+// del seu avís (Juanjo, 17-10-2026: «quita lo de desplegar, que muestre la
+// información como sale ahora plegado y al pulsar lleva al detalle del aviso,
+// es para simplificar la pagina inicial»). I plegades sota el títol, amb el
+// nombre d'avisos, si no n'hi ha cap amb «Nou» ni cap de vermell (Juanjo,
+// 18-10-2026: «quiero que esto aparezca plegado a no ser que haya algo
+// nuevo»; ADR 0094).
 function blocAvisos(dades, { ara = new Date(), curts: nomesCurts = false } = {}) {
   const aemet = avisosAemet(dades);
   const perills = [...blocPlans(dades.plans), ...blocSmp(dades.smp),
@@ -837,9 +840,16 @@ function blocAvisos(dades, { ara = new Date(), curts: nomesCurts = false } = {})
   const sec = element('section', 'avisos-actius');
   sec.setAttribute('aria-label', T('Avisos actius'));
   if (nomesCurts) {
+    const plec = element('details', 'avisos-plec');
+    const resum = element('summary');
+    resum.append(element('h2', 'seccio', T`Avisos actius (${curts.length})`));
     const llista = element('div', 'avisos-curts');
     llista.append(...curts);
-    sec.append(element('h2', 'seccio', T`Avisos actius (${curts.length})`), llista);
+    plec.append(resum, llista);
+    const nou = curts.some((c) => c.querySelector('.avis-nou') || nivellDe(c) === 'vermell');
+    plec.open = PLEC_AVISOS && PLEC_AVISOS.empremta === empremta ? PLEC_AVISOS.obert : nou;
+    plec.addEventListener('toggle', () => { PLEC_AVISOS = { empremta, obert: plec.open }; });
+    sec.append(plec);
     return sec;
   }
   const plec = element('details', 'avisos-plec');

@@ -486,7 +486,7 @@ def text_meteocat(canvi, f, avisos):
     if f.startswith("obs:"):
         ca = f"Meteocat: s'observa perill {gca} per {fca} al {nom}"
         es = f"Meteocat: se observa peligro {ges} por {fes} en el {nom}"
-    elif canvi == "nou":
+    elif canvi in ("nou", "vigent"):
         ca = f"Meteocat: avís de perill {gca} per {fca} al {nom}"
         es = f"Meteocat: aviso de peligro {ges} por {fes} en el {nom}"
     elif canvi == "puja":
@@ -503,6 +503,12 @@ def text_meteocat(canvi, f, avisos):
                   + "\nÉs un avís oficial: segueix les indicacions de Protecció Civil.",
             "es": negreta(es, n) + "".join("\n" + linia_smp(a, "es") for a in ordre)
                   + "\nEs un aviso oficial: sigue las indicaciones de Protección Civil."}
+
+
+def principal_smp(avisos):
+    """El fenomen del títol de la fitxa quan no hi ha res de nou: el que
+    s'observa ara, si n'hi ha cap; si no, el de més perill."""
+    return fenomen(max(avisos, key=lambda a: (a.get("tipus", "previsio") != "previsio", a["perill"])))
 
 
 def text_meteocat_fi():
@@ -709,7 +715,9 @@ def decideix(estat, salida, ahora):
     # vez, solo se apuntan; un estado de antes de la 3.87.0 ({clave: grado},
     # sin «fenomens») se toma como vacío: lo vigente se avisa una vez.
     if salida.get("smp") is not None:
-        avisos_smp = salida["smp"].get("avisos") or []
+        # Només el que queda: Meteocat manté a l'avís vigent les franges ja
+        # passades (18-10-2026), i l'episodi s'acaba quan no en queda cap.
+        avisos_smp = SMP.pendents(salida["smp"].get("avisos") or [], ahora)
         abans = (of or {}).get("smp")
         abans = abans if isinstance(abans, dict) and "fenomens" in abans else None
         e_smp, canvis, acabat = decideix_smp(abans, avisos_smp, ahora)
@@ -721,6 +729,10 @@ def decideix(estat, salida, ahora):
                         SMP.nivell(rang_max), episodi=e_smp["episodi"], enllac=METEOCAT, fins=fins_smp(avisos_smp))
             elif acabat:
                 afegeix("perill", f"meteocat:{hora}:fi", text_meteocat_fi(), "fi", episodi=abans["episodi"])
+            elif avisos_smp and e_smp["episodi"]:
+                # Sense res de nou, la fitxa de «Perill» diu el que queda ara,
+                # sense enviar cap missatge (historial).
+                e_smp["text"] = text_meteocat("vigent", principal_smp(avisos_smp), avisos_smp)
         nou_of["smp"] = e_smp
     elif of is not None and "smp" in of:
         nou_of["smp"] = of["smp"]
@@ -860,6 +872,11 @@ def tanca_aemet(h, vigents, ahora):
             e.update(fi=ara, fi_ca=RETIRAT["ca"], fi_es=RETIRAT["es"])
 
 
+def cos_avis(text):
+    """Les línies d'un avís sense el títol."""
+    return text.split("\n")[1:]
+
+
 def historial(estat, nous, ahora, anterior=None):
     h = estat["historial"] = fusiona(estat.get("historial") or [], anterior)
     for a in nous:
@@ -889,8 +906,15 @@ def historial(estat, nous, ahora, anterior=None):
     # «¿este aviso se ha retirado?»). Las cerradas antes de la 3.88.1 la toman
     # en la pasada siguiente.
     tanca_aemet(h, estat.get("aemet_vigents"), ahora)
-    smp = ((estat.get("oficials") or {}).get("smp") or {}).get("episodi")
+    smp_estat = (estat.get("oficials") or {}).get("smp") or {}
+    smp = smp_estat.get("episodi")
     mc = next((x for x in reversed(h) if smp and x["clau"] == smp), None)
+    # La fitxa oberta de Meteocat, amb el que queda: les franges que passen en
+    # surten, i «Observat ara» quan ja no s'observa (18-10-2026). Si les
+    # línies són les mateixes, es queda el text de l'últim avís.
+    ara_smp = smp_estat.get("text")
+    if mc and ara_smp and not mc.get("fi") and set(cos_avis(mc["ca"])) != set(cos_avis(ara_smp["ca"])):
+        mc.update(ca=ara_smp["ca"], es=ara_smp["es"])
     for e in h:
         if e["clau"] in (estat.get("aemet_coberts") or []) and not e.get("fi"):
             e.update(fi=ahora.isoformat(timespec="minutes"), fi_ca=SUBSTITUIT["ca"], fi_es=SUBSTITUIT["es"])

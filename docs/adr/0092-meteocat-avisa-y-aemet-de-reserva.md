@@ -134,3 +134,35 @@ horas nuevas, fenómeno nuevo, observación, final y episodio nuevo), el estado
 de antes, AEMET de reserva y el aviso a Juanjo al fallar y al volver. Con la
 página real y el estado real del NAS, la primera pasada da una notificación
 (el alto de Meteocat) y la siguiente, ninguna. Las 470 pruebas del proyecto.
+
+## Cambio del 18-10-2026 (3.135.0): solo lo que queda
+
+Meteocat mantiene en el aviso vigente las franjas ya pasadas: el domingo 18 a
+las 6:40 seguía dando las del sábado 17 junto a las del lunes 19, y la ficha
+de «Perill» decía «Observat ara, perill alt per temps violent: dissabte 17 de
+19 a 22 h» con el círculo naranja. Juanjo: «ahora mismo marca esto, pero no
+está una parte ya pasada?». Había dos fallos: el texto copiaba todas las
+franjas (el mensaje del sábado a las 19:13 ya traía «de 12 a 18 h») y la
+ficha se quedaba con el texto del último mensaje enviado.
+
+- **Solo las horas que quedan** (`smp.pendents`), desde la hora en curso: las
+  líneas de `montflorit.json` (que salen desplegadas en «Avisos actius» y en
+  /avisos_actius del bot), el resumen por fenómeno (que ya lo hacía) y lo que
+  decide y escribe `avisos_bot.py`. Un aviso sin ninguna hora por delante no
+  sale. Los avisos enteros siguen en `montflorit.json` para la gráfica y para
+  saber qué cubre Meteocat (ADR 0093).
+- **El final, a su hora**: como se decide con lo que queda, el episodio se
+  cierra con «ja no hi ha cap avís de perill» media hora después de la última
+  hora avisada, aunque Meteocat no haya retirado el aviso.
+- **La ficha dice lo que queda**: en cada pasada sin nada nuevo, si las líneas
+  cambian (una franja que pasa, una observación que acaba), la ficha abierta
+  de «Perill» se rehace sin enviar ningún mensaje, con el título neutro («avís
+  de perill moderat per pluja») y el color de lo que queda. El texto se
+  guarda en el estado (`oficials.smp.text`) y lo aplica `historial`. Si las
+  líneas son las mismas, se queda el texto del último aviso.
+
+Los mensajes ya enviados no se tocan: son lo que se envió. Validación:
+`tests/test_smp.py` con el caso del 17-18-10 (aviso observado a las 19:13, la
+ficha el domingo solo con el lunes y en amarillo, ningún mensaje, y el final
+al acabar el lunes); la lectura real de Meteocat del 18-10 a las 6:40, que
+deja solo el amarillo del lunes; la ficha vista en Chromium y Firefox.

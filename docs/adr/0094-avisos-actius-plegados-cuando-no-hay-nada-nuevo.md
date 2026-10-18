@@ -160,3 +160,18 @@ pie de la tarjeta «Ara». Juanjo: «está oculto en medio del texto, lo quiero
 arriba bajo el subtítulo o donde quieras pero que se vea nada más entrar».
 Ocupa una línea pequeña; los avisos siguen saliendo justo debajo. La tarjeta
 sigue sin la hora de la medida, que ya dice esa línea.
+
+## Cambio del 18-10-2026 (3.135.0): en la portada, plegado si no hay nada nuevo
+
+Juanjo, ante la portada con tres avisos ya vistos: «también quiero que esto
+aparezca plegado a no ser que haya algo nuevo». En «El temps», «Avisos
+actius (n)» vuelve a ser un desplegable; dentro, las mismas líneas cortas de
+la 3.120.0, cada una con su ficha. Se abre solo si alguna línea lleva «Nou»
+(un aviso o una actualización que este dispositivo no había mostrado) o si
+hay un aviso rojo, que no se pliega nunca; si no, solo el título con el
+número. Lo que haga la persona manda mientras la página sigue abierta y los
+avisos no cambian. «Nou» se calcula con el historial de «Perill»: hasta que
+llega, el bloque sale plegado, salvo un rojo. «Si surts» no cambia.
+Validación: `tests/test_perills.py` (plegado la segunda vez, abierto con algo
+nuevo o rojo); Chromium y Firefox, escritorio y móvil, primera visita abierta
+con «Nou» y la siguiente plegada.

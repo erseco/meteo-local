@@ -124,7 +124,9 @@ class Perills(unittest.TestCase):
         # Plegat, una línia per avís: tampoc no se'n pot deixar cap (ADR 0094).
         self.assertTots(r["curts"], "ca", B.TIPUS_PERILL, "«Avisos actius» plegat")
         # Es desplega la primera vegada i quan canvia el conjunt; si no, plegat; vermell, sempre obert.
-        self.assertEqual(r["plec"], [True, False, True, True, "h2"], "quan es desplega «Avisos actius» (a la portada, sense desplegable)")
+        # A la portada, plegat sota el títol si no hi ha res de nou (Juanjo, 18-10-2026).
+        self.assertEqual(r["plec"], [True, False, True, True, "details", False, True, True],
+                         "quan es desplega «Avisos actius» (a «Si surts» i a la portada)")
         # Cada alerta porta a la seva fitxa de «Perill», perquè s'hi destaqui
         # (Juanjo, 16-10-2026: «con este enlace no me sale el resalte»): a
         # «Avisos actius» i a les línies del resum.
@@ -164,7 +166,19 @@ class Node_ {
   get firstChild() { return this.fills[0]; }
   setAttribute(k, v) { this.attrs[k] = v; }
   addEventListener() {}
-  querySelector() { return new Node_('x'); }
+  // «etiqueta.classe», «.classe» o «etiqueta», entre els descendents; una
+  // etiqueta sola que no hi és (les icones, que aquí no es dibuixen), un node buit.
+  querySelector(sel) { return this.cerca(sel) || (sel.includes('.') ? null : new Node_('x')); }
+  cerca(sel) {
+    const [t, c] = sel.split('.');
+    for (const f of this.fills) {
+      if (typeof f === 'string') continue;
+      if ((!t || f.tag === t) && (!c || (f.className || '').split(' ').includes(c))) return f;
+      const r = f.cerca(sel);
+      if (r) return r;
+    }
+    return null;
+  }
   set textContent(t) { this.fills = [String(t)]; }
   get textContent() { return this.fills.map((f) => (typeof f === 'string' ? f : f.textContent)).join(''); }
 }
@@ -198,8 +212,14 @@ ctx.__pocs = { ...dades, entorn: null };
 ctx.__mes = { ...ctx.__pocs, riscos: [{ ...dades.riscos[0], nivell: 'taronja' }] };
 ctx.__vermell = { ...ctx.__pocs, entorn: dades.entorn };
 const obert = (nom) => vm.runInContext(`blocAvisos(${nom}).fills[0].open`, ctx);
+// A la portada (18-10-2026), en cada visita: plegat si no hi ha cap «Nou» (la
+// segona vegada que es veu el mateix);
+// obert si n'hi ha o si n'hi ha cap de vermell.
+const portada = (nom) => vm.runInContext(
+  `LLEGITS_ABANS = null; PLEC_AVISOS = null; blocAvisos(${nom}, { curts: true }).fills[0]`, ctx);
 const plec = [obert('__pocs'), obert('__pocs'), obert('__mes'), obert('__vermell'),
-  vm.runInContext('blocAvisos(__vermell, { curts: true }).fills[0].tag', ctx)];
+  portada('__vermell').tag, (portada('__pocs'), portada('__pocs').open), portada('__mes').open,
+  portada('__vermell').open];
 console.log(JSON.stringify({ text: bloc.textContent, curts: bloc.fills[1].textContent, detalls: detalls(bloc),
   sensePla, linies: liniesFitxa, plec }));
 """
