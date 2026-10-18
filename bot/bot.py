@@ -1420,7 +1420,9 @@ def text_radar_bot(dades, idioma, moment):
                 f"fa mitja hora, {abans}.")
     # La pluja més propera, si no és a sobre, com a la web (17-10-2026), i si
     # no és la mateixa que la forta que ja s'ha dit.
-    p = None if que.startswith(("Pluja a sobre", "Lluvia encima")) else r.get("propera")
+    # Amb plugim a sobre, tampoc (Juanjo, 18-10-2026: confonia).
+    plugim = (dades.get("pluja_ara") or {}).get("plugim")
+    p = None if que.startswith(("Pluja a sobre", "Lluvia encima")) or plugim else r.get("propera")
     f = r.get("forta")
     if f and p and round(p.get("km", 0)) == round(f["km"]) and p.get("rumb") == f["rumb"]:
         p = None

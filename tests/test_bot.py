@@ -326,6 +326,8 @@ class Resum(unittest.TestCase):
             "El radar veu pluja molt feble a sobre de Montflorit (plugim), que les estacions no mesuren."))
         self.assertTrue(B.text_radar_bot(d, "es", ARA).startswith(
             "El radar ve lluvia muy débil encima de Montflorit (llovizna), que las estaciones no miden."))
+        d["radar"]["propera"] = {"km": 4.2, "rumb": "nord-oest", "classe": 1}
+        self.assertNotIn("La més propera", B.text_radar_bot(d, "ca", ARA))
         self.assertIn("plugim segons el radar.", B.text_ara(d, "ca"))
         self.assertIn("llovizna según el radar.", B.text_ara(d, "es"))
 

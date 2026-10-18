@@ -587,8 +587,10 @@ function blocRadar(r, plou, hores) {
   // la mateixa que ja diu el titular.
   const pr = r.propera;
   const repetida = estat === 'a-prop' && pr && Math.round(pr.km) === Math.round(r.forta.km) && pr.rumb === r.forta.rumb;
-  // Si plou a sobre, la més propera no diu res: és aquesta (ADR 0101).
-  const propera = !repetida && !aSobre && textPropera(pr);
+  // Si plou a sobre, la més propera no diu res: és aquesta (ADR 0101). Amb
+  // plugim a sobre, tampoc: confonia (Juanjo, 18-10-2026).
+  const plugim = r.pluja && r.pluja.plugim;
+  const propera = !repetida && !aSobre && !plugim && textPropera(pr);
   if (propera) cos.append(element('p', 'radar-propera', propera));
   // La font i l'hora de la imatge, com demana Meteocat per reutilitzar-la,
   // amb l'enllaç al radar en directe (Juanjo, 08-10-2026). Sense moviment

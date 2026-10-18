@@ -396,3 +396,7 @@ para usarla en la previsión, junto con los ecos cercanos, a partir del
 07-11-2026. La pregunta y la lectura de respuestas de la niebla y del plugim
 comparten `confirmacio.py`. Pruebas: `tests/test_plugim.py`, `test_web.py` y
 `test_bot.py`; la portada, en Chromium, Firefox y WebKit con una simulación.
+
+3.140.1: con plugim encima, el recuadro del radar y /radar ya no dicen «La més
+propera, a 4 km…»: junto a «plugim a sobre» confundía (Juanjo, «quita la línea
+de la más cercana cuando hay plugim»).
