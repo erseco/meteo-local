@@ -37,10 +37,30 @@ const LLINDARS = {
   cotxe: { ratxa: [90, null], fred: [1, null] },
   public: { ratxa: [null, null], fred: [null, null] },
 };
-// Pluja en una hora (mm) per al cotxe: els llindars groc i taronja d'AEMET per
-// pluja en una hora (els del temps extrem fins al 16-10-2026, que ara són els
-// de Meteocat): compte i millor no (auditoria del 08-10-2026).
-const PLUJA_COTXE = [20, 40];
+// Pluja per al cotxe (mm), [compte, millor no]: els llindars de Meteocat que fan
+// servir els perills de la web (config.RISC_LLINDARS, ADR 0018), que cal passar
+// (no n'hi ha prou d'arribar-hi): la mesurada a
+// la darrera mitja hora, si se surt ara, i la prevista en 3 hores. Fins a la
+// 3.138.6, 20 i 40 mm previstos en una hora (AEMET), que amb l'arxiu de
+// 2024-2026 gairebé no sortien i no encertaven l'hora (ADR 0039).
+const PLUJA_COTXE_30MIN = [20, 40];
+const PLUJA_COTXE_3H = [60, 90];
+
+// La pluja prevista en 3 hores seguides al voltant d'una hora del viatge: de les
+// finestres de 3 hores que la contenen, la que més acumula. Com els perills
+// (riscos.py), només compten les hores en què pot ploure (20 % o més).
+function plujaTresHores(hores, f) {
+  const i = (hores || []).findIndex((h) => h.hora === f.hora);
+  if (i < 0) return null;
+  const pot = (h) => h.probabilitat == null || h.probabilitat >= PROB_POSSIBLE;
+  let millor = null;
+  for (let ini = Math.max(0, i - 2); ini <= i && ini + 3 <= hores.length; ini++) {
+    const tram = hores.slice(ini, ini + 3);
+    const mm = tram.reduce((s, h) => s + (pot(h) ? h.pluja_mm || 0 : 0), 0);
+    if (!millor || mm > millor.mm) millor = { mm, ini: tram[0], fi: tram[2] };
+  }
+  return millor;
+}
 const VELOCITAT = { peu: 0, bici: 18, moto: 45, cotxe: 0, public: 0 };
 const CANVI_TEMPERATURA = 6;
 const CALOR = 32;
@@ -126,7 +146,9 @@ function quan(anada, tornada, cond) {
 }
 
 // Veredicte d'un mitjà: {nivell: be|compte|no, motius: [...]}.
-function avalua(mitja, tram, trens, futur, transit) {
+// entorn: {hores, ara} (totes les hores de la taula i el que es mesura ara),
+// per a la pluja del cotxe en 3 hores i la de l'última mitja hora.
+function avalua(mitja, tram, trens, futur, transit, entorn) {
   const anada = tram[0];
   const tornada = tram[tram.length - 1];
   const viatge = [anada, tornada];
@@ -160,13 +182,19 @@ function avalua(mitja, tram, trens, futur, transit) {
     }
   }
   if (mitja === 'cotxe') {
-    // Amb pluja el cotxe no surt «bé» per defecte: forta o molt forta segons
-    // AEMET, probable, o possible (que no puja el nivell però es diu).
-    // Amb la xifra, no amb «forta»: per a Meteocat la pluja forta comença a 40 mm (ADR 0043).
-    const forta = (n) => (f) => (f.pluja_mm || 0) >= PLUJA_COTXE[n];
-    const mmMax = Math.round(Math.max(...viatge.map((f) => f.pluja_mm || 0)));
-    if (viatge.some(forta(1))) puja('no', T`Fins a ${mmMax}\u00a0mm de pluja en una hora ${quan(anada, tornada, forta(1))}: millor no agafar el cotxe.`);
-    else if (viatge.some(forta(0))) puja('compte', T`Fins a ${mmMax}\u00a0mm de pluja en una hora ${quan(anada, tornada, forta(0))}: condueix amb compte.`);
+    // Amb pluja el cotxe no surt «bé» per defecte: molta pluja ara al barri o
+    // prevista en 3 hores (llindars de Meteocat), probable, o possible (que no
+    // puja el nivell però es diu). Amb la xifra, no amb «forta» (ADR 0043).
+    const ara30 = !futur ? (((entorn || {}).ara || {}).pluja_30min || 0) : 0;
+    const tres = viatge.map((f) => plujaTresHores((entorn || {}).hores, f)).filter(Boolean)
+      .reduce((a, b) => (!a || b.mm > a.mm ? b : a), null);
+    const mm3 = tres ? Math.round(tres.mm) : 0;
+    const tresTxt = tres && T`de ${hora(tres.ini)} a ${new Date(tres.fi.fins).getHours()}\u00a0h`;
+    const mm30 = Math.round(ara30);
+    if (ara30 > PLUJA_COTXE_30MIN[1]) puja('no', T`Ara plou amb molta intensitat al barri (${mm30}\u00a0mm en mitja hora): millor no agafar el cotxe.`);
+    else if (tres && tres.mm > PLUJA_COTXE_3H[1]) puja('no', T`Fins a ${mm3}\u00a0mm de pluja en 3 hores (${tresTxt}): millor no agafar el cotxe.`);
+    else if (ara30 > PLUJA_COTXE_30MIN[0]) puja('compte', T`Ara plou amb força al barri (${mm30}\u00a0mm en mitja hora): condueix amb compte.`);
+    else if (tres && tres.mm > PLUJA_COTXE_3H[0]) puja('compte', T`Fins a ${mm3}\u00a0mm de pluja en 3 hores (${tresTxt}): condueix amb compte.`);
     else if (viatge.some(plouClar)) {
       // El nivell, el de sempre; el text, el mateix que en moto (ADR 0047): «Pluja
       // probable» només si la probabilitat ho diu, i l'avís, si és l'únic que la veu.
@@ -489,7 +517,7 @@ function pintaSortida() {
   const veredictes = [];
   for (const [clau, nom, icon] of MITJANS) {
     if (fora.has(clau)) continue;
-    const v = avalua(clau, tram, trens, i > 0, transit);
+    const v = avalua(clau, tram, trens, i > 0, transit, { hores, ara: dades.ara_casa });
     veredictes.push([nom, v]);
     const li = element('li', 'mitja ' + v.nivell);
     const cap = element('p', 'mitja-cap');

@@ -134,3 +134,30 @@ en el código la referencia «auditoría del 08-10-2026».
   cae puede adelantar una atención que antes habría llegado media hora más
   tarde o no habría llegado; es el precio de la anticipación y el aviso ya
   dice que es orientativo.
+
+## Cambio del 18-10-2026 (3.139.0): la lluvia del coche, con los umbrales de Meteocat
+
+Juanjo pidió revisar los 20 y 40 mm previstos en una hora (AEMET) con que el
+coche pasaba a «compte» y «millor no». Con el archivo del 01-01-2024 al
+04-10-2026 (previsión de la página, el máximo de los modelos finos; lluvia de
+Sabadell y Sant Cugat), casi no salían y no acertaban la hora: 40 mm previstos,
+2 horas, las dos el 03-10-2026 a las 21 y 22 h, con 2 y 9 mm medidos; 20 mm, 10
+horas, 4 con menos de 5 mm medidos; de las 14 horas con 20 mm o más medidos, la
+previsión llegó a 20 solo en 2, y el 29-09-2026, el día que se desbordó la
+riera, daba 5,7. Además no cuadraban con el resto de la web, que desde el
+16-10-2026 usa los de Meteocat (ADR 0018 y 0101).
+
+Ahora, los de los peligros (`config.RISC_LLINDARS`, que hay que pasar): la
+lluvia medida en la última media hora por la red del barrio, si se sale ahora
+(más de 40 mm, «millor no»; más de 20, «compte»), y la prevista en 3 horas
+alrededor de la ida o la vuelta, contando solo las horas con un 20 % o más,
+como los peligros (más de 90 mm, «millor no»; más de 60, «compte»). Con el
+archivo, 60 mm en 3 horas solo salieron en el episodio del 3 y 4 de octubre,
+en sus horas de lluvia, y nunca en un día seco; ninguna regla de previsión ve
+una tormenta como la del 29-09, que solo detectan las estaciones al caer y el
+radar al acercarse. Lo demás no cambia («Pluja probable», de la probabilidad).
+`aprenentatge.verifica_sortir` guarda la lluvia en 3 horas (`pluja_3h`) para
+juzgar el coche con la misma regla; la de la última media hora no se juzga,
+porque el registro empieza una hora antes de salir. Probado en Chromium,
+Firefox y WebKit, y en Chromium y Firefox con dos simulaciones (45 mm en media
+hora ahora; 8, 30, 38 y 22 mm previstos).

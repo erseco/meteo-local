@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.138.6"
+VERSION = "3.139.0"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -223,10 +223,12 @@ SORTIR_MIN_HORES = 30          # hores per sobre (o per sota) d'un llindar per j
 SORTIR_LLINDARS_PLUJA = {"curt": {"pluja": 0.4, "risc": 0.1}, "llarg": {"pluja": 0.6, "risc": 0.1}}
 # La resta de regles meteorològiques de «Si surts» (web/sortir.js), per a la
 # comprovació diària de tots els mitjans (aprenentatge.verifica_sortir, ADR
-# 0068); les proves les comparen amb la pàgina. En cotxe, pel que plou en una
-# hora, els llindars groc i taronja d'AEMET. Ratxes (km/h) i fred (°C):
+# 0068); les proves les comparen amb la pàgina. En cotxe, des de la 3.139.0, els
+# llindars de pluja de Meteocat dels perills (RISC_LLINDARS): la mesurada a la
+# darrera mitja hora, si se surt ara, i la prevista en 3 hores (abans, 20 i 40
+# mm previstos en una hora, d'AEMET, ADR 0039). Ratxes (km/h) i fred (°C):
 # (compte, millor no).
-SORTIR_PLUJA_COTXE = (20, 40)
+SORTIR_PLUJA_COTXE = {"30min": RISC_LLINDARS["pluja_30min"], "3h": RISC_LLINDARS["pluja_3h"]}
 SORTIR_LLINDARS = {
     "peu": {"ratxa": (None, 70), "fred": (None, None)},
     "bici": {"ratxa": (40, 50), "fred": (3, 1)},

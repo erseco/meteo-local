@@ -710,7 +710,7 @@ def avis_sant_cugat(vp):
 SORTIR = os.path.join(REGISTRE, "sortir.csv")
 MOTO_VELL = os.path.join(REGISTRE, "moto.csv")       # el de antes del 10-10-2026, sustituido
 CAMPS_SORTIR = ["fins", "termini", "emes", "antelacio_h", "probabilitat", "pluja_mm", "plou_ara", "avis",
-                "ratxa", "temperatura", "pluja_obs", "ratxa_obs", "temperatura_obs"]
+                "ratxa", "temperatura", "pluja_obs", "ratxa_obs", "temperatura_obs", "pluja_3h"]
 # Con qué antelación se juzga: al salir (la previsión de 1 a 3 horas antes) y
 # la vuelta, decidida por la mañana (de 6 a 10 horas antes); de cada hora, la
 # previsión más reciente dentro de ese margen.
@@ -736,6 +736,17 @@ def banda(h):
     return "curt" if (h.get("antelacio_h") or 0) <= C.SORTIR_CURT_H else "llarg"
 
 
+def pluja_3h(hores, i):
+    """La lluvia que mostraba la página en 3 horas seguidas alrededor de la
+    hora i: de las ventanas que la contienen, la que más acumula, solo con las
+    horas en que puede llover (20 % o más), como plujaTresHores de
+    web/sortir.js y los peligros (riscos.py)."""
+    pot = lambda f: f.get("probabilitat") is None or f["probabilitat"] >= C.PROB_ATENCION  # noqa: E731
+    sumes = [sum((f.get("pluja_mm") or 0) for f in hores[a:a + 3] if pot(f))
+             for a in range(max(0, i - 2), i + 1) if a + 3 <= len(hores)]
+    return round(max(sumes), 1) if sumes else None
+
+
 def nivell_pluja(mitja, h, llindars=None):
     """El nivel por lluvia de una hora, como avalua() de web/sortir.js. h:
     probabilitat, pluja_mm, plou_ara, avis (aviso de AEMET por lluvia) y
@@ -747,9 +758,12 @@ def nivell_pluja(mitja, h, llindars=None):
     if mitja in ("bici", "moto"):
         return "no" if pluja else "compte" if risc else "be"
     if mitja == "cotxe":
-        if mm >= C.SORTIR_PLUJA_COTXE[1]:
+        # La lluvia en 3 horas (desde la 3.139.0, ADR 0039); la de la última
+        # media hora solo cuenta al salir ahora, que el registro no juzga.
+        mm3 = h.get("pluja_3h") or 0
+        if mm3 > C.SORTIR_PLUJA_COTXE["3h"][1]:
             return "no"
-        return "compte" if mm >= C.SORTIR_PLUJA_COTXE[0] or pluja or avis else "be"
+        return "compte" if mm3 > C.SORTIR_PLUJA_COTXE["3h"][0] or pluja or avis else "be"
     if mitja == "peu":
         return "compte" if risc else "be"
     return "be"
@@ -813,7 +827,7 @@ def verifica_sortir(ahora=None):
     for arxiu in sorted(glob.glob(os.path.join(REGISTRE, "casa-*.jsonl"))):
         with open(arxiu, encoding="utf-8") as f:
             for linea in map(json.loads, f):
-                for h in linea["hores"]:
+                for idx, h in enumerate(linea["hores"]):
                     # Sin el aviso registrado (antes del 08-10-2026) no se sabe qué dijo.
                     if not h.get("mostrat") or h.get("avis_pluja") is None or int(h["fins"][11:13]) not in HORES_SORTIR:
                         continue
@@ -821,9 +835,10 @@ def verifica_sortir(ahora=None):
                         clau = (h["fins"], termini)
                         if a <= h["antelacio_h"] < b and (clau not in millor
                                                           or h["antelacio_h"] < millor[clau][1]["antelacio_h"]):
-                            millor[clau] = (linea["emes"], h)
+                            millor[clau] = (linea["emes"], h,
+                                            pluja_3h([x.get("mostrat") or {} for x in linea["hores"]], idx))
     noves = []
-    for (fins, termini), (emes, h) in sorted(millor.items()):
+    for (fins, termini), (emes, h, mm3) in sorted(millor.items()):
         if (fins, termini) in fetes or dt.datetime.fromisoformat(fins).astimezone() > ahora:
             continue
         obs = observada(casa, meteocat, veines, fins)
@@ -839,9 +854,10 @@ def verifica_sortir(ahora=None):
                       "probabilitat": m.get("probabilitat"), "pluja_mm": m.get("pluja_mm"),
                       "plou_ara": int(bool(m.get("plou_ara"))), "avis": int(bool(h["avis_pluja"])),
                       "ratxa": ratxa, "temperatura": temp, "pluja_obs": obs, "ratxa_obs": ratxa_obs,
-                      "temperatura_obs": temp_obs})
+                      "temperatura_obs": temp_obs, "pluja_3h": mm3})
     if noves:
         os.makedirs(os.path.dirname(SORTIR), exist_ok=True)
+        _al_dia_sortir()
         nou = not os.path.exists(SORTIR)
         with open(SORTIR, "a", newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=CAMPS_SORTIR)
@@ -851,10 +867,26 @@ def verifica_sortir(ahora=None):
     return len(noves)
 
 
+def _al_dia_sortir():
+    """Si sortir.csv tiene las columnas de antes (sin «pluja_3h», antes de la
+    3.139.0), lo reescribe con las de ahora; las filas viejas quedan vacías."""
+    if not os.path.exists(SORTIR):
+        return
+    with open(SORTIR, encoding="utf-8") as f:
+        r = csv.DictReader(f)
+        if r.fieldnames == CAMPS_SORTIR:
+            return
+        files = list(r)
+    with open(SORTIR, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=CAMPS_SORTIR)
+        w.writeheader()
+        w.writerows({k: fila.get(k, "") for k in CAMPS_SORTIR} for fila in files)
+
+
 def _hora_sortir(r):
     """Una fila de sortir.csv, con números."""
     n = {k: _num(r.get(k)) for k in ("probabilitat", "pluja_mm", "ratxa", "temperatura", "pluja_obs", "ratxa_obs",
-                                     "temperatura_obs")}
+                                     "temperatura_obs", "pluja_3h")}
     return {**n, "plou_ara": r.get("plou_ara") == "1", "avis": r.get("avis") == "1",
             "antelacio_h": _num(r.get("antelacio_h"))}
 

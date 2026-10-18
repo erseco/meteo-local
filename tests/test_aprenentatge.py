@@ -238,7 +238,9 @@ class Sortir(unittest.TestCase):
         ll = C.SORTIR_LLINDARS_PLUJA
         self.assertIn("const LLINDARS_PLUJA_INICI = { curt: { pluja: %g, risc: %g }, llarg: { pluja: %g, risc: %g } };"
                       % (ll["curt"]["pluja"], ll["curt"]["risc"], ll["llarg"]["pluja"], ll["llarg"]["risc"]), js)
-        self.assertIn(f"const PLUJA_COTXE = [{C.SORTIR_PLUJA_COTXE[0]}, {C.SORTIR_PLUJA_COTXE[1]}];", js)
+        for nom, clau in (("PLUJA_COTXE_30MIN", "30min"), ("PLUJA_COTXE_3H", "3h")):
+            ll = C.SORTIR_PLUJA_COTXE[clau]
+            self.assertIn(f"const {nom} = [{ll[0]:g}, {ll[1]:g}];", js)
 
     def test_el_cas_del_8_d_octubre(self):
         # A les 10 h, només l'avís; a les 17 h, ICON-EU 1,7 mm i un 25 %.
@@ -257,8 +259,18 @@ class Sortir(unittest.TestCase):
         self.assertEqual(A.nivells_sortir("moto", h), {"pluja": "compte", "vent": "compte", "fred": "compte"})
         self.assertEqual(A.nivells_sortir("cotxe", h), {"pluja": "be", "vent": "be", "fred": "be"})
         self.assertEqual(A.nivell_sortir("bici", h), "no")
-        self.assertEqual(A.nivell_pluja("cotxe", {"probabilitat": 0.1, "pluja_mm": 25}), "compte")
-        self.assertEqual(A.nivell_pluja("cotxe", {"probabilitat": 0.9, "pluja_mm": 45}), "no")
+        # Cotxe, des de la 3.139.0: la pluja en 3 hores amb els llindars de Meteocat (60 i 90 mm, cal passar-los).
+        self.assertEqual(A.nivell_pluja("cotxe", {"probabilitat": 0.1, "pluja_mm": 25}), "be")
+        self.assertEqual(A.nivell_pluja("cotxe", {"probabilitat": 0.9, "pluja_mm": 45}), "compte")
+        self.assertEqual(A.nivell_pluja("cotxe", {"probabilitat": 0.1, "pluja_mm": 0, "pluja_3h": 75}), "compte")
+        self.assertEqual(A.nivell_pluja("cotxe", {"probabilitat": 0.1, "pluja_mm": 0, "pluja_3h": 95}), "no")
+        self.assertEqual(A.nivell_pluja("cotxe", {"probabilitat": 0.1, "pluja_mm": 0, "pluja_3h": 60}), "be")
+
+    def test_pluja_en_3_hores_com_la_pagina(self):
+        hores = [{"pluja_mm": mm, "probabilitat": p} for mm, p in ((5, 0.5), (30, 0.9), (40, 0.9), (20, 0.1), (1, 0.3))]
+        # La finestra de 3 hores que conté l'hora i més acumula; les hores per sota del 20 % no compten.
+        self.assertEqual([A.pluja_3h(hores, i) for i in range(5)], [75, 75, 75, 70, 41])
+        self.assertIsNone(A.pluja_3h(hores[:2], 0))
         self.assertIsNone(A.nivells_sortir("moto", {"probabilitat": 0})["vent"])     # sense ratxa, res
 
 

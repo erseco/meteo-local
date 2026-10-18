@@ -402,17 +402,32 @@ class Web(unittest.TestCase):
         self.assertEqual(public([{"linia": "S2", "estat": "circula"}])["nivell"], "be")
 
     def test_cotxe_amb_pluja(self):
-        # Auditoria del 08-10-2026: amb 90 mm/h el cotxe sortia «bé, sense pluja».
-        def tram(mm, prob, t=20):
+        # Auditoria del 08-10-2026: amb 90 mm/h el cotxe sortia «bé, sense pluja». Des de la
+        # 3.139.0, els llindars de Meteocat: la pluja prevista en 3 hores (60 i 90 mm) i la
+        # mesurada a l'última mitja hora si se surt ara (20 i 40 mm), que cal passar (ADR 0039).
+        def tram(mm, prob, t=20, n=2):
             return [{"hora": f"2026-10-08T{h:02d}:00", "fins": f"2026-10-08T{h + 1:02d}:00", "temperatura": t,
-                     "ratxa": 10, "pluja_mm": mm, "probabilitat": prob, "avisos": []} for h in (12, 13)]
-        def cotxe(mm, prob, t=20):
+                     "ratxa": 10, "pluja_mm": mm, "probabilitat": prob, "avisos": []} for h in range(12, 12 + n)]
+        def cotxe(mm, prob, t=20, ara=None, futur=False):
+            entorn = {"hores": tram(mm, prob, t, 4), "ara": ara}
             return self.avalua("2026-10-08T12:00:00+02:00",
-                               f"avalua('cotxe', {json.dumps(tram(mm, prob, t))}, [], false)", "sortir.js")
-        self.assertEqual(cotxe(90, 1), {"nivell": "no", "motius": [
-            "Fins a 90\u00a0mm de pluja en una hora a l’anada i a la tornada: millor no agafar el cotxe."]})
+                               f"avalua('cotxe', {json.dumps(tram(mm, prob, t))}, [], {json.dumps(futur)}, [], "
+                               f"{json.dumps(entorn)})", "sortir.js")
+        self.assertEqual(cotxe(35, 1), {"nivell": "no", "motius": [
+            "Fins a 105\u00a0mm de pluja en 3 hores (de 12 a 15\u00a0h): millor no agafar el cotxe."]})
         self.assertEqual(cotxe(25, 0.9), {"nivell": "compte", "motius": [
-            "Fins a 25\u00a0mm de pluja en una hora a l’anada i a la tornada: condueix amb compte."]})
+            "Fins a 75\u00a0mm de pluja en 3 hores (de 12 a 15\u00a0h): condueix amb compte."]})
+        # 20 mm en una hora ja no basta (abans, «compte»): és la probabilitat la que diu «pluja probable».
+        self.assertEqual(cotxe(20, 0.9)["motius"], ["Pluja probable a l’anada i a la tornada: condueix amb compte."])
+        # El que plou ara al barri, si se surt ara; més tard, no compta.
+        self.assertEqual(cotxe(2, 0.7, ara={"pluja_30min": 45.2}), {"nivell": "no", "motius": [
+            "Ara plou amb molta intensitat al barri (45\u00a0mm en mitja hora): millor no agafar el cotxe."]})
+        self.assertEqual(cotxe(2, 0.7, ara={"pluja_30min": 25}), {"nivell": "compte", "motius": [
+            "Ara plou amb força al barri (25\u00a0mm en mitja hora): condueix amb compte."]})
+        self.assertEqual(cotxe(2, 0.7, ara={"pluja_30min": 20})["motius"],
+                         ["Pluja probable a l’anada i a la tornada: condueix amb compte."])
+        self.assertEqual(cotxe(2, 0.7, ara={"pluja_30min": 45}, futur=True)["motius"],
+                         ["Pluja probable a l’anada i a la tornada: condueix amb compte."])
         self.assertEqual(cotxe(2, 0.7), {"nivell": "compte", "motius": [
             "Pluja probable a l’anada i a la tornada: condueix amb compte."]})
         self.assertEqual(cotxe(0.3, 0.25), {"nivell": "be", "motius": ["Pot ploure a l’anada i a la tornada."]})
@@ -423,6 +438,16 @@ class Web(unittest.TestCase):
         # Per sota del 20 %, on la taula diu «sense pluja»: «poca probabilitat» (18-10-2026).
         self.assertEqual(cotxe(0.3, 0.15), {"nivell": "be", "motius": ["Poca probabilitat de pluja a l’anada i a la tornada."]})
         self.assertEqual(cotxe(0, 0.05, 0)["motius"], ["0\u00a0°C: compte amb el gel a primera hora."])
+
+    def test_pluja_en_3_hores_igual_que_la_comprovacio_diaria(self):
+        sys.path.insert(0, os.path.dirname(WEB))
+        import aprenentatge as A
+        hores = [{"hora": f"2026-10-08T{12 + i:02d}:00", "pluja_mm": mm, "probabilitat": p}
+                 for i, (mm, p) in enumerate(((5, 0.5), (30, 0.9), (40, 0.9), (20, 0.1), (1, 0.3)))]
+        js = self.avalua("2026-10-08T12:00:00+02:00",
+                         f"(() => {{ const h = {json.dumps(hores)}; return h.map((f) => plujaTresHores(h, f).mm); }})()",
+                         "sortir.js")
+        self.assertEqual(js, [A.pluja_3h(hores, i) for i in range(5)])
 
     def test_la_comprovacio_diaria_jutja_amb_les_regles_de_la_pagina(self):
         # ADR 0068: el nivell de cada mitjà que calcula aprenentatge.py per a
