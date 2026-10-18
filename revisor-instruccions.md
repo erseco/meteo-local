@@ -55,6 +55,14 @@ inclúyelas si son reales, explicando por qué.
   cuenta (aún no se usa en la previsión, ADR 0019).
 - Meteocat manda sobre AEMET en el mismo fenómeno; AEMET sale para lo que
   Meteocat no cubre.
+- La ficha de un aviso de Meteocat enseña siempre su contenido vigente (las
+  franjas de la última emisión), y «actualitzat a les…» es la hora del último
+  mensaje enviado a los vecinos, no la de la última emisión de Meteocat. Solo
+  se avisa de lo que importa a quien lo lee: nivel que sube, fenómeno nuevo u
+  horas nuevas (ADR 0092). Que una emisión posterior acorte o desplace una
+  franja dentro de horas ya avisadas (el 18-10-2026, «Acumulació» pasó de
+  0-24 h a 6-24 h y martes 0-6 h, ya avisado por otro meteoro) no genera
+  mensaje ni cambia esa hora: no es un error.
 - Los textos oficiales (nombres de meteoros, umbrales, avisos de Renfe y FGC)
   van en su idioma original y no se traducen: eso no es un error.
 - Una ficha de «Perill» con `fins` ya pasado sale como acabada en la página
