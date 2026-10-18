@@ -1007,8 +1007,14 @@ Civil.
 
 **Limitación conocida.** Los umbrales son una hipótesis basada en cuatro
 casos. Cada episodio se guarda con sus máximos para ajustarlos con lo que
-pase; ese ajuste no es automático. Hasta el 09-10-2026 no se ha visto
+pase; ese ajuste no es automático. Hasta el 18-10-2026 no se ha visto
 ningún aviso real.
+
+**El desenlace lo confirma una persona.** Nada mide el nivel de la riera:
+al cerrarse un episodio con aviso, el programa pregunta a Juanjo por
+Telegram, con botones, si se ha desbordado, y la respuesta queda en la
+columna `desbordament` del episodio (`riera.csv`). Con esos desenlaces se
+podrán contar aciertos, falsas alarmas y minutos de anticipación.
 
 ## 13. Cuando los modelos no ven la lluvia
 
@@ -1303,24 +1309,33 @@ más días se decidirá si se calcula por franjas horarias.
 
 ## 17 bis. Cómo acierta la previsión
 
-Lo que la web enseña en la vista en grande de la gráfica («Com encerta la
-previsió de les 7») y en cada día del historial (`historial.py`, ADR 0099).
-Se compara **la previsión de las 7 de cada día**, la del resumen de la
-mañana, tal como la mostraba la web (`mostrat` en `casa-AAAA-MM.jsonl`), con
-lo medido en Montflorit, en las horas de las 7 a medianoche:
+Lo que la web enseña en la vista en grande de la gráfica, con el botón «Com
+encerta», y en cada día del historial (`historial.py`, ADR 0099). Para cada
+hora se compara lo que mostraba la web en la publicación de N horas antes
+de que empezara (N de 1 a 23, elegible; `mostrat` en `casa-AAAA-MM.jsonl`)
+con lo medido en Montflorit:
 
 - **Temperatura**: el error medio absoluto,
   $$\mathrm{EMA} = \frac{1}{N}\sum_{h=1}^{N} \lvert T^{\text{mesurada}}_h - T^{\text{prevista}}_h \rvert,$$
-  con la temperatura de la estación de casa. Se da desde 48 horas.
+  donde la temperatura medida del tramo es la media de las lecturas de la
+  estación de casa al principio y al final de la hora, que es lo que la
+  previsión anuncia para el tramo (la media de las dos horas en punto,
+  apartado 6). Las horas con sol directo sobre el termómetro (apartado 17)
+  no cuentan, como en el aprendizaje. Se da desde 48 horas.
 - **Lluvia**: la comprobación de calibración de una probabilidad, contada en
-  casos. De las horas en que decía un 50 % o más, la fracción en que llovió
-  (0,2 mm o más, con `aprenentatge.observada`: casa, las vecinas y, para las
-  horas secas, Meteocat); de las que decía menos del 20 %, la fracción en
-  que no llovió. Las horas en que no se sabe si llovió no cuentan. Se da
-  desde 20 casos en cada sentido; con menos, «encara poques dades».
+  casos y por franjas de probabilidad anunciada: menos del 20 %, del 20 al
+  50, del 50 al 70 y del 70 o más. Para cada franja, las horas, la
+  probabilidad media anunciada y en cuántas llovió (0,2 mm o más, con
+  `aprenentatge.observada`: casa, las vecinas y, para las horas secas,
+  Meteocat). Si la probabilidad es buena, la fracción de horas con lluvia de
+  cada franja se parece a la media anunciada. Las horas en que no se sabe si
+  llovió no cuentan. Con menos de 20 horas de 50 % o más, «encara poques
+  hores».
+- **Cantidad**: los milímetros previstos y los medidos, sumados en las horas
+  que tienen los dos.
 
 Los últimos 30 días, los 30 anteriores (para ver si mejora) y la
-temperatura por meses cuando hay más de uno. La previsión de las 7 se apunta
+temperatura por meses cuando hay más de uno. Las previsiones se apuntan
 desde el 5 de octubre de 2026; lo medido, desde el 4.
 
 ## 18. Límites

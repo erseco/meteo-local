@@ -209,3 +209,23 @@ cuota. No se usa el «Plou» de una sola estación, que salta con una gota. Con
 lluvia moderada son unas 60 consultas por hora como mucho, dentro del tope
 diario de 500. Prueba: `tests/test_riera.py`
 (`test_pluja_moderada_al_barri_les_consulta`).
+
+## Cambio del 18-10-2026 (3.141.0): ¿se desbordó? La pregunta a Juanjo
+
+La auditoría de los métodos del 18-10-2026 señaló que el registro de
+episodios (`riera.csv`) tiene la columna `desbordament` y nadie la
+rellenaba: sin el desenlace no se puede medir si el aviso acierta, cuántas
+falsas alarmas da ni cuánto se adelanta. Como con la niebla y el plugim
+(ADR 0100 y 0019; `confirmacio.py`), lo que solo se ve desde el barrio se le
+pregunta a Juanjo por Telegram con botones: al cerrarse un episodio con
+aviso de atención o de peligro (tres horas de calma), el bot de los agentes
+le manda «¿se ha desbordado en Montflorit en este episodio?», con el
+principio y el final de la lluvia, la hora del aviso y el índice máximo, y
+los botones «Sí, se ha desbordado», «No se ha desbordado» y «No lo sé». La
+pregunta se apunta en `riera-preguntes.csv`; la respuesta, en
+`riera-confirmacions.csv` y, si es sí o no, en la columna `desbordament` del
+episodio (`riera.py respostes`, que `avisa` ejecuta cada minuto; la reserva
+de IONOS no tiene el bot y no pregunta). Los episodios solo de registro,
+sin aviso, no se preguntan. Validación: `tests/test_riera.py`
+(`Desbordament`).
+

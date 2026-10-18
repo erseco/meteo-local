@@ -716,7 +716,8 @@ function dibuixaGrafica(fig) {
       const previst = (v, t) => (v == null ? '' : t);
       linies.push(f.temperatura == null ? T('Temperatura: sense mesura')
         : T`Temperatura: ${Math.round(f.temperatura)}\u00a0°C`
-          + previst(p.temperatura, T` (prevista: ${Math.round(p.temperatura ?? 0)}\u00a0°C)`));
+          + previst(p.temperatura, T` (prevista: ${Math.round(p.temperatura ?? 0)}\u00a0°C)`)
+          + (f.sol ? T(' · sol sobre el termòmetre, no compta') : ''));
       const mm = (v) => (v >= 10 ? String(Math.round(v)) : v < 0.05 ? '0' : coma(Math.round(v * 10) / 10));
       const mmPrevist = p.mm == null ? '' : T`, ${mm(p.mm)}\u00a0mm`;
       linies.push(f.pluja_mm == null ? T('Pluja: no se sap') : T`Pluja: ${mm(f.pluja_mm)}\u00a0mm`
@@ -1137,6 +1138,57 @@ function textPlujaEncert(p, minim = 0) {
   return plou < minim ? `${text} ${T('Encara són poques hores per treure’n conclusions.')}` : text;
 }
 
+// La pluja per franges de probabilitat anunciada (historial.py, 3.141.0;
+// auditoria del 18-10-2026: l'indicador només comptava el 50 % o més i el
+// menys del 20 %, i no deia si la probabilitat es complia): per a cada
+// franja, quantes hores, què deia de mitjana i en quantes va ploure. Si la
+// probabilitat és bona, el «va ploure» s'acosta al que deia. Una taula, que
+// es llegeix d'un cop d'ull; el text d'abans queda per als dies guardats
+// sense franges.
+const FRANGES_PLUJA = [0, 20, 50, 70];
+function nomFranja(de, a) {
+  if (de === 0) return T`menys del ${a}\u00a0%`;
+  if (a == null) return T`${de}\u00a0% o més`;
+  return T`del ${de} al ${a}\u00a0%`;
+}
+
+function taulaPlujaEncert(franges, minim = 0) {
+  const limits = (franges && franges.limits) || FRANGES_PLUJA;
+  const files = limits.map((de, i) => [de, limits[i + 1], franges[String(de)] || [0, 0, 0]])
+    .filter(([, , [hores]]) => hores > 0);
+  if (!files.length) return null;
+  const taula = element('table', 'vg-encert-taula');
+  const cap = element('tr');
+  for (const [t, num] of [[T('Quan deia'), false], [T('De mitjana'), true], [T('Hores'), true], [T('Va ploure'), true]]) {
+    const th = element('th', num ? 'num' : null, t);
+    th.scope = 'col';
+    cap.append(th);
+  }
+  taula.append(element('thead'), element('tbody'));
+  taula.firstChild.append(cap);
+  let ambPluja = 0;
+  for (const [de, a, [hores, plogudes, suma]] of files) {
+    const fila = element('tr');
+    const th = element('th', null, nomFranja(de, a));
+    th.scope = 'row';
+    fila.append(th, element('td', 'num', `${Math.round((suma / hores) * 100)}\u00a0%`),
+      element('td', 'num', String(hores)),
+      element('td', 'num', `${plogudes} (${Math.round((plogudes / hores) * 100)}\u00a0%)`));
+    taula.lastChild.append(fila);
+    if (de >= 50) ambPluja += hores;
+  }
+  const res = [element('p', null, T('Pluja: quan deia cada probabilitat, en quantes hores va ploure.')), taula,
+    element('p', null, T('Si la probabilitat és bona, el «va ploure» s’acosta al que deia.'))];
+  if (ambPluja < minim) res.push(element('p', null, T('Encara són poques hores per treure’n conclusions.')));
+  return res;
+}
+
+function elementsPlujaEncert(p, minim = 0) {
+  if (p.franges) return taulaPlujaEncert(p.franges, minim) || [];
+  const text = textPlujaEncert(p, minim);
+  return text ? [element('p', null, text)] : [];
+}
+
 // Els mm previstos i els mesurats, sumats a les hores que tenen les dues
 // coses (historial.py; Juanjo, 18-10-2026).
 function textMmEncert(m) {
@@ -1163,8 +1215,8 @@ function textEncert(index, a) {
     temp += ' ' + T`Els 30 dies anteriors, ${coma(anteriors.temperatura.error)}\u00a0°C.`;
   }
   res.push(element('p', null, temp));
-  const pluja = textPlujaEncert(darrers.pluja, m.pluja_casos || 20);
-  if (pluja) res.push(element('p', null, pluja));
+  if (darrers.pluja.franges && index.franges) darrers.pluja.franges.limits = index.franges;
+  res.push(...elementsPlujaEncert(darrers.pluja, m.pluja_casos || 20));
   if (darrers.mm && darrers.mm.hores) res.push(element('p', null, textMmEncert(darrers.mm)));
   // Per mesos, quan n'hi ha més d'un: si millora amb el temps.
   const llista = Object.entries(mesos || {}).filter(([, e]) => e.temperatura.error != null);
@@ -1187,8 +1239,7 @@ function textEncertDia(dades, a) {
   if (e.temperatura.error != null) {
     res.push(element('p', null, T`Temperatura: s’equivoca de mitjana ${coma(e.temperatura.error)}\u00a0°C.`));
   }
-  const pluja = textPlujaEncert(e.pluja);
-  if (pluja) res.push(element('p', null, pluja));
+  res.push(...elementsPlujaEncert(e.pluja));
   if (e.mm && e.mm.hores) res.push(element('p', null, textMmEncert(e.mm)));
   return res;
 }

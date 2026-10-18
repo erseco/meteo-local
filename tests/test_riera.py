@@ -367,3 +367,77 @@ class Privacitat(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Desbordament(unittest.TestCase):
+    """La pregunta a Juanjo en tancar-se un episodi amb avís, i la seva resposta
+    a la columna «desbordament» del registre (auditoria del 18-10-2026)."""
+
+    def setUp(self):
+        import json
+        import tempfile
+        import confirmacio as CF
+        self.dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.dir.cleanup)
+        for nom in ("PREGUNTES", "CONFIRMACIONS", "REGISTRO", "DIR"):
+            self.addCleanup(setattr, RI, nom, getattr(RI, nom))
+        RI.DIR = self.dir.name
+        RI.PREGUNTES = os.path.join(self.dir.name, "p.csv")
+        RI.CONFIRMACIONS = os.path.join(self.dir.name, "c.csv")
+        RI.REGISTRO = os.path.join(self.dir.name, "riera.csv")
+        self.addCleanup(setattr, CF, "CONFIG_BOT", CF.CONFIG_BOT)
+        CF.CONFIG_BOT = os.path.join(self.dir.name, "bot.json")
+        with open(CF.CONFIG_BOT, "w") as f:
+            json.dump({"token": "x", "chat_id": 7}, f)
+        self.crides = []
+        self.resposta = "si"
+
+        def telegram(metode, **p):
+            self.crides.append((metode, p))
+            if metode == "sendMessage":
+                return {"message_id": 52}, {"chat_id": 7}
+            if metode == "getUpdates":
+                return [{"callback_query": {"id": "q", "data": f"riera:{self.resposta}", "from": {"id": 7},
+                                            "message": {"message_id": 52}}}], {"chat_id": 7}
+            return True, {"chat_id": 7}
+        self.addCleanup(setattr, RI, "telegram", RI.telegram)
+        RI.telegram = telegram
+        self.ara = dt.datetime(2026, 10, 9, 1, 0).astimezone()
+
+    def fila(self, atencio="2026-10-08T20:30+02:00", perill=""):
+        return {"inici": "2026-10-08T19:24+02:00", "fi": "2026-10-09T00:51+02:00", "hora_max": "2026-10-08T21:33+02:00",
+                "index_max": 38.2, "mm_3h_max": 30.1, "mm_6h_max": 40.0, "capcalera_3h_max": 12.0,
+                "avis_atencio": atencio, "avis_perill": perill, "desbordament": ""}
+
+    def test_pregunta_en_tancar_amb_avis_i_apunta_la_resposta(self):
+        RI.apunta(self.fila())
+        self.assertEqual(RI.pregunta_desbordament(self.fila(), self.ara), 52)
+        text = self.crides[0][1]["text"]
+        self.assertIn("¿se ha desbordado", text)
+        self.assertIn("aviso de atención a las 20:30", text)
+        self.assertIn("como mucho, 38 mm en 3 horas", text)
+        self.assertEqual([b["callback_data"] for b in self.crides[0][1]["reply_markup"]["inline_keyboard"][0]],
+                         ["riera:si", "riera:no", "riera:nose"])
+        self.assertEqual(RI.respostes(self.ara + dt.timedelta(hours=2)), 1)
+        self.assertEqual(RI.respostes(self.ara + dt.timedelta(hours=2)), 0)      # una sola vegada
+        self.assertIn("desbordament si", RI.resum())
+        # Amb perill, ho diu; i el «no lo sé» no omple la columna.
+        self.crides.clear()
+        RI.pregunta_desbordament(self.fila(perill="2026-10-08T21:10+02:00"), self.ara)
+        self.assertIn("aviso de peligro a las 21:10", self.crides[0][1]["text"])
+
+    def test_sense_avis_o_sense_bot_no_pregunta(self):
+        import confirmacio as CF
+        self.assertIsNone(RI.pregunta_desbordament(self.fila(atencio=""), self.ara))
+        os.remove(CF.CONFIG_BOT)                                   # la reserva d'IONOS no té el bot
+        self.assertIsNone(RI.pregunta_desbordament(self.fila(), self.ara))
+        self.assertEqual(self.crides, [])
+        self.assertEqual(RI.respostes(self.ara), 0)
+
+    def test_no_lo_se_no_omple_la_columna(self):
+        RI.apunta(self.fila())
+        self.resposta = "nose"
+        RI.pregunta_desbordament(self.fila(), self.ara)
+        self.assertEqual(RI.respostes(self.ara), 1)
+        self.assertIn("desbordament ?", RI.resum())
+

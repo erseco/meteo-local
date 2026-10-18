@@ -495,6 +495,12 @@ def apunta_veines(riera, ahora):
 
 def avisa(ruta, ahora=None):
     ahora = ahora or dt.datetime.now().astimezone()
+    # Las respuestas de Juanjo a la pregunta del desbordamiento, cada minuto,
+    # para que el mensaje diga enseguida que se han apuntado.
+    try:
+        respostes(ahora)
+    except Exception as ex:
+        print("Respostes del desbordament:", ex, file=sys.stderr)
     with open(ruta, encoding="utf-8") as f:
         salida = json.load(f)
     # Con datos viejos (la pasada ha fallado), no se avisa.
@@ -506,9 +512,96 @@ def avisa(ruta, ahora=None):
     desa_estat(estat)
     if fila:
         apunta(fila)
+        try:
+            pregunta_desbordament(fila, ahora)
+        except Exception as ex:
+            print("Pregunta del desbordament:", ex, file=sys.stderr)
     if text:
         print(text)         # al registro del NAS; ya no se manda a Juanjo (ADR 0027)
     return text
+
+
+# --- ¿Se desbordó? La confirmación de Juanjo ------------------------------------
+# Auditoría del 18-10-2026: el registro tiene la columna «desbordament» y nadie
+# la rellenaba, así que no se puede saber si el aviso acierta. Al cerrarse un
+# episodio con aviso (atención o peligro), el bot de los agentes le pregunta a
+# Juanjo con botones, como con la niebla (confirmacio.py); su respuesta va a
+# riera-confirmacions.csv y a la columna del episodio en riera.csv.
+PREGUNTES = os.path.join(DIR, "riera-preguntes.csv")
+CONFIRMACIONS = os.path.join(DIR, "riera-confirmacions.csv")
+CAMPS_PREGUNTA = ["inici", "fi", "index_max", "nivell"]
+RESPOSTES = {"si": "Sí, se ha desbordado", "no": "No se ha desbordado", "nose": "No lo sé"}
+
+
+def telegram(metode, **params):
+    import confirmacio as CF
+    return CF.telegram(metode, CF.CONFIG_BOT, **params)
+
+
+def _config_bot():
+    import confirmacio as CF
+    return CF.CONFIG_BOT
+
+
+def pregunta_desbordament(fila, ara=None):
+    """La pregunta por Telegram al cerrarse un episodio con aviso. Solo donde
+    está el bot de los agentes (el NAS; la reserva de IONOS no lo tiene).
+    Devuelve el identificador del mensaje o None."""
+    import confirmacio as CF
+    if not (fila.get("avis_atencio") or fila.get("avis_perill")) or not os.path.exists(_config_bot()):
+        return None
+    ara = ara or dt.datetime.now().astimezone()
+    nivell = "perill" if fila.get("avis_perill") else "atencio"
+    inici, fi = (dt.datetime.fromisoformat(fila[k]) for k in ("inici", "fi"))
+    avis = dt.datetime.fromisoformat(fila["avis_perill"] or fila["avis_atencio"])
+    text = (f"Riera de Sant Cugat: ¿se ha desbordado en Montflorit en este episodio? "
+            f"Lluvia desde el {inici:%d-%m} a las {inici:%H:%M} hasta las {fi:%H:%M} del {fi:%d-%m}; "
+            f"aviso de {'peligro' if nivell == 'perill' else 'atención'} a las {avis:%H:%M}; "
+            f"como mucho, {coma(float(fila['index_max']))} mm en 3 horas. "
+            "Con tu respuesta se comprueba si el aviso acierta.")
+    teclat = {"inline_keyboard": [[{"text": t, "callback_data": f"riera:{k}"} for k, t in RESPOSTES.items()]]}
+    with open(_config_bot(), encoding="utf-8") as f:
+        chat = json.load(f)["chat_id"]
+    r, _ = telegram("sendMessage", chat_id=chat, text=text, reply_markup=teclat)
+    CF.afegeix(PREGUNTES, ["t", "missatge"] + CAMPS_PREGUNTA,
+               {"t": ara.isoformat(timespec="minutes"), "missatge": r["message_id"], "inici": fila["inici"],
+                "fi": fila["fi"], "index_max": fila["index_max"], "nivell": nivell})
+    return r["message_id"]
+
+
+def respostes(ara=None):
+    """Las respuestas a los botones, una vez cada una, en riera-confirmacions.csv,
+    y la columna «desbordament» del episodio en riera.csv («si» o «no»)."""
+    import confirmacio as CF
+    if not os.path.exists(PREGUNTES):
+        return 0
+    n = CF.respostes("riera", PREGUNTES, CONFIRMACIONS, RESPOSTES, CAMPS_PREGUNTA, telegram,
+                     ara or dt.datetime.now().astimezone())
+    if n:
+        omple_desbordament()
+    return n
+
+
+def omple_desbordament():
+    """Pasa las respuestas («si» o «no») a la columna del episodio en riera.csv."""
+    import confirmacio as CF
+    resp = {r["pregunta_inici"]: r["resposta"] for r in CF.files(CONFIRMACIONS) if r["resposta"] in ("si", "no")}
+    if not resp or not os.path.exists(REGISTRO):
+        return 0
+    with open(REGISTRO, encoding="utf-8") as f:
+        files_ = list(csv.DictReader(f))
+    n = 0
+    for fila in files_:
+        if fila["inici"] in resp and fila.get("desbordament") != resp[fila["inici"]]:
+            fila["desbordament"] = resp[fila["inici"]]
+            n += 1
+    if n:
+        with open(REGISTRO + ".tmp", "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=CAMPOS)
+            w.writeheader()
+            w.writerows({c: fila.get(c, "") for c in CAMPOS} for fila in files_)
+        os.replace(REGISTRO + ".tmp", REGISTRO)
+    return n
 
 
 def resum():
@@ -538,6 +631,8 @@ if __name__ == "__main__":
         print(json.dumps(llegeix_estat(), ensure_ascii=False, indent=1))
     elif ordre == "resum":
         print(resum())
+    elif ordre == "respostes":
+        print(respostes())
     else:
         print(__doc__)
         sys.exit(1)

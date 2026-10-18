@@ -134,3 +134,38 @@ pasada se publicó por GitHub. Ahora los días viejos se rehacen por tandas, 3
 por pasada junto a los 2 de siempre (`REFER_PER_PASSADA`), y la marca dice el
 primero que falta; con 15 días, unas cinco pasadas. La marca del NAS se borró
 para que empezaran.
+
+## Cambio del 18-10-2026 (3.141.0): medir lo que la web anuncia, y la lluvia por franjas
+
+La auditoría de los métodos de predicción del 18-10-2026 (informe de Codex,
+`Informes/meteo-local/2026-10-18-evaluacion-metodos-prediccion.md`) señaló
+dos cosas de «Com encerta», y Juanjo pidió corregirlas:
+
+- **La temperatura no comparaba la misma magnitud.** La web anuncia para el
+  tramo de 18 a 19 la media de las temperaturas previstas a las 18 y a las
+  19 (`casa.py`), y el historial la comparaba con la lectura de la estación
+  de las 19. Ahora lo medido del tramo es también la media de las dos
+  lecturas en punto (`historial.temperatura_tram`); si falta una, no hay
+  medida. Y las horas con sol directo sobre el termómetro (`sol-estacio.csv`,
+  ADR 0081), que el aprendizaje ya excluía, llevan `sol` y no cuentan para
+  el error (la ficha de la hora lo dice). Con el registro del 4 al 18 de
+  octubre: 0,66 °C a 1 h (304 horas) y 1,02 °C a 23 h, frente a 0,73 y 1,07
+  con la comparación anterior.
+- **El indicador de la lluvia omitía el tramo del 20 al 50 %** y no decía si
+  la probabilidad se cumplía. Ahora `encert` cuenta por franjas de
+  probabilidad anunciada (menos del 20 %, del 20 al 50, del 50 al 70 y del
+  70 o más; `FRANGES`): horas, en cuántas llovió y la suma de lo que decía,
+  para dar la media anunciada. La web lo enseña en una tabla («Quan deia /
+  De mitjana / Hores / Va ploure») con una frase de cómo leerla: si la
+  probabilidad es buena, el «va ploure» se acerca a lo que decía. Con los
+  mismos datos, a 1 h: menos del 20 %, 209 horas y llovió en 1; del 20 al
+  50, 11 y 3; del 50 al 70, 5 y 2; 70 % o más, 11 y 6 con un 90 % de media
+  anunciado. Las cifras `plou` y `sec` de antes se conservan en los archivos,
+  y los días guardados sin franjas se enseñan con el texto anterior.
+
+`FORMAT` pasa a 3: los días viejos se rehacen por tandas, como en la
+3.137.1. Validación: `tests/test_historial_grafica.py` (la media del tramo,
+las horas con sol, las franjas y su suma con días sin ellas) y la vista con
+«Com encerta» con el historial real, en Chromium y Firefox, escritorio y
+móvil.
+

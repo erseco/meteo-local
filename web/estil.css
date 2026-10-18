@@ -1173,6 +1173,11 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .vg-encert { margin: .6rem 0 0; color: var(--suau); font-size: .9rem; line-height: 1.45; }
 .vg-encert p { margin: .15rem 0; }
 .vg-encert .vg-encert-titol { color: var(--text); font-weight: 600; }
+.vg-encert-taula { border-collapse: collapse; margin: .25rem 0; font-variant-numeric: tabular-nums; }
+.vg-encert-taula th, .vg-encert-taula td { padding: .15rem .5rem .15rem 0; text-align: left; border-bottom: 1px solid var(--vora); font-weight: 400; white-space: nowrap; }
+.vg-encert-taula thead th { font-size: .8rem; vertical-align: bottom; }
+.vg-encert-taula tbody th { color: var(--text); }
+.vg-encert-taula .num { text-align: right; }
 /* La pluja prevista de les hores passades (Com encerta): només la vora. */
 .grafica .g-pluja-prev { fill: none; stroke: var(--c-aigua-text); stroke-width: 1.5; stroke-dasharray: 3 2; }
 .g-clau .m-pluja-prev { width: .55rem; height: .8rem; border: 1.5px dashed var(--c-aigua-text); box-sizing: border-box; }
