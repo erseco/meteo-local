@@ -44,6 +44,7 @@ import json
 import math
 import os
 import re
+import unicodedata
 import urllib.request
 
 import config as C
@@ -408,6 +409,66 @@ def dins_horari(linia, ara):
     return inici <= ara.strftime("%H:%M") < fi
 
 
+def _norm(text):
+    """Minúscules, sense accents ni puntuació: «P.Catalunya» → «p catalunya»."""
+    text = unicodedata.normalize("NFKD", text.lower())
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", text).split())
+
+
+def _noms_parada(parades):
+    """Les maneres com un avís pot anomenar cada parada: el nom sencer, sense
+    «Barcelona-», «Terrassa Nord» per «Terrassa Estació del Nord», «P.
+    Catalunya» i la primera paraula si cap altra parada de la línia hi comença
+    («Sants», «Cerdanyola» a l'R4)."""
+    noms = {}
+    sense_bcn = [re.sub(r"^barcelona ", "", _norm(p)) for p in parades]
+    primeres = [n.split()[0] for n in sense_bcn]
+    for i, n in enumerate(sense_bcn):
+        alies = {_norm(parades[i]), n, re.sub(r" estacio del ", " ", n)}
+        if n.startswith("placa de "):
+            alies |= {"p " + n[9:], "pl " + n[9:], "pca " + n[9:]}
+        if primeres.count(primeres[i]) == 1:
+            alies.add(primeres[i])
+        for a in alies:
+            noms.setdefault(a, set()).add(i)
+    return noms
+
+
+def carretera_passa(linia, text):
+    """Si el servei per carretera d'un avís arriba a l'estació de la línia a
+    Cerdanyola. Si l'avís no anomena cap tram que es pugui situar a la línia
+    («en tot el seu recorregut», o noms que no hi són), sí, com fins ara: no es
+    pot descartar."""
+    parades = getattr(C, "TRENS_PARADES", {}).get(linia)
+    m = re.search(r"carretera", text, re.I)
+    if not m:
+        return False
+    if not parades:
+        return True
+    estacio = next((n for l, _, n in C.TRENS if l == linia), None)
+    propia = [i for i, p in enumerate(parades) if _norm(p) == _norm(estacio or "")]
+    if not propia:
+        return True
+    # El tram, a la frase del servei per carretera (fins al punt i seguit).
+    tros = " " + _norm(re.split(r"\.\s", text[m.end():])[0]) + " "
+    noms = _noms_parada(parades)
+    trobades, pos = [], 0
+    while pos < len(tros):
+        # El nom més llarg que comença aquí, sencer.
+        millor = max((a for a in noms if tros.startswith(" " + a + " ", pos)), key=len, default=None)
+        if millor and len(noms[millor]) == 1:
+            trobades.append(next(iter(noms[millor])))
+            pos += len(millor) + 1
+        else:
+            pos = tros.find(" ", pos + 1)
+            if pos < 0:
+                break
+    if len(trobades) < 2 or len(trobades) % 2:
+        return True
+    return any(min(a, b) <= propia[0] <= max(a, b) for a, b in zip(trobades[::2], trobades[1::2]))
+
+
 def estat_linia(linia, mouen, vist, avisos, ara):
     """vist: última vegada que s'ha vist un tren de la línia movent-se a prop
     de l'estació (ISO), o None."""
@@ -422,7 +483,9 @@ def estat_linia(linia, mouen, vist, avisos, ara):
     # dates, qualsevol avís propi de carretera (com fins ara). Només els
     # vigents: un avís que encara no ha començat o que ja ha acabat es mostra,
     # però no decideix (auditoria del 08-10-2026).
-    carretera = lambda a: bool(re.search(r"carretera", a["text"]["ca"] + a["text"]["es"], re.I))
+    # Només si el tram per carretera passa per Cerdanyola (18-10-2026: un bus
+    # entre Terrassa Nord i Manresa posava l'R4 «per carretera»).
+    carretera = lambda a: carretera_passa(linia, a["text"]["ca"]) or carretera_passa(linia, a["text"]["es"])
     # Els generals de Rodalies també decideixen: la seva API només porta els
     # vigents i al dia; els de Renfe, no, que s'hi quedaven avisos vells (ADR 0078).
     al_dia = mes_nous_primer([a for a in avisos if linia in a["linies"] and (a["linies"] == {linia} or a.get("font") == "rodalies")])

@@ -198,3 +198,19 @@ Chromium, Firefox y WebKit, en escritorio, móvil y tableta, con tema claro y
 oscuro, y axe-core sin incidencias, con los datos reales del 07-10-2026 (R4 y
 R7 sin trenes, R8 por carretera, S2 sin incidencias). Las casillas, probadas al
 desmarcar, recargar y volver a marcar.
+
+## Cambio del 18-10-2026 (3.138.5): «per carretera», solo si el tramo pasa por Cerdanyola
+
+El revisor (ADR 0101) encontró la R4 «Servei per carretera» con un aviso de
+Rodalies que decía «Servei complementari per carretera entre Terrassa
+Nord-Manresa», lejos de Cerdanyola. Bastaba la palabra «carretera» en un aviso
+propio de la línea. Ahora `trens.carretera_passa` busca el tramo en la frase
+del servicio por carretera y lo sitúa con las paradas de la línea en orden
+(`config.TRENS_PARADES`, de la API de la web de Rodalies del 18-10-2026,
+también con las formas cortas de los avisos: «Terrassa Nord», «P.Catalunya»,
+«Sants»). Solo cuenta si el tramo pasa por la estación de Cerdanyola de la
+línea o acaba en ella; si el aviso no nombra un tramo que se pueda situar
+(«en tot el seu recorregut»), cuenta como antes, porque no se puede descartar.
+Con el aviso del 18-10-2026 la R4 sale «Amb incidències». Si Rodalies cambia
+las paradas de una línea, hay que actualizar la lista; un nombre que no esté
+en ella deja el aviso como estaba antes de este cambio.

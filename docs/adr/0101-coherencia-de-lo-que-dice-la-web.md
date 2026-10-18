@@ -225,3 +225,12 @@ la última hora, la persistencia daba 47,5 %, 40 % y 34 % para las tres horas
 siguientes, y el modelo, 54 %, 39 % y 14 %: la fila 13–14 era del modelo y
 las otras dos, de la persistencia. Se explica en `revisor-instruccions.md`;
 el cálculo no cambia.
+
+## Cambio del 18-10-2026 (3.138.5): la leyenda del asterisco explica el hueco
+
+Para que quien lee la tabla entienda lo mismo que ahora sabe el revisor, la
+leyenda del «*» dice «Xifra que ve de la pluja de l'última hora al barri,
+encara que ja hagi parat: els models en donaven menys» (antes, «Hi compta la
+pluja de l'última hora al barri, encara que ja hagi parat»), en catalán y
+castellano (Juanjo: «sí, aplica la leyenda»). Y la R4 «per carretera» por un
+autobús entre Terrassa Nord y Manresa se corrige en el código (ADR 0029).

@@ -283,6 +283,26 @@ class Estat(unittest.TestCase):
             a["inici"] = None
         self.assertEqual(T.estat_linia("R8", [], None, [tren, bus], vespre)["estat"], "bus")
 
+    def test_carretera_nomes_si_el_tram_passa_per_cerdanyola(self):
+        # Revisor, 18-10-2026: l'R4 sortia «per carretera» per un bus entre Terrassa Nord i Manresa.
+        ara = ARA.replace(day=18, hour=17)
+        avis = self.avis(["R4"], "A causa d'incidències a la infraestructura entre Sants-P.Catalunya, i entre "
+                         "Sants-El Clot, [...] els trens circulen amb demores de 30 minuts de mitjana. Servei "
+                         "complementari per carretera entre Terrassa Nord-Manresa",
+                         "Debido a incidencias en la infraestructura entre Sants-P. Catalunya, [...] los trenes "
+                         "circulan con demoras de 30 minutos de media.Serv. complementari por carretera entre "
+                         "Terrassa Nord-Manresa", inici="2026-10-18T14:33+02:00")
+        avis["font"] = "rodalies"
+        mou = [tren("R4", *C.TRENS_ESTACIONS["R4"])]
+        self.assertEqual(T.estat_linia("R4", mou, None, [avis], ara)["estat"], "incidencies")
+        self.assertFalse(T.carretera_passa("R8", "Servei per carretera entre Martorell i Rubí Can Vallhonrat."))
+        # Si el tram passa per Cerdanyola, o hi acaba, sí; si no se sap on és, també.
+        self.assertTrue(T.carretera_passa("R4", "Servei per carretera entre Montcada i Reixac-Manresa i Sabadell Nord."))
+        self.assertTrue(T.carretera_passa("R4", "Servei per carretera entre Cerdanyola i Terrassa Est."))
+        self.assertTrue(T.carretera_passa("R4", "Servei alternatiu per carretera en tot el seu recorregut."))
+        self.assertTrue(T.carretera_passa("R7", "Servei per carretera entre Montcada i Reixac-Santa Maria i "
+                                                "Cerdanyola-Universitat."))
+
 
 if __name__ == "__main__":
     unittest.main()

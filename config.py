@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.138.4"
+VERSION = "3.138.5"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -340,6 +340,29 @@ TRANSIT_NIVELL_SORTIDA = 3
 TRENS_ESTACIONS = {"R4": (41.493, 2.148), "R7": (41.497, 2.115), "R8": (41.497, 2.115),
                    "S2": (41.502, 2.091)}
 TRENS_RADI_KM = 6
+# Las paradas de cada línea de Rodalies, en orden (API de la web de Rodalies,
+# lines/<línea>, 18-10-2026). Un aviso de servicio por carretera que nombra un
+# tramo solo cuenta si el tramo pasa por la estación de Cerdanyola de la línea
+# (el 18-10-2026 la R4 salía «per carretera» por un autobús entre Terrassa
+# Nord y Manresa).
+TRENS_PARADES = {
+    "R4": ["Sant Vicenç de Calders", "El Vendrell", "L'Arboç", "Els Monjos", "Vilafranca del Penedès",
+           "La Granada", "Lavern-Subirats", "Sant Sadurní d'Anoia", "Gelida", "Martorell Central",
+           "Castellbisbal", "El Papiol", "Molins de Rei", "Sant Feliu de Llobregat", "Sant Joan Despí",
+           "Cornellà", "L'Hospitalet de Llobregat", "Barcelona-Sants", "Barcelona-Plaça de Catalunya",
+           "Barcelona-Arc de Triomf", "Barcelona-La Sagrera-Meridiana", "Barcelona-Fabra i Puig",
+           "Barcelona-Torre Baró", "Vallbona", "Montcada Bifurcació", "Montcada i Reixac-Manresa",
+           "Montcada i Reixac-Santa Maria", "Cerdanyola del Vallès", "Barberà del Vallès", "Sabadell Sud",
+           "Sabadell Centre", "Sabadell Nord", "Terrassa Est", "Terrassa Estació del Nord",
+           "Sant Miquel de Gonteres-Viladecavalls", "Viladecavalls", "Vacarisses-Torreblanca", "Vacarisses",
+           "Castellbell i el Vilar-Monistrol de Mont", "Sant Vicenç de Castellet", "Manresa"],
+    "R7": ["Barcelona-Fabra i Puig", "Barcelona-Torre Baró", "Vallbona", "Montcada Bifurcació",
+           "Montcada i Reixac-Manresa", "Montcada i Reixac-Santa Maria", "Cerdanyola del Vallès",
+           "Cerdanyola-Universitat"],
+    "R8": ["Martorell Central", "Castellbisbal", "Rubí Can Vallhonrat", "Sant Cugat Coll Favà",
+           "Cerdanyola-Universitat", "Santa Perpètua de Mogoda Riera de Caldes", "Mollet-Sant Fost",
+           "Montmeló", "Granollers Centre"],
+}
 TRENS_VIST_MIN = 60
 TRENS_HORARI = ("05:30", "23:30")
 TRENS_HORARI_LINIA = {"R4": ("05:20", "23:59"), "R7": ("06:35", "22:40"), "R8": ("06:49", "21:50"),

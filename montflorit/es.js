@@ -233,7 +233,7 @@ var IDIOMA = {
     "Pluja": "Lluvia",
     "Els mil·límetres que caurien si plou.": "Los milímetros que caerían si llueve.",
     "Quina part del cel tapen els núvols: serè, menys del 20\u00a0%; poc ennuvolat, fins al 45\u00a0%; mig ennuvolat, fins al 70\u00a0%; molt ennuvolat, fins al 85\u00a0%, i cobert, més. Si la probabilitat de pluja arriba al 20\u00a0%, hi surt «possible pluja», i del 50\u00a0% amunt, la pluja. A l’hora en curs, el cel és el que s’observa a l’aeroport de Sabadell, si hi veu núvols.": "Qué parte del cielo tapan las nubes: despejado, menos del 20\u00a0%; poco nuboso, hasta el 45\u00a0%; nuboso, hasta el 70\u00a0%; muy nuboso, hasta el 85\u00a0%, y cubierto, más. Si la probabilidad de lluvia llega al 20\u00a0%, sale «posible lluvia», y del 50\u00a0% para arriba, la lluvia. En la hora en curso, el cielo es el que se observa en el aeropuerto de Sabadell, si ve nubes.",
-    "Hi compta la pluja de l\u2019última hora al barri, encara que ja hagi parat.": "Cuenta la lluvia de la última hora en el barrio, aunque ya haya parado.",
+    "Xifra que ve de la pluja de l\u2019última hora al barri, encara que ja hagi parat: els models en donaven menys.": "Cifra que sale de la lluvia de la última hora en el barrio, aunque ya haya parado: los modelos daban menos.",
     "Hi compta la pluja que el radar veu acostar-se.": "Cuenta la lluvia que el radar ve acercarse.",
     "Barra de color": "Barra de color",
     "Hores amb avís, del color del nivell.": "Horas con aviso, del color del nivel.",
