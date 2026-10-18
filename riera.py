@@ -267,17 +267,24 @@ def calcula_veines(ahora, nc, consulta):
             "index_6h": millor[3], "index_d_aqui_a_min": millor[4]}
 
 
-def cal_veines(res, nc, ahora):
+def cal_veines(res, nc, ahora, pluja_barri=None):
     """Si cal mirar les estacions: plou a Meteocat, el radar en veu sobre la
-    conca en l'hora que ve o hi ha un episodi obert."""
+    conca en l'hora que ve, plou de manera moderada o més al barri o hi ha un
+    episodi obert. pluja_barri: la pluja de la darrera mitja hora de la xarxa
+    del barri (casa.consens, la mediana); des d'1 mm, 2 mm/h, el primer graó
+    de l'escala d'intensitat de la web: amb plugim la riera no puja (Juanjo,
+    18-10-2026: «que llueva, pero de forma importante»). Cobreix la pluja que
+    el radar encara no veu sobre la conca mentre Meteocat no s'ha actualitzat."""
     if res and (res.get("mm_3h") or 0) >= 1:
         return True
     if nc and previst(nc, ahora, 60) >= 1:
         return True
+    if (pluja_barri or 0) >= C.RIERA_VEINES_BARRI_MM:
+        return True
     return bool(llegeix_estat().get("episodi"))
 
 
-def calcula(ahora, nc, lector=None, consulta=None):
+def calcula(ahora, nc, lector=None, consulta=None, pluja_barri=None):
     """Estado de la riera ahora, para casa.json. Con Meteocat y, si hace falta,
     las estaciones particulares de Sant Cugat (calcula_veines): manda el nivel
     más alto. None si no hay datos recientes de ninguna de las dos."""
@@ -288,7 +295,7 @@ def calcula(ahora, nc, lector=None, consulta=None):
         consulta = Consulta(ahora) if W.lectura_disponible() else None
     elif consulta is not None and not isinstance(consulta, Consulta):
         consulta = Consulta(ahora, consulta)
-    if consulta is not None and cal_veines(res, nc, ahora):
+    if consulta is not None and cal_veines(res, nc, ahora, pluja_barri):
         try:
             veines = calcula_veines(ahora, nc, consulta)
         except Exception:

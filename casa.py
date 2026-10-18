@@ -766,7 +766,7 @@ def recoger(anterior=None):
     # La riera de Sant Cugat: lo que ha llovido en la cuenca y lo que trae el
     # radar, para el aviso por Telegram (ADR 0027).
     try:
-        salida["riera"] = RI.calcula(P.AHORA, nc)
+        salida["riera"] = RI.calcula(P.AHORA, nc, pluja_barri=(salida.get("ara_casa") or {}).get("pluja_30min"))
         if salida["riera"] is None or salida["riera"].get("sense_meteocat"):
             salida["errors"].append("riera: Sant Cugat (Meteocat) sense dades recents")
         elif salida["riera"].get("incomplet"):

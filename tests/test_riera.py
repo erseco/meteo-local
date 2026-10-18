@@ -307,7 +307,7 @@ class Veines(unittest.TestCase):
             return obs_wu(self.ara, mm_h, fresca=i < frescas)
         return f
 
-    def calcula(self, mm_h_xv, mm_h_wu, frescas=6):
+    def calcula(self, mm_h_xv, mm_h_wu, frescas=6, pluja_barri=None):
         import prevision as P
         from unittest import mock
         fins = self.ara - dt.timedelta(minutes=30)
@@ -315,7 +315,7 @@ class Veines(unittest.TestCase):
         with mock.patch.object(P, "taula_meteocat",
                                lambda codi, dia=None, lector=None: [x for x in xv if x[0].date() == dia]
                                if codi == C.RIERA_ESTACIO else []):
-            return RI.calcula(self.ara, None, consulta=self.consulta(mm_h_wu, frescas))
+            return RI.calcula(self.ara, None, consulta=self.consulta(mm_h_wu, frescas), pluja_barri=pluja_barri)
 
     def test_mana_la_mes_alta(self):
         # Meteocat, 20 mm en 2 h; les estacions, 30 mm/h: 60 mm en 3 i en 6 hores, perill.
@@ -338,6 +338,15 @@ class Veines(unittest.TestCase):
     def test_sense_pluja_no_es_consulta(self):
         self.calcula(0, 30)
         self.assertEqual(self.crides, 0)
+
+    def test_pluja_moderada_al_barri_les_consulta(self):
+        # Meteocat encara sense pluja i el radar sense res sobre la conca: amb plugim al barri,
+        # no; des d'1 mm en mitja hora (2 mm/h), sí, i l'avís pot sortir de les estacions.
+        self.calcula(0, 30, pluja_barri=0.5)
+        self.assertEqual(self.crides, 0)
+        r = self.calcula(0, 30, pluja_barri=1.0)
+        self.assertGreater(self.crides, 0)
+        self.assertEqual((r["font"], r["nivell"]), ("veines", "perill"))
 
     def test_el_tope_del_dia(self):
         from unittest import mock

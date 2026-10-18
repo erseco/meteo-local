@@ -193,3 +193,19 @@ Cugat en Weather Underground, con dato cada 5 minutos.
 - **Validación**: `tests/test_riera.py` (manda la más alta, mínimo de tres
   estaciones, sin lluvia no se consulta, tope diario); los datos históricos
   de las seis y de Meteocat en los cuatro episodios.
+
+## Cambio del 18-10-2026 (3.139.1): también con lluvia moderada en el barrio
+
+Las estaciones particulares solo se consultaban si la estación del Meteocat
+de Sant Cugat llevaba 1 mm o más en 3 horas, si el radar preveía 1 mm o más
+sobre la cuenca en la hora siguiente o si había un episodio abierto. Quedaba
+un hueco: una lluvia que el radar aún no ve sobre la cuenca mientras el
+Meteocat no se ha actualizado (llega con 30-45 minutos). Ahora también se
+consultan si la red del barrio mide 1 mm o más en la última media hora (la
+mediana, la de «Ara»): 2 mm/h, el primer escalón de la escala de intensidad
+de la web (`config.RIERA_VEINES_BARRI_MM`). Juanjo: «que llueva, pero de
+forma importante? no llovizna»; con llovizna la riera no sube y no se gasta
+cuota. No se usa el «Plou» de una sola estación, que salta con una gota. Con
+lluvia moderada son unas 60 consultas por hora como mucho, dentro del tope
+diario de 500. Prueba: `tests/test_riera.py`
+(`test_pluja_moderada_al_barri_les_consulta`).
