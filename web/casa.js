@@ -479,6 +479,11 @@ function textRadar(r, plou) {
   // l'estat, com abans.
   const estat = r.pluja ? r.pluja.estat
     : plou ? 'plou' : r.arriba && aviat(r.arriba) ? 'radar_sobre' : null;
+  if (estat === 'plou' && !(r.arriba && aviat(r.arriba)) && !(r.possible && aviat(r.possible))) {
+    // La mesuren les estacions i el radar no la veu a sobre (el plugim, sovint):
+    // es diu, perquè el mapa del costat no en mostra (Juanjo, 18-10-2026).
+    return ['arriba', T('Pluja a sobre segons les estacions del barri · el radar no la veu'), false, true];
+  }
   if (estat === 'plou' || estat === 'radar_sobre') {
     const fi = !(r.arriba || r.possible) ? ''
       : r.fi ? T` · pararia cap a les\u00a0${horaCurta(r.fi)}`

@@ -314,7 +314,10 @@ class Resum(unittest.TestCase):
         self.assertTrue(B.text_radar_bot(d, "es", ARA).startswith(
             "Lluvia encima de Montflorit. Pararía hacia las 07:10 (en entrenamiento: puede fallar)."))
         d["radar"].update(possible=None, fi=None)
-        self.assertTrue(B.text_radar_bot(d, "ca", ARA).startswith("Pluja a sobre de Montflorit.\n"))
+        self.assertTrue(B.text_radar_bot(d, "ca", ARA).startswith(
+            "Pluja a sobre de Montflorit segons les estacions del barri; el radar no la veu.\n"))
+        self.assertTrue(B.text_radar_bot(d, "es", ARA).startswith(
+            "Lluvia encima de Montflorit según las estaciones del barrio; el radar no la ve.\n"))
         d["ara_casa"].update(intensitat=0, plou=False)
         self.assertTrue(B.text_radar_bot(d, "ca", ARA).startswith("El radar no veu pluja que vingui cap a Montflorit."))
 

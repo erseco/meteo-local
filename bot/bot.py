@@ -1368,7 +1368,13 @@ def text_radar_bot(dades, idioma, moment):
     # radar, es diu.
     estat = (dades.get("pluja_ara") or {}).get("estat")
     nomes_radar = estat == "radar_sobre" or (estat is None and aviat and not plou)
-    if (plou and (r.get("arriba") or r.get("possible"))) or aviat or estat == "radar_sobre":
+    veu = aviat or (r.get("possible") and dt.datetime.fromisoformat(r["possible"]) <= moment + dt.timedelta(minutes=5))
+    if plou and not veu and estat != "radar_sobre":
+        # La mesuren les estacions i el radar no la veu a sobre (el plugim,
+        # sovint), com a la web (Juanjo, 18-10-2026).
+        que = ("Lluvia encima de Montflorit según las estaciones del barrio; el radar no la ve." if es
+               else "Pluja a sobre de Montflorit segons les estacions del barri; el radar no la veu.")
+    elif (plou and (r.get("arriba") or r.get("possible"))) or aviat or estat == "radar_sobre":
         que = "Lluvia encima de Montflorit." if es else "Pluja a sobre de Montflorit."
         if nomes_radar:
             que = ("Lluvia encima de Montflorit según el radar; ninguna estación del barrio la mide." if es
@@ -1379,8 +1385,6 @@ def text_radar_bot(dades, idioma, moment):
         elif r.get("sense_fi"):
             que += (" No acaba en 2 horas (en entrenamiento: puede fallar)." if es
                     else " No s'acaba en 2 hores (en entrenament: pot fallar).")
-    elif plou:
-        que = "Lluvia encima de Montflorit." if es else "Pluja a sobre de Montflorit."
     elif r.get("arriba"):
         que = (f"Llegaría lluvia a Montflorit hacia las {h(r['arriba'])}." if idioma == "es" else f"Arribaria pluja a Montflorit cap a les {h(r['arriba'])}.")
     elif r.get("possible"):

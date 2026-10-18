@@ -348,3 +348,15 @@ en la de casa), «Mapa d'elaboració pròpia» y el radar y la hora de la imagen
 Juanjo: «que se vea que es una elaboración de la propia app y no una captura
 de otra web». Los nombres no se traducen; también lo dice la descripción
 para lectores de pantalla.
+
+## Cambio del 18-10-2026 (3.138.4): lluvia que miden las estaciones y el radar no ve
+
+Con llovizna, las estaciones del barrio midieron lluvia y el radar no veía
+nada encima de casa. El recuadro decía «Pluja a sobre · no s'acaba en 2
+hores» junto a un mapa sin lluvia en el barrio, y Juanjo lo leyó como una
+contradicción (llovía de verdad). Ahora, si llueve según las estaciones y el
+radar no ve lluvia (ni probable ni posible) encima de casa en los próximos 5
+minutos, el titular dice «Pluja a sobre segons les estacions del barri · el
+radar no la veu», sin la hora de final, que saldría del radar. Lo mismo en
+/radar del bot. Es el caso contrario de «segons el radar · cap estació del
+barri no en mesura» (ADR 0101).

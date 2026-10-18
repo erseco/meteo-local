@@ -203,6 +203,7 @@ var IDIOMA = {
     "A la part alta, {0} °C menys": "En la parte alta, {0} °C menos",
     "glaçada vora la riera": "helada junto a la riera",
     "Pluja a sobre": "Lluvia encima",
+    "Pluja a sobre segons les estacions del barri · el radar no la veu": "Lluvia encima según las estaciones del barrio · el radar no la ve",
     " · pararia cap a les\u00a0{0}": " · pararía hacia las\u00a0{0}",
     " · no s\u2019acaba en 2 hores": " · no acaba en 2 horas",
     " (en entrenament)": " (en entrenamiento)",
