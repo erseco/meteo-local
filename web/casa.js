@@ -571,16 +571,18 @@ function blocRadar(r, plou, hores) {
     const aProp = r.propera && r.propera.km <= 15;
     // La que només ve de la pluja que acaba de caure (segons_estacio) no és
     // pluja que el radar no veu (inventari del 18-10-2026).
-    const resta = (x) => (x.segons_estacio ? T`${textPct(x)}: per la pluja que ha caigut fa poc al barri.`
-      : aProp ? T`${textPct(x)}: la pluja de prop pot créixer o desviar-se cap aquí.`
+    // Qui dona què: la previsió per hores, amb l'hora (el compte ja és a
+    // l'etiqueta de dalt). Abans, «La previsió en dona d'aquí a…», que no es
+    // llegia bé (Juanjo, 18-10-2026: «quien da la previsión? queda extraño»).
+    const resta = (x) => (x.segons_estacio ? T`${textPct(x)}, per la pluja que ha caigut fa poc al barri.`
+      : aProp ? T`${textPct(x)}: pot ser pluja de prop que creixi o es desviï cap aquí.`
         : T`${textPct(x)}: seria pluja que es formi a prop, que el radar encara no veu.`);
     if (f && new Date(f.hora) < new Date(ara.getTime() + 2 * 3600e3)) {
-      const linia = element('p', 'radar-propera');
-      linia.append(T('La previsió en dona '), compte(f.hora, true), resta(f));
-      cos.append(linia);
+      cos.append(element('p', 'radar-propera',
+        T`La previsió per hores sí que dona pluja a partir de les ${new Date(f.hora).getHours()}\u00a0h` + resta(f)));
     } else {
       const g = (hores || []).find((x) => new Date(x.hora) <= ara && new Date(x.fins) > ara && plujaHora(x));
-      if (g) cos.append(element('p', 'radar-propera', T('La previsió en dona per a aquesta hora') + resta(g)));
+      if (g) cos.append(element('p', 'radar-propera', T('La previsió per hores sí que dona pluja per a aquesta hora') + resta(g)));
     }
   }
   // La pluja més propera, si no és a sobre (Juanjo, 17-10-2026), i si no és

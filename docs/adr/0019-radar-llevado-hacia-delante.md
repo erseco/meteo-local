@@ -425,3 +425,11 @@ respuesta sirve (Juanjo: «30 minutos no es demasiado? la situación puede haber
 cambiado totalmente»; descartados los botones que caducan, que perderían
 respuestas). El mensaje dice «Apuntado a las 19:42: …». Las respuestas de antes
 pasan sus datos a `pregunta_…` y quedan sin los del momento de responder.
+
+3.140.4: la línea del recuadro que explica la lluvia de la previsión cuando el
+radar no ve nada venir decía «La previsió en dona d'aquí a menys d'una hora
+(37 %)…» («La previsión la da…» en castellano), sin que se supiera quién la
+daba (Juanjo: «quien da la previsión? queda extraño así»). Ahora dice «La
+previsió per hores sí que dona pluja a partir de les 20 h (37 %): pot ser pluja
+de prop que creixi o es desviï cap aquí» (o «per a aquesta hora»), con la hora
+en lugar de la cuenta atrás, que ya está en la etiqueta de arriba.
