@@ -76,3 +76,17 @@ invasiva» de que se entienda qué es cada fase.
   desbordamiento y axe-core sin incidencias. axe detectó que el título
   naranja no se leía en tema oscuro (también en los avisos naranjas de la
   AEMET): ahora usa `--taronja-text`, más claro en ese tema.
+
+## Descartado el 18-10-2026: planes que no dependen del tiempo
+
+Se estudió mostrar el INFOCAT, el PLASEQCAT, el TRANSCAT y el SISMICAT. En
+los datos abiertos su descripción no dice dónde ocurren (el INFOCAT del
+03-07-2026 decía solo «Incendi vegetació -»; el lugar, la Bisbal d'Empordà,
+solo salía en el comunicado en PDF), así que el filtro de zona de los planes
+del tiempo los habría mostrado aunque fueran lejos. Situarlos exigía leer
+PDF sin formato fijo y reconocer municipios, sin un solo ejemplo de tres de
+los cuatro planes para probarlo. Juanjo: «lo veo muy frágil» y «lo dejamos,
+no merece la pena». Lo que aportarían ya llega por otra vía: las órdenes de
+confinamiento o evacuación, por ES-Alert a los móviles de la zona (el
+comunicado del INUNCAT del 18-10-2026 cuenta tres enviados el día antes), y
+los incendios cerca, por los datos de Bombers con coordenadas (ADR 0071).
