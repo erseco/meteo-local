@@ -149,3 +149,26 @@ class Registre(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class VeinesCincMinuts(unittest.TestCase):
+    def test_apunta_les_veines_sense_perdre_les_que_falten(self):
+        # Una columna per veïna (ADR 0102); una passada en què falta una estació
+        # conserva el que tenia apuntat.
+        with tempfile.TemporaryDirectory() as d:
+            vell = R.VEINES_5MIN
+            R.VEINES_5MIN = os.path.join(d, "veines-5min.csv")
+            try:
+                fin = dt.datetime(2026, 10, 5, 20, 10, tzinfo=TZ)
+                R.apunta_veines_5min({"ICERDA6": {fin: 0.2}, "ICERDA18": {fin: 0.0}, "ALTRA": {fin: 9}})
+                R.apunta_veines_5min({"ICERDA6": {fin: 0.3, fin + dt.timedelta(minutes=5): 0.1}})
+                import csv
+                with open(R.VEINES_5MIN, encoding="utf-8") as f:
+                    files = list(csv.DictReader(f))
+                self.assertEqual(files[0]["fins"], "2026-10-05T20:10")
+                self.assertEqual((files[0]["ICERDA6"], files[0]["ICERDA18"], files[0]["ICERDA28"]), ("0.3", "0.0", ""))
+                self.assertEqual((files[1]["ICERDA6"], files[1]["ICERDA18"]), ("0.1", ""))
+                self.assertNotIn("ALTRA", files[0])
+            finally:
+                R.VEINES_5MIN = vell
+

@@ -5,7 +5,9 @@ o RainViewer, más nuevo pero que marca más lluvia de la que hay (ADR 0026).
 
 En cada pasada de la página de casa se apunta lo que daba cada fuente para
 casa en las dos horas siguientes (nowcast.fonts, con el mismo movimiento) y
-si llovía en ese momento en casa. Cada día, con lo apuntado
+si llovía en ese momento en el barrio (casa.json: pluja_ara.mesurada, la
+regla única de aprenentatge.plou_ara_barri, ADR 0102; hasta la 3.142.0, solo
+el pluviómetro de casa, cuyos ceros no son fiables). Cada día, con lo apuntado
 en los últimos DIES días, se compara lo que daba cada una con lo que pasó
 después y se elige la que acierta más (Brier, docs/estadistica.md). La
 elección decide cuánto más nueva tiene que ser la imagen de RainViewer para
@@ -38,16 +40,22 @@ MIN_DIES = 3                    # en días distintos
 MILLORA = 0.95                  # error de la otra, como mucho este factor del actual
 
 
-def plou(ara_casa):
-    """Llueve en este momento en casa: el pluviómetro ha recogido lluvia en
-    los últimos minutos (ecowitt.resum_ara). Sin la estación, no se sabe
-    (None) y la pasada no cuenta al comparar."""
+def plou(salida):
+    """Llueve en este momento en el barrio, según las estaciones: True, False
+    o None si no se sabe (`pluja_ara.mesurada` de casa.json, ADR 0102), y
+    entonces la pasada no cuenta al comparar. Con una salida de antes de la
+    3.142.0 (sin `pluja_ara`), lo que marcaba el pluviómetro de casa."""
+    if not salida:
+        return None
+    if "pluja_ara" in salida:
+        return (salida["pluja_ara"] or {}).get("mesurada")
+    ara_casa = salida.get("ara_casa")
     return bool(ara_casa.get("plou")) if ara_casa else None
 
 
-def apunta(ahora, nc, ara_casa):
+def apunta(ahora, nc, salida):
     """Una línea por pasada en radar-fonts-AAAA-MM.jsonl."""
-    linia = {"t": ahora.isoformat(timespec="minutes"), "plou": plou(ara_casa),
+    linia = {"t": ahora.isoformat(timespec="minutes"), "plou": plou(salida),
              "triada": nc and nc.get("imatge"), "fonts": (nc or {}).get("fonts") or {}}
     with open(os.path.join(DIR, f"radar-fonts-{ahora:%Y-%m}.jsonl"), "a", encoding="utf-8") as f:
         f.write(json.dumps(linia, ensure_ascii=False) + "\n")

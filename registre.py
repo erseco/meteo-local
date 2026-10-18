@@ -25,6 +25,7 @@ import json
 import os
 import sys
 
+import config as C
 import ecowitt as E
 import prevision as P
 
@@ -111,6 +112,45 @@ def apunta_casa_5min(cincs):
     _desa_per_hores(ESTACIO_CASA_5MIN, CAMPOS_5MIN,
                     {P.clau_hora(fin): {"fins": P.clau_hora(fin), "pluja_mm": round(mm, 1)}
                      for fin, mm in cincs.items()})
+
+
+# La lluvia de las vecinas cada 5 minutos (veines-5min.csv, ADR 0102): una
+# columna por estación, para que el final de la lluvia (fi_pluja.py) se
+# juzgue con la misma regla que la hora (aprenentatge.pluja_observada) y no
+# solo con el pluviómetro de casa.
+VEINES_5MIN = os.path.join(DIR, "veines-5min.csv")
+
+
+def campos_veines_5min():
+    return ["fins"] + list(C.VEINES)
+
+
+def apunta_veines_5min(cincs):
+    """{estacio: {fin: mm}} (cincs_casa con las lecturas de cada vecina). Una
+    estación que falta en esta pasada conserva lo que tuviera apuntado."""
+    files = {}
+    for estacio, tram in cincs.items():
+        if estacio not in C.VEINES:
+            continue
+        for fin, mm in tram.items():
+            files.setdefault(P.clau_hora(fin), {})[estacio] = round(mm, 1)
+    if not files:
+        return
+    os.makedirs(DIR, exist_ok=True)
+    campos = campos_veines_5min()
+    guardadas = {}
+    if os.path.exists(VEINES_5MIN):
+        with open(VEINES_5MIN, encoding="utf-8") as f:
+            guardadas = {r["fins"]: {c: r.get(c, "") for c in campos} for r in csv.DictReader(f)}
+    for clave, valors in files.items():
+        fila = guardadas.setdefault(clave, {c: "" for c in campos})
+        fila["fins"] = clave
+        fila.update(valors)
+    with open(VEINES_5MIN + ".tmp", "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=campos)
+        w.writeheader()
+        w.writerows(guardadas[k] for k in sorted(guardadas, key=P.ordre_hora))
+    os.replace(VEINES_5MIN + ".tmp", VEINES_5MIN)
 
 
 def hores_meteocat(filas):

@@ -105,3 +105,7 @@ uso, `aprèn` escribe una propuesta (`fi-pluja-proposat.json`), avisa, y
 `aplica_proposta` la aplica al día siguiente si no existe «atura», como el
 aprendizaje de la lluvia (ADR 0012). `tests/test_fi_pluja.py`:
 `test_l_error_validat_deixa_fora_cada_episodi` y la prueba de la propuesta.
+
+## Cambio del 18-10-2026 (3.142.0): el final real con las vecinas
+
+El final real de un episodio sale de la lluvia del barrio cada 5 minutos (casa y las vecinas, `veines-5min.csv`), con la regla única de `aprenentatge.pluja_observada` desde 0,1 mm; un tramo del que no se sabe (None) ni corta ni alarga. Antes, el pluviómetro de casa solo, que daba finales antes de tiempo con lluvia débil; las cifras anteriores no son comparables. Detalle y motivo en el ADR 0102.

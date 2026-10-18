@@ -123,7 +123,7 @@ class Compara(unittest.TestCase):
         RF.DIR = dir_
         try:
             nc = {"imatge": "rainviewer", "fonts": {"rainviewer": {"hora": T0.isoformat(), "prob": [0.2]}}}
-            RF.apunta(T0, nc, {"plou": True})
+            RF.apunta(T0, nc, {"pluja_ara": {"estat": "plou", "mesurada": True}})
             with open(os.path.join(dir_, f"radar-fonts-{T0:%Y-%m}.jsonl")) as f:
                 l = json.loads(f.read())
             self.assertTrue(l["plou"])
@@ -132,10 +132,16 @@ class Compara(unittest.TestCase):
             RF.DIR = vell
 
     def test_que_plou(self):
-        # Plou si el pluviòmetre de casa ha recollit res en els últims minuts;
-        # sense estació no se sap, i la passada no compta (ADR 0058).
-        self.assertTrue(RF.plou({"plou": True, "intensitat": 0}))
-        self.assertFalse(RF.plou({"plou": False, "intensitat": 0.8}))
+        # La veritat mesurada del barri (pluja_ara.mesurada, ADR 0102): sí, no o no
+        # se sap (una sola veïna, cap que confirmi, plugim), i llavors la passada
+        # no compta. Una sortida d'abans de la 3.142.0, amb el pluviòmetre de casa.
+        self.assertTrue(RF.plou({"pluja_ara": {"estat": "plou", "mesurada": True}}))
+        self.assertFalse(RF.plou({"pluja_ara": {"estat": "no", "mesurada": False}}))
+        self.assertIsNone(RF.plou({"pluja_ara": {"estat": "no", "plugim": True, "mesurada": None}}))
+        self.assertIsNone(RF.plou({"pluja_ara": {"estat": "plou"}, "ara_casa": {"plou": True}}))
+        self.assertTrue(RF.plou({"ara_casa": {"plou": True, "intensitat": 0}}))
+        self.assertFalse(RF.plou({"ara_casa": {"plou": False, "intensitat": 0.8}}))
+        self.assertIsNone(RF.plou({"ara_casa": None}))
         self.assertIsNone(RF.plou(None))
         self.assertEqual(RF.parelles([{"t": T0.isoformat(), "plou": None, "triada": "meteocat", "fonts": {}}]), [])
 

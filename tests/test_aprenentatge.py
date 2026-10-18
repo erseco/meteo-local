@@ -227,6 +227,32 @@ class Rasgos(unittest.TestCase):
                 A.REGISTRE = vell
 
 
+class PlouAra(unittest.TestCase):
+    """La veritat de la pluja d'ara amb les estacions (plou_ara_barri, ADR 0102)."""
+
+    def veina(self, id_, mm):
+        return {"estacio": id_, "pluja_15min": mm, "plou": bool(mm), "compta": bool(C.VEINES[id_]["plou"])}
+
+    def test_casa_o_dues_veines(self):
+        casa = {"plou": False}
+        self.assertTrue(A.plou_ara_barri({"plou": True}, []))
+        self.assertTrue(A.plou_ara_barri(casa, [self.veina("ICERDA6", 0.2), self.veina("ICERDA28", 0.1)]))
+        self.assertIsNone(A.plou_ara_barri(casa, [self.veina("ICERDA6", 0.2), self.veina("ICERDA28", 0.0)]))
+        self.assertFalse(A.plou_ara_barri(casa, [self.veina("ICERDA6", 0.0), self.veina("ICERDA18", 0.0)]))
+        # ICERDA48 no compta ni confirma: amb ella sola, no se sap. Sense casa, tampoc.
+        self.assertIsNone(A.plou_ara_barri(casa, [self.veina("ICERDA48", 0.0)]))
+        self.assertIsNone(A.plou_ara_barri(casa, []))
+        self.assertIsNone(A.plou_ara_barri(None, [self.veina("ICERDA6", 0.0), self.veina("ICERDA18", 0.0)]))
+        # Plugim segons el radar: el zero és dubtós.
+        self.assertIsNone(A.plou_ara_barri(casa, [self.veina("ICERDA6", 0.0), self.veina("ICERDA18", 0.0)], plugim=True))
+
+    def test_llindar_de_la_regla(self):
+        # Per a 5 minuts, 0,1 mm ja és pluja; per a l'hora, des de 0,2 (C.UMBRAL_MM).
+        v = {"ICERDA6": {"pluja_mm": 0.1}, "ICERDA18": {"pluja_mm": 0.1}}
+        self.assertEqual(A.pluja_observada({"pluja_mm": 0.0}, (), v, llindar=0.1), 0.1)
+        self.assertEqual(A.pluja_observada({"pluja_mm": 0.0}, (), v), 0.0)
+
+
 class Sortir(unittest.TestCase):
     """Les regles de «Si surts» de cada mitjà (ADR 0047 i 0068)."""
 

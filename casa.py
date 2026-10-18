@@ -824,6 +824,10 @@ def recoger(anterior=None):
     # la taula, «Si surts» i el bot, i les hores, d'acord amb ell.
     salida["pluja_ara"] = estat_pluja(salida.get("radar"), salida.get("plou_ara"), P.AHORA)
     ajusta_hores(salida.get("hores"), salida["pluja_ara"], P.AHORA)
+    # Y la verdad medida de ahora, para comprobar el radar (ADR 0102): sí, no
+    # o no se sabe (una sola vecina, sin vecinas que confirmen, o llovizna
+    # que solo ve el radar).
+    salida["pluja_ara"]["mesurada"] = A.plou_ara_barri(casa, veines, salida["pluja_ara"].get("plugim"))
     # La niebla de la hora en curso (ADR 0100): la que observa el aeropuerto
     # de Sabadell, si además la estación de casa está saturada. AROME, de
     # donde sale el tipo de tiempo de cada hora, no da niebla (17-10-2026).
@@ -889,6 +893,8 @@ def recoger(anterior=None):
             if casa:
                 R.apunta_estacio_casa(E.hores(casa["files"]))
                 R.apunta_casa_5min(R.cincs_casa(casa["files"]))
+            # Y las vecinas cada 5 minutos, para el final de la lluvia (ADR 0102).
+            R.apunta_veines_5min({v["estacio"]: R.cincs_casa(v["files"]) for v in veines if v.get("files")})
             if salida["hores"] and not salida.get("previsio_de"):
                 r = salida.get("riera")
                 R.apunta_casa(P.AHORA, filas_registro(P.AHORA, h, e, salida["hores"][:HORAS], casa,
@@ -939,7 +945,7 @@ def recoger(anterior=None):
                 print("No he podido apuntar las nubes de Sabadell:", ex, file=sys.stderr)
         # Lo que daba cada radar, para saber cuál acierta más (ADR 0026).
         try:
-            RF.apunta(P.AHORA, nc, salida["ara_casa"])
+            RF.apunta(P.AHORA, nc, salida)
         except Exception as ex:
             print("No he podido apuntar los radares:", ex, file=sys.stderr)
     return salida

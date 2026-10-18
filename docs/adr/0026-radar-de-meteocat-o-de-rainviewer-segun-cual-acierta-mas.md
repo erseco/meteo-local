@@ -107,3 +107,7 @@ prevista; sin las dos fuentes no cuenta; cambia a la que acierta más y no
 cambia con pocos casos ni si la mejora no llega al 5 %; registro de cada
 pasada. Cálculo real del radar el
 06-10-2026 con las dos series.
+
+## Cambio del 18-10-2026 (3.142.0): la verdad del barrio, no la de casa
+
+La pasada apunta si llueve en el barrio según las estaciones (`pluja_ara.mesurada`: casa o dos vecinas que cuentan; seco solo si las que confirman marcan cero; desconocido con una sola vecina, sin vecinas o con llovizna que solo ve el radar), en lugar del `plou` del pluviómetro de casa, cuyos ceros daban por fallido un radar que acertaba. Las pasadas desconocidas no cuentan. Las cifras anteriores a esta versión no son comparables con las nuevas. Detalle y motivo en el ADR 0102.

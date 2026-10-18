@@ -108,3 +108,7 @@ repetir; acierto, aviso sin lluvia y lluvia sin aviso en el registro;
 chubascos seguidos; lluvia encima según el radar; datos viejos; sin radar.
 Prueba con los datos reales del 06-10-2026 a las 13:42 (sin lluvia
 acercándose: no avisa). Pendiente de ver un aviso real.
+
+## Cambio del 18-10-2026 (3.142.0): llueve según la web
+
+«Ya llueve» es el estado único de la lluvia de la web (`pluja_ara.estat`, ADR 0101: casa o una vecina que cuenta), no solo el pluviómetro de casa: el aviso no puede contradecir a la portada, y el registro del episodio apunta el comienzo de la lluvia según ese mismo estado. Detalle y motivo en el ADR 0102.

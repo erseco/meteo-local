@@ -19,11 +19,15 @@ Juanjo y se aplica al día siguiente, como el aprendizaje de la lluvia
 (aprenentatge.py); el archivo «atura» lo para. Se guarda en
 aprenentatge/fi-pluja.json; la propuesta, en fi-pluja-proposat.json.
 
-Aquí se compara con la lluvia de la estación de casa cada 5 minutos
-(estacio-casa-5min.csv, registre.py): episodios con lluvia separados por
-menos de BUIT_MIN minutos; su final, el último tramo con lluvia. El
-pluviómetro a veces no marca la lluvia débil (ADR 0017): un final que vea
-antes de tiempo cuenta como error de la regla, no se corrige. Se juzgan
+Aquí se compara con la lluvia del barrio cada 5 minutos (ADR 0102): la de
+la estación de casa (estacio-casa-5min.csv) y la de las vecinas
+(veines-5min.csv, registre.py), con la regla única de
+aprenentatge.pluja_observada: llueve si lo marca casa o dos vecinas que
+cuentan; seco si casa y las vecinas que confirman marcan cero; si no, no se
+sabe y el tramo no cuenta. Hasta la 3.142.0 solo contaba el pluviómetro de
+casa, que a veces no marca la lluvia débil (ADR 0017) y daba finales antes
+de tiempo. Episodios con lluvia separados por menos de BUIT_MIN minutos; su
+final, el último tramo con lluvia. Se juzgan
 las pasadas registradas mientras llovía (radar-fonts-*.jsonl, con el radar
 que usaba la página). El día en que hay MIN_EPISODIS episodios, el NAS manda
 el resultado a Juanjo una vez, para decidir si se muestra.
@@ -55,21 +59,36 @@ MIN_EPISODIS = 5
 ENCERT_MIN = 15         # acierto: a 15 minutos o menos del final real
 
 
-def pluja_5min():
-    """{fin del tramo: mm} de la estación de casa."""
-    ruta = os.path.join(DIR, "estacio-casa-5min.csv")
+def _llegeix(nom):
+    ruta = os.path.join(DIR, nom)
     if not os.path.exists(ruta):
-        return {}
+        return []
     with open(ruta, encoding="utf-8") as f:
-        return {dt.datetime.fromisoformat(r["fins"]).astimezone(): float(r["pluja_mm"]) for r in csv.DictReader(f)}
+        return list(csv.DictReader(f))
+
+
+def pluja_5min():
+    """{fin del tramo: mm} del barrio: la regla única (aprenentatge.pluja_observada,
+    ADR 0102) con la estación de casa y las vecinas de cada tramo de 5
+    minutos; None si no se sabe (una sola vecina con lluvia y casa a cero,
+    o casa a cero sin vecina que lo confirme)."""
+    import aprenentatge as A
+    casa = {r["fins"]: r for r in _llegeix("estacio-casa-5min.csv")}
+    veines = {r["fins"]: r for r in _llegeix("veines-5min.csv")}
+    res = {}
+    for fins in set(casa) | set(veines):
+        v = {k: {"pluja_mm": x} for k, x in veines.get(fins, {}).items() if k != "fins" and x not in ("", None)}
+        res[dt.datetime.fromisoformat(fins).astimezone()] = A.pluja_observada(casa.get(fins), (), v, llindar=0.1)
+    return res
 
 
 def episodis(pluja):
     """[[inicio, final]] con los tramos con lluvia; una pausa de menos de
     BUIT_MIN minutos no corta el episodio. El último, si aún podría seguir
-    (sin BUIT_MIN minutos registrados después), no cuenta."""
+    (sin BUIT_MIN minutos registrados después), no cuenta. Un tramo del que
+    no se sabe (None) ni corta ni alarga."""
     res = []
-    for t in sorted(t for t, mm in pluja.items() if mm > 0):
+    for t in sorted(t for t, mm in pluja.items() if mm):
         if res and t - res[-1][1] <= dt.timedelta(minutes=BUIT_MIN):
             res[-1][1] = t
         else:

@@ -31,6 +31,35 @@ class CincMinuts(unittest.TestCase):
 
 
 class Final(unittest.TestCase):
+    def test_pluja_del_barri_cada_5_minuts(self):
+        # La veritat única (ADR 0102): casa o dues veïnes que compten; sec si casa
+        # i les que confirmen marquen zero; si no, no se sap (None).
+        with tempfile.TemporaryDirectory() as d:
+            vell = F.DIR
+            F.DIR = d
+            try:
+                with open(os.path.join(d, "estacio-casa-5min.csv"), "w", encoding="utf-8") as f:
+                    f.write("fins,pluja_mm\n2026-10-06T20:05,0.0\n2026-10-06T20:10,0.0\n2026-10-06T20:15,0.0\n"
+                            "2026-10-06T20:20,0.3\n2026-10-06T20:25,0.0\n")
+                with open(os.path.join(d, "veines-5min.csv"), "w", encoding="utf-8") as f:
+                    f.write("fins,ICERDA6,ICERDA18,ICERDA28,ICERDA48\n"
+                            "2026-10-06T20:05,0.2,0.1,,0.0\n"      # dues veïnes que compten: plou
+                            "2026-10-06T20:10,0.2,0.0,0.0,0.0\n"   # una sola: no se sap
+                            "2026-10-06T20:15,0.0,0.0,0.0,0.0\n"   # totes a zero: sec
+                            "2026-10-06T20:30,0.0,0.0,0.0,0.0\n")  # sense casa: no se sap
+                p = F.pluja_5min()
+                self.assertEqual(p[t("20:05")], 0.2)                 # la mediana alta de les dues
+                self.assertIsNone(p[t("20:10")])
+                self.assertEqual(p[t("20:15")], 0.0)
+                self.assertEqual(p[t("20:20")], 0.3)                 # casa mana si marca pluja
+                self.assertIsNone(p[t("20:25")])                     # casa a zero sense veïnes
+                self.assertIsNone(p[t("20:30")])
+                # Els None ni tallen ni allarguen els episodis.
+                self.assertEqual(F.episodis({t("20:05"): 0.2, t("20:10"): None, t("20:15"): 0.2, t("21:00"): 0.0}),
+                                 [[t("20:00"), t("20:15")]])
+            finally:
+                F.DIR = vell
+
     def test_episodis(self):
         pluja = {t("20:05"): 0.2, t("20:10"): 1.0, t("20:35"): 0.2, t("21:20"): 0.2}
         pluja.update({t("22:00"): 0.0})

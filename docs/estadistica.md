@@ -67,7 +67,9 @@ del Centro Europeo, a 9 km, y GFS, el global de la NOAA de Estados Unidos
 - **La lluvia por horas de las estaciones vecinas de Montflorit** (Weather
   Underground, a menos de 1 km) y, de respaldo, **de las de Meteocat** de
   Sabadell y Sant Cugat (a 2,5 y 4,6 km): deciden qué pasó en las horas en que
-  el pluviómetro de casa marca cero (apartado 2.2, ADR 0070).
+  el pluviómetro de casa marca cero (apartado 2.2, ADR 0070). Desde el
+  18-10-2026, también la de las vecinas cada 5 minutos, para el final de la
+  lluvia (apartado 9, ADR 0102).
 - **Lo que daban los modelos**, una vez por hora y para las 24 horas
   siguientes: la lluvia de los tres modelos finos (AROME HD, AROME e ICON-EU)
   y, desde el 13-10-2026, la de ECMWF IFS,
@@ -682,8 +684,12 @@ estación de casa y ejecuta `aprenentatge.py diari`:
 El mismo día se comparan también los dos radares (`radar_fonts.py`, ADR
 0026). En cada pasada se apunta la probabilidad que daba cada uno para casa,
 $`p_M`$ (Meteocat) y $`p_R`$ (RainViewer), con su última imagen y el mismo
-movimiento, y si llovía en ese momento en casa ($`o = 1`$ u $`o = 0`$; sin la
-estación, la pasada no cuenta). Para cada hora prevista entre 10 y 60 minutos después de la
+movimiento, y si llovía en ese momento en el barrio ($`o = 1`$ u $`o = 0`$),
+con la regla única de la lluvia observada (apartado 2.2, ADR 0102): llueve
+si lo marca la estación de casa o dos vecinas que cuentan; seco si casa y
+las vecinas que confirman marcan cero; si no (una sola vecina, sin vecinas,
+o llovizna que solo ven los dos radares), no se sabe y la pasada no cuenta.
+Hasta el 18-10-2026 solo contaba el pluviómetro de casa. Para cada hora prevista entre 10 y 60 minutos después de la
 pasada, con una observación a menos de 4 minutos, se calcula la puntuación de
 Brier de los últimos 30 días:
 
@@ -787,11 +793,14 @@ Si no pasa en las dos horas del radar, «no s'acaba en 2 hores». La regla de
 partida es $`u = 0\text{,}2`$ y $`s = 3`$, es decir, menos del 20 % durante 15
 minutos.
 
-**Qué es la verdad.** La lluvia de casa cada 5 minutos: un episodio son los
-tramos con lluvia separados por menos de 30 minutos secos, y su final, el
-último tramo con lluvia. Como el pluviómetro a veces no marca la lluvia
-débil, un final real puede quedar antes de tiempo; se acepta como ruido de
-la medida (ADR 0058). Se juzgan las pasadas registradas mientras llovía,
+**Qué es la verdad.** La lluvia del barrio cada 5 minutos (ADR 0102): la de
+casa y la de las vecinas, con la regla única del apartado 2.2 aplicada a
+cada tramo de 5 minutos desde 0,1 mm (llueve si lo marca casa o dos vecinas
+que cuentan; seco si casa y las que confirman marcan cero; si no, no se sabe
+y el tramo ni corta ni alarga). Un episodio son los tramos con lluvia
+separados por menos de 30 minutos secos, y su final, el último tramo con
+lluvia. Hasta el 18-10-2026 solo contaba el pluviómetro de casa, que no
+marca la lluvia débil y daba finales antes de tiempo. Se juzgan las pasadas registradas mientras llovía,
 con el radar que usaba la página. El error de una pasada es
 $`\lvert t_{\text{fi}} - t_{\text{real}} \rvert`$ en minutos. Si la regla no da
 final, el error es cero cuando el final real cae más allá del horizonte del
@@ -831,7 +840,8 @@ y la propuesta espera un día.
 Tras cada pasada se mira cuántos minutos faltan para la llegada que da el
 radar, el primer paso con $`p(t) \ge 0\text{,}5`$ (`pluja_arriba.py`, ADR 0022). Si
 faltan 21 o menos (15 minutos más el intervalo de 6 del modo aviso) y aún no
-llueve en casa, se avisa a los suscriptores (ADR 0048). La
+llueve en el barrio según la web (el estado único de la lluvia: casa o una
+vecina que cuenta, ADR 0101 y 0102), se avisa a los suscriptores (ADR 0048). La
 intensidad que se anuncia es el máximo de $`\hat R`$ en los 30 minutos
 siguientes a la llegada: feble por debajo de 1 mm/h, moderada desde 1 y forta
 desde 4.

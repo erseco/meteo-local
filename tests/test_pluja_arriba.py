@@ -26,7 +26,8 @@ def salida(ahora, arriba=None, plou=False, mm_h=0.6):
     if arriba is not None:
         radar.update(arriba=a(arriba).isoformat(timespec="minutes"), arriba_mm_h=mm_h)
     return {"generat": ahora.isoformat(timespec="minutes"), "radar": radar,
-            "ara_casa": {"intensitat": 1.2 if plou else 0, "plou": plou}}
+            "ara_casa": {"intensitat": 1.2 if plou else 0, "plou": plou},
+            "pluja_ara": {"estat": "plou" if plou else "no"}}
 
 
 class Avis(unittest.TestCase):
@@ -97,6 +98,19 @@ class Avis(unittest.TestCase):
         self.assertIn("Seria moderada", text)       # franges de l'AEMET, com el radar
         text, _ = PA.compara({"episodi": None}, salida(a(18), 30, mm_h=20.0), a(18))
         self.assertIn("Seria forta", text)
+
+    def test_plou_segons_la_web_no_nomes_casa(self):
+        # La pluja d'ara és l'estat únic de la web (ADR 0101 i 0102): una veïna
+        # que compta amb pluja i casa a zero és «plou». Una sortida vella, casa.
+        s = salida(a(0), plou=False)
+        s["pluja_ara"]["estat"] = "plou"
+        self.assertTrue(PA.plou(s))
+        s["pluja_ara"]["estat"] = "radar_sobre"
+        self.assertFalse(PA.plou(s))
+        del s["pluja_ara"]
+        self.assertFalse(PA.plou(s))
+        s["ara_casa"]["plou"] = True
+        self.assertTrue(PA.plou(s))
 
     def test_sense_radar_no_falla(self):
         d = salida(T0)

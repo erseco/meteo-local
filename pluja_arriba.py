@@ -42,8 +42,12 @@ FONTS = {"meteocat": "Meteocat", "rainviewer": "RainViewer"}
 
 
 def plou(salida):
-    """Llueve ahora en casa: el pluviómetro ha recogido lluvia en los últimos
-    PLOU_ARA_MIN minutos (config.py). Solo cuenta el sí (ADR 0017)."""
+    """Llueve ahora en el barrio: lo que dice la web (`pluja_ara.estat`, el
+    estado único de la lluvia, ADR 0101: casa o una vecina que cuenta han
+    recogido lluvia en los últimos PLOU_ARA_MIN minutos). Hasta la 3.142.0,
+    solo el pluviómetro de casa (ADR 0102); con una salida vieja, lo mismo."""
+    if "pluja_ara" in salida:
+        return (salida["pluja_ara"] or {}).get("estat") == "plou"
     casa = salida.get("ara_casa")
     return bool(casa and casa.get("plou"))
 
