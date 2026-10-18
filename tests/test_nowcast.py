@@ -47,6 +47,22 @@ class MapaIPropera(unittest.TestCase):
         lluny[384, 384 + 70] = 5
         self.assertIsNone(N.propera(lluny, fila, col, km))
 
+    def test_el_mapa_porta_els_ecos_febles(self):
+        # 18-10-2026: si el requadre parla de plugim, el mapa l'ha de poder pintar.
+        camp = np.zeros((N.MIDA, N.MIDA))
+        fila, col, km = 384.3, 384.6, 0.9
+        camp[383, 384] = 0.2          # plugim, a sobre de casa
+        camp[384, 395] = 0.05         # soroll: no
+        m = N.mapa(camp, fila, col, km)
+        self.assertIsNotNone(m)       # abans, sense pluja que compta, no hi havia mapa
+        self.assertEqual(set(m["classes"]), {"0"})
+        n0 = (m["n"] - 1) // 2
+        f0, c0 = 384 - n0, 385 - n0
+        self.assertEqual(m["febles"][(383 - f0) * m["n"] + (384 - c0)], "1")
+        self.assertEqual(m["febles"].count("1"), 1)
+        camp[383, 384] = 1.0          # ja és pluja que compta: cap eco feble
+        self.assertNotIn("febles", N.mapa(camp, fila, col, km))
+
     def test_creixement(self):
         # 17-10-2026: la tempesta es formava cada cop més a prop, sense moure's cap aquí.
         fila, col, km = 384.3, 384.6, 0.9

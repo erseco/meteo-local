@@ -400,3 +400,12 @@ comparten `confirmacio.py`. Pruebas: `tests/test_plugim.py`, `test_web.py` y
 3.140.1: con plugim encima, el recuadro del radar y /radar ya no dicen «La més
 propera, a 4 km…»: junto a «plugim a sobre» confundía (Juanjo, «quita la línea
 de la más cercana cuando hay plugim»).
+
+3.140.2: si el recuadro dice plugim, el mapa del radar (miniatura y ampliado)
+lo pinta en lila claro, el color de la franja más baja del Meteocat, con
+«plugim» en la leyenda. Juanjo: «si habla de llovizna el miniradar tiene que
+mostrarla, de lo contrario no se entiende qué está diciendo»; la web de
+RainViewer no pinta ecos tan débiles aunque sus datos los tengan. El mapa
+(`nowcast.mapa`) lleva aparte los ecos de `FEBLE_MMH` a `PLOU_MMH` («febles»)
+y sale también si solo hay eso; la web solo los pinta con plugim. El titular
+no nombra radares: la condición ya es que lo vean los dos.

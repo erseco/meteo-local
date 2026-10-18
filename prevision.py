@@ -362,7 +362,7 @@ def radar():
 
 # Lluvia apreciable en el radar: unos 6 dBZ, el umbral que se usaba con la
 # opacidad de RainViewer (por debajo, llovizna o ruido).
-RADAR_APRECIABLE_MMH = 0.08
+RADAR_APRECIABLE_MMH = N.FEBLE_MMH
 PX_A_PROP = 40       # píxeles cercanos que se apuntan, como mucho (los más cercanos)
 
 

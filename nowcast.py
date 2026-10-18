@@ -49,6 +49,7 @@ PAS_MIN = 5
 HORITZO_MIN = 120
 RADI_KM = (3.0, 0.08)       # radio del círculo: 3 km + 0,08 km por minuto
 PLOU_MMH = 0.5              # unos 18 dBZ: lluvia que llega al suelo
+FEBLE_MMH = 0.08            # unos 6 dBZ: por debajo, ruido; hasta PLOU_MMH, eco débil (plugim)
 VEL_MAX_KMH = 120           # más rápido es un error del cálculo
 DESACORD_KMH = 20           # pares de RainViewer que difieren más: sin movimiento
 # Cuántos minutos más nueva ha de ser la imagen de RainViewer para usarla en
@@ -527,15 +528,23 @@ def classe(mm):
 
 def mapa(camp, fila, col, km_px, radi_km=MAPA_KM):
     """El tros de la imatge al voltant de casa, en classes d'intensitat, una
-    xifra per píxel (fila a fila, de nord a sud): uns 4 KB. None si no hi
-    plou enlloc."""
+    xifra per píxel (fila a fila, de nord a sud): uns 4 KB. I, a «febles», els
+    ecos per sota de la pluja que compta (de FEBLE_MMH a PLOU_MMH), un 1 per
+    píxel, perquè la web pinti el plugim quan en parla (Juanjo, 18-10-2026:
+    «si habla de llovizna el miniradar tiene que mostrarla»). None si no hi
+    ha res."""
     n = int(math.ceil(radi_km / km_px))
     f0, c0 = int(round(fila)), int(round(col))
-    tros = classe(camp[f0 - n:f0 + n + 1, c0 - n:c0 + n + 1])
-    if not tros.any():
+    tall = camp[f0 - n:f0 + n + 1, c0 - n:c0 + n + 1]
+    tros = classe(tall)
+    febles = (tall >= FEBLE_MMH) & (tall < PLOU_MMH)
+    if not tros.any() and not febles.any():
         return None
-    return {"km_px": round(km_px, 4), "n": 2 * n + 1, "fila": round(fila - (f0 - n), 2),
-            "col": round(col - (c0 - n), 2), "classes": "".join(str(int(x)) for x in tros.ravel())}
+    res = {"km_px": round(km_px, 4), "n": 2 * n + 1, "fila": round(fila - (f0 - n), 2),
+           "col": round(col - (c0 - n), 2), "classes": "".join(str(int(x)) for x in tros.ravel())}
+    if febles.any():
+        res["febles"] = "".join("1" if x else "0" for x in febles.ravel())
+    return res
 
 
 def propera(camp, fila, col, km_px, max_km=PROPERA_MAX_KM):

@@ -615,6 +615,11 @@ function blocRadar(r, plou, hores) {
 // pobles, la costa i les carreteres. ---
 const NOM_INTENSITAT = () => [null, T('feble'), T('moderada'), T('forta'), T('molt forta'), T('torrencial')];
 const COLOR_INTENSITAT = [null, '#93c5fd', '#2563eb', '#facc15', '#f97316', '#dc2626'];
+// El plugim que només es diu si el veuen els dos radars (ADR 0019): lila clar,
+// com la franja més baixa del radar de Meteocat.
+const COLOR_PLUGIM = '#c4b5fd';
+// Si el requadre parla de plugim, el mapa el pinta (Juanjo, 18-10-2026).
+const ambPlugim = (r) => Boolean(r.pluja && r.pluja.plugim && r.mapa && r.mapa.febles);
 // Les poblacions, en km des de Montflorit (est i nord), i on va el nom: a la
 // dreta o, perquè no en tapi cap altre ni surti del mapa, a l'esquerra («e»)
 // o a sota («s»). Damunt del mapa, que les porta més febles perquè és aclarit
@@ -681,7 +686,20 @@ function svgMapa(r, gran) {
       camins[c].push(`M${x.toFixed(2)} ${y.toFixed(2)}h1.04v1.04h-1.04z`);
     }
   }
+  const febles = [];
+  if (ambPlugim(r)) {
+    for (let i = 0; i < m.n; i++) {
+      for (let j = 0; j < m.n; j++) {
+        if (m.febles[i * m.n + j] !== '1') continue;
+        const x = j - m.col;
+        const y = i - m.fila;
+        if (Math.abs(x * k) > R || Math.abs(y * k) > R) continue;
+        febles.push(`M${x.toFixed(2)} ${y.toFixed(2)}h1.04v1.04h-1.04z`);
+      }
+    }
+  }
   const pluja = nou('g', { transform: `scale(${k})`, class: 'mapa-pluja' });
+  if (febles.length) pluja.append(nou('path', { d: febles.join(''), fill: COLOR_PLUGIM }));
   camins.forEach((d, c) => { if (d.length) pluja.append(nou('path', { d: d.join(''), fill: COLOR_INTENSITAT[c] })); });
   svg.append(pluja);
   for (const km of CERCLES_KM) svg.append(nou('circle', { cx: 0, cy: 0, r: km, class: 'mapa-cercle' }));
@@ -795,6 +813,13 @@ function obreMapa(r, font) {
     + T` Mapa d’elaboració pròpia de ${nomPropi()}.`);
   const llegenda = element('p', 'mapa-llegenda');
   const presents = classesDibuixades(r.mapa, CERCLES_KM[CERCLES_KM.length - 1]);
+  if (ambPlugim(r)) {
+    const s = element('span', 'mapa-clau');
+    const q = element('span', 'mapa-quadre');
+    q.style.background = COLOR_PLUGIM;
+    s.append(q, T('plugim'));
+    llegenda.append(s);
+  }
   NOM_INTENSITAT().forEach((nom, c) => {
     if (!nom || !presents.has(String(c))) return;
     const s = element('span', 'mapa-clau');
