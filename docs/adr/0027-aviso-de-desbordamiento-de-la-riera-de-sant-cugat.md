@@ -159,3 +159,37 @@ separado, de momentos distintos, y podía dar peligro sin que ningún
 momento cumpliera las dos condiciones (auditoría del 09-10-2026, ADR
 0057). Ahora `nivell_amb_radar` calcula las dos para cada media hora de
 aquí a una hora y aplica la regla a cada pareja. La regla no cambia.
+
+## Cambio del 18-10-2026 (3.138.0): las estaciones particulares de Sant Cugat
+
+Juanjo: «para predecir la riera, se podría buscar una estación meteorológica
+cercana a la riera que esté por Sant Cugat, así se podría mirar la lluvia no
+solo de la estación de Meteocat que es cada media hora». La ACA sigue sin
+medir el nivel de la riera, y hay unas 190 estaciones particulares de Sant
+Cugat en Weather Underground, con dato cada 5 minutos.
+
+- **Elección**: de las diez más cercanas al centro y a la parte alta de la
+  cuenca, seis midieron con coherencia los cuatro episodios conocidos
+  (ISANTC157, ISANTC147, ISANTC65 e ISANTC37 en el centro; ISANTC40 e
+  ISANTC89 en la parte alta). ISANTC179 daba siempre cero, ISANTC57 y
+  ISANTC67 un día sí y otro no, e ISANTC134 se quedaba corta.
+- **Calibración** (tabla en `docs/estadistica.md`, 12.2): la mediana suele
+  dar más que Meteocat (el 29-09-2026, 93 mm en 3 horas frente a 67) y no
+  separa mejor los episodios que se desbordan; con lo medido, adelanta los
+  avisos de 40 a 55 minutos, y el 13-09-2025 habría dado un peligro de más.
+  Juanjo aceptó el riesgo («habrá que arriesgarse») y que el registro se
+  lleve a la vez que el aviso, no antes.
+- **Decisión**: el índice se calcula también con la mediana de las seis (con
+  al menos tres con dato de los últimos 20 minutos) y manda el nivel más
+  alto de las dos fuentes; sin Meteocat, las estaciones solas. El aviso dice
+  «segons 6 estacions particulars» cuando deciden ellas. Solo se consultan
+  si llueve, el radar ve lluvia sobre la cuenca o hay un episodio abierto,
+  con un tope diario de 500 consultas (`riera-wu.json`) y el día anterior
+  guardado una vez. Cada pasada con estaciones se apunta con las dos fuentes
+  en `registre/riera-veines.csv`.
+- **Riesgos**: más falsas alarmas de peligro con chaparrones sobre suelo
+  seco; estaciones particulares sin mantenimiento (por eso la mediana y el
+  mínimo de tres); si se agota la cuota, el aviso sigue con Meteocat.
+- **Validación**: `tests/test_riera.py` (manda la más alta, mínimo de tres
+  estaciones, sin lluvia no se consulta, tope diario); los datos históricos
+  de las seis y de Meteocat en los cuatro episodios.

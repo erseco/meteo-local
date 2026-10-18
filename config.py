@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.137.1"
+VERSION = "3.138.0"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -254,6 +254,23 @@ RIERA_ATENCIO_MM = 35
 RIERA_PERILL_MM = 50
 RIERA_PERILL_6H_MM = 60
 RIERA_FI_H = 3                      # horas por debajo del registro para cerrar el episodio
+# Las estaciones particulares de Sant Cugat en Weather Underground (ADR 0027,
+# 18-10-2026; Juanjo: «se podría buscar una estación cercana a la riera…
+# así no solo la de Meteocat, que es cada media hora»): dato cada 5 minutos,
+# casi sin retraso. Las seis que midieron con coherencia los cuatro episodios
+# conocidos (29-04-2024, 13-09-2025, 29-09-2026 y 04-10-2026); otras cuatro
+# cercanas fallaban (siempre a cero o un día sí y otro no). Del centro y de la
+# parte alta de la cuenca (Valldoreix y el oeste). Se usa su mediana, con
+# RIERA_VEINES_MIN como mínimo con dato de los últimos RIERA_VEINES_FRESCA_MIN
+# minutos, y el aviso toma el nivel más alto de las dos fuentes: con lo
+# medido, adelantaba los avisos 40-55 minutos, y el 13-09-2025 habría dado un
+# peligro de más (Juanjo: «habrá que arriesgarse»). Solo se consultan cuando
+# llueve o el radar ve lluvia sobre la cuenca, con un tope diario para no
+# quitar cuota a la web (1.500 consultas al día; la web gasta unas 400).
+RIERA_VEINES = ("ISANTC157", "ISANTC147", "ISANTC65", "ISANTC37", "ISANTC40", "ISANTC89")
+RIERA_VEINES_MIN = 3
+RIERA_VEINES_FRESCA_MIN = 20
+RIERA_VEINES_MAX_DIA = 500
 
 # Trenes de cerca (trens.py, ADR 0029): línea, operador y dónde para en
 # Cerdanyola. Una línea circula si se ha visto un tren suyo moviéndose a

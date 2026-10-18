@@ -759,7 +759,7 @@ def recoger(anterior=None):
     # radar, para el aviso por Telegram (ADR 0027).
     try:
         salida["riera"] = RI.calcula(P.AHORA, nc)
-        if salida["riera"] is None:
+        if salida["riera"] is None or salida["riera"].get("sense_meteocat"):
             salida["errors"].append("riera: Sant Cugat (Meteocat) sense dades recents")
         elif salida["riera"].get("incomplet"):
             salida["errors"].append("riera: a Sant Cugat (Meteocat) li falten mitges hores de pluja")

@@ -213,24 +213,29 @@ def text_perill_fi():
 def text_riera(riera, nivell):
     """Primer què cal fer; després, la pluja de Sant Cugat i si el radar en veu
     venir més (ADR 0076). El detall, a la fitxa i a «Com funciona»."""
-    hora = dt.datetime.fromisoformat(riera["fins"]).strftime("%H:%M")
-    mm3 = coma(riera["mm_3h"])
+    # La pluja de la font que ha decidit: Meteocat o, si dona més, la mediana de
+    # les estacions particulars de Sant Cugat, i es diu (ADR 0027, 18-10-2026).
+    v = riera.get("veines") if riera.get("font") == "veines" else None
+    hora = dt.datetime.fromisoformat((v or riera)["fins"]).strftime("%H:%M")
+    mm3 = coma((v or riera)["mm_3h"])
+    qui_ca = f"segons {v['n']} estacions particulars, a les {hora}" if v else f"a les {hora}"
+    qui_es = f"según {v['n']} estaciones particulares, a las {hora}" if v else f"a las {hora}"
     radar = riera.get("radar_1h")
     mes_ca = " i el radar en veu venir més" if radar and radar >= 1 else ""
     mes_es = " y el radar ve venir más" if radar and radar >= 1 else ""
     if nivell == "perill":
         ca = (negreta("Temps a Montflorit: perill de desbordament de la riera de Sant Cugat", nivell) +
-              f"\nNo t'acostis a la riera.\n{mm3} mm en 3 hores a Sant Cugat (a les {hora}){mes_ca}: "
+              f"\nNo t'acostis a la riera.\n{mm3} mm en 3 hores a Sant Cugat ({qui_ca}){mes_ca}: "
               "amb aquesta pluja ja s'ha desbordat altres vegades.")
         es = (negreta("Temps a Montflorit: peligro de desbordamiento de la riera de Sant Cugat", nivell) +
-              f"\nNo te acerques a la riera.\n{mm3} mm en 3 horas en Sant Cugat (a las {hora}){mes_es}: "
+              f"\nNo te acerques a la riera.\n{mm3} mm en 3 horas en Sant Cugat ({qui_es}){mes_es}: "
               "con esta lluvia ya se ha desbordado otras veces.")
     else:
         ca = (negreta("Temps a Montflorit: possible desbordament de la riera de Sant Cugat", nivell) +
-              f"\nNo t'acostis a la riera.\n{mm3} mm en 3 hores a Sant Cugat (a les {hora}){mes_ca}: "
+              f"\nNo t'acostis a la riera.\n{mm3} mm en 3 hores a Sant Cugat ({qui_ca}){mes_ca}: "
               "si continua plovent fort, es pot desbordar.")
         es = (negreta("Temps a Montflorit: posible desbordamiento de la riera de Sant Cugat", nivell) +
-              f"\nNo te acerques a la riera.\n{mm3} mm en 3 horas en Sant Cugat (a las {hora}){mes_es}: "
+              f"\nNo te acerques a la riera.\n{mm3} mm en 3 horas en Sant Cugat ({qui_es}){mes_es}: "
               "si sigue lloviendo fuerte, se puede desbordar.")
     if riera.get("incomplet"):
         ca += " A l'estació li falten mesures: pot haver plogut més."

@@ -266,6 +266,91 @@ class Avisos(unittest.TestCase):
         self.assertEqual(files, [])
 
 
+def obs_wu(fins, mm_h, hores=2, fresca=True):
+    """Lectures de 5 minuts d'una estació de Weather Underground, plovent mm_h
+    les darreres hores fins a fins (acumulada del dia, com la dona l'API)."""
+    res, acum = [], 0.0
+    t = fins.replace(hour=0, minute=0)
+    while t <= fins:
+        if t > fins - dt.timedelta(hours=hores):
+            acum += mm_h / 12
+        res.append({"obsTimeUtc": t.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "metric": {"precipTotal": round(acum, 2)}})
+        t += dt.timedelta(minutes=5)
+    return res if fresca else [o for o in res if o["obsTimeUtc"] < (fins - dt.timedelta(hours=1)).astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")]
+
+
+class Veines(unittest.TestCase):
+    """Les estacions particulars de Sant Cugat (18-10-2026): la mediana fa el
+    mateix índex i mana el nivell més alt de les dues fonts."""
+    def setUp(self):
+        import tempfile
+        from unittest import mock
+        self.dir = tempfile.TemporaryDirectory()
+        self.p = [mock.patch.object(RI, "COMPTADOR_WU", os.path.join(self.dir.name, "c.json")),
+                  mock.patch.object(RI, "CACHE_WU", os.path.join(self.dir.name, "cache")),
+                  mock.patch.object(RI, "ESTADO", os.path.join(self.dir.name, "riera.json"))]
+        for x in self.p:
+            x.start()
+        self.ara = dt.datetime(2026, 10, 18, 14, 0).astimezone()
+        self.crides = 0
+
+    def tearDown(self):
+        for x in self.p:
+            x.stop()
+        self.dir.cleanup()
+
+    def consulta(self, mm_h, frescas=6):
+        def f(ruta, params):
+            self.crides += 1
+            i = C.RIERA_VEINES.index(params["stationId"])
+            return obs_wu(self.ara, mm_h, fresca=i < frescas)
+        return f
+
+    def calcula(self, mm_h_xv, mm_h_wu, frescas=6):
+        import prevision as P
+        from unittest import mock
+        fins = self.ara - dt.timedelta(minutes=30)
+        xv = [(fins - dt.timedelta(minutes=30 * (k + 1)), mm_h_xv / 2) for k in range(4)]
+        with mock.patch.object(P, "taula_meteocat",
+                               lambda codi, dia=None, lector=None: [x for x in xv if x[0].date() == dia]
+                               if codi == C.RIERA_ESTACIO else []):
+            return RI.calcula(self.ara, None, consulta=self.consulta(mm_h_wu, frescas))
+
+    def test_mana_la_mes_alta(self):
+        # Meteocat, 20 mm en 2 h; les estacions, 30 mm/h: 60 mm en 3 i en 6 hores, perill.
+        r = self.calcula(10, 30)
+        self.assertEqual((r["font"], r["nivell"], r["veines"]["n"]), ("veines", "perill", 6))
+        self.assertEqual(r["veines"]["mm_3h"], 60.0)
+        import avisos_bot as AB
+        self.assertIn("60 mm en 3 hores a Sant Cugat (segons 6 estacions particulars, a les 14:00)",
+                      AB.text_riera(r, "perill")["ca"])
+        self.assertIn("Mediana de 6 estacions particulars", RI.missatge(r, "perill"))
+        # Si Meteocat en dona més, mana Meteocat.
+        r = self.calcula(40, 5)
+        self.assertEqual(r["font"], "meteocat")
+
+    def test_calen_tres_estacions_amb_dada_recent(self):
+        r = self.calcula(10, 30, frescas=2)
+        self.assertIsNone(r["veines"])
+        self.assertEqual(r["font"], "meteocat")
+
+    def test_sense_pluja_no_es_consulta(self):
+        self.calcula(0, 30)
+        self.assertEqual(self.crides, 0)
+
+    def test_el_tope_del_dia(self):
+        from unittest import mock
+        with mock.patch.object(C, "RIERA_VEINES_MAX_DIA", 4):
+            r = self.calcula(10, 30)
+        self.assertEqual(self.crides, 4)
+        self.assertIsNotNone(r["veines"])        # 4 estacions llegides, prou
+        with mock.patch.object(C, "RIERA_VEINES_MAX_DIA", 4):
+            r = self.calcula(10, 30)
+        self.assertIsNone(r["veines"])           # el dia ja ha gastat el tope
+        self.assertEqual(self.crides, 4)
+
+
 class Privacitat(unittest.TestCase):
     def test_la_web_publica_no_porta_la_riera(self):
         self.assertIn("riera", M.PRIVADES)

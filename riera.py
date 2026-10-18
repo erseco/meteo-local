@@ -158,9 +158,161 @@ def nivell_amb_radar(filas, fins, nc, ahora):
     return millor[1:]
 
 
-def calcula(ahora, nc, lector=None):
-    """Estado de la riera ahora, para casa.json. None si Sant Cugat no da
-    datos recientes."""
+# --- Les estacions particulars de Sant Cugat (Weather Underground) ---------------
+# Un dada cada 5 minuts i gairebé sense retard, al centre i a la part alta de
+# la conca (C.RIERA_VEINES; Juanjo, 18-10-2026). La seva mediana fa el mateix
+# índex que Meteocat (el mesurat més el que porta el radar) i l'avís pren el
+# nivell més alt dels dos: només pot avançar o pujar un avís, mai treure'l.
+# Només es consulten quan plou o el radar en veu sobre la conca, o hi ha un
+# episodi obert, amb un tope diari (C.RIERA_VEINES_MAX_DIA); el dia d'ahir
+# (per a les finestres que passen la mitjanit) es guarda i es baixa un cop.
+ESTAT_DIR = os.path.dirname(DIR)
+COMPTADOR_WU = os.path.join(ESTAT_DIR, "riera-wu.json")
+CACHE_WU = os.path.join(ESTAT_DIR, "riera-wu-ahir")
+REGISTRE_WU = os.path.join(DIR, "riera-veines.csv")
+CAMPS_WU = ["t", "xv_3h", "xv_index", "xv_nivell", "n", "veines_3h", "veines_6h", "veines_index",
+            "veines_nivell", "font"]
+
+
+class Consulta:
+    """Les consultes a Weather Underground, comptades: amb el tope del dia
+    gastat, no se'n fa cap més fins l'endemà."""
+    def __init__(self, ahora, consulta=None):
+        import wunderground as W
+        self.W, self.fer = W, consulta or W._consulta
+        self.dia = ahora.date().isoformat()
+        try:
+            with open(COMPTADOR_WU, encoding="utf-8") as f:
+                c = json.load(f)
+        except (OSError, ValueError):
+            c = {}
+        self.n = c.get("n", 0) if c.get("dia") == self.dia else 0
+
+    def __call__(self, ruta, params):
+        if self.n >= C.RIERA_VEINES_MAX_DIA:
+            raise RuntimeError("tope diari de consultes de la riera")
+        self.n += 1
+        try:
+            with open(COMPTADOR_WU, "w", encoding="utf-8") as f:
+                json.dump({"dia": self.dia, "n": self.n}, f)
+        except OSError:
+            pass
+        return self.fer(ruta, params)
+
+
+def increments(lectures):
+    """La pluja de cada lectura a partir de l'acumulada del dia, que torna a
+    zero quan l'estació canvia de dia."""
+    res, abans = [], None
+    for x in lectures:
+        v = x.get("pluja_avui") or 0
+        res.append((x["t"], v if abans is None or v < abans else v - abans))
+        abans = v
+    return res
+
+
+def serie_veina(estacio, ahora, consulta):
+    """[(t, mm)] de les últimes 6 hores o més d'una estació."""
+    W = consulta.W
+    avui = W.files(consulta("observations/all/1day", {"stationId": estacio}))
+    if avui and avui[0]["t"] > ahora - dt.timedelta(hours=6):
+        ahir = (ahora - dt.timedelta(days=1)).strftime("%Y%m%d")
+        ruta = os.path.join(CACHE_WU, f"{estacio}-{ahir}.json")
+        try:
+            with open(ruta, encoding="utf-8") as f:
+                obs = json.load(f)
+        except (OSError, ValueError):
+            obs = consulta("history/all", {"stationId": estacio, "date": ahir})
+            try:
+                os.makedirs(CACHE_WU, exist_ok=True)
+                for vell in os.listdir(CACHE_WU):
+                    if not vell.endswith(f"-{ahir}.json"):
+                        os.remove(os.path.join(CACHE_WU, vell))
+                with open(ruta, "w", encoding="utf-8") as f:
+                    json.dump(obs, f)
+            except OSError:
+                pass
+        avui = W.files(obs) + avui
+    return increments(avui)
+
+
+def calcula_veines(ahora, nc, consulta):
+    """La mediana de les estacions amb dada recent, amb el mateix índex que
+    Meteocat. None si n'hi ha menys de C.RIERA_VEINES_MIN."""
+    import statistics
+    series = {}
+    for e in C.RIERA_VEINES:
+        try:
+            s = serie_veina(e, ahora, consulta)
+        except Exception:
+            continue
+        if s and ahora - s[-1][0] <= dt.timedelta(minutes=C.RIERA_VEINES_FRESCA_MIN):
+            series[e] = s
+    if len(series) < C.RIERA_VEINES_MIN:
+        return None
+    fins = min(s[-1][0] for s in series.values())
+    med = lambda h: round(statistics.median(  # noqa: E731
+        sum(d for t, d in s if fins - dt.timedelta(hours=h) < t <= fins) for s in series.values()), 1)
+    millor = None
+    for minuts in (0, 30, 60):
+        radar = previst(nc, fins, minuts)
+        mm3 = round(med(max(C.RIERA_HORES - minuts / 60, 0)) + radar, 1)
+        mm6 = round(med(max(6 - minuts / 60, 0)) + radar, 1)
+        n = nivell(mm3, mm6)
+        clau = (NIVELLS.index(n), mm3, minuts)
+        if millor is None or clau > millor[0]:
+            millor = (clau, n, mm3, mm6, minuts)
+    return {"n": len(series), "estacions": sorted(series), "fins": fins.astimezone().isoformat(timespec="minutes"),
+            "mm_3h": med(C.RIERA_HORES), "mm_6h": med(6), "nivell": millor[1], "index": millor[2],
+            "index_6h": millor[3], "index_d_aqui_a_min": millor[4]}
+
+
+def cal_veines(res, nc, ahora):
+    """Si cal mirar les estacions: plou a Meteocat, el radar en veu sobre la
+    conca en l'hora que ve o hi ha un episodi obert."""
+    if res and (res.get("mm_3h") or 0) >= 1:
+        return True
+    if nc and previst(nc, ahora, 60) >= 1:
+        return True
+    return bool(llegeix_estat().get("episodi"))
+
+
+def calcula(ahora, nc, lector=None, consulta=None):
+    """Estado de la riera ahora, para casa.json. Con Meteocat y, si hace falta,
+    las estaciones particulares de Sant Cugat (calcula_veines): manda el nivel
+    más alto. None si no hay datos recientes de ninguna de las dos."""
+    res = calcula_meteocat(ahora, nc, lector)
+    veines = None
+    if consulta is None and lector is None:
+        import wunderground as W
+        consulta = Consulta(ahora) if W.lectura_disponible() else None
+    elif consulta is not None and not isinstance(consulta, Consulta):
+        consulta = Consulta(ahora, consulta)
+    if consulta is not None and cal_veines(res, nc, ahora):
+        try:
+            veines = calcula_veines(ahora, nc, consulta)
+        except Exception:
+            veines = None
+    if res is None and veines is None:
+        return None
+    if res is None:
+        # Sense Meteocat, les estacions soles (casa.py ho diu als errors).
+        res = {"estacio": None, "sense_meteocat": True, "fins": veines["fins"], "mm_3h": veines["mm_3h"],
+               "mm_6h": veines["mm_6h"], "mm_1h": None, "incomplet": False,
+               "radar_1h": previst(nc, dt.datetime.fromisoformat(veines["fins"]), 60) if nc else None,
+               "capcalera": None, "nivell": None, "index": 0.0, "index_6h": 0.0, "index_d_aqui_a_min": 0}
+    res["veines"] = veines
+    res["font"] = "meteocat"
+    if veines and (NIVELLS.index(veines["nivell"]), veines["index"]) > (NIVELLS.index(res["nivell"]), res["index"]):
+        res.update({k: veines[k] for k in ("nivell", "index", "index_6h", "index_d_aqui_a_min")}, font="veines")
+    elif res.get("sense_meteocat"):
+        res["font"] = "veines"
+    return res
+
+
+def calcula_meteocat(ahora, nc, lector=None):
+    """La riera amb l'estació de Meteocat de Sant Cugat. None si no dona
+    dades recents."""
     filas = files(C.RIERA_ESTACIO, ahora, 6, lector)
     if not filas:
         return None
@@ -193,6 +345,10 @@ def coma(x):
 
 
 def missatge(riera, nom):
+    v = riera.get("veines") if riera.get("font") == "veines" else None
+    if v:
+        # Ha decidit la mediana de les estacions particulars (calcula).
+        riera = {**riera, "mm_3h": v["mm_3h"], "mm_6h": v["mm_6h"], "fins": v["fins"]}
     hora = dt.datetime.fromisoformat(riera["fins"]).strftime("%H:%M")
     if nom == "perill":
         cap = ("Riera de Sant Cugat, perill de desbordament a Montflorit: a Sant Cugat han caigut "
@@ -217,6 +373,8 @@ def missatge(riera, nom):
                 f"{C.RIERA_PERILL_6H_MM} en 6.")
     if riera.get("incomplet"):
         cap += " A l'estació li falten mesures: la pluja real pot ser més alta."
+    if v:
+        cap += f" (Mediana de {v['n']} estacions particulars de Sant Cugat.)"
     return cap
 
 
@@ -304,6 +462,30 @@ def apunta(fila):
         w.writerow(fila)
 
 
+def apunta_veines(riera, ahora):
+    """Les dues fonts, cada vegada que s'han mirat les estacions, per comparar
+    en el registre (riera-veines.csv) i ajustar els llindars."""
+    v = (riera or {}).get("veines")
+    if not v:
+        return
+    fila = {"t": ahora.isoformat(timespec="minutes"),
+            "xv_3h": "" if riera.get("sense_meteocat") else riera.get("mm_3h"),
+            "xv_index": "", "xv_nivell": "", "n": v["n"], "veines_3h": v["mm_3h"], "veines_6h": v["mm_6h"],
+            "veines_index": v["index"], "veines_nivell": v["nivell"] or "", "font": riera.get("font")}
+    if riera.get("font") == "meteocat" and not riera.get("sense_meteocat"):
+        fila.update(xv_index=riera["index"], xv_nivell=riera["nivell"] or "")
+    try:
+        nou = not os.path.exists(REGISTRE_WU)
+        os.makedirs(DIR, exist_ok=True)
+        with open(REGISTRE_WU, "a", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=CAMPS_WU)
+            if nou:
+                w.writeheader()
+            w.writerow(fila)
+    except OSError:
+        pass
+
+
 def avisa(ruta, ahora=None):
     ahora = ahora or dt.datetime.now().astimezone()
     with open(ruta, encoding="utf-8") as f:
@@ -312,6 +494,7 @@ def avisa(ruta, ahora=None):
     if ahora - dt.datetime.fromisoformat(salida["generat"]) > dt.timedelta(minutes=C.INTERVALO_CASA_MIN):
         return None
     estat = llegeix_estat()
+    apunta_veines(salida.get("riera"), ahora)
     text, fila = compara(estat, salida.get("riera"), ahora)
     desa_estat(estat)
     if fila:

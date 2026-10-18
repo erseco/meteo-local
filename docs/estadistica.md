@@ -893,6 +893,17 @@ riera: aún no hay historial para saber qué umbral le corresponde. A lo medido 
 delante sobre el centro de la cuenca (apartado 4), que cubre también la
 media hora que la estación va por detrás.
 
+Desde el 18-10-2026 se mira también la lluvia de seis estaciones
+particulares de Sant Cugat de la red de Weather Underground, del centro y de
+la parte alta de la cuenca (Valldoreix y el oeste), que dan un dato cada 5
+minutos casi sin retraso (`C.RIERA_VEINES`). Se eligieron porque midieron con
+coherencia los cuatro episodios conocidos; otras cuatro cercanas fallaban
+(siempre a cero o un día sí y otro no). Se usa su mediana, con al menos tres
+estaciones con dato de los últimos 20 minutos, para que una estropeada no
+decida. Solo se consultan cuando llueve en Sant Cugat, el radar ve lluvia
+sobre la cuenca en la hora siguiente o hay un episodio abierto, con un tope
+de 500 consultas al día para no quitar cuota a la web.
+
 ### 12.2 El índice
 
 El índice es la lluvia de tres horas más alta que se alcanzará en la hora
@@ -924,6 +935,26 @@ horas por debajo de 20 mm; al acabar se apunta en el registro con sus
 máximos. Si a la ventana de 3 horas le falta más de una media hora medida,
 o a la de 6 más de dos, el índice se da por incompleto: un hueco cuenta
 como cero y no se puede decir que el riesgo haya bajado.
+
+El mismo índice se calcula con la mediana de las estaciones particulares
+(lo medido hasta ahora más el radar de la hora siguiente), y el nivel es el
+más alto de las dos fuentes: las estaciones solo pueden adelantar o subir un
+aviso, nunca quitarlo. El aviso dice de dónde sale la cifra.
+
+| Episodio | ¿Se desbordó? | Meteocat, 3 h | Mediana de las 6, 3 h / 6 h | Atención: Meteocat → estaciones | Peligro: Meteocat → estaciones |
+|---|---|---|---|---|---|
+| 29-04-2024 | sí | 53 | 85 / 112 (4 estaciones) | | |
+| 13-09-2025 | no | 52 | 65 / 66 | 17:00 → 16:15 | no → 17:25 |
+| 29-09-2026 | sí | 67 | 93 / 93 | 12:00 → 11:20 | 12:30 → 11:35 |
+| 03/04-10-2026 | sí | 67 | 66 / 67 | 00:30 → 23:45 | 02:30 → 01:40 |
+
+Las horas son las de lo medido, sin el radar, con el retraso de 30 minutos de
+Meteocat. Con las estaciones, los avisos de los dos desbordamientos de 2026
+habrían llegado de 40 a 55 minutos antes; a cambio, el 13-09-2025, sobre
+suelo seco, habrían dado un peligro de más. La mediana no separa mejor que
+Meteocat los episodios que se desbordan: lo que aporta es tiempo. Con cuatro
+casos no se puede calibrar otro umbral; se usan los mismos y se apunta cada
+pasada con las dos fuentes (`registre/riera-veines.csv`) para ajustarlos.
 
 ### 12.3 De dónde salen los umbrales
 
