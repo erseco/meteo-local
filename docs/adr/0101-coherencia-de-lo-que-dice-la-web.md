@@ -181,3 +181,10 @@ arreglan en el código:
   (`smp.textos` da el fenómeno), como en el bloque plegado.
 - Una ficha creada el día 16 decía «demà» de su día: la nota del revisor
   cubre ahora las fichas creadas antes del 18-10-2026, no solo las cerradas.
+
+## Cambio del 18-10-2026 (3.136.2): el texto de antes y el de después
+
+El mensaje de una corrección automática lleva el texto de antes y el de
+después, sin el HTML de Telegram, y el de una propuesta, el texto actual y el
+propuesto (Juanjo: «sí, añádelo»). Hasta ahora solo decía dónde estaba el
+error y por qué.

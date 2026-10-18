@@ -142,6 +142,13 @@ class Revisio(unittest.TestCase):
         # Corregit sol, amb el botó de desfer.
         botons = [p["reply_markup"] for m, p in self.enviats if p.get("reply_markup")]
         self.assertEqual(botons[0]["inline_keyboard"][0][0]["text"], "Deshacer")
+        # Amb el text d'abans i el de després, sense l'HTML de Telegram.
+        text = next(p["text"] for m, p in self.enviats if p.get("reply_markup"))
+        antes, ahora = text.split("\nAntes:\n")[1].split("\n\nAhora:\n")
+        self.assertIn("Observat ara", antes)
+        self.assertNotIn("Observat ara", ahora)
+        self.assertIn("dilluns 19", ahora)
+        self.assertNotIn("<b>", text)
         self.assertIn(FITXA, RV.llegeix(RV.CORRECCIONS, {})["fitxes"])
         # A la següent pasada, sense res de nou, no es desperta.
         self.assertIsNone(self.revisa(ARA + dt.timedelta(minutes=6), [problema])[0])

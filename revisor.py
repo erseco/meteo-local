@@ -451,19 +451,20 @@ def chat_juanjo():
     return llegeix(CONFIG_BOT, {}).get("chat_id")
 
 
-def missatge(p, accio):
-    """El mensaje de un problema: dónde, qué, por qué; y lo hecho o propuesto."""
+def missatge(p, accio, abans=None, despres=None):
+    """El mensaje de un problema: dónde, qué, por qué; y lo hecho o propuesto,
+    con el texto de antes y el de después (Juanjo, 18-10-2026: «sí, añádelo»)."""
     t = [f"Temps a Montflorit, revisor: {p.get('on', '')}", "", p.get("que", "")]
     if p.get("per_que"):
         t += ["", p["per_que"]]
+    tros = lambda x: netja(x)[:1500]  # noqa: E731
     if accio == "corregit":
-        t += ["", "Corregido (se quitan esas líneas en la web y en Telegram)."]
+        t += ["", "Corregido en la web y en Telegram.", "", "Antes:", tros(abans), "", "Ahora:", tros(despres)]
     elif accio == "proposta":
-        c = p.get("correccio") or {}
-        t += ["", "Propuesta:", netja(c.get("ca") or "") or c.get("tipus", "")]
+        t += ["", "Ahora dice:", tros(abans), "", "Propuesta:", tros(despres)]
     elif accio == "codi":
         t += ["", "No se puede corregir desde aquí: hay que arreglarlo en el código (queda apuntado)."]
-    return "\n".join(t)[:3900]
+    return "\n".join(t)[:4000]
 
 
 def botons(n, accio):
@@ -511,20 +512,22 @@ def revisa(casa_json, avisos_json, moment=None, prova=False, demana_=None, pagin
         resum_juanjo = []
         for p in problemes:
             c = p.get("correccio")
-            accio = "codi"
+            accio, abans, despres = "codi", None, None
             if c and c.get("tipus") == "treu_linies" and (nous := valida(avisos, c)):
-                aplica(c, *nous, avisos, moment, motiu)
-                accio = "corregit"
+                entrada = aplica(c, *nous, avisos, moment, motiu)
+                accio, abans, despres = "corregit", entrada["abans_ca"], entrada["ca"]
             elif c and (e := objectiu(avisos, c)) and (c.get("ca") or c.get("tipus") == "tanca_fitxa"):
                 c = {**c, "original_empremta": empremta(e.get("ca")), "abans_ca": e.get("ca")}
-                accio = "proposta"
+                accio, abans = "proposta", e.get("ca")
+                despres = (f"Se cierra la ficha: {c.get('fi_es') or c.get('fi_ca') or ''}"
+                           if c.get("tipus") == "tanca_fitxa" else c.get("ca"))
             fets.append({"accio": accio, **p})
             # Lo que se corrige o se propone, un mensaje con su botón; lo
             # demás, grave o medio, en un solo mensaje; lo leve, al registro.
             if accio in ("corregit", "proposta"):
                 n = str(max([int(k) for k in preguntes] + [0]) + 1)
                 try:
-                    r, _ = telegram("sendMessage", chat_id=chat_juanjo(), text=missatge(p, accio),
+                    r, _ = telegram("sendMessage", chat_id=chat_juanjo(), text=missatge(p, accio, abans, despres),
                                     reply_markup=botons(n, accio))
                     preguntes[n] = {"missatge": r["message_id"], "accio": accio, "correccio": c,
                                     "t": moment.isoformat(timespec="minutes")}
