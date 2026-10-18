@@ -66,3 +66,19 @@ que muchas veces tiene niebla ella sola, no en Sabadell».
 
 - Pruebas: el METAR con FG y BCFG es niebla y con BR no; solo si es
   reciente; observada solo con casa saturada.
+
+## Cambio del 18-10-2026 (3.140.3): la respuesta vale para cuando se responde
+
+Juanjo respondió «No lo sé» a una pregunta del plugim porque la veía tarde y no
+quería dar un dato falso: la respuesta se apuntaba con los datos del momento de
+la pregunta. Como la pregunta dice «ahora» y se contesta mirando por la
+ventana, ahora la respuesta vale para el momento en que se responde
+(`confirmacio.respostes`): se apunta con su hora (`resposta_t`, la de la pasada
+del reloj que la lee, cada minuto) y con lo que dicen los datos entonces (la
+última pasada, de 6 minutos como mucho en modo aviso: píxeles de cada radar,
+plugim y lluvia medida; en la niebla, la humedad de casa y Sabadell), y también
+con lo que decían al preguntar (`pregunta_…`). Sin caducidad: cualquier
+respuesta sirve (Juanjo: «30 minutos no es demasiado? la situación puede haber
+cambiado totalmente»; descartados los botones que caducan, que perderían
+respuestas). El mensaje dice «Apuntado a las 19:42: …». Las respuestas de antes
+pasan sus datos a `pregunta_…` y quedan sin los del momento de responder.

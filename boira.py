@@ -180,10 +180,24 @@ def _pregunta(ara, casa_json):
     return r["message_id"]
 
 
+def estat(casa_json=None):
+    """La humedad de casa y la niebla de Sabadell ahora, para la respuesta,
+    que vale para el momento en que se responde (confirmacio.respostes)."""
+    with open(casa_json or CASA_JSON, encoding="utf-8") as f:
+        c = json.load(f).get("ara_casa") or {}
+    res = {"humitat": c.get("humitat_estacio", c.get("humitat")), "sabadell": None}
+    try:
+        res["sabadell"] = int(bool(NV.boira_ara(NV.llegeix(P.get), dt.datetime.now(P.ZONA))))
+    except Exception:
+        pass
+    return res
+
+
 def respostes(ara=None):
-    """Las respuestas a los botones, una vez cada una, en boira-confirmacions.csv."""
+    """Las respuestas a los botones, una vez cada una, en boira-confirmacions.csv,
+    con los datos del momento en que se responde."""
     return CF.respostes("boira", PREGUNTES, CONFIRMACIONS, RESPOSTES, ["humitat", "sabadell"], telegram,
-                        ara or dt.datetime.now(P.ZONA))
+                        ara or dt.datetime.now(P.ZONA), estat)
 
 
 if __name__ == "__main__":

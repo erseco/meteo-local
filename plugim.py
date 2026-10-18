@@ -33,7 +33,20 @@ CASA_JSON = "/estat/casa.json"
 HORES_PREGUNTA = range(7, 23)
 CADA_H = 3
 RESPOSTES = {"si": "Sí, llueve", "no": "No llueve", "nose": "No lo sé"}
-CAMPS = ["meteocat", "rainviewer"]
+# Els píxels febles de cada radar, si la web deia plugim i si alguna estació
+# mesurava pluja: en preguntar i en respondre.
+CAMPS = ["meteocat", "rainviewer", "plugim", "plou"]
+
+
+def estat(casa_json=None):
+    """El que diuen ara les dades (l'última passada, de fa 6 minuts com a
+    molt en mode avís), amb les columnes de CAMPS."""
+    with open(casa_json or CASA_JSON, encoding="utf-8") as f:
+        casa = json.load(f)
+    px = (casa.get("radar") or {}).get("plugim") or {}
+    return {"meteocat": px.get("meteocat"), "rainviewer": px.get("rainviewer"),
+            "plugim": int(bool((casa.get("pluja_ara") or {}).get("plugim"))),
+            "plou": int(bool((casa.get("ara_casa") or {}).get("plou")))}
 
 
 def telegram(metode, **params):
@@ -60,7 +73,7 @@ def _pregunta(ara, casa_json):
     ultima = CF.files(PREGUNTES)[-1:]
     if ultima and ara - dt.datetime.fromisoformat(ultima[0]["t"]) < dt.timedelta(hours=CADA_H):
         return None
-    px = ((casa.get("radar") or {}).get("plugim") or {})
+    px = estat(casa_json)
     text = ("¿Llueve en casa ahora? Los dos radares ven lluvia muy débil encima del barrio "
             f"(Meteocat, {px.get('meteocat')} puntos; RainViewer, {px.get('rainviewer')}, a 3 km o menos) "
             "y ninguna estación la mide. Con tu respuesta se comprueba si el radar acierta la llovizna.")
@@ -72,9 +85,10 @@ def _pregunta(ara, casa_json):
 
 
 def respostes(ara=None):
-    """Les respostes als botons, una vegada cadascuna, a plugim-confirmacions.csv."""
+    """Les respostes als botons, una vegada cadascuna, a plugim-confirmacions.csv,
+    amb les dades del moment en què es respon."""
     return CF.respostes("plugim", PREGUNTES, CONFIRMACIONS, RESPOSTES, CAMPS, telegram,
-                        ara or dt.datetime.now(P.ZONA))
+                        ara or dt.datetime.now(P.ZONA), estat)
 
 
 def resum():

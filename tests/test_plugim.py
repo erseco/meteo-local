@@ -47,13 +47,14 @@ class Confirmacio(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.dir.cleanup)
-        vells = {k: getattr(PG, k) for k in ("PREGUNTES", "CONFIRMACIONS", "CONFIG_BOT", "telegram")}
+        vells = {k: getattr(PG, k) for k in ("PREGUNTES", "CONFIRMACIONS", "CONFIG_BOT", "CASA_JSON", "telegram")}
         self.addCleanup(lambda: [setattr(PG, k, v) for k, v in vells.items()])
         PG.PREGUNTES = os.path.join(self.dir.name, "p.csv")
         PG.CONFIRMACIONS = os.path.join(self.dir.name, "c.csv")
         PG.CONFIG_BOT = os.path.join(self.dir.name, "bot.json")
         json.dump({"token": "x", "chat_id": 7}, open(PG.CONFIG_BOT, "w"))
         self.casa = os.path.join(self.dir.name, "casa.json")
+        PG.CASA_JSON = self.casa
         self.crides = []
 
         def telegram(metode, **p):
@@ -68,9 +69,10 @@ class Confirmacio(unittest.TestCase):
             return True, {"chat_id": 7}
         PG.telegram = telegram
 
-    def casa_amb(self, plugim):
-        json.dump({"pluja_ara": {"estat": "no", **({"plugim": True} if plugim else {})},
-                   "radar": {"plugim": {"meteocat": 31, "rainviewer": 27, "si": plugim}}}, open(self.casa, "w"))
+    def casa_amb(self, plugim, mc=31, rv=27):
+        with open(self.casa, "w") as f:
+            json.dump({"pluja_ara": {"estat": "no", **({"plugim": True} if plugim else {})},
+                       "radar": {"plugim": {"meteocat": mc, "rainviewer": rv, "si": plugim}}}, f)
 
     def test_pregunta_i_apunta_la_resposta(self):
         self.casa_amb(True)
@@ -78,11 +80,40 @@ class Confirmacio(unittest.TestCase):
         text = self.crides[0][1]["text"]
         self.assertIn("Meteocat, 31 puntos; RainViewer, 27", text)
         self.assertIsNone(PG.pregunta(ARA + dt.timedelta(hours=1), self.casa))   # no fins d'aquí a 3 h
-        # Només la resposta del plugim, no la de la boira.
-        self.assertEqual(PG.respostes(ARA), 1)
-        self.assertEqual(PG.respostes(ARA), 0)
-        fila = json.loads(json.dumps(__import__("confirmacio").files(PG.CONFIRMACIONS)))[0]
-        self.assertEqual((fila["resposta"], fila["meteocat"], fila["rainviewer"]), ("si", "31", "27"))
+        # Només la resposta del plugim, no la de la boira. Respon més tard: val
+        # per a aquell moment, amb les dades d'aleshores (Juanjo, 18-10-2026).
+        self.casa_amb(False, 5, 30)
+        tard = ARA + dt.timedelta(minutes=40)
+        self.assertEqual(PG.respostes(tard), 1)
+        self.assertEqual(PG.respostes(tard), 0)
+        fila = __import__("confirmacio").files(PG.CONFIRMACIONS)[0]
+        self.assertEqual((fila["resposta"], fila["resposta_t"], fila["meteocat"], fila["plugim"]),
+                         ("si", tard.isoformat(timespec="minutes"), "5", "0"))
+        self.assertEqual((fila["pregunta"], fila["pregunta_meteocat"], fila["pregunta_plugim"]),
+                         (ARA.isoformat(timespec="minutes"), "31", "1"))
+        edit = [p for m, p in self.crides if m == "editMessageReplyMarkup"][0]
+        self.assertEqual(edit["reply_markup"]["inline_keyboard"][0][0]["text"], "Apuntado a las 19:25: Sí, llueve")
+
+    def test_les_respostes_d_abans_passen_a_les_dades_de_la_pregunta(self):
+        import confirmacio as CF
+        with open(PG.CONFIRMACIONS, "w") as f:
+            f.write("missatge,pregunta,resposta,meteocat,rainviewer\n431,2026-10-18T19:16+02:00,nose,17,32\n")
+        CF.al_dia(PG.CONFIRMACIONS, PG.CAMPS)
+        fila = CF.files(PG.CONFIRMACIONS)[0]
+        self.assertEqual((fila["resposta"], fila["meteocat"], fila["pregunta_meteocat"], fila["pregunta_rainviewer"]),
+                         ("nose", "", "17", "32"))
+        CF.al_dia(PG.CONFIRMACIONS, PG.CAMPS)
+        self.assertEqual(len(CF.files(PG.CONFIRMACIONS)), 1)
+
+    def test_les_preguntes_d_abans_no_es_desquadren(self):
+        import confirmacio as CF
+        with open(PG.PREGUNTES, "w") as f:
+            f.write("t,missatge,meteocat,rainviewer\n2026-10-18T13:16+02:00,431,17,32\n")
+        self.casa_amb(True)
+        PG.pregunta(ARA, self.casa)
+        files = CF.files(PG.PREGUNTES)
+        self.assertEqual([(x["missatge"], x["meteocat"], x["plugim"]) for x in files],
+                         [("431", "17", ""), ("52", "31", "1")])
 
     def test_no_pregunta_si_no_toca(self):
         self.casa_amb(False)
