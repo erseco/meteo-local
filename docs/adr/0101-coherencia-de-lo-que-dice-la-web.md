@@ -234,3 +234,19 @@ encara que ja hagi parat: els models en donaven menys» (antes, «Hi compta la
 pluja de l'última hora al barri, encara que ja hagi parat»), en catalán y
 castellano (Juanjo: «sí, aplica la leyenda»). Y la R4 «per carretera» por un
 autobús entre Terrassa Nord y Manresa se corrige en el código (ADR 0029).
+
+## Cambio del 18-10-2026 (3.138.6): tres hallazgos leves del revisor
+
+- **«Si surts» daba por acabado un riesgo que volvía**: «Cap a les 15 h
+  s'acaba el risc de pluja» con lluvia posible de 16 a 0 h. Si el riesgo
+  vuelve dentro de la salida, dice «De 15 a 16 h, sense risc de pluja» (o
+  «sense avís oficial per pluja»); «s'acaba» solo si no vuelve.
+- **La lluvia de 15 minutos era solo la de casa** y la de la última hora, la
+  mediana del barrio: 0,3 mm en 15 minutos y 0 en la hora. Ahora también va
+  por consenso (ADR 0085); con las mismas estaciones, las medianas no se
+  cruzan. El revisor sabe que «Plou» basta con una estación.
+- **El radar marcaba «†» con un 5 %**: la regla de los milímetros no pedía
+  probabilidad, y el recuadro, que dice «Pot arribar pluja» desde el 20 %,
+  decía que no venía lluvia. Ahora el radar solo sube una hora si su
+  probabilidad llega a `PROB_ATENCION` (ADR 0019). En el registro de octubre,
+  de 36 horas marcadas por el radar, esta era la única por debajo.

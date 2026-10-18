@@ -520,6 +520,18 @@ class Web(unittest.TestCase):
                                f"consells({json.dumps(tram(0.01))}, new Date())", "sortir.js")
         self.assertIn("Cap a les 20\u00a0h s’acaba l’avís oficial.", consells)
 
+    def test_pausa_en_el_risc_de_pluja_no_es_el_final(self):
+        # Revisor, 18-10-2026: «Cap a les 15 h s'acaba el risc de pluja» amb pluja possible de 16 a 0 h.
+        def tram(probs):
+            return [{"hora": f"2026-10-18T{14 + i:02d}:00", "probabilitat": p, "pluja_mm": 0,
+                     "temperatura": 17, "avisos": []} for i, p in enumerate(probs)]
+        def consells(probs):
+            return self.avalua("2026-10-18T14:30:00+02:00", f"consells({json.dumps(tram(probs))}, new Date())",
+                               "sortir.js")
+        self.assertIn("De 15 a 16\u00a0h, sense risc de pluja.", consells([0.6, 0.05, 0.6, 0.6]))
+        self.assertNotIn("Cap a les 15\u00a0h s’acaba el risc de pluja.", consells([0.6, 0.05, 0.6, 0.6]))
+        self.assertIn("Cap a les 15\u00a0h s’acaba el risc de pluja.", consells([0.6, 0.05, 0.05, 0.05]))
+
     def test_pluja_en_moto_per_la_probabilitat(self):
         # El cas del 08-10-2026: avís groc des de les 10 h, cap dada hi veia pluja
         # a les 10 i a les 17 h només ICON-EU donava 1,7 mm (un 25 %). Va dir «no»

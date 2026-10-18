@@ -360,3 +360,12 @@ minutos, el titular dice «Pluja a sobre segons les estacions del barri · el
 radar no la veu», sin la hora de final, que saldría del radar. Lo mismo en
 /radar del bot. Es el caso contrario de «segons el radar · cap estació del
 barri no en mesura» (ADR 0101).
+
+## Cambio del 18-10-2026 (3.138.6): el radar sube la tabla solo desde el 20 %
+
+Los milímetros del radar llevado hacia delante subían una hora de la tabla
+(«†») aunque su probabilidad fuera del 5 %, y el recuadro, que solo habla de
+lluvia que llega desde `PROB_ATENCION` (20 %), decía «El radar no veu pluja
+que vingui cap aquí». Ahora la probabilidad y los milímetros del radar solo
+cuentan si su probabilidad llega a ese umbral. Solo rebaja casos dudosos: en
+el registro de octubre, 1 de las 36 horas marcadas por el radar (ADR 0101).

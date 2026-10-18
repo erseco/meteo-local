@@ -43,6 +43,11 @@ inclúyelas si son reales, explicando por qué.
   del barrio solo cuentan cuando miden lluvia (la ausencia de lluvia medida
   puede ser lluvia muy débil), pero si el radar ve lluvia encima y ninguna la
   mide, la web no puede decir que llueve sin aclarar que es el radar.
+- La lluvia medida del barrio (`pluja_15min`, `pluja_30min`, `pluja_1h`,
+  `pluja_3h`, `pluja_avui`) es la mediana de las estaciones que cuentan; lo
+  de una sola estación va en los campos `…_estacio`. «Plou» basta con que
+  llueva en una de ellas, así que puede llover con una mediana de 0: no es
+  un error.
 - Meteocat manda sobre AEMET en el mismo fenómeno; AEMET sale para lo que
   Meteocat no cubre.
 - Los textos oficiales (nombres de meteoros, umbrales, avisos de Renfe y FGC)

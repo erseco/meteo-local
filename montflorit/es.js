@@ -271,6 +271,8 @@ var IDIOMA = {
     "Amb vent de {0}\u00a0km/h, {1} es noten com {2}.": "Con viento de {0}\u00a0km/h, {1} se notan como {2}.",
     "A partir de les {0}\u00a0h, risc de pluja.": "A partir de las {0}\u00a0h, riesgo de lluvia.",
     "Cap a les {0}\u00a0h s\u2019acaba el risc de pluja.": "Hacia las {0}\u00a0h se acaba el riesgo de lluvia.",
+    "De {0} a {1}\u00a0h, sense risc de pluja.": "De {0} a {1}\u00a0h, sin riesgo de lluvia.",
+    "De {0} a {1}\u00a0h, sense avís oficial per pluja.": "De {0} a {1}\u00a0h, sin aviso oficial por lluvia.",
     "La temperatura va de {0} ({1}\u00a0h) a {2} ({3}\u00a0h).": "La temperatura va de {0} ({1}\u00a0h) a {2} ({3}\u00a0h).",
     "Calor: fins a {0}. Porta aigua i evita el sol de les hores centrals.": "Calor: hasta {0}. Lleva agua y evita el sol de las horas centrales.",
     "Protector solar, gorra i ulleres de sol: índex UV {0} ({1}) cap a les {2}\u00a0h.": "Protector solar, gorra y gafas de sol: índice UV {0} ({1}) hacia las {2}\u00a0h.",

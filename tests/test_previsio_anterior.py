@@ -70,6 +70,26 @@ class TemperaturaDelTram(unittest.TestCase):
         self.assertEqual([(f["hora"][11:16], f["temperatura"]) for f in files[:2]],
                          [("18:00", 18.5), ("19:00", 19.5)])
 
+    def test_el_radar_nomes_marca_l_hora_amb_un_20_per_cent(self):
+        # Revisor, 18-10-2026: «†» en la fila 16-17 per 0,2 mm amb un 5 %, i el requadre
+        # del radar deia que no venia pluja (ho diu per sota del 20 %).
+        import config as C
+        import nowcast as N
+        desde = dt.datetime(2026, 10, 18, 15, 3).astimezone()
+        h = {"time": [f"2026-10-18T{x:02d}:00" for x in range(24)],
+             "temperature_2m_meteofrance_seamless": [17.0] * 24}
+        for m in C.MODELOS_FINOS:
+            h[f"precipitation_{m}"] = [0.0] * 24
+        def nc(prob):
+            return {"hora": desde.isoformat(), "llocs": {"casa": [
+                {"min": m, "mm_h": 0.5, "prob": prob} for m in range(0, 120, N.PAS_MIN)]}}
+        feble = casa.previsio(desde, h, {}, [], nc=nc(0.05))[1]
+        self.assertFalse(feble["segons_radar"])
+        self.assertEqual(feble["pluja_mm"], 0.0)
+        clar = casa.previsio(desde, h, {}, [], nc=nc(0.3))[1]
+        self.assertTrue(clar["segons_radar"])
+        self.assertEqual(clar["probabilitat"], 0.3)
+
     def test_acaba_el_tram_del_dia(self):
         # Juanjo, 09-10-2026: la previsió arriba a 24 hores com a mínim i fins
         # a les 21 h de demà, i acaba sempre amb un tram (matí, tarda o nit).

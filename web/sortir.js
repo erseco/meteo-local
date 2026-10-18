@@ -308,8 +308,17 @@ function consells(tram, ara) {
     res.push(avis ? T`A partir de les ${hora(f)} h, avís oficial per pluja.`
       : T`A partir de les ${hora(f)} h, risc de pluja.`);
   } else if (mullat[0] && !mullat.every(Boolean)) {
-    const h = hora(tram[mullat.indexOf(false)]);
-    res.push(avis ? T`Cap a les ${h} h s’acaba l’avís oficial.` : T`Cap a les ${h} h s’acaba el risc de pluja.`);
+    // Si el risc torna més tard, és una pausa, no el final (revisor,
+    // 18-10-2026: «s'acaba el risc» a les 15 h amb pluja possible de 16 a 0 h).
+    const sec = mullat.indexOf(false);
+    const torna = mullat.indexOf(true, sec);
+    const h = hora(tram[sec]);
+    if (torna < 0) {
+      res.push(avis ? T`Cap a les ${h} h s’acaba l’avís oficial.` : T`Cap a les ${h} h s’acaba el risc de pluja.`);
+    } else {
+      const h2 = hora(tram[torna]);
+      res.push(avis ? T`De ${h} a ${h2} h, sense avís oficial per pluja.` : T`De ${h} a ${h2} h, sense risc de pluja.`);
+    }
   }
   const amb = tram.filter((f) => f.temperatura != null);
   if (amb.length) {

@@ -94,6 +94,17 @@ class Ecowitt(unittest.TestCase):
         self.assertEqual(casa.consens_pluja(casa_, veines)["pluja_1h"], 2.5)
         self.assertEqual(casa.consens_pluja(None, veines[:1])["pluja_1h"], 4.0)
 
+    def test_la_de_15_minuts_tambe_per_consens(self):
+        # Revisor, 18-10-2026: 0,3 mm en 15 minuts (només casa) i 0 a l'última hora (mediana).
+        casa_ = {"pluja_15min": 0.3, "pluja_30min": 0.3, "pluja_1h": 0.3, "pluja_3h": 0.8, "pluja_avui": 4.0,
+                 "plou": True, "intensitat": 1.8, "temperatura": 16.0}
+        seca = {"compta": True, "pluja_15min": 0.0, "pluja_30min": 0.0, "pluja_1h": 0.0, "pluja_3h": 0.8,
+                "plou": False}
+        r = casa.consens(dict(casa_), casa_, [dict(seca), dict(seca)])
+        self.assertLessEqual(r["pluja_15min"], r["pluja_30min"])
+        self.assertLessEqual(r["pluja_30min"], r["pluja_1h"])
+        self.assertEqual(r["pluja_15min_estacio"], 0.3)
+
     def test_sin_claves_no_esta_disponible(self):
         with mock.patch.dict(os.environ, {"HOME": tempfile.mkdtemp()}, clear=True):
             self.assertFalse(E.disponible())

@@ -86,3 +86,11 @@ Versión 3.76.0 (`casa.consens`, `casa.consens_pluja`).
   escritorio, en catalán y en castellano: «Plou: 2,4 mm/h» y, sin intensidad,
   «Llueve»; sin errores propios (los únicos, de IONOS, que no deja leer los
   datos desde una web local).
+
+## Cambio del 18-10-2026 (3.138.6): también la lluvia de 15 minutos
+
+La lluvia de los últimos 15 minutos seguía siendo la de casa, y la de la
+última hora era la mediana: el revisor (ADR 0101) vio 0,3 mm en 15 minutos y 0
+en la hora. Ahora va también por consenso, con las mismas estaciones, y la de
+casa queda en `pluja_15min_estacio`. «Plou» sigue siendo que llueva en una
+estación que cuenta.

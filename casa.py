@@ -235,7 +235,12 @@ def consens_pluja(casa, veines=None):
     que cuentan para «plou ara», con las que se hayan podido leer, de la
     última hora y de hoy. Sin vecinas, la de casa."""
     estacions = ([casa] if casa else []) + [v for v in veines or [] if v.get("compta")]
-    return {**{c: _mediana([e.get(c) for e in estacions]) for c in ("pluja_30min", "pluja_1h", "pluja_3h")},
+    # También la de 15 minutos: si no, quedaba la de casa sola y podía ser
+    # mayor que la de la última hora (revisor, 18-10-2026: 0,3 mm en 15
+    # minutos y 0 en la hora). Con las mismas estaciones, las medianas no se
+    # cruzan.
+    return {**{c: _mediana([e.get(c) for e in estacions])
+               for c in ("pluja_15min", "pluja_30min", "pluja_1h", "pluja_3h")},
             "pluja_avui": _mediana([casa.get("pluja_avui") if e is casa else pluja_avui_veina(e)
                                     for e in estacions])}
 
@@ -252,7 +257,7 @@ def consens(ara_casa, casa, veines=None):
         return ara_casa
     res = dict(ara_casa)
     pluja = consens_pluja(casa, veines)
-    for camp in ("pluja_30min", "pluja_1h", "pluja_3h", "pluja_avui"):
+    for camp in ("pluja_15min", "pluja_30min", "pluja_1h", "pluja_3h", "pluja_avui"):
         if pluja[camp] is not None and any(v.get("compta") for v in veines or []):
             res.setdefault(f"{camp}_estacio", ara_casa.get(camp))
             res[camp] = pluja[camp]
@@ -487,10 +492,13 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
         segun_radar = False
         # La probabilidad vale aunque el radar cubra solo una parte de la hora
         # (si llueve en ese rato, llueve en la hora); los mm, solo si cubre
-        # media hora o más.
+        # media hora o más. Los dos, solo si la probabilidad del radar llega a
+        # PROB_ATENCION, la misma con la que el recuadro dice «Pot arribar
+        # pluja»: con menos, la tabla marcaba «†» y el recuadro decía que no
+        # venía lluvia (revisor, 18-10-2026: 0,2 mm con un 5 %).
         radar = N.en_tram(nc, "casa", max(ini, desde), fin)
-        if radar:
-            if radar["prob"] > (p or 0) and radar["prob"] >= C.PROB_ATENCION:
+        if radar and radar["prob"] >= C.PROB_ATENCION:
+            if radar["prob"] > (p or 0):
                 p, segun_radar = radar["prob"], True
             if radar["minuts"] >= 30 and radar["mm"] > mm and radar["mm"] >= C.UMBRAL_MM:
                 mm, segun_radar = radar["mm"], True
