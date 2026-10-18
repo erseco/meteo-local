@@ -603,6 +603,16 @@ class Web(unittest.TestCase):
         self.assertEqual((float(m.group(1)), float(m.group(2))),
                          (C.RISC_LLINDARS["ratxa"][0], C.RISC_LLINDARS["calor"][0]))
 
+    def test_meteocat_agrupat_per_fenomen(self):
+        # 18-10-2026: «Avisos actius (3)» i, desplegat, 4 línies (dos meteors de la pluja).
+        expr = ("element = (t, c, x) => ({ className: c, fills: x ? [x] : [], dataset: {},"
+                " append(...a) { this.fills.push(...a); } });"
+                "blocSmp({linies: [{nivell: 'mig', fenomen: 'pluja', ca: 'A'}, {nivell: 'alt', fenomen: 'pluja', ca: 'B'},"
+                " {nivell: 'mig', fenomen: 'vent', ca: 'C'}]})"
+                ".map((i) => [i.className, i.fills.map((f) => (typeof f === 'string' ? f : f.fills[0])).join('')])")
+        self.assertEqual(self.avalua("2026-10-18T07:00:00+02:00", expr),
+                         [["avis-item taronja", "BA"], ["avis-item groc", "C"]])
+
     def test_final_de_la_pluja_en_entrenament(self):
         # «Pluja a sobre» amb l'hora en què pararia, marcat «en entrenament» (ADR 0049).
         r = {"arriba": "2026-10-08T19:00", "fi": "2026-10-08T20:10:00+02:00"}

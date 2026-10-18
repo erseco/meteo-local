@@ -659,14 +659,26 @@ function blocEntorn(entorn) {
 // organisme (Juanjo, 17-10-2026; abans anaven dins del pla, ADR 0067).
 const COLOR_SMP = { mig: 'groc', alt: 'taronja', maxim: 'vermell' };
 
+// Agrupats per fenomen, com al bloc plegat: «Avisos actius (3)» deia 3 i,
+// desplegat, en sortien 4, perquè Meteocat dona un avís per cada meteor de la
+// pluja (revisor, 18-10-2026; ADR 0101). Cada grup, del color del pitjor.
+const RANG_SMP = { mig: 1, alt: 2, maxim: 3 };
 function blocSmp(smp) {
   if (!smp) return [];
   const es = IDIOMA.codi.startsWith('es');
-  return (smp.linies || []).filter((l) => COLOR_SMP[l.nivell]).map((l) => {
-    const item = element('p', `avis-item ${COLOR_SMP[l.nivell]}`);
+  const grups = new Map();
+  (smp.linies || []).filter((l) => COLOR_SMP[l.nivell]).forEach((l, n) => {
+    const clau = l.fenomen || `linia${n}`;
+    if (!grups.has(clau)) grups.set(clau, []);
+    grups.get(clau).push(l);
+  });
+  return [...grups.values()].map((ls) => {
+    ls.sort((a, b) => RANG_SMP[b.nivell] - RANG_SMP[a.nivell]);
+    const item = element(ls.length > 1 ? 'div' : 'p', `avis-item ${COLOR_SMP[ls[0].nivell]}`);
     item.dataset.tipus = 'smp';
     item.dataset.detall = fitxaPerill((h) => h.clau.startsWith('meteocat:'));
-    item.append(es ? l.es : l.ca);
+    if (ls.length === 1) item.append(es ? ls[0].es : ls[0].ca);
+    else item.append(...ls.map((l) => element('span', 'smp-linia', es ? l.es : l.ca)));
     return item;
   });
 }

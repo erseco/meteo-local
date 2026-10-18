@@ -167,3 +167,17 @@ umbrales de config, «Si surts»), `tests/test_riscos.py`, `tests/test_smp.py`
 y `tests/test_pluja_arriba.py`. Dos revisiones reales con Sonnet 5.5 y los
 datos del momento. La web, vista en Chromium y Firefox, en escritorio y
 móvil.
+
+## Cambio del 18-10-2026 (3.136.1): lo que vio la primera revisión en el NAS
+
+La primera revisión real (07:46, 34 s, 0,17 USD) encontró tres cosas, y se
+arreglan en el código:
+
+- La ficha de AEMET de tormentas, abierta con la versión anterior, no llevaba
+  cuándo empieza y decía «Actiu ara»: las fichas abiertas de AEMET lo toman
+  de su clave (`aemet:tipus:inici`).
+- «Avisos actius (3)» en «Si surts» tenía 4 líneas al desplegarlo: Meteocat
+  da un aviso por meteoro. Las líneas de Meteocat se agrupan por fenómeno
+  (`smp.textos` da el fenómeno), como en el bloque plegado.
+- Una ficha creada el día 16 decía «demà» de su día: la nota del revisor
+  cubre ahora las fichas creadas antes del 18-10-2026, no solo las cerradas.

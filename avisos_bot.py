@@ -927,6 +927,11 @@ def historial(estat, nous, ahora, anterior=None):
     # «¿este aviso se ha retirado?»). Las cerradas antes de la 3.88.1 la toman
     # en la pasada siguiente.
     tanca_aemet(h, estat.get("aemet_vigents"), ahora)
+    # Les fitxes de l'AEMET obertes abans de la 3.136.0 no duien quan comencen:
+    # és a la clau (aemet:tipus:inici).
+    for e in h:
+        if e["clau"].startswith("aemet:") and not e.get("fi") and not e.get("comenca"):
+            e["comenca"] = e["clau"].split(":", 2)[2]
     smp_estat = (estat.get("oficials") or {}).get("smp") or {}
     smp = smp_estat.get("episodi")
     mc = next((x for x in reversed(h) if smp and x["clau"] == smp), None)

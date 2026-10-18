@@ -196,7 +196,8 @@ def textos(avisos, hora):
         llindar = f"{a['llindar']}; " if a.get("llindar") else ""
         emes = hora_local(a.get("emissio"))
         tipus = a.get("tipus", "previsio")
-        res.append({"nivell": n,
+        # El fenomen, perquè la web agrupi les línies com al bloc plegat (ADR 0101).
+        res.append({"nivell": n, "fenomen": fenomen(a["meteor"]),
                     "ca": (f"Meteocat: {NOM_TIPUS['ca'][tipus]} de perill {GRAU['ca'][n]} per «{a['meteor']}» al {nom}, "
                            f"{quan(a['dies'], 'ca')} ({llindar}emès a les {emes})."),
                     "es": (f"Meteocat: {NOM_TIPUS['es'][tipus]} de peligro {GRAU['es'][n]} por «{a['meteor']}» en el {nom}, "

@@ -536,6 +536,9 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
   background: var(--enllac); color: var(--fons); font-size: .72rem; font-weight: 700; line-height: 1.5;
   vertical-align: .1em; }
 .avisos-curts .avis-item + .avis-item { margin-top: .35rem; }
+/* Les línies d'un mateix fenomen de Meteocat, en un sol avís (ADR 0101). */
+.avis-item .smp-linia { display: block; }
+.avis-item .smp-linia + .smp-linia { margin-top: .25rem; }
 .avisos-actius .avisos-mes { margin: .6rem 0 0; font-size: .92rem; }
 .avis-item { margin: 0; padding: .15rem 0 .15rem .7rem; border-left: .3rem solid var(--nivell, var(--compte)); }
 .avis-item + .avis-item, .avis-item + .risc-previst, .risc-previst + .avis-item { margin-top: .5rem; }
