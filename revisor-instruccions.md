@@ -56,6 +56,8 @@ inclúyelas si son reales, explicando por qué.
 - El resumen del día agrupa en una franja las horas seguidas con lluvia al
   menos posible (20 %) y la nombra por la más probable: no es un error que
   alguna hora de la franja sea solo «Possible pluja».
+- La diferencia de la parte alta se dice redondeada al grado: 0,5 °C sale
+  como «1 °C més» (Juanjo, 13-10-2026), y no sale si redondeada es 0.
 - La hora «propera» de la actualización sale de un horario fijo (cada 15
   minutos, o cada 6 en vigilancia, en horas fijas), no de sumar el intervalo
   a la última; una publicación fuera de horario (por código nuevo) puede

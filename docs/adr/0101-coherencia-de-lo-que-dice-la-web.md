@@ -188,3 +188,14 @@ El mensaje de una corrección automática lleva el texto de antes y el de
 después, sin el HTML de Telegram, y el de una propuesta, el texto actual y el
 propuesto (Juanjo: «sí, añádelo»). Hasta ahora solo decía dónde estaba el
 error y por qué.
+
+## Cambio del 18-10-2026 (3.138.1): el asterisco de la persistencia
+
+El revisor encontró «*» («Hi compta la pluja que cau ara al barri») y «Pluja
+feble» en la tabla con «No plou» arriba. La persistencia sube las primeras
+horas por la lluvia de la última hora (`consens_pluja(...)["pluja_1h"]`),
+aunque ya haya parado: el cálculo es el validado, el rótulo era inexacto.
+Ahora dice «Hi compta la pluja de l'última hora al barri, encara que ja hagi
+parat», y «Com funciona», «Si ha plogut a l'última hora…» en vez de «Si ja
+plou». La parte alta redondeada («1 °C més» con 0,5) era la regla de Juanjo
+del 13-10-2026 y se le explica al revisor.

@@ -1040,7 +1040,8 @@ function taula(hores, mesurada, riscos, sol) {
   }
   terme(T('Prob.'), T('La probabilitat que plogui en aquella hora. Per sota del 10\u00a0%, no s’espera pluja; del 10 al 20\u00a0%, és poc probable, però pot caure algun ruixat; del 20 al 50\u00a0%, pot ploure: si surts, porta paraigua; del 50\u00a0% amunt, el més probable és que plogui. Per exemple, un 40\u00a0% vol dir que, de cada 10 vegades que la previsió dona un 40\u00a0% per a una hora, en 4 acaba plovent.'));
   terme(T('Pluja'), T('Els mil·límetres que caurien si plou.'));
-  if (visibles.some((f) => f.segons_estacio)) terme('*', T('Hi compta la pluja que cau ara al barri.'));
+  // La persistència: la pluja de l'última hora, no la d'ara (revisor, 18-10-2026).
+  if (visibles.some((f) => f.segons_estacio)) terme('*', T('Hi compta la pluja de l’última hora al barri, encara que ja hagi parat.'));
   if (visibles.some((f) => f.segons_radar)) terme('\u2020', T('Hi compta la pluja que el radar veu acostar-se.'));
   // La part alta, només si algun tram la diu, amb l'etiqueta tal com surt
   // (ADR 0087; Juanjo, 13-10-2026: «por qué ha desaparecido la explicación»).
