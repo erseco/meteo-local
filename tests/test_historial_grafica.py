@@ -4,6 +4,7 @@ El otro test_historial.py es el de la página «Perill»."""
 import datetime as dt
 import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -69,6 +70,25 @@ class Historial(unittest.TestCase):
         self.assertEqual(list(i["encert"]["2"]["mesos"]), ["2026-10"])
         self.assertIn("2026-10-17", i["dies"])
         self.assertEqual(sorted(map(int, i["encert"])), list(range(1, 24)))
+
+    def test_el_format_nou_es_refa_per_tandes(self):
+        # 18-10-2026: tots els dies de cop eren 22 arxius i IONOS en vol 12 com a
+        # molt. Cada passada, els 2 de sempre i 3 dels vells, fins que hi són tots.
+        with tempfile.TemporaryDirectory() as reg, tempfile.TemporaryDirectory() as sortida:
+            for f in os.listdir(self.dir.name):
+                shutil.copy(os.path.join(self.dir.name, f), reg)
+            avui = dt.date(2026, 10, 17)
+            tandes = []
+            while True:
+                noms = H.fes(sortida, 2, avui, reg)
+                tandes.append([n for n in noms if n != "historial.json"])
+                if open(os.path.join(reg, "historial-format")).read() == str(H.FORMAT):
+                    break
+            dies = (avui - H.PRIMER_DIA).days + 1
+            self.assertTrue(all(len(t) <= 5 for t in tandes))
+            self.assertEqual(len({n for t in tandes for n in t}), dies)
+            self.assertEqual(H.fes(sortida, 2, avui, reg), ["historial.json", "historial-2026-10-16.json",
+                                                            "historial-2026-10-17.json"])
 
     def test_el_dia_del_canvi_d_hora_te_25_hores(self):
         self.assertEqual(len(H.hores_del_dia(dt.date(2026, 10, 25))), 25)

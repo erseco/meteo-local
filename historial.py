@@ -55,9 +55,13 @@ PROB_SEC = 0.2                           # «no plourà», por debajo de «possi
 DIES_FINESTRA = 30
 MIN_HORES_TEMP = 48                      # para dar el error de la temperatura
 MIN_CASOS_PLUJA = 20                     # para dar el acierto de la lluvia (en cada sentido)
-# El formato de los días: si cambia, la pasada siguiente los rehace todos, no
-# solo los últimos (3.137.0: los mm previstos), y lo apunta en el registro.
+# El formato de los días: si cambia, se rehacen todos, no solo los últimos
+# (3.137.0: los mm previstos), y lo apunta en el registro. Por tandas: IONOS
+# acepta como mucho 12 archivos por envío (reserva/rep-dades.sh, ADR 0057), y
+# todos de golpe se rechazaron (18-10-2026, 22 archivos). Con los 2 días de
+# siempre, el índice, los datos y las 4 imágenes, caben 3 más por pasada.
 FORMAT = 2
+REFER_PER_PASSADA = 3
 
 
 def hores_del_dia(dia):
@@ -211,22 +215,33 @@ def fes(carpeta, ultims=None, avui=None, registre=None):
     escriu = lambda nom, dades: json.dump(dades, open(os.path.join(carpeta, nom), "w", encoding="utf-8"),
                                           ensure_ascii=False, separators=(",", ":"))
     escriu("historial.json", index(dies, avui))
+    # La marca: el formato, si ya están todos; si no, {"format", "seguent"}, el
+    # primer día que falta rehacer.
     marca = os.path.join(registre or A.REGISTRE, "historial-format")
     try:
         with open(marca) as f:
-            vell = f.read().strip() != str(FORMAT)
+            text = f.read().strip()
     except OSError:
-        vell = True
-    if vell:
-        ultims = None
-    for d in dies[-ultims:] if ultims else dies:
+        text = ""
+    triats = dies[-ultims:] if ultims else dies
+    pendent = None
+    if ultims and text != str(FORMAT):
+        try:
+            m = json.loads(text)
+            seguent = m["seguent"] if m.get("format") == FORMAT else PRIMER_DIA.isoformat()
+        except (ValueError, TypeError, KeyError, AttributeError):
+            seguent = PRIMER_DIA.isoformat()
+        vells = [d for d in dies[:-ultims] if d["dia"] >= seguent]
+        triats = vells[:REFER_PER_PASSADA] + triats
+        pendent = vells[REFER_PER_PASSADA]["dia"] if len(vells) > REFER_PER_PASSADA else None
+    for d in triats:
         nom = f"historial-{d['dia']}.json"
         escriu(nom, d)
         noms.append(nom)
-    if vell:
+    if ultims and text != str(FORMAT):
         try:
             with open(marca, "w") as f:
-                f.write(str(FORMAT))
+                f.write(json.dumps({"format": FORMAT, "seguent": pendent}) if pendent else str(FORMAT))
         except OSError:
             pass
     return noms

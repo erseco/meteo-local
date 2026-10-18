@@ -127,3 +127,10 @@ del mes? por qué dice que hay 7 horas de lluvia prevista?»):
   lluvia.
 - Los milímetros, como cantidad: «Quantitat de pluja: en preveia 78,5 mm i
   en van caure 18,7».
+
+3.137.1: rehacer todos los días de golpe fueron 22 archivos, e IONOS acepta
+12 por envío (`reserva/rep-dades.sh`, ADR 0057): el envío se rechazó y esa
+pasada se publicó por GitHub. Ahora los días viejos se rehacen por tandas, 3
+por pasada junto a los 2 de siempre (`REFER_PER_PASSADA`), y la marca dice el
+primero que falta; con 15 días, unas cinco pasadas. La marca del NAS se borró
+para que empezaran.
