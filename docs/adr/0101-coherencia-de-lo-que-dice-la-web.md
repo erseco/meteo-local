@@ -213,3 +213,15 @@ dura, dice «L'AEMET l'ha allargat fins a dg. 18/10, 03:59», también en el
 texto que se comparte. La ficha del 17-10 se completó a mano en el estado del
 NAS. Los mensajes de Telegram y del navegador no cambian: se enviaron con el
 final que tenían.
+
+## Falsa alarma del 18-10-2026: asterisco con hueco
+
+El revisor avisó cuatro veces (filas 9–10, 11–12, 12–13 y, a las 12:58,
+14–15 y 15–16) de que el «*» salía en horas futuras y no en una intermedia,
+y lo tomaba por un fallo que debía limitarse a la hora en curso. No lo es: la
+persistencia cubre las cuatro primeras filas (ADR 0007) y cada fila lleva la
+cifra mayor, la del modelo o la de la persistencia. A las 12:58, con 0,5 mm en
+la última hora, la persistencia daba 47,5 %, 40 % y 34 % para las tres horas
+siguientes, y el modelo, 54 %, 39 % y 14 %: la fila 13–14 era del modelo y
+las otras dos, de la persistencia. Se explica en `revisor-instruccions.md`;
+el cálculo no cambia.

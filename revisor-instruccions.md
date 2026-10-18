@@ -56,6 +56,14 @@ inclúyelas si son reales, explicando por qué.
 - El resumen del día agrupa en una franja las horas seguidas con lluvia al
   menos posible (20 %) y la nombra por la más probable: no es un error que
   alguna hora de la franja sea solo «Possible pluja».
+- El asterisco «*» de la tabla por horas (`segons_estacio`) no se limita a la
+  hora en curso: si ha llovido en la última hora, las cuatro primeras filas
+  no bajan de lo que pasó después en casos parecidos del histórico (la
+  persistencia, validada, ADR 0007), cada vez menos probable. Cada fila lleva
+  la cifra mayor, la del modelo o la de la persistencia, y el asterisco solo
+  marca las que ha dado la persistencia. Si en una fila intermedia el modelo
+  da más, esa va sin asterisco y las de antes y después con él: no es un
+  error, ni lo es que la hora futura lleve asterisco aunque ya no llueva.
 - La diferencia de la parte alta se dice redondeada al grado: 0,5 °C sale
   como «1 °C més» (Juanjo, 13-10-2026), y no sale si redondeada es 0.
 - La hora «propera» de la actualización sale de un horario fijo (cada 15
