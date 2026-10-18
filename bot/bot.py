@@ -187,10 +187,23 @@ class Bloquejat(Exception):
 
 # Las unidades no se separan de su número al partir la línea.
 UNITATS = re.compile(r"(\d) (°C|mm|km/h|cm)\b")
+# La última línea acaba en un enlace (la web, «Més informació…», la ficha).
+ENLLAC_FINAL = re.compile(r"(<a\s[^>]*>.*</a>|https?://\S+)\s*$")
+
+
+def text_telegram(text):
+    """El texto tal como sale a Telegram: las unidades pegadas a su número y
+    una línea en blanco antes del enlace final, en todos los mensajes
+    (Juanjo, 18-10-2026: «en telegram deja una linea siempre antes del
+    enlace final»)."""
+    linies = UNITATS.sub("\\1\u00a0\\2", text).rstrip().split("\n")
+    if len(linies) > 1 and ENLLAC_FINAL.search(linies[-1]) and linies[-2].strip():
+        linies.insert(-1, "")
+    return "\n".join(linies)
 
 
 def envia(api, chat, text, teclat=None, html=False):
-    return api("sendMessage", chat_id=chat, text=UNITATS.sub("\\1\u00a0\\2", text), disable_web_page_preview=True,
+    return api("sendMessage", chat_id=chat, text=text_telegram(text), disable_web_page_preview=True,
                parse_mode="HTML" if html else None,
                reply_markup={"inline_keyboard": teclat} if teclat else None)
 
@@ -228,12 +241,12 @@ def envia_resum(api, chat, text, imatge=None):
     cap sota la foto, la foto i després el text; si la foto no entra, només el
     text."""
     if imatge:
-        net = UNITATS.sub("\\1\u00a0\\2", text)
-        pla = html.unescape(re.sub(r"<[^>]+>", "", net))
+        peu = text_telegram(text)
+        pla = html.unescape(re.sub(r"<[^>]+>", "", peu))
         cap = len(pla.encode("utf-16-le")) // 2 <= PEU_MAX
         try:
             r = api("sendPhoto", chat_id=chat, photo=FOTOS.get(imatge, imatge),
-                    caption=net if cap else None, parse_mode="HTML" if cap else None)
+                    caption=peu if cap else None, parse_mode="HTML" if cap else None)
         except Bloquejat:
             raise
         except Exception as ex:
@@ -1847,7 +1860,7 @@ def corregeix(api, estat, moment):
         for chat, missatge, idioma in (estat.get("missatges") or {}).get(clau, []):
             try:
                 api("editMessageText", chat_id=chat, message_id=missatge, parse_mode="HTML",
-                    text=UNITATS.sub("\\1\u00a0\\2", c.get(idioma) or c["ca"]), disable_web_page_preview=True)
+                    text=text_telegram(c.get(idioma) or c["ca"]), disable_web_page_preview=True)
             except Exception as ex:
                 registra(f"correcció de {clau} a {chat}: {ex}")
             time.sleep(0.05)

@@ -167,6 +167,25 @@ class Menu(unittest.TestCase):
         self.assertEqual((subs, api.enviats), ({}, []))
 
 
+class TextTelegram(unittest.TestCase):
+    # Juanjo, 18-10-2026: «en telegram deja una linea siempre antes del enlace final».
+    def test_linia_en_blanc_abans_de_l_enllac_final(self):
+        avis = AB.amb_enllac({"tipus": "pluja", "ca": "🟠 Meteocat: avís\nAcumulada > 100 mm.", "es": "x"}, [])
+        self.assertIn("100\u00a0mm.\n\n<a href=", B.text_telegram(avis["ca"]))
+        self.assertTrue(B.text_telegram("Hola\n" + B.WEB).endswith("Hola\n\n" + B.WEB))
+        self.assertTrue(B.text_telegram("Previsió de les 10:00. La de cada moment, a " + B.WEB).startswith("Previsió"))
+
+    def test_si_ja_hi_ha_linia_en_blanc_o_no_acaba_en_enllac_no_canvia(self):
+        self.assertEqual(B.text_telegram("Hola\n\n" + B.WEB), "Hola\n\n" + B.WEB)
+        self.assertEqual(B.text_telegram("Hola\nAdéu"), "Hola\nAdéu")
+        self.assertEqual(B.text_telegram(B.WEB), B.WEB)
+
+    def test_tots_els_enviaments_el_fan_servir(self):
+        api = Api()
+        B.envia(api, "1", "Hola\n" + B.WEB)
+        self.assertTrue(api.enviats[-1][1]["text"].endswith("Hola\n\n" + B.WEB))
+
+
 class Resum(unittest.TestCase):
     def test_resum(self):
         r = B.resum(dades(), "ca", ARA)

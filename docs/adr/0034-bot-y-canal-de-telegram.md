@@ -236,3 +236,16 @@ da (y sí lo recibe si el canal falla), y el menú lo explica; un alta y una baj
 del canal (también por expulsión) avisan a Juanjo con el nombre, y un cambio de
 papel o un alta en otro chat, no. La página de ayuda pasa por las pruebas de la web pública
 (traducción completa), `probar-web` y axe-core.
+
+## Cambio del 18-10-2026 (3.138.3): línea en blanco antes del enlace final
+
+Juanjo, ante un aviso de Meteocat con «Més informació a Temps a Montflorit»
+pegado a la línea anterior: «en telegram deja una linea siempre antes del
+enlace final». Para que ningún mensaje se lo deje, la regla está en
+`text_telegram`, por donde pasa todo lo que el bot envía o edita en el canal y
+a los suscriptores (`envia`, el pie de la foto del resumen y las correcciones
+del revisor): si la última línea acaba en un enlace y la anterior no está en
+blanco, añade una línea en blanco. Vale para los avisos, el resumen («La de
+cada moment, a …») y las consultas. Las notificaciones del navegador no
+cambian: quitan ese enlace. Los mensajes privados a Juanjo, en texto llano, no
+pasan por ahí.
