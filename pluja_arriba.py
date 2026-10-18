@@ -60,7 +60,8 @@ def falta_min(salida, ahora):
 def intensitat(mm_h):
     if mm_h is None:
         return ""
-    return " Seria forta." if mm_h >= 4 else " Seria moderada." if mm_h >= 1 else " Seria feble."
+    import nowcast as N
+    return f" Seria {N.nom_intensitat(mm_h)}."
 
 
 def missatge(salida, ahora):

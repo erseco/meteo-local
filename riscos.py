@@ -58,7 +58,9 @@ TEMPERATURES = ("calor", "fred")
 def num(x, tipus=None):
     """Sin decimales; la temperatura, con uno si no es un grado entero, como
     los umbrales de Meteocat (36,8 °C)."""
-    t = f"{x:.1f}" if tipus in TEMPERATURES and abs(x - round(x)) >= 0.05 else f"{x:.0f}"
+    # La neu, també amb un decimal: «0 cm» d'una neu de 0,3 cm es contradeia
+    # (inventari del 18-10-2026).
+    t = f"{x:.1f}" if tipus in TEMPERATURES + ("neu_24h",) and abs(x - round(x)) >= 0.05 else f"{x:.0f}"
     return t.replace(".", ",").replace("-", "−")
 
 
@@ -136,18 +138,30 @@ def de_la_previsio(hores, ahora):
             res.append(risc(tipus, "previsio", t[0], t[1], t[2], ahora))
     # La lluvia, en las horas seguidas que más acumulan: 3 y 24. La media
     # hora de Meteocat no se puede prever con modelos que dan horas enteras.
+    # Només les hores en què la pàgina diu que pot ploure (probabilitat del
+    # 20 % o més, C.PROB_ATENCION): els mil·límetres són el màxim dels models i
+    # diuen com seria la pluja, no si n'hi haurà. Abans sortia «Pluja intensa
+    # prevista» al costat de «Sense pluja prevista» (inventari del 18-10-2026).
+    # Si cap d'aquestes hores arriba al 50 %, es diu la probabilitat.
+    pot = lambda f: f.get("probabilitat") is None or f["probabilitat"] >= C.PROB_ATENCION  # noqa: E731
     for tipus, n in (("pluja_3h", 3), ("pluja_24h", 24)):
         millor = None
         for i in range(max(0, len(hores) - n + 1)):
             tram = hores[i:i + n]
-            mm = sum(f.get("pluja_mm") or 0 for f in tram)
+            mm = sum(f.get("pluja_mm") or 0 for f in tram if pot(f))
             if millor is None or mm > millor[0]:
                 millor = (mm, tram)
         if millor and nivell(tipus, millor[0]):
             tram = millor[1]
-            res.append(risc(tipus, "previsio", millor[0], dt.datetime.fromisoformat(tram[0]["hora"]),
-                            dt.datetime.fromisoformat(tram[-1]["fins"]), ahora))
-    neu = sum(f.get("neu") or 0 for f in hores)
+            r = risc(tipus, "previsio", millor[0], dt.datetime.fromisoformat(tram[0]["hora"]),
+                     dt.datetime.fromisoformat(tram[-1]["fins"]), ahora)
+            probs = [f["probabilitat"] for f in tram if pot(f) and f.get("probabilitat") is not None]
+            if probs and max(probs) < 0.5:
+                r["prob"] = round(max(probs) * 100)
+                r["text"] = r["text"][:-1] + f" (probabilitat fins al {r['prob']} %)."
+            res.append(r)
+    # Arrodonida com es diu: per sota d'1 mm de neu, no n'hi ha.
+    neu = round(sum(f.get("neu") or 0 for f in hores), 1)
     r = risc("neu_24h", "previsio", neu)
     if r:
         res.append(r)

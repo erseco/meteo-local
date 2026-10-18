@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.135.0"
+VERSION = "3.136.0"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -110,6 +110,15 @@ SMP_COMARCA_NOM = "Vallès Occidental"
 # Minutos sin ver un fenómeno de Meteocat para darlo por acabado (ADR 0092):
 # entre dos emisiones del mismo aviso, el relevo no avisa dos veces.
 SMP_FI_MIN = 30
+
+# El revisor de coherencia (revisor.py, ADR 0101): el modelo, fijado por su
+# nombre y de la generación 5.5 como mínimo (Juanjo, 05-10-2026); las horas
+# en que revisa, con el resumen del bot, antes de los de la mañana (6, 7 y 8)
+# y del de mañana (21); y los minutos que espera entre dos revisiones por un
+# cambio de lo que concluye la web (un aviso enviado no espera).
+REVISOR_MODEL = "claude-sonnet-5-5"
+REVISOR_HORES = ("05:50", "20:50")
+REVISOR_MIN_MIN = 30
 # Si la descripción del plan nombra solo otras zonas, no afecta al barrio.
 ZONAS_PROPIAS_PC = ["Vallès", "Barcelona", "Catalunya"]
 ZONAS_AJENAS_PC = ["Ebre", "Pirineu", "Aran", "Lleida", "Girona", "Tarragona", "Empordà"]

@@ -916,6 +916,8 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .perill .episodi-titol { margin-top: 0; }
 .perill .episodi-quan { color: var(--suau); font-size: .92rem; }
 .perill .episodi-actiu { color: var(--vermell); font-weight: 600; }
+/* Previst: encara no ha començat (ADR 0101). */
+.episodi-previst { font-weight: 600; }
 .perill .episodi-acabat { color: var(--verd-text); }
 /* Les acabades, sense el color del nivell (ADR 0074). */
 .perill .episodi.acabat { --nivell: var(--suau); --nivell-text: var(--text); }

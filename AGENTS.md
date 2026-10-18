@@ -34,6 +34,13 @@ Al cambiar algo:
   «Consultes»). Un tipo de alerta nuevo se añade a `bot.TIPUS_PERILL` y a
   `tests/test_perills.py`, que falla si algún sitio se lo deja. Por fenómeno
   manda Meteocat; AEMET, para lo que Meteocat no cubre (`smp.marca_coberts`).
+- **Todo lo que dice la web tiene que cuadrar** (ADR 0101): la lluvia de
+  ahora sale solo de `pluja_ara` (`casa.estat_pluja`), y lo que se muestra en
+  dos sitios usa el mismo umbral y la misma palabra. Si añades una frase que
+  afirma algo del tiempo de ahora, mira qué otra puede contradecirla. En el
+  NAS, `revisor.py` revisa con IA lo publicado y lo enviado; sus hallazgos de
+  código van al registro (`docker exec meteo-local python3 /proyecto/revisor.py
+  estat`) y a Juanjo: arréglalos en el código, no solo en los datos.
 - Si cambia un umbral, actualiza `config.py`, el texto «Com es decideix» de
   `web/sortir.html` (o «D'on surt» de `web/casa.html`), el README, las pruebas
   y el ADR.

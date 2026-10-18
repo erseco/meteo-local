@@ -48,6 +48,8 @@ python3 casa.py --json "$dades/casa.json" --anterior "$CASA_ANTERIOR" >/dev/null
 if [ -n "$ESTAT_DIR" ]; then
   python3 avisos_bot.py "$dades/casa.json" "$dades/avisos.json" https://bilateria.org/app/meteo-local/avisos.json >/dev/null \
     || echo "$(date '+%F %T')  han fallat els avisos del bot" >&2
+  # Per al revisor de coherència, que el llegeix després de publicar (ADR 0101).
+  [ ! -f "$dades/avisos.json" ] || cp "$dades/avisos.json" "$ESTAT_DIR/avisos.json"
 fi
 # Los datos de la web pública: los de casa sin lo privado.
 python3 montflorit.py dades "$dades/casa.json" "$publica/montflorit.json" "$dades/avisos.json"

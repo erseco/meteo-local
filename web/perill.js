@@ -102,8 +102,12 @@ function fitxa(e, ara) {
     // No s'ha apagat: ha sortit de la zona que vigila la web (ADR 0071).
     estat.append(element('span', 'episodi-substituit', T('Fora de la zona')), ' · ');
   } else if (fi) estat.append(element('span', 'episodi-acabat', `🟢 ${T('Acabat')}`), ' · ');
-  else estat.append(element('span', 'episodi-actiu', T('Actiu ara')), ' · ');
-  estat.append(quan(e, fi));
+  else if (e.comenca && new Date(e.comenca) > ara) {
+    // Encara no ha començat (l'avís de demà): «Previst», no «Actiu ara»
+    // (revisor, 18-10-2026; ADR 0101).
+    estat.append(element('span', 'episodi-previst', T('Previst')), ' · ');
+  } else estat.append(element('span', 'episodi-actiu', T('Actiu ara')), ' · ');
+  estat.append(!fi && e.comenca && new Date(e.comenca) > ara ? T`Comença ${moment(e.comenca)}` : quan(e, fi));
   // L'última actualització, com a «Avisos actius» (Juanjo, 17-10-2026).
   const pub = !fi && publicacioEpisodi(e);
   if (pub && pub.actualitzat) estat.append(` · ${textPublicacio(pub)}`);

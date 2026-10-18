@@ -68,6 +68,8 @@ var IDIOMA = {
     "Acabat": "Terminado",
     "Substituït per ": "Sustituido por ", "l’avís de Meteocat": "el aviso de Meteocat",
     "Actiu ara": "Activo ahora",
+    "Previst": "Previsto",
+    "Comença {0}": "Empieza {0}",
     "Més informació": "Más información",
     "Detalls": "Detalles",
     "Ara no hi ha cap situació de perill.": "Ahora no hay ninguna situación de peligro.",
@@ -138,6 +140,8 @@ var IDIOMA = {
     "Avís de Protecció Civil": "Aviso de Protección Civil",
     "El consell de cada mitjà surt del temps previst i del trànsit: no té en compte l’emergència de Protecció Civil (vegeu l’avís de dalt).": "El consejo de cada medio sale del tiempo previsto y del tráfico: no tiene en cuenta la emergencia de Protección Civil (véase el aviso de arriba).",
     "El consell de cada mitjà surt del temps previst i del trànsit: no té en compte l’alerta de Protecció Civil (vegeu l’avís de dalt).": "El consejo de cada medio sale del tiempo previsto y del tráfico: no tiene en cuenta la alerta de Protección Civil (véase el aviso de arriba).",
+    "El consell de cada mitjà no té en compte el perill de la riera de Sant Cugat (vegeu l’avís de dalt).": "El consejo de cada medio no tiene en cuenta el peligro de la riera de Sant Cugat (véase el aviso de arriba).",
+    "El consell de cada mitjà no té en compte l’incendi proper (vegeu l’avís de dalt).": "El consejo de cada medio no tiene en cuenta el incendio cercano (véase el aviso de arriba).",
     "Són els trens d’ara, no els de l’hora triada.": "Son los trenes de ahora, no los de la hora elegida.",
     " Evita els desplaçaments que no siguin necessaris.": " Evita los desplazamientos que no sean necesarios.",
     "Pressió {0}\u00a0hPa": "Presión {0}\u00a0hPa",
@@ -159,7 +163,7 @@ var IDIOMA = {
     " · va cap {0} a {1}\u00a0km/h": " · va hacia {0} a {1}\u00a0km/h",
     "Radar de {0} de les {1}{2}": "Radar de {0} de las {1}{2}",
     "Temps a Montflorit: risc {0}": "Temps a Montflorit: riesgo {0}",
-    "(llindar {0} de l’AEMET: {1} {2})": "(umbral {0} de la AEMET: {1} {2})",
+    "(llindar {0} de Meteocat: {1} {2})": "(umbral {0} de Meteocat: {1} {2})",
     "AEMET: avís {0} per {1}": "AEMET: aviso {0} por {1}",
     "Avís {0}": "Aviso {0}",
     "Avui els models no veuen aquesta pluja: en les darreres {0} hores han caigut {1}\u00a0mm a Montflorit i en preveien {2}. Les primeres hores de la taula parteixen del que mesura l’estació; per a la resta, fes més cas dels avisos.": "Hoy los modelos no ven esta lluvia: en las últimas {0} horas han caído {1}\u00a0mm en Montflorit y preveían {2}. Las primeras horas de la tabla parten de lo que mide la estación; para el resto, haz más caso de los avisos.",
@@ -208,6 +212,8 @@ var IDIOMA = {
     "La previsió en dona per a aquesta hora": "La previsión la da para esta hora",
     "{0}: seria pluja que es formi a prop, que el radar encara no veu.": "{0}: sería lluvia que se forme cerca, que el radar aún no ve.",
     "{0}: la pluja de prop pot créixer o desviar-se cap aquí.": "{0}: la lluvia cercana puede crecer o desviarse hacia aquí.",
+    "{0}: per la pluja que ha caigut fa poc al barri.": "{0}: por la lluvia que ha caído hace poco en el barrio.",
+    " segons el radar · cap estació del barri no en mesura": " según el radar · ninguna estación del barrio la mide",
     "La pluja s’està formant a prop: ja ocupa el {0}\u00a0% del terreny a 15\u00a0km o menys; fa mitja hora, gens.": "La lluvia se está formando cerca: ya ocupa el {0}\u00a0% del terreno a 15\u00a0km o menos; hace media hora, nada.",
     "La pluja s’està formant a prop: ja ocupa el {0}\u00a0% del terreny a 15\u00a0km o menys; fa mitja hora, el {1}\u00a0%.": "La lluvia se está formando cerca: ya ocupa el {0}\u00a0% del terreno a 15\u00a0km o menos; hace media hora, el {1}\u00a0%.",
     "Risc previst": "Riesgo previsto",
@@ -249,6 +255,11 @@ var IDIOMA = {
     "Pluja probable {0}.": "Lluvia probable {0}.",
     "Pot ploure {0}: porta l\u2019impermeable.": "Puede llover {0}: lleva el impermeable.",
     "Pot ploure {0}.": "Puede llover {0}.",
+    "Poca probabilitat de pluja {0}: porta l\u2019impermeable per si de cas.": "Poca probabilidad de lluvia {0}: lleva el impermeable por si acaso.",
+    "Poca probabilitat de pluja {0}.": "Poca probabilidad de lluvia {0}.",
+    "Poca probabilitat de pluja {0}: condueix amb compte.": "Poca probabilidad de lluvia {0}: conduce con cuidado.",
+    "Poca probabilitat de pluja mentre ets fora: porta paraigua per si de cas.": "Poca probabilidad de lluvia mientras estás fuera: lleva paraguas por si acaso.",
+    "Sense pluja ni vent fort a l\u2019anada ni a la tornada.": "Sin lluvia ni viento fuerte a la ida ni a la vuelta.",
     "Ratxes de vent de fins a {0}\u00a0km/h.": "Rachas de viento de hasta {0}\u00a0km/h.",
     "{0}: hi pot haver gel.": "{0}: puede haber hielo.",
     "{0}: compte amb el gel a primera hora.": "{0}: cuidado con el hielo a primera hora.",
@@ -570,8 +581,10 @@ var IDIOMA = {
     }
     // Com riscos.num: sense decimals; la temperatura, amb un si no és un grau enter.
     const v = Number(r.valor);
-    const ambDecimal = ['calor', 'fred'].includes(r.tipus) && Math.abs(v - Math.round(v)) >= 0.05;
+    const ambDecimal = ['calor', 'fred', 'neu_24h'].includes(r.tipus) && Math.abs(v - Math.round(v)) >= 0.05;
     const xifra = ambDecimal ? v.toFixed(1).replace('.', ',') : v.toFixed(0);
-    return plantilla.replace('{v}', xifra.replace('-', '\u2212')).replace('{q}', quan);
+    const text = plantilla.replace('{v}', xifra.replace('-', '\u2212')).replace('{q}', quan);
+    // La probabilitat, si cap hora no arriba al 50 % (riscos.py, 18-10-2026).
+    return r.prob ? `${text.slice(0, -1)} (probabilidad hasta el ${r.prob} %).` : text;
   },
 };

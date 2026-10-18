@@ -50,7 +50,9 @@ import unicodedata
 import urllib.request
 
 import config as C
+import nowcast as N
 import pluja_arriba as PA
+import revisor as RV
 import smp as SMP
 import riera as RI
 import riscos as RS
@@ -128,9 +130,10 @@ def text_pluja(salida, ahora):
     mm = r.get("arriba_mm_h")
     forca = {"ca": "", "es": ""}
     if mm is not None:
-        forca = ({"ca": " Pot ser forta.", "es": " Puede ser fuerte."} if mm >= 4 else
-                 {"ca": " Serà moderada.", "es": " Será moderada."} if mm >= 1 else
-                 {"ca": " Serà feble.", "es": " Será débil."})
+        # Les franges de l'AEMET, com el requadre del radar (N.nom_intensitat).
+        segura = mm < N.FRANGES_MMH[1]
+        forca = {"ca": f" {'Serà' if segura else 'Pot ser'} {N.nom_intensitat(mm, 'ca')}.",
+                 "es": f" {'Será' if segura else 'Puede ser'} {N.nom_intensitat(mm, 'es')}."}
     if falta <= 2:
         ca = (negreta("Temps a Montflorit: pluja imminent", "pluja") + "\nEl radar ja veu pluja a sobre del barri: pot "
               "començar en qualsevol moment." + forca["ca"])
@@ -176,7 +179,8 @@ def linia_risc_es(r, ahora):
     plantilla = previst if r["origen"] == "previsio" else mesura
     if not plantilla:
         return r["text"]
-    return plantilla.format(v=RS.num(r["valor"], r["tipus"]), q=quan_es(r, ahora) if r.get("des_de") else "")
+    text = plantilla.format(v=RS.num(r["valor"], r["tipus"]), q=quan_es(r, ahora) if r.get("des_de") else "")
+    return text[:-1] + f" (probabilidad hasta el {r['prob']} %)." if r.get("prob") else text
 
 
 def text_perill(nous, ahora):
@@ -377,32 +381,31 @@ def moment(iso, ahora):
     return t, (t.date() - ahora.date()).days
 
 
-def nom_dia(t, dies, idioma):
-    es = idioma == "es"
-    return (("hoy" if es else "avui") if dies == 0 else ("mañana" if es else "demà") if dies == 1
-            else DIES[idioma][t.weekday()])
+def nom_dia(t, idioma):
+    """«dilluns 19»: el dia de la setmana i del mes, no «avui» ni «demà». El text
+    es queda a la fitxa de «Perill» i es rellegeix altres dies: el 18-10-2026
+    hi deia «Des de demà…» d'avisos del 16 i del 17 (revisor, ADR 0101)."""
+    return f"{DIES[idioma][t.weekday()]} {t.day}"
 
 
 def franja(inici, fi, ahora, idioma):
-    """«Des d'avui a les 15 h fins a mitjanit.», «Desde mañana a las 6 h hasta el
-    sábado a las 3 h.»"""
+    """«Des del dissabte 17 a les 15 h fins a mitjanit.», «Desde el lunes 19 a
+    las 6 h hasta el martes 20 a las 3 h.», «Dilluns 19, de les 0 h a les 4 h.»"""
     es = idioma == "es"
     t0, d0 = moment(inici, ahora)
     t1, d1 = moment(fi, ahora)
-    dia0 = nom_dia(t0, d0, idioma)
+    dia0 = nom_dia(t0, idioma)
     if d1 == d0:                                     # el mateix dia
         return (f"{dia0.capitalize()}, de las {t0.hour} h a las {t1.hour} h." if es
                 else f"{dia0.capitalize()}, de les {t0.hour} h a les {t1.hour} h.")
     if t1.hour == 0 and t1.minute == 0 and d1 == d0 + 1:
         fins = "hasta medianoche" if es else "fins a mitjanit"
     else:
-        dia1 = nom_dia(t1, d1, idioma)
-        fins = (f"hasta {'el ' if d1 > 1 else ''}{dia1} a las {t1.hour} h" if es
-                else f"fins {dia1} a les {t1.hour} h")
+        fins = (f"hasta el {nom_dia(t1, idioma)} a las {t1.hour} h" if es
+                else f"fins al {nom_dia(t1, idioma)} a les {t1.hour} h")
     if es:
-        return f"Desde {'el ' if d0 > 1 else ''}{dia0} a las {t0.hour} h {fins}."
-    de = "d'" if dia0[:1] in "aeiouàèéíòóú" else "de "
-    return f"Des {de}{dia0} a les {t0.hour} h {fins}."
+        return f"Desde el {dia0} a las {t0.hour} h {fins}."
+    return f"Des del {dia0} a les {t0.hour} h {fins}."
 
 
 def text_aemet(a, ahora):
@@ -505,6 +508,14 @@ def text_meteocat(canvi, f, avisos):
                   + "\nEs un aviso oficial: sigue las indicaciones de Protección Civil."}
 
 
+def comenca_smp(avisos):
+    """Quan comença el primer dels que queden, en hora local."""
+    def ini(a):
+        dia = min(a["dies"])
+        return dt.datetime.fromisoformat(dia).astimezone() + dt.timedelta(hours=a["dies"][dia][0][0])
+    return min(ini(a) for a in avisos).isoformat(timespec="minutes") if avisos else None
+
+
 def principal_smp(avisos):
     """El fenomen del títol de la fitxa quan no hi ha res de nou: el que
     s'observa ara, si n'hi ha cap; si no, el de més perill."""
@@ -601,13 +612,15 @@ def decideix(estat, salida, ahora):
     nous = []
     hora = ahora.isoformat(timespec="minutes")
 
-    def afegeix(tipus, clau, text, nivell=None, episodi=None, enllac=None, fins=None, nomes_avis=False):
+    def afegeix(tipus, clau, text, nivell=None, episodi=None, enllac=None, fins=None, nomes_avis=False, comenca=None):
         # episodi: de qué suceso es parte, para el historial (ADR 0071); enllac,
         # más información si el texto no la enlaza; fins, cuándo acaba un
         # aviso que no tiene mensaje de final (los de AEMET); nomes_avis, que
         # lleva a la ficha del episodio sin cambiarla (el comunicado nuevo).
+        # comenca: quan comença el que s'avisa, si és més tard (ADR 0101): la
+        # fitxa diu «Previst» i no «Actiu ara» mentre no ha començat.
         extra = {k: v for k, v in (("episodi", episodi), ("enllac", enllac), ("fins", fins),
-                                   ("nomes_avis", nomes_avis)) if v}
+                                   ("nomes_avis", nomes_avis), ("comenca", comenca)) if v}
         nous.append({"id": f"{tipus}:{clau}", "tipus": tipus, "nivell": nivell, "hora": hora, **text, **extra})
 
     # Lluvia en unos minutos: la lógica del aviso de Juanjo, con estado propio.
@@ -628,11 +641,17 @@ def decideix(estat, salida, ahora):
         actius[r["clau"]]["vist"] = hora
     # Sin previsión o sin estación no se ha podido mirar: el riesgo no caduca,
     # para no repetirlo al canal cuando vuelvan los datos.
-    sense = not salida.get("hores") or not salida.get("ara")
+    # Fins a la 3.136.0 mirava «ara», que casa.py no escriu (és «ara_casa»): no
+    # se'n tancava cap i el final no s'avisava mai (inventari del 18-10-2026).
+    sense = not salida.get("hores") or not salida.get("ara_casa")
     acabats = []
     for clau, a in list(actius.items()):
-        if not sense and ahora - dt.datetime.fromisoformat(a["vist"]) >= dt.timedelta(hours=C.RISC_FI_H):
-            acabats.append(clau)
+        vist = ahora - dt.datetime.fromisoformat(a["vist"])
+        if not sense and vist >= dt.timedelta(hours=C.RISC_FI_H):
+            # Els que fa dies que no es veuen (els que s'havien quedat oberts
+            # per aquest error) es tanquen sense avisar: el final arribaria tard.
+            if vist < dt.timedelta(hours=C.RISC_FI_H + 1):
+                acabats.append(clau)
             del actius[clau]
     if nous_perill:
         text, pitjor = text_perill(nous_perill, ahora)
@@ -700,7 +719,7 @@ def decideix(estat, salida, ahora):
                 abans = of["aemet"].get(k)
                 if abans is None or RS.NIVELLS.index(a["nivel"]) > RS.NIVELLS.index(abans):
                     afegeix("perill", f"aemet:{k}:{a['nivel']}", text_aemet(a, ahora), a["nivel"],
-                            episodi=f"aemet:{k}", enllac=AEMET, fins=a.get("fin"))
+                            episodi=f"aemet:{k}", enllac=AEMET, fins=a.get("fin"), comenca=a.get("inicio"))
         anterior_aemet = (of or {}).get("aemet") or {}
         nou_of["aemet"] = {k: (anterior_aemet.get(k) if a.get("cobert") else a["nivel"]) for k, a in aemet.items()}
         nou_of["aemet"] = {k: v for k, v in nou_of["aemet"].items() if v}
@@ -726,13 +745,15 @@ def decideix(estat, salida, ahora):
                 canvi, f = canvis[0]
                 rang_max = max(a["perill"] for a in avisos_smp)
                 afegeix("perill", f"meteocat:{hora}:{canvi}:{f}", text_meteocat(canvi, f, avisos_smp),
-                        SMP.nivell(rang_max), episodi=e_smp["episodi"], enllac=METEOCAT, fins=fins_smp(avisos_smp))
+                        SMP.nivell(rang_max), episodi=e_smp["episodi"], enllac=METEOCAT, fins=fins_smp(avisos_smp),
+                        comenca=comenca_smp(avisos_smp))
             elif acabat:
                 afegeix("perill", f"meteocat:{hora}:fi", text_meteocat_fi(), "fi", episodi=abans["episodi"])
             elif avisos_smp and e_smp["episodi"]:
                 # Sense res de nou, la fitxa de «Perill» diu el que queda ara,
                 # sense enviar cap missatge (historial).
-                e_smp["text"] = text_meteocat("vigent", principal_smp(avisos_smp), avisos_smp)
+                e_smp["text"] = {**text_meteocat("vigent", principal_smp(avisos_smp), avisos_smp),
+                                 "comenca": comenca_smp(avisos_smp)}
         nou_of["smp"] = e_smp
     elif of is not None and "smp" in of:
         nou_of["smp"] = of["smp"]
@@ -896,10 +917,10 @@ def historial(estat, nous, ahora, anterior=None):
             if rang(a.get("nivell")) >= rang(obert.get("nivell")):
                 obert["nivell"] = a.get("nivell")
             obert.update(ca=a["ca"], es=a["es"], darrer=a["hora"],
-                         **{k: a[k] for k in ("enllac", "fins") if a.get(k)})
+                         **{k: a[k] for k in ("enllac", "fins", "comenca") if a.get(k)})
         else:
             h.append({"clau": ep, "tipus": a["tipus"], "inici": a["hora"], "nivell": a.get("nivell"),
-                      "ca": a["ca"], "es": a["es"], **{k: a[k] for k in ("enllac", "fins") if a.get(k)}})
+                      "ca": a["ca"], "es": a["es"], **{k: a[k] for k in ("enllac", "fins", "comenca") if a.get(k)}})
     # Un aviso de AEMET que ahora cubre Meteocat ya no se muestra en ningún
     # sitio (ADR 0093): su ficha se cierra diciéndolo, con la de Meteocat que
     # la sustituye, para que «Perill» no la dé por acabada (Juanjo, 16-10-2026:
@@ -915,6 +936,8 @@ def historial(estat, nous, ahora, anterior=None):
     ara_smp = smp_estat.get("text")
     if mc and ara_smp and not mc.get("fi") and set(cos_avis(mc["ca"])) != set(cos_avis(ara_smp["ca"])):
         mc.update(ca=ara_smp["ca"], es=ara_smp["es"])
+    if mc and ara_smp and not mc.get("fi") and ara_smp.get("comenca"):
+        mc["comenca"] = ara_smp["comenca"]
     for e in h:
         if e["clau"] in (estat.get("aemet_coberts") or []) and not e.get("fi"):
             e.update(fi=ahora.isoformat(timespec="minutes"), fi_ca=SUBSTITUIT["ca"], fi_es=SUBSTITUIT["es"])
@@ -1061,8 +1084,10 @@ def actualitza(casa_json, sortida, ahora=None, anterior=None, avisa=True):
         # llevaba a una «Perill» vacía (Juanjo, 15-10-2026; ADR 0091).
         prealerta = [{k: p.get(k) for k in ("pla", "nom", "fase", "des_de", "descripcio", "comunicat")}
                      for p in salida.get("plans") or [] if p.get("fase") == "prealerta"]
-        json.dump({"generat": ahora.isoformat(timespec="minutes"), "versio": C.VERSION, "avisos": llista,
-                   "historial": hist, "pla_alfa": alfa, "plans_prealerta": prealerta}, f, ensure_ascii=False)
+        # Les correccions del revisor (ADR 0101), mentre el text sigui el corregit.
+        json.dump(RV.aplica_correccions({"generat": ahora.isoformat(timespec="minutes"), "versio": C.VERSION,
+                                         "avisos": llista, "historial": hist, "pla_alfa": alfa,
+                                         "plans_prealerta": prealerta}), f, ensure_ascii=False)
     return nous
 
 

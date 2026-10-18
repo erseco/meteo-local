@@ -41,7 +41,10 @@ function dada(id, text) {
 // 09-10-2026: «dividir la lista del tiempo en mañana, tarde, noche como
 // desplegables»).
 const TRAMS = [[7, 14, 'Matí'], [14, 21, 'Tarda'], [21, 7, 'Nit']];
-const FENOMENS = { pluja_forta: INTENSITAT_PLUJA[1], pluja_torrencial: INTENSITAT_PLUJA[2], ratxa: 70, calor: 36, glaçada: 0 };
+// Les ratxes i la calor, amb els llindars del temps extrem (config.RISC_LLINDARS,
+// els baixos de Meteocat, superats «amb més que»): abans 70 km/h i 36 °C, i
+// l'etiqueta sortia sense l'avís corresponent (inventari del 18-10-2026).
+const FENOMENS = { pluja_forta: INTENSITAT_PLUJA[1], pluja_torrencial: INTENSITAT_PLUJA[2], ratxa: 72, calor: 36.8, glaçada: 0 };
 // Els noms, amb T() literal perquè les proves de traducció els trobin.
 const NOM_TRAM = { Matí: () => T('Matí'), Tarda: () => T('Tarda'), Nit: () => T('Nit') };
 const NOM_TRAM_DEMA = { Matí: () => T('Demà matí'), Tarda: () => T('Demà tarda'), Nit: () => T('Demà nit') };
@@ -150,12 +153,16 @@ function resumTrams(hores, ara, mesurada) {
     const fenomens = [];
     const tempesta = (f) => f.codi >= 95 || (f.avisos || []).some((a) => (a.tipus || []).includes('tempestes'));
     if (g.files.some(tempesta)) fenomens.push([NOM_FENOMEN.tempesta(), 'i-cloud-lightning', origenTempesta(g.files)]);
-    if (g.files.some((f) => (f.pluja_mm || 0) >= FENOMENS.pluja_torrencial)) fenomens.push([NOM_FENOMEN.pluja_torrencial(), 'i-cloud-rain-wind']);
-    else if (g.files.some((f) => (f.pluja_mm || 0) >= FENOMENS.pluja_forta)) fenomens.push([NOM_FENOMEN.pluja_forta(), 'i-cloud-rain-wind']);
+    // La pluja forta, només a les hores en què pot ploure (plujaHora), com el
+    // cel de la taula: els mil·límetres sols no diuen si n'hi haurà
+    // (inventari del 18-10-2026).
+    const mmPluja = (f) => (plujaHora(f) ? f.pluja_mm || 0 : 0);
+    if (g.files.some((f) => mmPluja(f) >= FENOMENS.pluja_torrencial)) fenomens.push([NOM_FENOMEN.pluja_torrencial(), 'i-cloud-rain-wind']);
+    else if (g.files.some((f) => mmPluja(f) >= FENOMENS.pluja_forta)) fenomens.push([NOM_FENOMEN.pluja_forta(), 'i-cloud-rain-wind']);
     if (g.files.reduce((s, f) => s + (f.neu || 0), 0) >= 0.1) fenomens.push([NOM_FENOMEN.neu(), 'i-snowflake']);
     const ratxa = Math.max(...g.files.map((f) => f.ratxa || 0));
-    if (ratxa >= FENOMENS.ratxa) fenomens.push([T`ratxes de ${Math.round(ratxa)}\u00a0km/h`, 'i-wind']);
-    if (temps.length && Math.max(...temps) >= FENOMENS.calor) fenomens.push([NOM_FENOMEN.calor(), 'i-thermometer-sun']);
+    if (ratxa > FENOMENS.ratxa) fenomens.push([T`ratxes de ${Math.round(ratxa)}\u00a0km/h`, 'i-wind']);
+    if (temps.length && Math.max(...temps) > FENOMENS.calor) fenomens.push([NOM_FENOMEN.calor(), 'i-thermometer-sun']);
     if (temps.length && Math.min(...temps) <= FENOMENS.glaçada) {
       fenomens.push([Math.min(...alta) > FENOMENS.glaçada ? NOM_FENOMEN.glaçadaRiera() : NOM_FENOMEN.glaçada(),
         'i-thermometer-snowflake']);
@@ -278,7 +285,9 @@ function blocAra(casa, radarDades, vent, veines, hores, resum) {
   llista.append(!plou ? dada('i-umbrella-off', T('No plou'))
     : intensitat ? dada('i-umbrella', T`Plou: ${coma(intensitat)} mm/h`)
       : dada('i-umbrella', T('Plou')));
-  llista.append(dada('i-cloud-rain', T`${coma(casa.pluja_avui || 0)} mm avui`));
+  // «Plou» amb «0 mm avui» es contradiu: si plou i encara no se n'ha recollit
+  // (la mediana del barri, casa.consens), només «Plou» (inventari del 18-10-2026).
+  if (!plou || casa.pluja_avui) llista.append(dada('i-cloud-rain', T`${coma(casa.pluja_avui || 0)} mm avui`));
   // El vent, de l'estació de Meteocat més propera, per mitges hores (ADR
   // 0037): l'estació i l'hora, a «D'on surt» (ADR 0074). Si ve de les veïnes
   // (ADR 0064), que «D'on surt» encara no diu, es diu aquí.
@@ -329,7 +338,7 @@ function blocAra(casa, radarDades, vent, veines, hores, resum) {
 // pluja de 17 a 19 h (…). Comença d'aquí a unes 4 hores.» Si avui no en
 // preveu però en vindrà abans de 24 hores, la línia «Sense pluja prevista»
 // diu quan.
-const LINIA_PLUJA = /^(Possible pluja|Pluja|Posible lluvia|Lluvia|Aquesta nit|Esta noche)\b/;
+const LINIA_PLUJA = /^(Possible pluja|Pluja|Posible lluvia|Lluvia|Aquesta nit|Esta noche|De matinada|De madrugada)\b/;
 const LINIA_SECA = /^(Sense pluja|Sin lluvia)/;
 const LINIA_TRENS = /^(Trens|Trenes) de /;
 function posaComptePluja(cos, hores, ara = new Date()) {
@@ -338,6 +347,11 @@ function posaComptePluja(cos, hores, ara = new Date()) {
   const files = [...cos.querySelectorAll('.resum-linia')];
   const text = (fila) => (fila.lastElementChild && fila.lastElementChild.textContent || '').trim();
   const pluja = files.find((fila) => LINIA_PLUJA.test(text(fila)));
+  // L'etiqueta només va amb la línia de la mateixa pluja: si la línia parla
+  // de la d'ara («Possible pluja de 10 a 11 h») i la propera és demà, no
+  // (inventari del 18-10-2026: hi deia «Pot començar d'aquí a unes 20 hores»).
+  const de = pluja && /\bde (\d{1,2})\b/.exec(text(pluja));
+  if (pluja && de && +de[1] !== new Date(f.hora).getHours()) return;
   if (pluja) {
     // Destacat en una etiqueta del color de la pluja, com la de la part alta
     // (Juanjo, 17-10-2026: «quisiera que se destacase algo… decide tú»; un
@@ -457,14 +471,21 @@ function blocsResum(dades, ambAvui) {
 function textRadar(r, plou) {
   if (!r) return null;
   const aviat = (t) => new Date(t) <= new Date(Date.now() + 5 * 60e3);
-  // El que es mesura mana: si ja plou, «Pluja a sobre», encara que el radar
-  // només en vegi una part; si no en veu gens, sense hora (Juanjo, 08-10-2026).
-  if ((plou && (r.arriba || r.possible)) || (r.arriba && aviat(r.arriba))) {
-    const fi = r.fi ? T` · pararia cap a les\u00a0${horaCurta(r.fi)}`
-      : r.sense_fi ? T(' · no s’acaba en 2 hores') : '';
-    return ['arriba', T('Pluja a sobre') + fi, Boolean(fi)];
+  // L'estat únic de la pluja (ADR 0101): el mateix que diu «Ara». El que es
+  // mesura mana: si ja plou, «Pluja a sobre», encara que el radar només en
+  // vegi una part; si no en veu gens, sense hora (Juanjo, 08-10-2026). Si
+  // només la veu el radar, es diu (Juanjo, 18-10-2026: «lo decía el radar:
+  // lluvia encima, pero no había»). Amb dades d'abans de la 3.136.0, sense
+  // l'estat, com abans.
+  const estat = r.pluja ? r.pluja.estat
+    : plou ? 'plou' : r.arriba && aviat(r.arriba) ? 'radar_sobre' : null;
+  if (estat === 'plou' || estat === 'radar_sobre') {
+    const fi = !(r.arriba || r.possible) ? ''
+      : r.fi ? T` · pararia cap a les\u00a0${horaCurta(r.fi)}`
+        : r.sense_fi ? T(' · no s’acaba en 2 hores') : '';
+    const nomesRadar = estat === 'radar_sobre' ? T(' segons el radar · cap estació del barri no en mesura') : '';
+    return ['arriba', T('Pluja a sobre') + nomesRadar + fi, Boolean(fi), true];
   }
-  if (plou) return ['arriba', T('Pluja a sobre'), false];
   // Quant falta, en minuts, i l'hora (Juanjo, 17-10-2026: «empezará a llover
   // en x horas o minutos (se actualizará en tiempo real) y la hora prevista»);
   // el compte s'actualitza sol cada minut (actualitzaComptes).
@@ -510,7 +531,7 @@ function blocRadar(r, plou, hores) {
   if (!t) return null;
   const creix = textCreixement(r);
   if (t[0] === 'res' && !creix && !plujaPrevistaAviat(hores)) return null;
-  const [estat, text, proves] = t;
+  const [estat, text, proves, aSobre] = t;
   // Si la pluja creix al voltant, en blau com «pot arribar» (17-10-2026).
   const caixa = element('div', `radar-ara ${estat === 'res' && creix ? 'a-prop' : estat}`);
   caixa.append(icona('i-radar'));
@@ -532,8 +553,11 @@ function blocRadar(r, plou, hores) {
     const ara = new Date();
     const f = primeraPluja(hores, ara);
     const aProp = r.propera && r.propera.km <= 15;
-    const resta = (x) => (aProp ? T`${textPct(x)}: la pluja de prop pot créixer o desviar-se cap aquí.`
-      : T`${textPct(x)}: seria pluja que es formi a prop, que el radar encara no veu.`);
+    // La que només ve de la pluja que acaba de caure (segons_estacio) no és
+    // pluja que el radar no veu (inventari del 18-10-2026).
+    const resta = (x) => (x.segons_estacio ? T`${textPct(x)}: per la pluja que ha caigut fa poc al barri.`
+      : aProp ? T`${textPct(x)}: la pluja de prop pot créixer o desviar-se cap aquí.`
+        : T`${textPct(x)}: seria pluja que es formi a prop, que el radar encara no veu.`);
     if (f && new Date(f.hora) < new Date(ara.getTime() + 2 * 3600e3)) {
       const linia = element('p', 'radar-propera');
       linia.append(T('La previsió en dona '), compte(f.hora, true), resta(f));
@@ -547,7 +571,8 @@ function blocRadar(r, plou, hores) {
   // la mateixa que ja diu el titular.
   const pr = r.propera;
   const repetida = estat === 'a-prop' && pr && Math.round(pr.km) === Math.round(r.forta.km) && pr.rumb === r.forta.rumb;
-  const propera = !repetida && textPropera(pr);
+  // Si plou a sobre, la més propera no diu res: és aquesta (ADR 0101).
+  const propera = !repetida && !aSobre && textPropera(pr);
   if (propera) cos.append(element('p', 'radar-propera', propera));
   // La font i l'hora de la imatge, com demana Meteocat per reutilitzar-la,
   // amb l'enllaç al radar en directe (Juanjo, 08-10-2026). Sense moviment
@@ -1103,7 +1128,9 @@ function pinta(dades) {
     const m = dades.models;
     avisos.append(element('p', 'avis', T`Avui els models no veuen aquesta pluja: en les darreres ${m.hores} hores han caigut ${coma(m.mesurada_mm)}\u00a0mm a Montflorit i en preveien ${coma(m.prevista_mm)}. Les primeres hores de la taula parteixen del que mesura l\u2019estació; per a la resta, fes més cas dels avisos.`));
   }
-  const ara = dades.ara_casa && blocAra(dades.ara_casa, dades.radar, dades.vent, dades.veines, dades.hores,
+  // El radar porta l'estat únic de la pluja (ADR 0101), per dir el mateix que «Ara».
+  const radarAmbPluja = dades.radar && dades.pluja_ara ? { ...dades.radar, pluja: dades.pluja_ara } : dades.radar;
+  const ara = dades.ara_casa && blocAra(dades.ara_casa, radarAmbPluja, dades.vent, dades.veines, dades.hores,
     textResum(dades, 'avui'));
   if (ara) cont.append(ara);
   if (OFERTA_AVISOS) cont.append(OFERTA_AVISOS);

@@ -163,6 +163,56 @@ def llueve_ahora_en(casa, veines=None):
     return bool(casa and casa.get("plou")) or WU.plou_a_les_veines(veines)
 
 
+def estat_pluja(radar, plou, ahora):
+    """El estado único de la lluvia de ahora (ADR 0101), del que sale todo lo
+    que la web y el bot dicen de ella. Cada bloque lo decidía con sus datos y
+    se contradecían: «No plou», «Pluja a sobre» y una hora «sense pluja» a la
+    vez (Juanjo, 18-10-2026). Manda lo medido, luego el radar, luego el modelo:
+    - plou: alguna estación del barrio que cuenta ha medido lluvia en los
+      últimos PLOU_ARA_MIN minutos;
+    - radar_sobre: el radar la pone encima (llegada en 5 minutos o menos, o ya
+      pasada: la imagen llega con retraso), pero ninguna estación la mide;
+    - arriba / possible: el radar la ve venir (50 % / 20 %);
+    - no: nada de lo anterior."""
+    r = radar or {}
+    t = lambda k: dt.datetime.fromisoformat(r[k]) if r.get(k) else None  # noqa: E731
+    arriba, possible = t("arriba"), t("possible")
+    if plou:
+        estat, font = "plou", "estacions"
+    elif arriba and arriba <= ahora + dt.timedelta(minutes=5):
+        estat, font = "radar_sobre", "radar"
+    elif arriba:
+        estat, font = "arriba", "radar"
+    elif possible:
+        estat, font = "possible", "radar"
+    else:
+        estat, font = "no", None
+    return {"estat": estat, "font": font, **{k: r.get(k) for k in ("arriba", "possible", "fi", "sense_fi")}}
+
+
+def ajusta_hores(hores, pluja, ahora):
+    """Las horas de la tabla, de acuerdo con el estado de la lluvia: si el radar
+    la pone encima, la hora en curso no puede decir «sense pluja»; si la ve
+    llegar dentro de una hora, esa hora tampoco. Solo sube la probabilidad,
+    como el radar en previsio(); hace falta también con la previsión anterior
+    (previsio_anterior), que no lleva el radar."""
+    if not hores or not pluja:
+        return hores
+    local = lambda iso: dt.datetime.fromisoformat(iso).astimezone().replace(tzinfo=None)  # noqa: E731
+    marques = []
+    if pluja["estat"] == "radar_sobre":
+        marques.append((ahora.astimezone().replace(tzinfo=None), 0.5))
+    elif pluja["estat"] in ("arriba", "possible") and pluja.get(pluja["estat"]):
+        marques.append((local(pluja[pluja["estat"]]), 0.5 if pluja["estat"] == "arriba" else C.PROB_ATENCION))
+    for t, p in marques:
+        for f in hores[:3]:
+            if dt.datetime.fromisoformat(f["hora"]) <= t < dt.datetime.fromisoformat(f["fins"]) \
+                    and (f.get("probabilitat") or 0) < p:
+                f["probabilitat"] = p
+                f["segons_radar"] = not f.get("plou_ara") and not f.get("segons_estacio")
+    return hores
+
+
 def pluja_avui_veina(v):
     """La lluvia de hoy de una vecina, sumando lo que sube su total desde
     medianoche: el total del día de Weather Underground no siempre vuelve a
@@ -523,10 +573,13 @@ def previsio_anterior(origen, avisos, casa=None, veines=None, nuvols_ara=None):
     return {"hores": hores, "previsio_de": de, "aprenentatge": antes.get("aprenentatge")}
 
 
-def comprobacion_modelos(desde, h, filas_estacion):
+def comprobacion_modelos(desde, h, filas_estacion, consens_3h=None):
     """Lluvia medida en casa y prevista en las últimas horas completas. Si
     los modelos se han quedado muy cortos, la página lo dice. Solo si las
-    lecturas de la estación (ecowitt.resum_ara) cubren esas horas."""
+    lecturas de la estación (ecowitt.resum_ara) cubren esas horas. Lo medido,
+    el de la red del barrio (consens_3h, la mediana que muestra «Ara»), si
+    lo hay: con solo la estación de casa, la nota decía «12 mm a Montflorit»
+    junto a «6 mm avui» (inventari del 18-10-2026)."""
     if not filas_estacion:
         return None
     fin = desde.replace(minute=0, second=0, microsecond=0)
@@ -534,6 +587,8 @@ def comprobacion_modelos(desde, h, filas_estacion):
     if filas_estacion[0]["t"] > ini or filas_estacion[-1]["t"] < fin:
         return None
     medida = E.pluja_entre(filas_estacion, ini, fin)
+    if consens_3h is not None and HORAS_COMPROBACION == 3:
+        medida = consens_3h
     prevista = 0.0
     for i, t in enumerate(h["time"]):
         tt = dt.datetime.fromisoformat(t).astimezone()
@@ -728,7 +783,8 @@ def recoger(anterior=None):
         salida["hores"] = previsio(P.AHORA, h, e, avisos, model, casa, nc, planes, salida.get("riera"), veines,
                                    nuvols_ara)
         PA.a_les_hores(salida["hores"], taula_alta)
-        salida["models"] = comprobacion_modelos(P.AHORA, h, (casa or {}).get("files", []))
+        salida["models"] = comprobacion_modelos(P.AHORA, h, (casa or {}).get("files", []),
+                                                (salida.get("ara_casa") or {}).get("pluja_3h"))
     except Exception as ex:
         salida["hores"] = salida["models"] = None
         salida["errors"].append(f"previsió: {ex}")
@@ -737,6 +793,10 @@ def recoger(anterior=None):
         antes = previsio_anterior(anterior, avisos, casa, veines, nuvols_ara)
         if antes:
             salida.update(antes)
+    # L'estat únic de la pluja (ADR 0101): el que diuen la portada, el radar,
+    # la taula, «Si surts» i el bot, i les hores, d'acord amb ell.
+    salida["pluja_ara"] = estat_pluja(salida.get("radar"), salida.get("plou_ara"), P.AHORA)
+    ajusta_hores(salida.get("hores"), salida["pluja_ara"], P.AHORA)
     # La niebla de la hora en curso (ADR 0100): la que observa el aeropuerto
     # de Sabadell, si además la estación de casa está saturada. AROME, de
     # donde sale el tipo de tiempo de cada hora, no da niebla (17-10-2026).

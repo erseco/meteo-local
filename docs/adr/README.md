@@ -102,5 +102,6 @@
 | [0098](0098-la-grafica-del-resumen-en-telegram-y-en-los-avisos.md) | La gráfica del resumen en Telegram y en los avisos | aceptado |
 | [0099](0099-historial-de-la-grafica-y-acierto-de-la-prevision.md) | Historial de la gráfica y acierto de la previsión | aceptado |
 | [0100](0100-la-niebla.md) | La niebla | en curso |
+| [0101](0101-coherencia-de-lo-que-dice-la-web.md) | Coherencia de lo que dice la web: un solo estado de la lluvia, reglas fijas y un revisor con IA | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

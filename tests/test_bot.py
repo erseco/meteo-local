@@ -39,7 +39,7 @@ class Api:
         if metode == "sendMessage" and p["chat_id"] == B.CANAL and self.canal_falla:
             raise RuntimeError("canal")
         self.enviats.append((metode, p))
-        return {}
+        return {"message_id": len(self.enviats)} if metode == "sendMessage" else {}
 
 
 def dades(generat=ARA):
@@ -407,6 +407,32 @@ class Repartiment(unittest.TestCase):
             json.dump({"avisos": avisos}, f)
         with open(os.path.join(self.dir.name, "montflorit.json"), "w") as f:
             json.dump(dades_ or dades(), f)
+
+    def test_correccio_del_revisor(self):
+        # ADR 0101: el revisor deixa la correcció a avisos.json i el bot edita
+        # els missatges ja enviats, al canal i a cada xat, en el seu idioma;
+        # una sola vegada, i no passades les 48 hores de Telegram.
+        hora = ARA.isoformat(timespec="minutes")
+        avis = {"id": "perill:1", "tipus": "perill", "hora": hora, "ca": "Mal ca", "es": "Mal es"}
+        self.escriu([avis])
+        subs = {"1": {"idioma": "ca", "avisos": ["perill"], "resum": None},
+                "2": {"idioma": "es", "avisos": ["perill"], "resum": None}}
+        api, estat = Api(), {}
+        B.reparteix(api, subs, estat, ARA)
+        self.assertEqual(len(estat["missatges"]["perill:1"]), 3)          # el canal i els dos xats
+        with open(os.path.join(self.dir.name, "avisos.json"), "w") as f:
+            json.dump({"avisos": [avis], "correccions": [{"id": "perill:1", "hora": hora, "ca": "Bé ca",
+                                                          "es": "Bien es"}]}, f)
+        api.enviats.clear()
+        B.corregeix(api, estat, ARA + dt.timedelta(minutes=5))
+        edits = sorted((p["chat_id"], p["text"]) for m, p in api.enviats if m == "editMessageText")
+        self.assertEqual(edits, sorted([(B.CANAL, "Bé ca"), ("1", "Bé ca"), ("2", "Bien es")]))
+        api.enviats.clear()
+        B.corregeix(api, estat, ARA + dt.timedelta(minutes=6))
+        self.assertEqual(api.enviats, [])                                  # una sola vegada
+        estat["corregits"].clear()
+        B.corregeix(api, estat, ARA + dt.timedelta(hours=48))
+        self.assertEqual(api.enviats, [])                                  # massa tard per a Telegram
 
     def test_cadascu_el_que_tria_i_canal(self):
         hora = ARA.isoformat(timespec="minutes")
@@ -830,8 +856,9 @@ class AvisosPublics(unittest.TestCase):
             t = AB.text_pluja(salida("rainviewer"), ARA)
         self.assertEqual(t["url"], AB.C.RADAR_EN_DIRECTE["rainviewer"])
         self.assertTrue(t["ca"].endswith(f'Radar en directe: <a href="{AB.html.escape(t["url"])}">RainViewer</a>'))
-        self.assertIn("Puede ser fuerte.\nRadar en directo:", t["es"])
-        self.assertTrue(t["push"]["ca"].endswith("Pot ser forta. Toca per veure el radar."))
+        # 5 mm/h: moderada, com al radar (franges de l'AEMET, 18-10-2026).
+        self.assertIn("Será moderada.\nRadar en directo:", t["es"])
+        self.assertTrue(t["push"]["ca"].endswith("Serà moderada. Toca per veure el radar."))
         self.assertNotIn("<a ", t["push"]["es"])
         with unittest.mock.patch.object(AB.PA, "falta_min", return_value=1):
             t = AB.text_pluja(salida("meteocat"), ARA)
@@ -871,12 +898,17 @@ class AvisosPublics(unittest.TestCase):
         # Quan ja no en queda cap, un avís que ho diu (abans només el rebia Juanjo).
         r = {"clau": "previsio:ratxa", "tipus": "ratxa", "origen": "previsio", "nivell": "groc", "valor": 75,
              "text": "Vent molt fort previst."}
-        dades = {"hores": [{}], "ara": {"temperatura": 18}}
+        dades = {"hores": [{}], "ara_casa": {"temperatura": 18}}
         estat = {}
         AB.decideix(estat, {**dades, "riscos": [r]}, ARA)
         self.assertEqual(AB.decideix(estat, dades, ARA + dt.timedelta(hours=1)), [])
         fi = AB.decideix(estat, dades, ARA + dt.timedelta(hours=3))
         self.assertEqual([(a["tipus"], a["nivell"]) for a in fi], [("perill", "fi")])
+        # Un que s'havia quedat obert de fa dies es tanca sense avisar.
+        estat2 = {}
+        AB.decideix(estat2, {**dades, "riscos": [r]}, ARA)
+        self.assertEqual(AB.decideix(estat2, dades, ARA + dt.timedelta(days=2)), [])
+        self.assertEqual(estat2["perill"], {})
         self.assertTrue(fi[0]["ca"].startswith("🟢 <b>Temps a Montflorit: ja no hi ha cap situació de perill al barri</b>"))
         self.assertEqual(AB.decideix(estat, dades, ARA + dt.timedelta(hours=4)), [])
         # Sense previsió no es pot saber: no es dona per acabat.
@@ -1056,15 +1088,15 @@ class AltesIRiscos(unittest.TestCase):
         r = {"clau": "previsio:ratxa", "tipus": "ratxa", "origen": "previsio", "nivell": "groc", "valor": 75,
              "des_de": "2026-10-07T15:00+02:00", "fins": "2026-10-07T16:00+02:00",
              "text": "Vent fort previst: ratxes de fins a 75 km/h, avui de 15 a 16 h."}
-        complet = {"riscos": [r], "hores": [{}], "ara": {"temperatura": 1}}
+        complet = {"riscos": [r], "hores": [{}], "ara_casa": {"temperatura": 1}}
         estat = {}
         self.assertEqual(len(AB.decideix(estat, complet, ARA)), 1)
         # Sense previsió ni estació durant hores: el risc segueix apuntat i no es repeteix en tornar.
-        AB.decideix(estat, {"riscos": [], "hores": None, "ara": None}, ARA + dt.timedelta(hours=5))
+        AB.decideix(estat, {"riscos": [], "hores": None, "ara_casa": None}, ARA + dt.timedelta(hours=5))
         self.assertIn("previsio:ratxa", estat["perill"])
         self.assertEqual(AB.decideix(estat, complet, ARA + dt.timedelta(hours=6)), [])
         # Amb dades i sense veure'l 3 hores, caduca i es tornaria a avisar.
-        AB.decideix(estat, {"riscos": [], "hores": [{}], "ara": {"temperatura": 1}}, ARA + dt.timedelta(hours=10))
+        AB.decideix(estat, {"riscos": [], "hores": [{}], "ara_casa": {"temperatura": 1}}, ARA + dt.timedelta(hours=10))
         self.assertNotIn("previsio:ratxa", estat["perill"])
 
 if __name__ == "__main__":

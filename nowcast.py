@@ -508,6 +508,15 @@ CREIX_GUANY_KM2 = 50        # perquè es digui: 50 km² més que fa 30 minuts
 # Les franges d'intensitat de l'AEMET (mm/h): feble, moderada, forta, molt
 # forta i torrencial; per sota de PLOU_MMH, sense pluja.
 FRANGES_MMH = (2, 15, 30, 60)
+INTENSITATS = {"ca": ("feble", "moderada", "forta", "molt forta", "torrencial"),
+               "es": ("débil", "moderada", "fuerte", "muy fuerte", "torrencial")}
+
+
+def nom_intensitat(mm_h, idioma="ca"):
+    """La paraula de les franges de l'AEMET per a una intensitat en mm/h: la
+    mateixa per al requadre del radar i per a l'avís de pluja (abans l'avís
+    deia «forta» des de 4 mm/h i el radar, des de 15; inventari del 18-10-2026)."""
+    return INTENSITATS[idioma][sum(mm_h >= l for l in FRANGES_MMH)]
 
 
 def classe(mm):

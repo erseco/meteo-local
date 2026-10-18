@@ -44,6 +44,23 @@ class Deteccio(unittest.TestCase):
         self.assertEqual(salida(hores({3: {"ratxa": 72}}))["riscos"], [])     # cal passar-lo
         self.assertIn("avui de 15 a 18 h", r[0]["text"])
 
+    def test_pluja_prevista_amb_la_probabilitat(self):
+        # Inventari del 18-10-2026: «Pluja intensa prevista: 65 mm» amb
+        # «Sense pluja prevista» al resum. Les hores per sota del 20 % no hi
+        # compten; si cap arriba al 50 %, es diu la probabilitat.
+        fort = {i: {"pluja_mm": 25} for i in range(3, 6)}
+        self.assertEqual(salida(hores({i: {**v, "probabilitat": 0.1} for i, v in fort.items()}))["riscos"], [])
+        r = salida(hores({i: {**v, "probabilitat": 0.3} for i, v in fort.items()}))["riscos"]
+        self.assertEqual(r[0]["tipus"], "pluja_3h")
+        self.assertTrue(r[0]["text"].endswith("(probabilitat fins al 30 %)."))
+        r = salida(hores({i: {**v, "probabilitat": 0.8} for i, v in fort.items()}))["riscos"]
+        self.assertNotIn("probabilitat", r[0]["text"])
+
+    def test_neu_amb_decimal(self):
+        r = salida(hores({3: {"neu": 0.3}}))["riscos"]
+        self.assertIn("0,3 cm", r[0]["text"])
+        self.assertEqual(salida(hores({3: {"neu": 0.02}}))["riscos"], [])
+
     def test_pluja_24h_sense_cap_tram_fort(self):
         h = hores({i: {"pluja_mm": 6} for i in range(4, 22)})
         r = salida(h)["riscos"]

@@ -483,7 +483,10 @@ def text_ara(dades, idioma, lloc="", moment=None):
     plou = plou_ara(dades)
     # El cel de l'hora, el de la taula de la web; si plou, el paraigua, com allà.
     f = hora_ara(dades, moment or ara())
-    icona = marca("i-umbrella") if plou else (f and emoji_cel(f))
+    # Si no plou, el cel sense pluja: «no plou» amb un núvol de pluja es
+    # contradeia (inventari del 18-10-2026).
+    icona = marca("i-umbrella") if plou else (f and (marca("i-cloud") if icona_cel(f) in ORDRE_PLUJA
+                                                     else emoji_cel(f)))
     if idioma == "es":
         return amb_icona(icona, f"Ahora mismo{lloc and ' en ' + lloc}: {graus(t)}, {'llueve' if plou else 'no llueve'}.")
     return amb_icona(icona, f"Ara mateix{lloc and ' a ' + lloc}: {graus(t)}, {'plou' if plou else 'no plou'}.")
@@ -688,8 +691,10 @@ def text_alta(tram, idioma):
     return f" (hasta {graus(alta)} en la parte alta)" if idioma == "es" else f" (fins a {graus(alta)} a la part alta)"
 
 
-def text_temperatura(tram, idioma, quan, comparacio=None, respecte="ahir"):
-    temps = [f["temperatura"] for f in tram if f.get("temperatura") is not None]
+def text_temperatura(tram, idioma, quan, comparacio=None, respecte="ahir", ara=None):
+    # Amb la d'ara, la mesurada: la de les hores és prevista, i «entre 12 i
+    # 17 °C» amb 17,5 °C a «Ara» es contradeia (inventari del 18-10-2026).
+    temps = [f["temperatura"] for f in tram if f.get("temperatura") is not None] + ([ara] if ara is not None else [])
     i = " y " if idioma == "es" else " i "
     if not temps:
         return None
@@ -912,7 +917,8 @@ def resum(dades, idioma, moment, dema=False, avui=False, telegram=False):
                   else f"<b>Avui, {nom_dia}, a Montflorit</b>",
                   text_ara(dades, idioma, moment=moment),
                   text_temperatura(tram, idioma, "Temperatura de aquí a medianoche" if idioma == "es"
-                                   else "Temperatura d'aquí a mitjanit", compara_temp(dades, tram), "ahir"),
+                                   else "Temperatura d'aquí a mitjanit", compara_temp(dades, tram), "ahir",
+                                   (dades.get("ara_casa") or {}).get("temperatura")),
                   text_pluja(tram, idioma)]
         roba = text_roba(tram, idioma)
         paraigua = text_paraigua(tram, idioma)
@@ -920,8 +926,11 @@ def resum(dades, idioma, moment, dema=False, avui=False, telegram=False):
         if avui and moment.hour >= HORA_DEMA:
             fi_nit = dt.datetime.combine(moment.date() + dt.timedelta(days=1), dt.time(6))
             nit = [f for f in hores if fi_dia <= hora(f) < fi_nit]
+            # «De matinada», de 0 a 6 h: el vespre ja és a la línia de la pluja, i
+            # «Aquesta nit» del resum de demà va de les 18 a les 6 h (inventari
+            # del 18-10-2026: la mateixa pluja amb dues franges).
             if franges(nit):
-                linies.append(amb_icona(emoji_pluja(nit), ("Esta noche: " if idioma == "es" else "Aquesta nit: ")
+                linies.append(amb_icona(emoji_pluja(nit), ("De madrugada: " if idioma == "es" else "De matinada: ")
                                         + text_franges(franges(nit), idioma) + "."))
                 paraigua = text_paraigua(tram + nit, idioma)
         linies += linies_perill_dia(dades, idioma, moment.date(), moment)
@@ -1342,8 +1351,15 @@ def text_radar_bot(dades, idioma, moment):
     # l'hora en què pararia si el radar la veu (ADR 0049).
     plou = plou_ara(dades)
     aviat = r.get("arriba") and dt.datetime.fromisoformat(r["arriba"]) <= moment + dt.timedelta(minutes=5)
-    if (plou and (r.get("arriba") or r.get("possible"))) or aviat:
+    # L'estat únic de la pluja (ADR 0101), com a la web: si només la veu el
+    # radar, es diu.
+    estat = (dades.get("pluja_ara") or {}).get("estat")
+    nomes_radar = estat == "radar_sobre" or (estat is None and aviat and not plou)
+    if (plou and (r.get("arriba") or r.get("possible"))) or aviat or estat == "radar_sobre":
         que = "Lluvia encima de Montflorit." if es else "Pluja a sobre de Montflorit."
+        if nomes_radar:
+            que = ("Lluvia encima de Montflorit según el radar; ninguna estación del barrio la mide." if es
+                   else "Pluja a sobre de Montflorit segons el radar; cap estació del barri no en mesura.")
         if r.get("fi"):
             que += (f" Pararía hacia las {h(r['fi'])} (en entrenamiento: puede fallar)." if es
                     else f" Pararia cap a les {h(r['fi'])} (en entrenament: pot fallar).")
@@ -1379,7 +1395,7 @@ def text_radar_bot(dades, idioma, moment):
                 f"fa mitja hora, {abans}.")
     # La pluja més propera, si no és a sobre, com a la web (17-10-2026), i si
     # no és la mateixa que la forta que ja s'ha dit.
-    p = r.get("propera")
+    p = None if que.startswith(("Pluja a sobre", "Lluvia encima")) else r.get("propera")
     f = r.get("forta")
     if f and p and round(p.get("km", 0)) == round(f["km"]) and p.get("rumb") == f["rumb"]:
         p = None
@@ -1460,13 +1476,14 @@ def text_avisos_actius(dades, idioma, moment):
         blocs.append(("Riera de Sant Cugat", riera))
     # Incendis a prop i Pla Alfa des del nivell 3 (ADR 0046).
     blocs += blocs_entorn(dades.get("entorn") or {}, idioma)
-    # El temps excepcional que calcula la pàgina amb els llindars de l'AEMET
+    # El temps excepcional que calcula la pàgina amb els llindars de Meteocat (des
+    # del 16-10-2026; abans deia «de l'AEMET», inventari del 18-10-2026)
     # (el mateix de l'avís «perill», ADR 0018), dit que no és oficial.
     propis = linies_riscos(dades.get("riscos") or [], idioma, moment)
     if propis:
         blocs.append(("Tiempo excepcional en Montflorit" if es else "Temps excepcional a Montflorit",
-                      [("<i>Lo calcula Temps a Montflorit con los umbrales de la AEMET: no es oficial.</i>" if es else
-                        "<i>Ho calcula Temps a Montflorit amb els llindars de l'AEMET: no és oficial.</i>")]
+                      [("<i>Lo calcula Temps a Montflorit con los umbrales de Meteocat: no es oficial.</i>" if es else
+                        "<i>Ho calcula Temps a Montflorit amb els llindars de Meteocat: no és oficial.</i>")]
                       + [html.escape(x, quote=False) for x in propis]))
     if not blocs:
         # Amb un pla amagat per falta de motiu meteorològic (ADR 0062), el pla
@@ -1799,6 +1816,45 @@ def al_canal(api, chat, memoria):
     return memoria[chat]
 
 
+def apunta_missatge(estat, clau, chat, idioma, resultat):
+    """On ha anat cada avís, per poder-lo corregir (corregeix). Només el
+    xat, el número del missatge i l'idioma, i es treu amb l'avís, als 3 dies."""
+    if isinstance(resultat, dict) and resultat.get("message_id"):
+        estat.setdefault("missatges", {}).setdefault(clau, []).append([chat, resultat["message_id"], idioma])
+
+
+# Les correccions del revisor (revisor.py, ADR 0101): el NAS les deixa a
+# avisos.json i el bot edita els missatges que ja havia enviat, al canal i a
+# cada xat. Telegram només deixa editar-los durant 48 hores; els avisos al
+# navegador no es poden corregir un cop arribats.
+EDITA_MAX_H = 47
+
+
+def corregeix(api, estat, moment):
+    correccions = llegeix(os.path.join(DADES, "avisos.json"), {}).get("correccions") or []
+    fetes = estat.setdefault("corregits", {})
+    for c in correccions:
+        clau, hora = c.get("id"), c.get("hora")
+        if not clau or fetes.get(clau) == hora:
+            continue
+        fetes[clau] = hora
+        enviat = (estat.get("enviats") or {}).get(clau)
+        if not enviat or moment - dt.datetime.fromisoformat(enviat) > dt.timedelta(hours=EDITA_MAX_H):
+            continue
+        # Si encara s'està repartint, la resta ja rep el text corregit.
+        if clau in estat.get("pendents", {}):
+            estat["pendents"][clau]["avis"].update({k: c[k] for k in ("ca", "es") if c.get(k)})
+        for chat, missatge, idioma in (estat.get("missatges") or {}).get(clau, []):
+            try:
+                api("editMessageText", chat_id=chat, message_id=missatge, parse_mode="HTML",
+                    text=UNITATS.sub("\\1\u00a0\\2", c.get(idioma) or c["ca"]), disable_web_page_preview=True)
+            except Exception as ex:
+                registra(f"correcció de {clau} a {chat}: {ex}")
+            time.sleep(0.05)
+    for k in [k for k in fetes if k not in (estat.get("enviats") or {})]:
+        del fetes[k]
+
+
 def reparteix(api, subs, estat, moment):
     """Reparte los avisos nuevos y vuelve a intentar, cada minuto mientras el
     aviso esté vigente, lo que Telegram no aceptó (el canal o algún chat):
@@ -1828,7 +1884,7 @@ def reparteix(api, subs, estat, moment):
             continue
         if p["canal"]:
             try:
-                envia(api, CANAL, a["ca"], html=True)
+                apunta_missatge(estat, clau, CANAL, "ca", envia(api, CANAL, a["ca"], html=True))
                 p["canal"] = False
             except Exception as ex:
                 registra(f"aviso {clau}: el canal no lo acepta: {ex}")
@@ -1841,7 +1897,7 @@ def reparteix(api, subs, estat, moment):
             if not sub or a["tipus"] not in sub["avisos"] or (al_canal_ok and al_canal(api, chat, memoria)):
                 continue
             try:
-                envia(api, chat, a[sub["idioma"]], html=True)
+                apunta_missatge(estat, clau, chat, sub["idioma"], envia(api, chat, a[sub["idioma"]], html=True))
             except Bloquejat:
                 treu(subs, estat, chat, "bloqueig")
             except Exception as ex:
@@ -1857,6 +1913,8 @@ def reparteix(api, subs, estat, moment):
     limit = moment - dt.timedelta(days=3)
     for k in [k for k, v in enviats.items() if dt.datetime.fromisoformat(v) < limit]:
         del enviats[k]
+    for k in [k for k in estat.get("missatges", {}) if k not in enviats]:
+        del estat["missatges"][k]
     # El resumen diario: primero el del canal, a las 7 y a las 21 (la de mañana);
     # luego el de cada uno, a su hora, salvo a quien ya le ha llegado por el
     # canal. Se apunta como hecho solo cuando Telegram lo acepta: si falla, se
@@ -1937,6 +1995,7 @@ def volta():
     fi = time.time() + DURADA_S
     while True:
         reparteix(api, subs, estat, ara())
+        corregeix(api, estat, ara())
         desa(SUBS, subs)
         desa(ESTAT, estat)
         queda = int(fi - time.time())

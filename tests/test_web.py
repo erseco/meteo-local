@@ -4,12 +4,15 @@ avisos de la página de casa, la hora en que la página vuelve a leer los
 datos y la ropa de «Si surts». Necesita Node."""
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import unittest
 
 WEB = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
+sys.path.insert(0, os.path.dirname(WEB))
+import config as C  # noqa: E402
 
 # Carga comu.js y casa.js con un DOM mínimo y evalúa una expresión con la
 # hora «ara» fijada.
@@ -416,7 +419,9 @@ class Web(unittest.TestCase):
         # Un sol model amb 1 mm i poca probabilitat: des de la 3.56.0 decideix la
         # probabilitat també en cotxe (ADR 0069), i només es diu.
         self.assertEqual(cotxe(1.7, 0.25), {"nivell": "be", "motius": ["Pot ploure a l’anada i a la tornada."]})
-        self.assertEqual(cotxe(0, 0.05), {"nivell": "be", "motius": ["Sense pluja ni vent fort."]})
+        self.assertEqual(cotxe(0, 0.05), {"nivell": "be", "motius": ["Sense pluja ni vent fort a l’anada ni a la tornada."]})
+        # Per sota del 20 %, on la taula diu «sense pluja»: «poca probabilitat» (18-10-2026).
+        self.assertEqual(cotxe(0.3, 0.15), {"nivell": "be", "motius": ["Poca probabilitat de pluja a l’anada i a la tornada."]})
         self.assertEqual(cotxe(0, 0.05, 0)["motius"], ["0\u00a0°C: compte amb el gel a primera hora."])
 
     def test_la_comprovacio_diaria_jutja_amb_les_regles_de_la_pagina(self):
@@ -457,10 +462,10 @@ class Web(unittest.TestCase):
                                f"avalua('{mitja}', {json.dumps(tram)}, [], {json.dumps(futur)}, {json.dumps(t)})",
                                "sortir.js")
         self.assertEqual(v("cotxe", False), {"nivell": "compte", "motius": [
-            "Sense pluja ni vent fort.", "Ara hi ha retencions o talls a menys de 5\u00a0km: C-58."]})
+            "Sense pluja ni vent fort a l’anada ni a la tornada.", "Ara hi ha retencions o talls a menys de 5\u00a0km: C-58."]})
         self.assertEqual(v("moto", False)["nivell"], "compte")
         # Més tard, el trànsit d'ara no compta; a peu o en bici, tampoc.
-        self.assertEqual(v("cotxe", True), {"nivell": "be", "motius": ["Sense pluja ni vent fort."]})
+        self.assertEqual(v("cotxe", True), {"nivell": "be", "motius": ["Sense pluja ni vent fort a l’anada ni a la tornada."]})
         self.assertEqual(v("bici", False)["nivell"], "be")
         # Només circulació intensa i obres: es llisten, però no canvien el consell.
         self.assertEqual(v("cotxe", False, transit[2:])["nivell"], "be")
@@ -589,25 +594,42 @@ class Web(unittest.TestCase):
         r = self.avalua("2026-10-12T10:00:00+02:00", expr, arnes=ARNES_ASYNC)
         self.assertEqual(r, ["https://m.test/consultes.html#llum", ["Enllaç copiat"]])
 
+    def test_etiquetes_amb_els_llindars_del_temps_extrem(self):
+        # Inventari del 18-10-2026: «ratxes de 71 km/h» sense l'avís, que és de
+        # més de 72. Les etiquetes del tram, amb els llindars de config.
+        with open(os.path.join(WEB, "casa.js"), encoding="utf-8") as f:
+            codi = f.read()
+        m = re.search(r"const FENOMENS = \{[^}]*ratxa: ([\d.]+), calor: ([\d.]+)", codi)
+        self.assertEqual((float(m.group(1)), float(m.group(2))),
+                         (C.RISC_LLINDARS["ratxa"][0], C.RISC_LLINDARS["calor"][0]))
+
     def test_final_de_la_pluja_en_entrenament(self):
         # «Pluja a sobre» amb l'hora en què pararia, marcat «en entrenament» (ADR 0049).
         r = {"arriba": "2026-10-08T19:00", "fi": "2026-10-08T20:10:00+02:00"}
         ara = "2026-10-08T19:02:00+02:00"
         self.assertEqual(self.avalua(ara, f"textRadar({json.dumps(r)}, true)"),
-                         ["arriba", "Pluja a sobre · pararia cap a les\u00a020:10", True])
+                         ["arriba", "Pluja a sobre · pararia cap a les\u00a020:10", True, True])
         self.assertEqual(self.avalua(ara, f"textRadar({json.dumps({**r, 'fi': None, 'sense_fi': True})}, true)"),
-                         ["arriba", "Pluja a sobre · no s’acaba en 2 hores", True])
+                         ["arriba", "Pluja a sobre · no s’acaba en 2 hores", True, True])
         # Ja plou però el radar només veu pluja possible: mana el que es mesura (08-10-2026, 20:04).
         possible = {"arriba": None, "possible": "2026-10-08T20:00", "fi": "2026-10-08T20:10:00+02:00"}
         les20 = "2026-10-08T20:04:00+02:00"
         self.assertEqual(self.avalua(les20, f"textRadar({json.dumps(possible)}, true)"),
-                         ["arriba", "Pluja a sobre · pararia cap a les\u00a020:10", True])
+                         ["arriba", "Pluja a sobre · pararia cap a les\u00a020:10", True, True])
         self.assertEqual(self.avalua(les20, f"textRadar({json.dumps(possible)}, false)")[1], "Pluja a prop: pot arribar")
         # Plou i el radar no en veu gens: sense hora.
         self.assertEqual(self.avalua(ara, 'textRadar({"arriba": null, "possible": null, "fi": null, "sense_fi": false}, true)'),
-                         ["arriba", "Pluja a sobre", False])
+                         ["arriba", "Pluja a sobre", False, True])
         self.assertEqual(self.avalua(ara, 'textRadar({"arriba": null, "possible": null}, false)')[1],
                          "El radar no veu pluja que vingui cap aquí")
+        # El radar la posa a sobre i cap estació no en mesura: es diu (ADR 0101; Juanjo,
+        # 18-10-2026: «lo decía el radar: lluvia encima, pero no había»).
+        sobre = {**r, "pluja": {"estat": "radar_sobre"}}
+        self.assertEqual(self.avalua(ara, f"textRadar({json.dumps(sobre)}, false)")[1],
+                         "Pluja a sobre segons el radar · cap estació del barri no en mesura · pararia cap a les\u00a020:10")
+        # Amb l'estat, mana l'estat: «arriba» lluny no és «a sobre».
+        lluny = {"arriba": "2026-10-08T19:30", "pluja": {"estat": "arriba"}}
+        self.assertTrue(self.avalua(ara, f"textRadar({json.dumps(lluny)}, false)")[1][0].startswith("Pluja "))
         # Pluja forta a prop que no ve cap aquí: al titular (17-10-2026, amb trons).
         forta = {"arriba": None, "possible": None, "forta": {"km": 10.2, "rumb": "al nord", "classe": 4}}
         self.assertEqual(self.avalua(ara, f"textRadar({json.dumps(forta)}, false)"),
@@ -624,7 +646,7 @@ class Web(unittest.TestCase):
         self.assertIsNone(self.avalua(ara, 'textCreixement({"creixement": {"creix": false, "pct": 3}})'))
         # Sense dada (dades d'abans), com sempre.
         self.assertEqual(self.avalua(ara, 'textRadar({"arriba": "2026-10-08T19:00"}, true)'),
-                         ["arriba", "Pluja a sobre", False])
+                         ["arriba", "Pluja a sobre", False, True])
 
     def test_llegenda_del_mapa_nomes_el_que_es_dibuixa(self):
         # 17-10-2026: deia «moderada» i «forta» per pluja de la vora del tros,

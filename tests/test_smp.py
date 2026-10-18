@@ -260,6 +260,8 @@ class Smp(unittest.TestCase):
                          "🟡 Perill moderat per «Intensitat de pluja en 30 minuts»: dilluns 19 de 12 a 24 h.\n"
                          "És un avís oficial: segueix les indicacions de Protecció Civil.")
         self.assertTrue(fitxa()["es"].startswith("🟡 <b>Meteocat: aviso de peligro moderado por lluvia"))
+        # I diu quan comença el que queda: la fitxa en surt «Previst» (ADR 0101).
+        self.assertEqual(fitxa()["comenca"], dt.datetime(2026, 10, 19, 12).astimezone().isoformat(timespec="minutes"))
         self.assertNotIn("fi", fitxa())
         # Passat el dilluns, el final, encara que Meteocat no l'hagi retirat.
         self.assertEqual(passa(avisos, dt.datetime(2026, 10, 19, 23, 55).astimezone()), [])
@@ -268,6 +270,16 @@ class Smp(unittest.TestCase):
         fi = passa(avisos, dimarts + dt.timedelta(minutes=C.SMP_FI_MIN))
         self.assertEqual(fi[0]["ca"], "🟢 <b>Meteocat: ja no hi ha cap avís de perill per al Vallès Occidental</b>")
         self.assertIn("fi", fitxa())
+
+    def test_franja_de_l_aemet_amb_el_dia(self):
+        # 18-10-2026: les fitxes deien «Des de demà…» d'avisos de dies abans.
+        ara = dt.datetime(2026, 10, 18, 0, 15).astimezone()
+        self.assertEqual(AB.franja("2026-10-19T16:00:00+02:00", "2026-10-19T23:59:59+02:00", ara, "ca"),
+                         "Des del dilluns 19 a les 16 h fins a mitjanit.")
+        self.assertEqual(AB.franja("2026-10-19T16:00:00+02:00", "2026-10-20T03:59:59+02:00", ara, "es"),
+                         "Desde el lunes 19 a las 16 h hasta el martes 20 a las 4 h.")
+        self.assertEqual(AB.franja("2026-10-18T00:00:00+02:00", "2026-10-18T03:59:59+02:00", ara, "ca"),
+                         "Diumenge 18, de les 0 h a les 4 h.")
 
     def test_l_estat_d_abans_avisa_el_que_hi_ha(self):
         # Fins a la 3.86.3 l'estat era {clau: grau} i, com que la lectura fallava,

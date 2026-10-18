@@ -804,7 +804,7 @@ function blocRiscos(riscos) {
     // El text ve fet en català a les dades; en un altre idioma es torna a fer.
     const li = element('li', null, IDIOMA.risc ? IDIOMA.risc(r) : r.text);
     const llindar = coma(r.llindar, 0).replace('-', '\u2212');
-    li.append(' ', element('span', 'detall', T`(llindar ${TD(r.nivell)} de l\u2019AEMET: ${llindar} ${r.unitat})`));
+    li.append(' ', element('span', 'detall', T`(llindar ${TD(r.nivell)} de Meteocat: ${llindar} ${r.unitat})`));
     llista.append(li);
   }
   caixa.append(llista);

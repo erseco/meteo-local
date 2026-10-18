@@ -11,6 +11,10 @@
 # (aprenentatge.py). Mientras exista /estat/vigila-pluviometre.json, cada hora
 # comprueba si el pluviómetro de casa marca la lluvia débil; al tener
 # resultado avisa y lo borra (pluviometre.py, ADR 0017).
+# Tras cada publicación, el revisor de coherencia (revisor.py, ADR 0101)
+# mira si toca revisar con IA lo que dice la web y lo que se ha enviado; va
+# aparte, para no frenar el reloj. Cada minuto lee los botones de Juanjo y,
+# si se ha aplicado o deshecho una corrección, publica enseguida.
 # Tras cada publicación apunta en el registro las situaciones de peligro
 # (riscos.py, ADR 0018), la lluvia que el radar anuncia y si acertó
 # (pluja_arriba.py, ADR 0022) y los episodios de la riera de Sant Cugat
@@ -80,11 +84,28 @@ riscos() {
   [ -z "${aviso:-}" ] || registro "riera: $aviso"
 }
 
+revisor() {
+  [ -f "$REPO/revisor.py" ] && [ -f "$ESTAT_DIR/avisos.json" ] || return 0
+  ( cd "$REPO" && python3 revisor.py revisa "$ESTAT_DIR/casa.json" "$ESTAT_DIR/avisos.json" 2>&1 \
+      | while IFS= read -r linia; do registro "revisor: $linia"; done ) &
+}
+
+respostes_revisor() {
+  [ -f "$REPO/revisor.py" ] || return 0
+  (cd "$REPO" && python3 revisor.py respostes >/dev/null 2>&1) || true
+  if [ -f "$ESTAT_DIR/publica-ara" ]; then
+    rm -f "$ESTAT_DIR/publica-ara"
+    registro "corrección del revisor: se publica ya"
+    pasada
+  fi
+}
+
 pasada() {
   prepara || return
   if ESTAT_DIR="$ESTAT_DIR" bash "$REPO/publica.sh" >/dev/null; then
     registro "publicado"
     riscos
+    revisor
   else
     registro "ha fallado la publicación"
   fi
@@ -144,6 +165,7 @@ while true; do
   fi
   [ -d "$REPO/.git" ] && reintenta_avisos
   [ -d "$REPO/.git" ] && respostes_boira
+  [ -d "$REPO/.git" ] && respostes_revisor
   # La copia del registro, una vez al día a partir de HORA_COPIA.
   if [ -f "$REPO/nas/copia-registre.sh" ] && [[ "$ahora" > "$HORA_COPIA" || "$ahora" = "$HORA_COPIA" ]] \
       && [ "$(cat "$ESTAT_DIR/copia-feta" 2>/dev/null)" != "$(date +%F)" ]; then
