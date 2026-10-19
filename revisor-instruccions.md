@@ -54,9 +54,21 @@ inclúyelas si son reales, explicando por qué.
   estaciones marquen 0 mm, ni que la tabla y la previsión no lo tengan en
   cuenta (aún no se usa en la previsión, ADR 0019).
 - Meteocat manda sobre AEMET en el mismo fenómeno; AEMET sale para lo que
-  Meteocat no cubre.
-- La ficha de un aviso de Meteocat enseña siempre su contenido vigente (las
-  franjas de la última emisión), y «actualitzat a les…» es la hora del último
+  Meteocat no cubre, también en las horas de un aviso que Meteocat solo
+  cubre en parte (`inicio_visible` y `fin_visible`, desde la 3.154.0).
+- Si en los datos `aemet` (los avisos de AEMET) es null, es que esa pasada no se
+  ha podido leer AEMET (la página lo dice con «No s'han pogut llegir totes
+  les fonts»): las fichas de AEMET abiertas se mantienen tal cual hasta que se
+  pueda leer otra vez, porque una lectura fallida no significa que el aviso se
+  haya retirado. No es un error. Un aviso retirado de verdad llega como una
+  lista sin él, y entonces la ficha se cierra.
+- La ficha de un aviso de Meteocat enseña siempre su contenido vigente: las
+  franjas de la última emisión **recortadas a las horas que quedan**, desde
+  la hora en curso (ADR 0092, 3.135.0). A las 10:16, unos datos con
+  «Acumulació» de 6 a 24 h salen en la ficha y en la portada como «de 10 a
+  24 h» (y la franja de 6 a 12 h, «de 10 a 12 h»): no es un error ni faltan
+  horas. Compara con las horas que quedan, no con las de la emisión. Y
+  «actualitzat a les…» es la hora del último
   mensaje enviado a los vecinos, no la de la última emisión de Meteocat. Solo
   se avisa de lo que importa a quien lo lee: nivel que sube, fenómeno nuevo u
   horas nuevas (ADR 0092). Que una emisión posterior acorte o desplace una
