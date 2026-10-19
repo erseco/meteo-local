@@ -664,6 +664,9 @@ def decideix(estat, salida, ahora):
             if vist < dt.timedelta(hours=C.RISC_FI_H + 1):
                 acabats.append(clau)
             del actius[clau]
+    # El que hi ha ara, per tenir al dia la fitxa oberta de «Perill» (historial).
+    riscos_ara = salida.get("riscos") or []
+    estat["perill_text"] = text_perill(riscos_ara, ahora)[0] if riscos_ara else None
     if nous_perill:
         text, pitjor = text_perill(nous_perill, ahora)
         afegeix("perill", hora + ":" + ",".join(r["clau"] for r in nous_perill), text, pitjor,
@@ -969,6 +972,15 @@ def historial(estat, nous, ahora, anterior=None):
         mc.update(ca=ara_smp["ca"], es=ara_smp["es"])
     if mc and ara_smp and not mc.get("fi") and ara_smp.get("comenca"):
         mc["comenca"] = ara_smp["comenca"]
+    # La fitxa oberta del temps extrem d'aquesta web, igual: els riscos d'ara,
+    # cadascun amb d'on surt i quant s'hi pot confiar, que canvia d'una passada
+    # a l'altra (riscos.font). Sense «darrer»: no és un avís nou (Juanjo,
+    # 19-10-2026: la fitxa de les 13:09 deia «Calculat per aquesta aplicació»
+    # d'unes ratxes que només preveia un model).
+    propi = next((x for x in reversed(h) if x["clau"] == "propi" and not x.get("fi")), None)
+    ara_propi = estat.get("perill_text")
+    if propi and ara_propi and cos_avis(propi["ca"]) != cos_avis(ara_propi["ca"]):
+        propi.update(ca=ara_propi["ca"], es=ara_propi["es"])
     for e in h:
         if e["clau"] in (estat.get("aemet_coberts") or []) and not e.get("fi"):
             e.update(fi=ahora.isoformat(timespec="minutes"), fi_ca=SUBSTITUIT["ca"], fi_es=SUBSTITUIT["es"])

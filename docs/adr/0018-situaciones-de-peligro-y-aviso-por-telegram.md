@@ -157,6 +157,14 @@ añadir una i de info que lleve a la explicación de la alerta».
   de las 24 horas), a «Com funciona». La leyenda lo explica. En móvil, la
   columna de viento se ensancha solo en los tramos que lo llevan.
 
+- **La ficha abierta, al día** (3.156.1): como la de Meteocat, la ficha
+  abierta del temps extrem en «Perill» toma en cada pasada los riesgos de
+  ahora con su origen (`estat["perill_text"]`), sin `darrer`, de modo que no
+  se marca «Nou». Así la del 19-10-2026 a las 13:09, publicada con «Calculat
+  per aquesta aplicació», se corrige sola, y la fiabilidad que cambia de una
+  pasada a otra (cuántos modelos llegan) está siempre al día. Prueba:
+  `tests/test_historial.py`.
+
 Validación: `tests/test_riscos.py` (`FontTest`), `tests/test_web.py`
 (`test_ratxa_de_l_avis_a_la_taula` y el umbral naranja igual al de
 `config`); la web generada con los datos del 19-10-2026 en Chromium y

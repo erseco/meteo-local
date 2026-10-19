@@ -35,6 +35,18 @@ class Historial(unittest.TestCase):
         self.assertEqual(len(h), 1)
         self.assertEqual((h[0]["nivell"], h[0]["ca"]), ("perill", "després"))
 
+    def test_la_fitxa_del_temps_extrem_amb_els_riscos_d_ara(self):
+        # 19-10-2026: la fitxa oberta diu d'on surt cada risc ara (riscos.font), sense marcar-se nova.
+        estat = {}
+        AB.historial(estat, [avis(0, "propi", "groc", "🟡 títol\nVent fort previst.\nCalculat per aquesta aplicació, no oficial.")], ARA)
+        estat["perill_text"] = {"ca": "🟡 títol\nVent fort previst.\nOrigen: Météo-France.\nAvís no oficial.", "es": "x"}
+        h = AB.historial(estat, [], ARA + dt.timedelta(minutes=15))
+        self.assertIn("Origen: Météo-France.", h[0]["ca"])
+        self.assertNotIn("darrer", h[0])
+        # Sense riscos ara (falta la previsió), es queda com estava.
+        estat["perill_text"] = None
+        self.assertIn("Origen: Météo-France.", AB.historial(estat, [], ARA + dt.timedelta(minutes=30))[0]["ca"])
+
     def test_un_episodi_nou_despres_d_un_d_acabat(self):
         estat = {}
         AB.historial(estat, [avis(0, "propi", "groc"), avis(10, "propi", "fi")], ARA)
