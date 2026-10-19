@@ -67,6 +67,7 @@ var IDIOMA = {
     "Des de {0}": "Desde {0}",
     "Acabat": "Terminado",
     "L’AEMET l’ha allargat fins a {0}.": "La AEMET lo ha alargado hasta el {0}.",
+    "L’AEMET l’ha allargat.": "La AEMET lo ha alargado.",
     "Substituït per ": "Sustituido por ", "l’avís de Meteocat": "el aviso de Meteocat",
     "Actiu ara": "Activo ahora",
     "Previst": "Previsto",

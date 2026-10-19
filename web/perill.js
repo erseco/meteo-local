@@ -124,9 +124,12 @@ function fitxa(e, ara) {
   // El text diu el final amb què es va publicar; si l'AEMET l'ha allargat,
   // la fitxa ho diu sota la primera línia, la de quan dura (revisor,
   // 18-10-2026; ADR 0101).
+  // Si la primera línia ja diu el final nou (`franja_fins`, avisos_bot.refa_franja),
+  // només que l'ha allargat: deia «de les 6 h a les 7 h» i, a sota, «fins a
+  // dt. 20/10, 08:59» (revisor, 19-10-2026).
   const allargat = e.allargat_de && e.fins && new Date(e.fins) > new Date(e.allargat_de);
-  const linies = allargat ? [...resta.slice(0, 1), ...trossos(T`L’AEMET l’ha allargat fins a ${moment(e.fins)}.`),
-    ...resta.slice(1)] : resta;
+  const nota = e.franja_fins === e.fins ? T('L’AEMET l’ha allargat.') : T`L’AEMET l’ha allargat fins a ${moment(e.fins)}.`;
+  const linies = allargat ? [...resta.slice(0, 1), ...trossos(nota), ...resta.slice(1)] : resta;
   const compartit = textCompartit([primera, ...linies, ...(textFi ? trossos(textFi) : [])]);
   cap.append(titol, botoCompartir(art.id, primera.map((t) => t.t).join('').trim(), compartit));
   const estat = element('p', 'episodi-quan');

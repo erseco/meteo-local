@@ -391,6 +391,33 @@ class Smp(unittest.TestCase):
         estat = {"historial": [fitxa(dema_t, fi)], "aemet_vigents": None}
         self.assertNotIn("fi", AB.historial(estat, [], AHORA)[0])
 
+    def test_la_fitxa_de_l_aemet_allargada_diu_el_final_nou(self):
+        # 19-10-2026: «Dimarts 20, de les 6 h a les 7 h» i, a sota, «L'AEMET l'ha allargat fins a
+        # dt. 20/10, 08:59»; la portada deia de 6 a 9 (revisor). La línia passa a dir el final nou.
+        k = "aemet:pluja:2026-10-20T04:00:00+02:00"
+        ca = "🟡 <b>AEMET: avís groc per pluja al Vallès</b>\nDimarts 20, de les 6 h a les 7 h.\n«20 mm.»"
+        es = "🟡 <b>AEMET: aviso amarillo por lluvia en el Vallès</b>\nMartes 20, de las 6 h a las 7 h.\n«20 mm.»"
+        fitxa = {"clau": k, "tipus": "perill", "inici": "2026-10-19T10:30+02:00", "nivell": "groc", "ca": ca, "es": es,
+                 "fins": "2026-10-20T06:59:59+02:00", "comenca": "2026-10-20T06:00:00+02:00"}
+        estat = {"historial": [fitxa], "aemet_vigents": {k: {"fin": "2026-10-20T08:59:59+02:00", "cobert": False}}}
+        e = AB.historial(estat, [], AHORA)[0]
+        self.assertEqual(e["ca"].split("\n")[1], "Dimarts 20, de les 6 h a les 9 h.")
+        self.assertEqual(e["es"].split("\n")[1], "Martes 20, de las 6 h a las 9 h.")
+        self.assertEqual((e["allargat_de"], e["franja_fins"]), ("2026-10-20T06:59:59+02:00", "2026-10-20T08:59:59+02:00"))
+        # Si l'allarga una altra vegada, també; i la fitxa que ja estava allargada abans d'aquesta
+        # versió (sense franja_fins) es corregeix a la passada següent.
+        estat["aemet_vigents"][k]["fin"] = "2026-10-20T11:59:59+02:00"
+        e = AB.historial(estat, [], AHORA)[0]
+        self.assertEqual(e["ca"].split("\n")[1], "Dimarts 20, de les 6 h a les 12 h.")
+        vella = dict(fitxa, fins="2026-10-20T08:59:59+02:00", allargat_de="2026-10-20T06:59:59+02:00")
+        e = AB.historial({"historial": [vella], "aemet_vigents": {k: {"fin": vella["fins"], "cobert": False}}}, [], AHORA)[0]
+        self.assertEqual(e["ca"].split("\n")[1], "Dimarts 20, de les 6 h a les 9 h.")
+        # Sense la línia (la va treure el revisor), no es toca.
+        sense = dict(fitxa, ca="🟡 <b>AEMET</b>\nÉs un avís oficial.", es="🟡 <b>AEMET</b>\nEs un aviso oficial.")
+        e = AB.historial({"historial": [sense], "aemet_vigents": {k: {"fin": vella["fins"], "cobert": False}}}, [], AHORA)[0]
+        self.assertEqual(e["ca"], sense["ca"])
+        self.assertNotIn("franja_fins", e)
+
     def test_avis_a_juanjo_en_el_moment(self):
         # Si la passada no ha pogut llegir Meteocat, una vegada; i quan torna.
         from unittest import mock

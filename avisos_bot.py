@@ -892,6 +892,30 @@ def posa_fins(e, fins):
     e["fins"] = fins
 
 
+def refa_franja(e):
+    """La línea de cuándo dura, con el final que AEMET ha alargado: «de les 6 h
+    a les 7 h» pasa a «de les 6 h a les 9 h», en lugar de dejarla y decir
+    debajo hasta cuándo va (revisor, 19-10-2026: la ficha decía las dos cosas
+    y la portada, de 6 a 9). `franja_fins` es el final que dice ahora la línea;
+    con él la web sabe que ya no hace falta repetir la hora. Si la línea no
+    está (la quitó el revisor o es de un texto antiguo, con «demà»), no se toca."""
+    fins_text = e.get("franja_fins") or e.get("allargat_de")
+    if not fins_text or not e.get("fins") or fins_text == e["fins"]:
+        return
+    ini = e.get("comenca") or e["clau"].split(":", 2)[2]
+    t = dt.datetime.fromisoformat(e["fins"])
+    canviat = False
+    for idioma in ("ca", "es"):
+        abans, ara = franja(ini, fins_text, t, idioma), franja(ini, e["fins"], t, idioma)
+        linies = e[idioma].split("\n")
+        if abans in linies:
+            linies[linies.index(abans)] = ara
+            e[idioma] = "\n".join(linies)
+            canviat = True
+    if canviat:
+        e["franja_fins"] = e["fins"]
+
+
 def tanca_aemet(h, vigents, ahora):
     """Las fichas de AEMET al día con lo que publica AEMET ahora (Juanjo,
     17-10-2026: «Perill» enseñaba como activos dos avisos que AEMET ya había
@@ -908,6 +932,7 @@ def tanca_aemet(h, vigents, ahora):
         v = vigents.get(e["clau"])
         if v:
             posa_fins(e, v["fin"])
+            refa_franja(e)
             continue
         if e.get("fins") and dt.datetime.fromisoformat(e["fins"]) <= ahora:
             continue        # ja ha acabat a la seva hora
@@ -954,6 +979,7 @@ def historial(estat, nous, ahora, anterior=None):
                 obert["nivell"] = a.get("nivell")
             obert.update(ca=a["ca"], es=a["es"], darrer=a["hora"],
                          **{k: a[k] for k in ("enllac", "comenca") if a.get(k)})
+            obert.pop("franja_fins", None)      # el text nou diu el seu final
             posa_fins(obert, a.get("fins"))
         else:
             h.append({"clau": ep, "tipus": a["tipus"], "inici": a["hora"], "nivell": a.get("nivell"),

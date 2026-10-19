@@ -359,3 +359,24 @@ Validación: `tests/test_riscos.py`, `tests/test_web.py`,
 `tests/test_historial.py`; «Perill» con la ficha en pausa y la leyenda, en
 Chromium y Firefox, móvil, claro y oscuro; axe-core sin fallos en las dos
 páginas.
+
+
+## Cambio del 19-10-2026 (3.159.2): los hallazgos del revisor de 15:28 y 16:22
+
+- **Ficha de AEMET alargada** (15:28): decía «Dimarts 20, de les 6 h a les
+  7 h» y debajo «L'AEMET l'ha allargat fins a dt. 20/10, 08:59», con la
+  portada de 6 a 9. Ahora, cuando AEMET alarga un aviso, `avisos_bot.refa_franja`
+  rehace la línea de cuándo dura con el final nuevo («de les 6 h a les
+  9 h»), en catalán y castellano, y guarda en `franja_fins` el final que dice;
+  la web, con la línea ya al día, solo añade «L'AEMET l'ha allargat.». Si la
+  línea no está (la quitó el revisor, o es un texto anterior con «demà»), se
+  queda como antes, con la hora debajo. Las fichas ya alargadas se corrigen
+  en la pasada siguiente.
+- **Bloque del radar** (16:22): decía «La previsió per hores sí que dona
+  pluja a partir de les 17 h (56 %)» con la hora en curso, de 16 a 17, al
+  78 %. Ahora se mira primero la hora en curso («per a aquesta hora») y solo
+  si no da lluvia, la primera hora siguiente.
+
+Validación: `tests/test_smp.py` (`test_la_fitxa_de_l_aemet_allargada_diu_el_final_nou`);
+el bloque del radar, con las horas de las 16:22, en Node; «Perill» y la
+portada con los datos del NAS, en Chromium y Firefox, móvil y escritorio.

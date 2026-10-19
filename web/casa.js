@@ -596,12 +596,13 @@ function blocRadar(r, plou, hores) {
     const resta = (x) => (x.segons_estacio ? T`${textPct(x)}, per la pluja que ha caigut fa poc al barri.`
       : aProp ? T`${textPct(x)}: pot ser pluja de prop que creixi o es desviï cap aquí.`
         : T`${textPct(x)}: seria pluja que es formi a prop, que el radar encara no veu.`);
-    if (f && new Date(f.hora) < new Date(ara.getTime() + 2 * 3600e3)) {
+    // Primer, la de l'hora en curs: si ja en dona, «a partir de les 17 h» deia
+    // l'hora següent amb la de les 16 a la taula (revisor, 19-10-2026).
+    const g = (hores || []).find((x) => new Date(x.hora) <= ara && new Date(x.fins) > ara && plujaHora(x));
+    if (g) cos.append(element('p', 'radar-propera', T('La previsió per hores sí que dona pluja per a aquesta hora') + resta(g)));
+    else if (f && new Date(f.hora) < new Date(ara.getTime() + 2 * 3600e3)) {
       cos.append(element('p', 'radar-propera',
         T`La previsió per hores sí que dona pluja a partir de les ${new Date(f.hora).getHours()}\u00a0h` + resta(f)));
-    } else {
-      const g = (hores || []).find((x) => new Date(x.hora) <= ara && new Date(x.fins) > ara && plujaHora(x));
-      if (g) cos.append(element('p', 'radar-propera', T('La previsió per hores sí que dona pluja per a aquesta hora') + resta(g)));
     }
   }
   // La pluja més propera, si no és a sobre (Juanjo, 17-10-2026), i si no és
