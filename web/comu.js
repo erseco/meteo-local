@@ -798,6 +798,15 @@ const NOM_RISC = () => ({ pluja_30min: T('pluja intensa'), pluja_3h: T('pluja in
 
 // El temps extrem que calcula la pàgina: situacions de perill segons el que mesuren les estacions i el que preveu
 // la pàgina (riscos.py, ADR 0018), amb el color del nivell de l'AEMET.
+// La xifra d'un risc com la diu el text (riscos.num): sense decimals, les
+// meitats cap amunt; la temperatura i la neu, amb un si no és enter. Abans, la
+// línia curta deia «vent fort (92,5 km/h)» i el text «92» (revisor, 19-10-2026).
+function numRisc(r) {
+  const v = Number(r.valor);
+  const ambDecimal = ['calor', 'fred', 'neu_24h'].includes(r.tipus) && Math.abs(v - Math.round(v)) >= 0.05;
+  return (ambDecimal ? v.toFixed(1) : v.toFixed(0)).replace('.', ',').replace('-', '\u2212');
+}
+
 function blocRiscos(riscos) {
   if (!riscos || !riscos.length) return null;
   const pitjor = riscos[0].nivell;
@@ -807,7 +816,7 @@ function blocRiscos(riscos) {
   caixa.dataset.clau = 'risc:' + riscos.map((r) => `${r.clau}:${r.nivell}`).join(',');
   // Qui avisa, primer (Juanjo, 17-10-2026).
   caixa.dataset.curt = T`Temps a Montflorit: risc ${TD(pitjor)} (no oficial)` + ': '
-    + riscos.map((r) => `${NOM_RISC()[r.tipus] || r.tipus} (${String(r.valor).replace('.', ',')} ${r.unitat})`).join(', ') + '.';
+    + riscos.map((r) => `${NOM_RISC()[r.tipus] || r.tipus} (${numRisc(r)} ${r.unitat})`).join(', ') + '.';
   const titol = element('p', 'titol-risc');
   titol.append(icona('i-triangle-alert'), T`Temps a Montflorit: risc ${TD(pitjor)}`);
   caixa.append(titol);
@@ -1498,7 +1507,8 @@ const CLAU_PERILL_VIST = 'meteo.perill-vist-fins';
 // que marcar como nuevo lo que sea nuevo»).
 function perillsNous(historial, vist, ara = new Date()) {
   return (historial || []).filter((e) => {
-    const actiu = !e.fi && !(e.fins && new Date(e.fins) <= ara);
+    // En pausa (la previsió ja no el veu i espera a tancar-se): no és actiu.
+    const actiu = !e.fi && !e.en_pausa && !(e.fins && new Date(e.fins) <= ara);
     const hora = e.clau ? publicacioEpisodi(e).hora : new Date(e.darrer || e.inici);
     return actiu && (!vist || hora.getTime() > new Date(vist).getTime());
   });

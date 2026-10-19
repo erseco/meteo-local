@@ -35,6 +35,26 @@ class Historial(unittest.TestCase):
         self.assertEqual(len(h), 1)
         self.assertEqual((h[0]["nivell"], h[0]["ca"]), ("perill", "després"))
 
+    def test_sense_risc_la_fitxa_espera_en_pausa(self):
+        # Revisor, 19-10-2026: «Perill» donava per activa una fitxa que la portada ja no llistava.
+        estat = {}
+        AB.historial(estat, [avis(0, "propi", "groc", "🟡 títol\nVent fort.")], ARA)
+        estat.update(perill_text=None, perill_buit=True)
+        h = AB.historial(estat, [], ARA + dt.timedelta(minutes=30))
+        self.assertEqual(h[0]["en_pausa"][11:16], "12:30")
+        # Sense dades no es decideix res; si el risc torna, deixa d'estar en pausa.
+        estat.update(perill_buit=False)
+        self.assertIn("en_pausa", AB.historial(estat, [], ARA + dt.timedelta(minutes=45))[0])
+        estat.update(perill_text={"ca": "🟡 títol\nVent fort.", "es": "x"})
+        self.assertNotIn("en_pausa", AB.historial(estat, [], ARA + dt.timedelta(minutes=60))[0])
+
+    def test_el_comunicat_nou_posa_l_hora_del_missatge(self):
+        # Revisor, 19-10-2026: «actualitzat avui 12:08» (el PDF) amb el missatge enviat a les 12:15.
+        estat = {}
+        AB.historial(estat, [avis(0, "pla:INUNCAT", "pc", "pla")], ARA)
+        h = AB.historial(estat, [avis(15, "pla:INUNCAT", "pc", "comunicat", nomes_avis=True)], ARA)
+        self.assertEqual((h[0]["ca"], h[0]["darrer"][11:16]), ("pla", "12:15"))
+
     def test_la_fitxa_del_temps_extrem_amb_els_riscos_d_ara(self):
         # 19-10-2026: la fitxa oberta diu d'on surt cada risc ara (riscos.font), sense marcar-se nova.
         estat = {}
@@ -94,7 +114,8 @@ class Historial(unittest.TestCase):
         AB.historial(estat, [avis(0, "pla:INUNCAT", "pc", "alerta")], ARA)
         nou = avis(30, "pla:INUNCAT", "pc", "comunicat nou", nomes_avis=True)
         h = AB.historial(estat, [nou], ARA)
-        self.assertEqual((len(h), h[0]["ca"], h[0].get("darrer")), (1, "alerta", None))
+        # El text no canvia; «actualitzat» diu l'hora del missatge (revisor, 19-10-2026).
+        self.assertEqual((len(h), h[0]["ca"], h[0].get("darrer")[11:16]), (1, "alerta", "12:30"))
         self.assertEqual(AB.pagina(nou, h), "perill.html#" + AB.id_fitxa("pla:INUNCAT", h[0]["inici"]))
 
     def test_es_guarda_un_any(self):

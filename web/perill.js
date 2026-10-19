@@ -145,6 +145,9 @@ function fitxa(e, ara) {
     // Encara no ha començat (l'avís de demà): «Previst», no «Actiu ara»
     // (revisor, 18-10-2026; ADR 0101).
     estat.append(element('span', 'episodi-previst', T('Previst')), ' · ');
+  } else if (e.en_pausa) {
+    // La previsió ja no veu el risc; es tanca si no torna (avisos_bot, revisor 19-10-2026).
+    estat.append(element('span', 'episodi-previst', T('Ja no es preveu')), ' · ');
   } else estat.append(element('span', 'episodi-actiu', T('Actiu ara')), ' · ');
   estat.append(!fi && e.comenca && new Date(e.comenca) > ara ? T`Comença ${moment(e.comenca)}` : quan(e, fi));
   // L'última actualització, com a «Avisos actius» (Juanjo, 17-10-2026).
@@ -152,6 +155,9 @@ function fitxa(e, ara) {
   if (pub && pub.actualitzat) estat.append(` · ${textPublicacio(pub)}`);
   art.append(cap, estat);
   const cos = nodesText(linies);
+  if (!fi && e.en_pausa) {
+    cos.unshift(element('p', null, T`La previsió ja no ho veu des de ${moment(e.en_pausa)}. Si no torna en 3 hores, es dona per acabat.`));
+  }
   // Els avisos que calcula aquesta web (la riera i el temps extrem) no tenen
   // cap font oficial on ampliar-los: porten a «Com funciona», on s'expliquen
   // amb paraules corrents, no a la metodologia (Juanjo, 12-10-2026; ADR 0076).

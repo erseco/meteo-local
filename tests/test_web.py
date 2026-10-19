@@ -571,7 +571,8 @@ class Web(unittest.TestCase):
         # Si no plou ara, o si se surt més tard, com sempre.
         self.assertEqual(avalua("moto", estat="no")["motius"], ["Pluja probable a la tornada (9\u00a0h)."])
         self.assertEqual(avalua("moto", futur=True)["motius"], ["Pluja probable a la tornada (9\u00a0h)."])
-        self.assertEqual(avalua("peu", futur=True)["motius"], ["Pot ploure mentre ets fora: porta paraigua."])
+        # A peu, «pluja probable» amb el mateix llindar que els vehicles (revisor, 19-10-2026: deia «pot ploure»).
+        self.assertEqual(avalua("peu", futur=True)["motius"], ["Pluja probable mentre ets fora: porta paraigua."])
 
     def test_pausa_en_el_risc_de_pluja_no_es_el_final(self):
         # Revisor, 18-10-2026: «Cap a les 15 h s'acaba el risc de pluja» amb pluja possible de 16 a 0 h.
@@ -669,6 +670,13 @@ class Web(unittest.TestCase):
                          (C.RISC_LLINDARS["ratxa"][0], C.RISC_LLINDARS["calor"][0]))
         m = re.search(r"const RATXA_TARONJA = ([\d.]+);", codi)
         self.assertEqual(float(m.group(1)), C.RISC_LLINDARS["ratxa"][1])
+
+    def test_xifra_del_risc_com_el_text(self):
+        # Revisor, 19-10-2026: «vent fort (92,5 km/h)» a la portada, «92» a l'avís i «93» a la taula.
+        r = self.avalua("2026-10-19T14:00:00+02:00",
+                        "[numRisc({tipus: 'ratxa', valor: 92.5}), numRisc({tipus: 'calor', valor: 36.85}),"
+                        " numRisc({tipus: 'calor', valor: 37}), numRisc({tipus: 'fred', valor: -1.6})]")
+        self.assertEqual(r, ["93", "36,9", "37", "\u22121,6"])
 
     def test_ratxa_de_l_avis_a_la_taula(self):
         # 19-10-2026: l'avís de vent fort (77 km/h) i, a la taula, «13 (77)» com qualsevol
@@ -927,6 +935,8 @@ class Web(unittest.TestCase):
         self.assertEqual(nous(None), ["2026-10-12T05:00+02:00"])
         self.assertEqual(nous("2026-10-12T05:10:00+02:00"), [])
         self.assertEqual(self.avalua(ara, "perillsNous([{inici: '2026-10-11T19:30+02:00', fi: '2026-10-11T19:36+02:00'}], null)"), [])
+        # En pausa (la previsió ja no el veu i espera a tancar-se), no és nou ni actiu (revisor, 19-10-2026).
+        self.assertEqual(self.avalua(ara, "perillsNous([{inici: '2026-10-12T05:00+02:00', en_pausa: '2026-10-12T05:20+02:00'}], null)"), [])
         # Un avís actualitzat després de l'última visita també és nou (19-10-2026): l'hora de
         # publicació és la de «Nou» a «Avisos actius» (darrer, o el comunicat d'un pla).
         actualitzat = [{"clau": "smp:pluja", "inici": "2026-10-11T19:30+02:00", "darrer": "2026-10-12T05:20+02:00"}]
@@ -1052,6 +1062,16 @@ class Web(unittest.TestCase):
                          ["Perill alt: pluja · Avís taronja: tempestes",
                           "Meteocat: perill alt per pluja; AEMET: avís taronja per tempestes"])
         self.assertIsNone(self.avalua(ara, f"perillTram({json.dumps([f(7)])})"))
+        # D'on surt la tempesta, sense repetir l'avís del perill ni «aEMET» (revisor, 19-10-2026).
+        aemet = {"nivell": "groc", "noms": ["pluja", "tempestes"], "fonts": "aemet",
+                 "perFont": [["aemet", ["pluja", "tempestes"]]]}
+        tram = lambda perill, origen: f"origenTram({{perill: {json.dumps(perill)}, fenomens: [['tempesta', 'i-cloud-lightning', {json.dumps(origen)}]]}})"
+        self.assertEqual(self.avalua(ara, tram(aemet, "AEMET: avís groc per tempestes")),
+                         "AEMET: avís groc per pluja i tempestes.")
+        self.assertEqual(self.avalua(ara, tram(aemet, "AEMET: avís groc per tempestes; Els models preveuen tempesta")),
+                         "AEMET: avís groc per pluja i tempestes. Tempesta: els models preveuen tempesta.")
+        self.assertEqual(self.avalua(ara, tram(None, "AEMET: avís groc per tempestes")),
+                         "Tempesta: AEMET: avís groc per tempestes.")
 
     def test_en_obrir_la_web_marxen_les_notificacions(self):
         # ADR 0048: en obrir la web o tornar-hi, les seves notificacions es treuen de la safata.

@@ -321,3 +321,41 @@ racha no cambia. Con los datos del 19-10-2026, la fila de 17 a 18 pasó de «3
 entre parèntesis, la ratxa més forta de l'hora». Prueba:
 `tests/test_casa_fonts.py` (`VentHora`).
 
+
+## Cambio del 19-10-2026 (3.158.0): los hallazgos del revisor de 11:34 a 14:18
+
+Juanjo: «sí, arregla los del revisor». Cada uno comprobado en el código:
+
+- **Redondeo** (14:18): la racha de 92,5 km/h salía «92» en el aviso
+  (Python redondea las mitades a par), «93» en la tabla y «92,5» en la
+  portada. `riscos.num` redondea las mitades hacia arriba, como la web, y la
+  línea corta de la portada usa `numRisc`, la misma regla que el texto.
+- **«Tempesta: aEMET…»** (11:34): `origenTram` pasaba a minúscula la primera
+  letra aunque fuera una sigla, y repetía el aviso que el perill del tramo ya
+  decía. Ahora no repite la fuente que ya nombra el perill con tormentas y no
+  toca las siglas.
+- **Hora de «actualitzat» de un plan** (13:10): era la del PDF de Protecció
+  Civil (12:08) con el mensaje enviado a las 12:15. El comunicado nuevo pone
+  ahora `darrer` con la hora del mensaje, la misma que en el móvil (ADR 0094);
+  el texto de la ficha sigue sin cambiar.
+- **«A peu»** (11:34): decía «Pot ploure mentre ets fora» con un 60 % y los
+  vehículos «Pluja probable a la tornada». A pie hay ahora «Pluja probable
+  mentre ets fora: porta paraigua» con el mismo umbral (`plouRodes`).
+- **«uns 31 mm» en la cabecera de un tramo** (14:18): es la cantidad esperada
+  (ADR 0103), no la suma de la columna, y la página no lo decía. La leyenda
+  «Com es llegeix la previsió» lo explica («Pluja del tram») cuando algún
+  tramo la muestra.
+- **El aviso de la web, activo en «Perill» y ausente de la portada** (13:44):
+  cuando la previsión deja de ver el riesgo, la ficha espera 3 horas a
+  cerrarse (`RISC_FI_H`, para que el vaivén de los modelos no repita
+  mensajes). Durante esa espera ahora lleva `en_pausa`: dice «Ja no es
+  preveu» y desde cuándo, y no cuenta como activa ni como «Nou»
+  (`perillsNous`), igual que la portada, que ya no la lista. Si el riesgo
+  vuelve, deja de estar en pausa.
+- La de las 13:44 sobre «77 km/h» frente a «20 (66)» ya la resolvió la
+  3.157.0 (la racha, la del modelo que da más; ADR 0018).
+
+Validación: `tests/test_riscos.py`, `tests/test_web.py`,
+`tests/test_historial.py`; «Perill» con la ficha en pausa y la leyenda, en
+Chromium y Firefox, móvil, claro y oscuro; axe-core sin fallos en las dos
+páginas.

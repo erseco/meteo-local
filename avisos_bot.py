@@ -667,6 +667,9 @@ def decideix(estat, salida, ahora):
     # El que hi ha ara, per tenir al dia la fitxa oberta de «Perill» (historial).
     riscos_ara = salida.get("riscos") or []
     estat["perill_text"] = text_perill(riscos_ara, ahora)[0] if riscos_ara else None
+    # Amb dades i cap risc: la fitxa oberta espera RISC_FI_H hores a tancar-se,
+    # però ja no és activa (historial, «en_pausa»).
+    estat["perill_buit"] = not riscos_ara and not sense
     if nous_perill:
         text, pitjor = text_perill(nous_perill, ahora)
         afegeix("perill", hora + ":" + ",".join(r["clau"] for r in nous_perill), text, pitjor,
@@ -934,6 +937,11 @@ def historial(estat, nous, ahora, anterior=None):
             continue
         obert = next((e for e in reversed(h) if e["clau"] == ep and not e.get("fi")), None)
         if a.get("nomes_avis"):
+            # El comunicat nou d'un pla no canvia la fitxa, però «actualitzat»
+            # diu l'hora del missatge, la mateixa que al mòbil: deia la del PDF
+            # (12:08) amb el missatge enviat a les 12:15 (revisor, 19-10-2026).
+            if obert:
+                obert["darrer"] = a["hora"]
             continue
         if a.get("nivell") == "fi":
             for e in h:
@@ -981,6 +989,14 @@ def historial(estat, nous, ahora, anterior=None):
     ara_propi = estat.get("perill_text")
     if propi and ara_propi and cos_avis(propi["ca"]) != cos_avis(ara_propi["ca"]):
         propi.update(ca=ara_propi["ca"], es=ara_propi["es"])
+    # Si la previsió ja no veu cap risc, la fitxa no es tanca fins passades
+    # RISC_FI_H hores (que el vaivé dels models no repeteixi missatges), però
+    # mentrestant diu «Ja no es preveu» i no compta com a activa: «Perill» la
+    # donava per activa i la portada ja no la llistava (revisor, 19-10-2026).
+    if propi and ara_propi:
+        propi.pop("en_pausa", None)
+    elif propi and estat.get("perill_buit"):
+        propi.setdefault("en_pausa", ahora.isoformat(timespec="minutes"))
     for e in h:
         if e["clau"] in (estat.get("aemet_coberts") or []) and not e.get("fi"):
             e.update(fi=ahora.isoformat(timespec="minutes"), fi_ca=SUBSTITUIT["ca"], fi_es=SUBSTITUIT["es"])

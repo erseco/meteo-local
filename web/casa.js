@@ -962,9 +962,16 @@ function marcaSol([id, text, quan]) {
 
 function origenTram(t) {
   const parts = t.perill ? [textPerill(t.perill)] : [];
-  const tempesta = (t.fenomens.find(([, id]) => id === 'i-cloud-lightning') || [])[2];
-  if (tempesta && !parts.some((x) => x.includes(tempesta))) {
-    parts.push(T`${NOM_FENOMEN.tempesta().replace(/^./, (c) => c.toUpperCase())}: ${tempesta.replace(/^./, (c) => c.toLowerCase())}`);
+  // D'on surt la tempesta, sense repetir l'avís que el perill ja diu («AEMET:
+  // avís groc per pluja i tempestes») i sense passar a minúscula una sigla:
+  // sortia «Tempesta: aEMET: avís groc per tempestes» (revisor, 19-10-2026).
+  const tempesta = ((t.fenomens.find(([, id]) => id === 'i-cloud-lightning') || [])[2] || '')
+    .split('; ').filter((o) => o && !parts.flatMap((x) => x.split('; '))
+      .some((x) => x.startsWith(o.split(':')[0] + ':') && /tempest|torment/i.test(x)))
+    .join('; ');
+  if (tempesta) {
+    const minuscula = /^.[A-Z]/.test(tempesta) ? tempesta : tempesta.replace(/^./, (c) => c.toLowerCase());
+    parts.push(T`${NOM_FENOMEN.tempesta().replace(/^./, (c) => c.toUpperCase())}: ${minuscula}`);
   }
   return parts.length ? `${parts.join('. ')}.` : '';
 }
@@ -1155,6 +1162,12 @@ function taula(hores, mesurada, riscos, sol) {
   }
   terme(T('Prob.'), T('La probabilitat que plogui en aquella hora. Per sota del 10\u00a0%, no s’espera pluja; del 10 al 20\u00a0%, és poc probable, però pot caure algun ruixat; del 20 al 50\u00a0%, pot ploure: si surts, porta paraigua; del 50\u00a0% amunt, el més probable és que plogui. Per exemple, un 40\u00a0% vol dir que, de cada 10 vegades que la previsió dona un 40\u00a0% per a una hora, en 4 acaba plovent.'));
   terme(T('Pluja'), T('Els mil·límetres que caurien si plou.'));
+  // La xifra de la capçalera de cada tram és la quantitat esperada (ADR 0103),
+  // no la suma de la columna: la pàgina no ho deia (revisor, 19-10-2026: «uns
+  // 31 mm» amb unes files que sumaven 34).
+  if (trams.some((t) => t.plou && t.mm >= 1)) {
+    terme(T('Pluja del tram'), T('A la capçalera, la probabilitat més alta de les seves hores i la pluja que s’espera: els mil·límetres de cada hora pesats per la seva probabilitat. No és la suma de la columna Pluja, que diu el que cauria si plou.'));
+  }
   // La persistència: la pluja de l'última hora, no la d'ara (revisor, 18-10-2026).
   if (visibles.some((f) => f.segons_estacio)) terme('*', T('Xifra que ve de la pluja de l’última hora al barri, encara que ja hagi parat: els models en donaven menys.'));
   if (visibles.some((f) => f.segons_radar)) terme('\u2020', T('Hi compta la pluja que el radar veu acostar-se.'));

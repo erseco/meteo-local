@@ -244,10 +244,14 @@ function avalua(mitja, tram, trens, futur, transit, entorn) {
     // Si ara plou, també a peu es diu, com en els vehicles (19-10-2026).
     puja('compte', T`Ara plou al barri, segons ${araPlou}: porta paraigua.`);
   } else if (mitja === 'peu' && tram.some(mulla)) {
+    // «Pluja probable» amb el mateix llindar que els vehicles (plouRodes): amb un
+    // 60 % a la tornada, a peu deia «pot ploure» i els altres «pluja probable»
+    // (revisor, 19-10-2026).
     puja('compte', tram.filter(mulla).every(senseDades)
       ? T('Avís oficial per pluja mentre ets fora: ni el radar, ni les estacions, ni els models hi veuen pluja. Per si de cas, porta paraigua.')
-      : pocaPluja(tram.filter(mulla)) ? T('Poca probabilitat de pluja mentre ets fora: porta paraigua per si de cas.')
-        : T('Pot ploure mentre ets fora: porta paraigua.'));
+      : tram.some(plouRodes) ? T('Pluja probable mentre ets fora: porta paraigua.')
+        : pocaPluja(tram.filter(mulla)) ? T('Poca probabilitat de pluja mentre ets fora: porta paraigua per si de cas.')
+          : T('Pot ploure mentre ets fora: porta paraigua.'));
   }
   if (mitja === 'public') return avaluaPublic(trens, futur);
   // En vehicle només es miren l'anada i la tornada: es diu, perquè no

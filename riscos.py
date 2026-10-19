@@ -25,6 +25,7 @@ Uso:
   python3 riscos.py estat             lo que se tiene por activo
 """
 import datetime as dt
+from decimal import ROUND_HALF_UP, Decimal
 import json
 import os
 import sys
@@ -60,7 +61,11 @@ def num(x, tipus=None):
     los umbrales de Meteocat (36,8 °C)."""
     # La neu, també amb un decimal: «0 cm» d'una neu de 0,3 cm es contradeia
     # (inventari del 18-10-2026).
-    t = f"{x:.1f}" if tipus in TEMPERATURES + ("neu_24h",) and abs(x - round(x)) >= 0.05 else f"{x:.0f}"
+    # Les meitats, cap amunt, com la web (Math.round, toFixed): Python arrodoneix
+    # a parell i la mateixa ratxa de 92,5 km/h sortia 92 a l'avís i 93 a la
+    # taula (revisor, 19-10-2026).
+    d = 1 if tipus in TEMPERATURES + ("neu_24h",) and abs(x - round(x)) >= 0.05 else 0
+    t = str(Decimal(str(x)).quantize(Decimal(1).scaleb(-d), rounding=ROUND_HALF_UP))
     return t.replace(".", ",").replace("-", "−")
 
 
