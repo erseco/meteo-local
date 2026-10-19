@@ -50,6 +50,7 @@ nuevo y se autorizan así:
 | `.config/meteo-local/ionos.env` | `IONOS=` usuario y servidor SSH del hosting | Panel de IONOS |
 | `.config/meteo-local/ecowitt.env` | `ECOWITT_APPLICATION_KEY`, `ECOWITT_API_KEY`, `ECOWITT_MAC` | ecowitt.net > usuario > API Keys (ADR 0017) |
 | `.config/meteo-local/wunderground.env` | `WU_STATION_ID`, `WU_STATION_KEY`: la estación de casa en Weather Underground (ADR 0059); `WU_API_KEY`: la clave de lectura de las vecinas, que caduca a los seis meses (`config.WU_CLAU_CADUCA`, ADR 0060) | wunderground.com > Member Settings > Devices; la clave de lectura, en API Keys de la versión antigua del sitio (la nueva no la enseña) |
+| `.config/meteo-local/meteocat.env` | `METEOCAT_API_KEY`: la API de Meteocat, de reserva de los avisos (ADR 0109); vale hasta el 31-10-2027 y Meteocat escribe para renovarla | Meteocat, formulario de alta de apidocs.meteocat.gencat.cat |
 | `.config/meteo-local/claude.env` | `CLAUDE_CODE_OAUTH_TOKEN`, solo para el vigía del NAS | `claude setup-token` |
 | `.local/bin/avisar-juanjo` y `.config/avisar-juanjo/config.json` | Los avisos a Juanjo por Telegram (`usuario`, `token`, `chat_id`) | El script está en el equipo de Juanjo; el token, en @BotFather |
 
