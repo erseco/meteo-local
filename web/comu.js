@@ -1518,6 +1518,46 @@ function senyalaPerill(historial, ara = new Date()) {
   }
 }
 
+// El punt de la pestanya «Riera» (ADR 0107): vermell si hi ha un avís de la
+// riera actiu que no s'ha vist (el mateix criteri que el punt de «Perill»,
+// només amb la riera); ambre si la previsió dels models diu «risc de
+// crescuda possible» i no s'ha vist: ambre i no vermell, perquè el vermell
+// és el d'una situació de perill amb dades reals (Juanjo, 19-10-2026). Fins
+// que s'obre «Riera», que apunta fins a quan s'ha vist.
+const CLAU_RIERA_VIST = 'meteo.riera-vist-fins';
+
+function rieraNova(previsio, vist) {
+  return Boolean(previsio && previsio.nivell === 'possible' && previsio.inici
+    && (!vist || new Date(previsio.inici).getTime() > new Date(vist).getTime()));
+}
+
+function puntRiera(previsio, historial, vist, ara = new Date()) {
+  if (perillsNous((historial || []).filter((e) => e.tipus === 'riera'), vist, ara).length) return 'vermell';
+  return rieraNova(previsio, vist) ? 'ambre' : null;
+}
+
+function senyalaRiera(previsio, historial) {
+  let vist = null;
+  try { vist = localStorage.getItem(CLAU_RIERA_VIST); } catch (_) {}
+  const color = puntRiera(previsio, historial, vist);
+  const text = color === 'vermell' ? T('Hi ha un avís de la riera nou') : T('Previsió de risc de crescuda de la riera');
+  for (const a of document.querySelectorAll('.pagines a[href$="riera.html"]')) {
+    let punt = a.querySelector('.punt-riera');
+    if (color && !punt) {
+      punt = element('span', 'punt-riera');
+      punt.setAttribute('role', 'img');
+      a.append(punt);
+    }
+    if (color) {
+      punt.className = `punt-riera ${color}`;
+      punt.setAttribute('aria-label', text);
+      punt.title = text;
+    } else if (punt) punt.remove();
+  }
+}
+
+let PREVISIO_RIERA = null;
+
 // A «Perill» mateix no cal: s'hi és. A les altres, es mira en carregar i cada
 // cinc minuts.
 if (!/(^|\/)perill\.html$/.test(location.pathname) && document.querySelectorAll('.pagines a[href$="perill.html"]').length) {
@@ -1525,6 +1565,8 @@ if (!/(^|\/)perill\.html$/.test(location.pathname) && document.querySelectorAll(
   const miraPerill = () => llegeixDades('avisos.json').then((d) => {
     HISTORIAL_PERILL = d.historial;
     senyalaPerill(d.historial);
+    PREVISIO_RIERA = d.riera_previsio || null;
+    if (!/(^|\/)riera\.html$/.test(location.pathname)) senyalaRiera(PREVISIO_RIERA, d.historial);
     if (typeof repintaAvisos === 'function') repintaAvisos();
   }, () => {});
   miraPerill();
@@ -1545,6 +1587,7 @@ addEventListener('pageshow', (e) => {
   if (!e.persisted) return;
   marcaNovetats();
   if (HISTORIAL_PERILL && !/(^|\/)perill\.html$/.test(location.pathname)) senyalaPerill(HISTORIAL_PERILL);
+  if (!/(^|\/)riera\.html$/.test(location.pathname)) senyalaRiera(PREVISIO_RIERA, HISTORIAL_PERILL);
 });
 
 // Compartir (Juanjo, 11-10-2026: «cualquier pagina o consulta … quiero que se

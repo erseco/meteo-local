@@ -1111,6 +1111,50 @@ Telegram, con botones, si se ha desbordado, y la respuesta queda en la
 columna `desbordament` del episodio (`riera.csv`). Con esos desenlaces se
 podrán contar aciertos, falsas alarmas y minutos de anticipación.
 
+### 12.6 La previsión de crecida (ADR 0107)
+
+La página «Riera» dice, además de lo que pasa ahora, lo que puede pasar en
+las próximas 24 horas según los modelos, **como previsión y no como aviso**:
+no sale por ningún canal, solo en su página, con un punto ámbar en la pestaña
+mientras no se haya visto. Cada pasada pide a Open-Meteo la lluvia por horas
+de AROME HD, AROME, ICON-EU y ECMWF en el centro de la cuenca
+(`config.CONCA_RIERA`) y calcula, para cada modelo $`m`$, su lluvia de 3 horas
+más alta en el horizonte:
+
+```math
+P_3 = \max_{m}\ \max_{k} \sum_{i=k-2}^{k} p_{m,i}, \qquad P_6 \text{ igual con 6 horas,}
+```
+
+y «risc de crescuda possible» si $`P_3 \ge 20`$ mm (`RIERA_PREVISIO_MM`).
+Manda el modelo que más da porque es el único que no rebaja la lluvia fuerte
+(apartado 6 bis); al lado va la media de los modelos en la misma ventana, el
+modelo que lo da y las horas, y la lluvia de las últimas 24 horas en Sant
+Cugat, que es lo que distingue los casos (12.3). Cada pasada se apunta en
+`registre/riera-previsio.csv` (`riera.py previsio-resum` compara con lo que
+después midió Sant Cugat).
+
+**Con el archivo 2024-2026** (`calibracio/dades/prev_casa.csv` y
+`ecmwf/`, las previsiones pasadas de los modelos en Montflorit, última pasada
+y pasada del día anterior; `obs_XV.csv`, Sant Cugat por medias horas; 1.008
+días, 7 con 35 mm o más en 3 horas):
+
+| $`P_3`$ previsto | Días con señal | Con 35 mm reales | Se escapan | Falsas |
+|---|---|---|---|---|
+| 15 mm | 34 | 4 | 3 | 30 |
+| **20 mm** | **21** | **4** | **3** | **17** |
+| 25 mm | 16 | 4 | 3 | 12 |
+| 35 mm | 5 | 3 | 4 | 2 |
+
+Con la pasada del día anterior, a 20 mm: 13 días con señal, 3 reales. En los
+episodios conocidos (última pasada, $`P_3`$ previsto / real): 29-04-2024,
+30 / 53 (desbordamiento); 13-09-2025, 52 / 47 (no se desbordó);
+29-09-2026, 13 / 66 (desbordamiento, invisible para los modelos);
+03-10-2026, 111 / 37; 04-10-2026, 88 / 67 (desbordamiento). De los tres
+desbordamientos, la señal de 20 mm habría salido en dos (abril de 2024 y
+octubre de 2026) y no en el 29 de septiembre de 2026, el más grave. Por eso
+es una previsión que se muestra y no un aviso que se envía; el umbral se
+revisará con el registro propio.
+
 ## 13. Cuando los modelos no ven la lluvia
 
 En cada pasada se suman la lluvia medida en casa en las tres últimas horas

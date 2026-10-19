@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Pruebas del aviso de la riera de Sant Cugat (sin red ni Telegram)."""
+import csv
 import datetime as dt
+import json
 import os
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -361,8 +364,13 @@ class Veines(unittest.TestCase):
 
 
 class Privacitat(unittest.TestCase):
-    def test_la_web_publica_no_porta_la_riera(self):
-        self.assertIn("riera", M.PRIVADES)
+    def test_la_web_publica_porta_la_riera(self):
+        # Fins a la 3.149.0 era privada (només servia per a l'avís, ADR 0027); ara la
+        # mostra la pàgina «Riera» (ADR 0107), amb la previsió.
+        self.assertNotIn("riera", M.PRIVADES)
+        publiques = M.dades_publiques({"versio": "1", "riera": {"nivell": None, "index": 0.0},
+                                       "riera_previsio": {"nivell": "possible"}, "sortides": []})
+        self.assertEqual(set(publiques), {"versio", "riera", "riera_previsio"})
 
 
 if __name__ == "__main__":
@@ -440,4 +448,56 @@ class Desbordament(unittest.TestCase):
         RI.pregunta_desbordament(self.fila(), self.ara)
         self.assertEqual(RI.respostes(self.ara), 1)
         self.assertIn("desbordament ?", RI.resum())
+
+
+class Previsio(unittest.TestCase):
+    """La previsió de crescuda (ADR 0107): el model que més en dona en 3 hores,
+    la finestra, la mitjana i el nivell «possible»; només les properes hores."""
+
+    def test_el_model_que_mes_en_dona_i_la_finestra(self):
+        ara = dt.datetime(2026, 10, 19, 7, 40, tzinfo=dt.timezone(dt.timedelta(hours=2)))
+        hores = [(ara.replace(minute=0) + dt.timedelta(hours=k)).isoformat(timespec="minutes") for k in range(-2, 46)]
+        zeros = [0.0] * len(hores)
+        arome = list(zeros)
+        arome[2 + 9], arome[2 + 10], arome[2 + 11] = 5.2, 7.0, 10.9      # de 16 a 19 h: 23,1
+        icon = list(zeros)
+        icon[2 + 30] = 40.0                                              # demà: fora de les 24 hores
+        ecmwf = [None] * len(hores)                                      # sense dades
+        p = RI.previsio_models(hores, {"meteofrance_arome_france_hd": arome, "icon_eu": icon, "ecmwf_ifs": ecmwf}, ara)
+        self.assertEqual((p["model_max"], p["mm_3h_max"], p["nivell"]), ("meteofrance_arome_france_hd", 23.1, "possible"))
+        self.assertEqual((p["finestra_3h"]["ini"][11:16], p["finestra_3h"]["fi"][11:16]), ("16:00", "19:00"))
+        self.assertAlmostEqual(p["mm_3h_mitjana"], round(23.1 / 2, 1), places=1)     # dos models amb dades
+        self.assertEqual(p["per_model"], {"meteofrance_arome_france_hd": 23.1, "icon_eu": 0.0})
+        self.assertEqual(p["models"], ["meteofrance_arome_france_hd", "icon_eu"])
+        self.assertEqual(len(p["hores"]), 25)        # l'hora en curs i les 24 següents
+        # Per sota del llindar, cap nivell; i sense cap model amb dades, res.
+        arome[2 + 11] = 1.0
+        self.assertIsNone(RI.previsio_models(hores, {"a": arome}, ara)["nivell"])
+        self.assertIsNone(RI.previsio_models(hores, {"a": ecmwf}, ara))
+
+    def test_previsio_amb_xarxa_simulada_i_registre(self):
+        ara = dt.datetime(2026, 10, 19, 7, 40, tzinfo=dt.timezone(dt.timedelta(hours=2)))
+        hores = [(ara.replace(minute=0, tzinfo=None) + dt.timedelta(hours=k)).isoformat(timespec="minutes") for k in range(-7, 41)]
+        serie = [0.0] * len(hores)
+        serie[7 + 10] = 25.0
+        resposta = json.dumps({"hourly": {"time": hores, "precipitation_meteofrance_arome_france_hd": serie,
+                                          "precipitation_meteofrance_arome_france": [0.0] * len(hores),
+                                          "precipitation_icon_eu": [0.0] * len(hores),
+                                          "precipitation_ecmwf_ifs": [0.0] * len(hores)}})
+        with tempfile.TemporaryDirectory() as d:
+            vell = (RI.DIR, RI.ESTAT_DIR, RI.ESTAT_PREVISIO, RI.REGISTRE_PREVISIO)
+            RI.DIR, RI.ESTAT_DIR = os.path.join(d, "registre"), d
+            RI.ESTAT_PREVISIO, RI.REGISTRE_PREVISIO = os.path.join(d, "riera-previsio.json"), os.path.join(RI.DIR, "riera-previsio.csv")
+            try:
+                p = RI.previsio(ara, get=lambda url: resposta, lector=lambda url: "")
+                self.assertEqual((p["nivell"], p["mm_3h_max"], p["inici"]), ("possible", 25.0, ara.isoformat(timespec="minutes")))
+                # Una passada després, el «possible» continua des de la mateixa hora (per al punt de la pestanya).
+                p2 = RI.previsio(ara + dt.timedelta(minutes=15), get=lambda url: resposta, lector=lambda url: "")
+                self.assertEqual(p2["inici"], ara.isoformat(timespec="minutes"))
+                with open(RI.REGISTRE_PREVISIO, encoding="utf-8") as f:
+                    files_ = list(csv.DictReader(f))
+                self.assertEqual([r["mm_3h_max"] for r in files_], ["25.0", "25.0"])
+                self.assertIn("2026-10-19", RI.resum_previsio(registre_xv=os.path.join(d, "no-hi-es.csv")))
+            finally:
+                RI.DIR, RI.ESTAT_DIR, RI.ESTAT_PREVISIO, RI.REGISTRE_PREVISIO = vell
 

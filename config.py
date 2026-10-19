@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.149.0"
+VERSION = "3.150.0"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -263,6 +263,12 @@ RIERA_ATENCIO_MM = 35
 RIERA_PERILL_MM = 50
 RIERA_PERILL_6H_MM = 60
 RIERA_FI_H = 3                      # horas por debajo del registro para cerrar el episodio
+# La previsió de crescuda (riera.previsio, ADR 0107): si algun model preveu
+# RIERA_PREVISIO_MM o més en 3 hores a la conca en les properes
+# RIERA_PREVISIO_HORES, la pàgina «Riera» diu «risc de crescuda possible».
+# No avisa: amb l'arxiu 2024-2026, 27 dies amb 20 mm previstos, 4 reals.
+RIERA_PREVISIO_MM = 20
+RIERA_PREVISIO_HORES = 24
 # Las estaciones particulares de Sant Cugat en Weather Underground (ADR 0027,
 # 18-10-2026; Juanjo: «se podría buscar una estación cercana a la riera…
 # así no solo la de Meteocat, que es cada media hora»): dato cada 5 minutos,

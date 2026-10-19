@@ -23,6 +23,12 @@ y en [castellano](https://meteo-montflorit.github.io/es/). Tiene cuatro páginas
   «Avisos actius» sale desplegado la primera vez y cuando cambia el conjunto
   de avisos (o hay uno rojo); si no, plegado, con el número de avisos y una
   línea corta por aviso (ADR 0094).
+- **Riera**: la riera de Sant Cugat en una página (ADR 0107): ahora (la
+  lluvia medida y el radar, el mismo índice que decide el aviso), las
+  próximas horas (lo que prevén los cuatro modelos en la cuenca: «risc de
+  crescuda possible» desde 20 mm en 3 horas, una previsión que no avisa,
+  con un punto ámbar en la pestaña mientras no se haya visto) y los
+  episodios desde 2024.
 - **Perill**: las situaciones de peligro en Montflorit, con el texto de los
   avisos tal como llegaron y un enlace para saber más: avisos oficiales de AEMET, de Meteocat y de Protección Civil, incendios
   forestales de Collserola y de Cerdanyola, la riera de Sant Cugat y el tiempo
@@ -167,7 +173,7 @@ Umbrales y lugares, en `config.py`. El porqué, en los ADR.
 | `prevision.py` | Recogida de datos que usa `casa.py`: avisos de AEMET, planes de Protección Civil, radar, lluvia y viento de las estaciones, y el modo aviso |
 | `smp.py` | Con un plan de Protección Civil a la vista, si Meteocat tiene aviso de peligro para el Vallès Occidental, leído de meteo.cat, y su prueba diaria (ADR 0067) |
 | `config.py` | Coordenadas, horario, estaciones, zonas de aviso, modelos y umbrales |
-| `web/` | Las fuentes de la web pública: `casa.html` y `casa.js` (el tiempo ahora), `sortir.html` y `sortir.js` («Si surts»), `perill.html` y `perill.js` («Perill»), `consultes.html` y `consultes.js` («Consultes»), `avisos.html` y `avisos.js` (avisos en el navegador), `telegram.html` (ayuda de Telegram), `privacitat.html` (qué se guarda y qué no, ADR 0073), `comu.js` (lo común), `estil.css`, `fonts.html` (fuentes y créditos), `manifest.webmanifest`, `sw.js` e `icones/` |
+| `web/` | Las fuentes de la web pública: `casa.html` y `casa.js` (el tiempo ahora), `sortir.html` y `sortir.js` («Si surts»), `perill.html` y `perill.js` («Perill»), `riera.html` y `riera.js` («Riera»), `consultes.html` y `consultes.js` («Consultes»), `avisos.html` y `avisos.js` (avisos en el navegador), `telegram.html` (ayuda de Telegram), `privacitat.html` (qué se guarda y qué no, ADR 0073), `comu.js` (lo común), `estil.css`, `fonts.html` (fuentes y créditos), `manifest.webmanifest`, `sw.js` e `icones/` |
 | `montflorit.py`, `montflorit/` | Genera la web pública a partir de `web/` y sus datos sin lo privado; manifiesto, iconos y README propios (ADR 0024), y `es.js`, los textos del programa en castellano (ADR 0025) |
 | `i18n/` | `es.json`, la traducción de los textos fijos, y `claus.js`, que saca del programa los textos por traducir (ADR 0025) |
 | `publica.sh` | Calcula y publica (lo usa el NAS) |

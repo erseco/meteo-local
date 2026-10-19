@@ -39,9 +39,10 @@ WEB = "https://meteo-montflorit.github.io/"
 # La versión del pie enlaza sus notas, en el repositorio del código.
 NOTES = f"https://github.com/meteo-montflorit/meteo-local/releases/tag/v{VERSION}"
 DADES = "montflorit.json"
-# Lo que casa.json lleva para la página del trayecto, y el estado de la
-# riera, que solo sirve para el aviso por Telegram (ADR 0027).
-PRIVADES = ("sortides", "sortida_per_defecte_h", "riera")
+# Lo que casa.json lleva para la página del trayecto. El estado de la riera
+# era privado porque solo servía para el aviso por Telegram (ADR 0027);
+# desde la 3.150.0 lo muestra la página «Riera» (ADR 0107).
+PRIVADES = ("sortides", "sortida_per_defecte_h")
 # Con False, la página pide a los buscadores que no la indexen. Desde el
 # 06-10-2026, sí (ADR 0024).
 INDEXABLE = True
@@ -55,8 +56,9 @@ NAV = re.compile(r'\n( *)<nav class="pagines".*?</nav>', re.S)   # amb el sagnat
 # «El temps», sense «ara»: la pàgina també porta la previsió (Juanjo, 08-10-2026).
 # Desde el 09-10-2026, también «Consultes»: lo mismo que el bot, eligiendo qué ver (ADR 0054).
 # Desde el 11-10-2026, «Perill», entre «El temps» y «Si surts»: las situaciones de peligro (ADR 0071).
+# Desde el 19-10-2026, «Riera», tras «Perill»: la riera ahora, la previsión y los episodios (ADR 0107).
 PAGINES_PUBLIQUES = [("./", "El temps", "i-cloud-sun"), ("perill.html", "Perill", "i-triangle-alert"),
-                     ("sortir.html", "Si surts", "i-door-open"),
+                     ("riera.html", "Riera", "i-waves"), ("sortir.html", "Si surts", "i-door-open"),
                      ("consultes.html", "Consultes", "i-message-square-text")]
 
 
@@ -128,6 +130,12 @@ CANVIS_PERILL = [
      f'<html lang="ca" data-theme="light" data-dades="{DADES}" data-notes="{NOTES}">'),
     ("<title>Perill</title>", "<title>Perill · Temps a Montflorit</title>"),
 ]
+# «Riera» (ADR 0107): ara, properes hores i episodis.
+CANVIS_RIERA = [
+    ('<html lang="ca" data-theme="light">',
+     f'<html lang="ca" data-theme="light" data-dades="{DADES}" data-notes="{NOTES}">'),
+    ("<title>Riera</title>", "<title>Riera · Temps a Montflorit</title>"),
+]
 # «Privacitat» (ADR 0073): què es desa i què no, en una pàgina pròpia.
 CANVIS_PRIVACITAT = [
     ('<html lang="ca" data-theme="light">',
@@ -164,15 +172,17 @@ PROHIBIDES_README = ("casa", "trajecte")
 FORA_FONTS = [re.compile(r"\n      <li>Icones de roba i pluja de .*?</li>")]
 
 SW_PECES = re.compile(r"const PECES = \[.*?\];", re.S)
-PECES = ["./", "index.html", "sortir.html", "perill.html", "consultes.html", "avisos.html", "telegram.html",
-         "fonts.html", "com-funciona.html", "privacitat.html", "es/", "es/sortir.html", "es/perill.html", "es/consultes.html",
+PECES = ["./", "index.html", "sortir.html", "perill.html", "riera.html", "consultes.html", "avisos.html", "telegram.html",
+         "fonts.html", "com-funciona.html", "privacitat.html", "es/", "es/sortir.html", "es/perill.html", "es/riera.html",
+         "es/consultes.html",
          "es/avisos.html", "es/telegram.html", "es/fonts.html", "es/com-funciona.html", "es/privacitat.html", "estil.css",
-         "comu.js", "grafica.js", "casa.js", "sortir.js", "perill.js", "consultes.js", "avisos.js", "es.js", "manifest.webmanifest",
+         "comu.js", "grafica.js", "casa.js", "sortir.js", "perill.js", "riera.js", "consultes.js", "avisos.js", "es.js",
+         "manifest.webmanifest",
          "icones/icona-192.png"]
 
 # --- En castellano (ADR 0025) ---
 TRADUCCIONS = os.path.join(ARREL, "i18n", "es.json")
-BLOC = re.compile(r"<(title|h1|h2|p|li|summary)\b([^>]*)>(.*?)</\1>", re.S)
+BLOC = re.compile(r"<(title|h1|h2|h3|p|li|summary)\b([^>]*)>(.*?)</\1>", re.S)
 ATRIBUT = re.compile(r'(\b(?:title|aria-label|alt)="|<meta name="description" content=")([^"]*)"')
 # Lo que cambia además del texto: idioma, cómo se llama la estación propia y
 # dónde están los archivos comunes, que quedan una carpeta más arriba.
@@ -224,6 +234,11 @@ CANVIS_ES_PERILL = [
     ('<script src="perill.js"></script>', '<script src="../perill.js"></script>'),
     ('href="img/incendis.webp"', 'href="../img/incendis.webp"'),
     ('src="img/incendis.webp"', 'src="../img/incendis.webp"'),
+]
+CANVIS_ES_RIERA = [
+    (f'data-dades="{DADES}"', f'data-dades="{DADES}" data-arrel="../"'),
+    ('<script src="comu.js"></script>', '<script src="../es.js"></script>\n  <script src="../comu.js"></script>'),
+    ('<script src="riera.js"></script>', '<script src="../riera.js"></script>'),
 ]
 CANVIS_ES_PRIVACITAT = [
     (f'data-dades="{DADES}"', f'data-dades="{DADES}" data-arrel="../"'),
@@ -277,6 +292,7 @@ def castella(html, nom, taula=None):
     t = canvia(t, {"index.html": CANVIS_ES_INDEX + CANVIS_ES_NAV, "sortir.html": CANVIS_ES_SORTIR + CANVIS_ES_NAV,
                    "consultes.html": CANVIS_ES_CONSULTES + CANVIS_ES_NAV,
                    "perill.html": CANVIS_ES_PERILL + CANVIS_ES_NAV,
+                   "riera.html": CANVIS_ES_RIERA + CANVIS_ES_NAV,
                    "telegram.html": CANVIS_ES_TELEGRAM + CANVIS_ES_NAV,
                    "avisos.html": CANVIS_ES_AVISOS + CANVIS_ES_NAV,
                    "fonts.html": CANVIS_ES_FONTS + CANVIS_ES_NAV + [CREDIT_TRADUCCIO],
@@ -384,6 +400,14 @@ def perill(html):
     return t
 
 
+def riera(html):
+    t = menu(canvia(html, CANVIS_RIERA, "riera.html"), "riera.html", "riera.html")
+    if INDEXABLE:
+        t = canvia(t, [(ROBOTS, "")], "riera.html")
+    comprova("riera.html", t)
+    return t
+
+
 def telegram(html):
     t = menu(canvia(html, CANVIS_TELEGRAM, "telegram.html"), "telegram.html", "telegram.html")
     if INDEXABLE:
@@ -467,7 +491,7 @@ def construeix(desti, web=None):
     os.makedirs(desti, exist_ok=True)
     escriu = lambda nom, text: escriu_fitxer(os.path.join(desti, nom), text)
     pagines = {"index.html": index(llegeix("casa.html")), "sortir.html": sortir(llegeix("sortir.html")),
-               "perill.html": perill(llegeix("perill.html")),
+               "perill.html": perill(llegeix("perill.html")), "riera.html": riera(llegeix("riera.html")),
                "consultes.html": consultes_html(llegeix("consultes.html")),
                "avisos.html": avisos(llegeix("avisos.html")), "telegram.html": telegram(llegeix("telegram.html")),
                "fonts.html": fonts(llegeix("fonts.html")),
@@ -479,7 +503,8 @@ def construeix(desti, web=None):
         escriu(nom, html)
         escriu("es/" + nom, castella(html, nom))
     escriu("sw.js", service_worker(llegeix("sw.js")))
-    for nom in ("estil.css", "comu.js", "grafica.js", "casa.js", "sortir.js", "perill.js", "consultes.js", "avisos.js"):
+    for nom in ("estil.css", "comu.js", "grafica.js", "casa.js", "sortir.js", "perill.js", "riera.js", "consultes.js",
+                "avisos.js"):
         shutil.copy(os.path.join(web, nom), desti)
     shutil.copytree(propi, desti, dirs_exist_ok=True)
     shutil.copytree(os.path.join(web, "img"), os.path.join(desti, "img"), dirs_exist_ok=True)

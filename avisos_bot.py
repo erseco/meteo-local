@@ -1110,7 +1110,9 @@ def actualitza(casa_json, sortida, ahora=None, anterior=None, avisa=True):
         # Les correccions del revisor (ADR 0101), mentre el text sigui el corregit.
         json.dump(RV.aplica_correccions({"generat": ahora.isoformat(timespec="minutes"), "versio": C.VERSION,
                                          "avisos": llista, "historial": hist, "pla_alfa": alfa,
-                                         "plans_prealerta": prealerta}), f, ensure_ascii=False)
+                                         "plans_prealerta": prealerta,
+                                         # Per al punt ambre de la pestanya «Riera» (ADR 0107).
+                                         "riera_previsio": salida.get("riera_previsio")}), f, ensure_ascii=False)
     return nous
 
 

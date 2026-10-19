@@ -782,6 +782,13 @@ def recoger(anterior=None):
     except Exception as ex:
         salida["riera"] = None
         salida["errors"].append(f"riera: {ex}")
+    # La previsió de crescuda de les properes hores, per a la pàgina «Riera»
+    # (ADR 0107): una previsió, no un avís.
+    try:
+        salida["riera_previsio"] = RI.previsio(P.AHORA)
+    except Exception as ex:
+        salida["riera_previsio"] = None
+        salida["errors"].append(f"riera, previsió: {ex}")
     salida["horari"] = P.horario([C.HORARIO_CASA_AVISO if motivos else C.HORARIO_CASA],
                                  C.INTERVALO_CASA_MIN, motivos)
     # El cielo que se ve ahora desde el aeropuerto de Sabadell (ADR 0088). Si

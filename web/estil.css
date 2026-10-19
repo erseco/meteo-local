@@ -283,8 +283,11 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 /* «Avisos al mòbil», la campana de la botonera; a la seva pàgina, marcada. */
 .boto-avisos, .pagines a.amb-nou { position: relative; }
 /* Situació de perill nova a la pestanya «Perill» (comu.js, ADR 0071). */
-.punt-perill { display: inline-block; width: .6rem; height: .6rem; margin-left: .35rem; border-radius: 50%;
+.punt-perill, .punt-riera { display: inline-block; width: .6rem; height: .6rem; margin-left: .35rem; border-radius: 50%;
   background: var(--vermell); box-shadow: 0 0 0 2px var(--fons); vertical-align: middle; }
+/* A «Riera» (ADR 0107): ambre per una previsió; vermell per un avís de la riera. */
+.punt-riera.ambre { background: #d97706; }
+.punt-riera.vermell { background: var(--vermell); }
 .boto-avisos[aria-current="page"] { background: var(--enllac); color: var(--fons); border-color: var(--enllac); }
 /* «Nou!» damunt la campana o la pestanya, mentre la pàgina és nova (comu.js). */
 .xip-nou { position: absolute; top: -.55rem; right: -.6rem; padding: .05rem .4rem; border-radius: 999px;
@@ -911,6 +914,19 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 /* Pàgina «Perill» (ADR 0071): una fitxa per situació, amb la franja del seu
    nivell; les acabades, amb el detall plegat; els mesos d'abans, plegats. */
 .perill .seccio { margin: 1.2rem 0 .5rem; }
+/* «Riera» (ADR 0107): ara, properes hores i episodis. */
+.riera section { margin-top: 1.1rem; }
+.riera .avis-item.be { --nivell: var(--verd, #16a34a); }
+.riera .riera-detalls { margin: .4rem 0 0 1rem; color: var(--suau); font-size: .92rem; }
+.riera .nota { margin-top: .7rem; }
+.riera .avis-previsio { margin-top: .6rem; border-color: #d97706; background: color-mix(in srgb, #d97706 10%, var(--superficie)); }
+.riera details.com > div { margin-top: .5rem; }
+.riera details.com h3 { margin: .9rem 0 .3rem; font-size: 1rem; }
+.riera #riera-avis .avis-item { margin-bottom: .5rem; }
+.riera .riera-episodis { list-style: none; padding: 0; margin: 0; }
+.riera .episodi-linia { padding: .15rem 0 .15rem .7rem; border-left: .3rem solid var(--nivell, var(--compte)); margin: .35rem 0; }
+.riera .episodi-linia.vermell { --nivell: var(--vermell); }
+.riera .episodi-linia.taronja { --nivell: #fb923c; }
 .perill .episodi { padding: .5rem .8rem .5rem .9rem; background: var(--superficie); border: 1px solid var(--vora);
   border-left: .35rem solid var(--nivell, var(--compte)); border-radius: .5rem; }
 .perill .episodi + .episodi { margin-top: .6rem; }
@@ -988,7 +1004,7 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
   .barra { margin: 0; }
   .pagines, .barra .pagines {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; margin: 0;
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: .2rem;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: .15rem;
     padding: .35rem .35rem calc(.35rem + env(safe-area-inset-bottom));
     background: var(--superficie); border-top: 1px solid var(--vora); box-shadow: 0 -2px 10px rgb(0 0 0 / .08);
   }
@@ -997,7 +1013,7 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
     padding: .3rem .1rem; border: 0; border-radius: .6rem; background: none; line-height: 1.2; text-align: center;
   }
   .pagines svg { width: 1.4rem; height: 1.4rem; }
-  .pagines .punt-perill { position: absolute; top: .3rem; right: calc(50% + .6rem); margin: 0; }
+  .pagines .punt-perill, .pagines .punt-riera { position: absolute; top: .3rem; right: calc(50% + .6rem); margin: 0; }
   .pagines .xip-nou { top: -.5rem; right: .2rem; }
   .avis-breu { bottom: calc(5.2rem + env(safe-area-inset-bottom)); }
 }

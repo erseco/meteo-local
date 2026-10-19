@@ -33,6 +33,8 @@ Al cambiar algo:
   portada, «Perill», /avisos_actius y el resumen del día (bot y «Consultes»).
   «Si surts» no las repite: una línea dice cuántas pueden afectar la
   conducción y lleva a «Perill» (`sortir.liniaAvisosConduccio`, 3.149.0).
+  La previsión de crecida de la riera (`riera.previsio`, página «Riera», ADR
+  0107) no es una alerta: no avisa por ningún canal y solo marca la pestaña.
   Un tipo de alerta nuevo se añade a `bot.TIPUS_PERILL` y a
   `tests/test_perills.py`, que falla si algún sitio se lo deja. Por fenómeno
   manda Meteocat; AEMET, para lo que Meteocat no cubre (`smp.marca_coberts`).

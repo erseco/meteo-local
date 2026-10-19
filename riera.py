@@ -36,6 +36,8 @@ Uso:
   python3 riera.py avisa CASA.json      mira los datos y apunta el episodio
   python3 riera.py estat                el episodio en curso
   python3 riera.py resum                los episodios apuntados
+  python3 riera.py previsio             la previsió de crescuda de les properes hores (amb xarxa)
+  python3 riera.py previsio-resum       les previsions apuntades i el que va caure
 """
 import csv
 import datetime as dt
@@ -604,6 +606,171 @@ def omple_desbordament():
     return n
 
 
+# --- La previsió de crescuda (ADR 0107) ------------------------------------------------
+# El que els models preveuen a la conca per a les properes hores, per a la
+# pàgina «Riera»: una previsió, no un avís (Juanjo, 19-10-2026: «no podemos
+# dar falsos positivos que provoquen alarma… dejando muy claro que es una
+# previsión y que la situación puede cambiar en cualquier momento»). Amb
+# l'arxiu 2024-2026, el màxim dels models amb 20 mm o més en 3 hores va
+# sortir 27 dies, 4 amb 35 mm reals; dels tres desbordaments en va veure
+# venir un (el 04-10-2026), un a mitges (29-04-2024, 30 mm) i cap senyal del
+# 29-09-2026 (14 mm previstos, 66 caiguts).
+
+ESTAT_PREVISIO = os.path.join(ESTAT_DIR, "riera-previsio.json")
+REGISTRE_PREVISIO = os.path.join(DIR, "riera-previsio.csv")
+CAMPS_PREVISIO = ["t", "nivell", "mm_3h_max", "mm_3h_mitjana", "finestra_ini", "finestra_fi", "mm_6h_max",
+                  "mm_6h_mitjana", "model_max", "xv_24h"]
+URL_PREVISIO = ("https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=precipitation"
+                "&models={models}&forecast_days=2&timezone=Europe%2FMadrid")
+
+
+def _suma(valors, i, n):
+    tros = [v for v in valors[max(0, i - n + 1):i + 1] if v is not None]
+    return round(sum(tros), 1) if tros else None
+
+
+def previsio_models(hores, per_model, ahora, horitzo_h=None, llindar=None):
+    """La previsió de crescuda amb les sèries horàries de cada model a la
+    conca ({model: [mm per hora]}; hores: ISO, l'hora en què comença cada
+    mm): per a cada model, la seva pluja de 3 hores més alta en les properes
+    horitzo_h hores; mana el model que més en dona («si un model ho veu»), amb
+    la seva finestra, i s'hi afegeix la mitjana dels models en aquesta
+    finestra. El mateix en 6 hores, i el nivell «possible» des de llindar mm
+    en 3 hores."""
+    horitzo_h = horitzo_h or C.RIERA_PREVISIO_HORES
+    llindar = llindar or C.RIERA_PREVISIO_MM
+    fi = ahora + dt.timedelta(hours=horitzo_h)
+    dins = [i for i, h in enumerate(hores) if ahora - dt.timedelta(hours=1) < dt.datetime.fromisoformat(h) <= fi]
+    series = {m: s for m, s in per_model.items() if any(i < len(s) and s[i] is not None for i in dins)}
+    if not dins or not series:
+        return None
+    mitjana = []
+    for i in range(len(hores)):
+        vals = [s[i] for s in series.values() if i < len(s) and s[i] is not None]
+        mitjana.append(round(sum(vals) / len(vals), 2) if vals else None)
+    res = {"generat": ahora.isoformat(timespec="minutes"), "horitzo_h": horitzo_h, "models": list(series),
+           "hores": [{"hora": hores[i], "max": max([s[i] for s in series.values() if i < len(s) and s[i] is not None] or [None]),
+                      "mitjana": mitjana[i]} for i in dins]}
+    for n, nom in ((3, "3h"), (6, "6h")):
+        millor_model, millor_i, millor_mm = None, dins[0], -1.0
+        for m, s in series.items():
+            for i in dins:
+                v = _suma(s, i, n)
+                if v is not None and v > millor_mm:
+                    millor_model, millor_i, millor_mm = m, i, v
+        ini = dt.datetime.fromisoformat(hores[max(0, millor_i - n + 1)])
+        res[f"mm_{nom}_max"] = max(millor_mm, 0.0)
+        res[f"mm_{nom}_mitjana"] = _suma(mitjana, millor_i, n) or 0.0
+        res[f"finestra_{nom}"] = {"ini": ini.isoformat(timespec="minutes"),
+                                  "fi": (dt.datetime.fromisoformat(hores[millor_i]) + dt.timedelta(hours=1)).isoformat(timespec="minutes")}
+        if n == 3:
+            res["per_model"] = {m: (_suma(s, millor_i, 3) or 0.0) for m, s in series.items()}
+            res["model_max"] = millor_model
+    res["nivell"] = "possible" if res["mm_3h_max"] >= llindar else None
+    res["llindar_mm"] = llindar
+    return res
+
+
+def previsio(ahora, get=None, lector=None):
+    """La previsió de crescuda per a casa.json: els quatre models a la conca
+    (CONCA_RIERA), la pluja de les últimes 24 hores a Sant Cugat (el sòl
+    mullat distingeix els casos, docs/estadistica.md 12.3) i des de quan
+    dura el «possible» (ESTAT_PREVISIO), perquè la pestanya el senyali com a
+    nou. S'apunta cada passada al registre per mesurar-la."""
+    import prevision as P
+    get = get or P.get_reintenta
+    models = C.MODELOS_FINOS + [C.MODEL_ECMWF]
+    d = json.loads(get(URL_PREVISIO.format(lat=C.CONCA_RIERA[0], lon=C.CONCA_RIERA[1], models=",".join(models))))
+    h = d["hourly"]
+    per_model = {m: h.get(f"precipitation_{m}") or [] for m in models}
+    hores = h["time"]
+    # Les hores d'Open-Meteo vénen en hora local sense zona: s'hi posa la d'ahora.
+    tz = ahora.tzinfo
+    hores_tz = [dt.datetime.fromisoformat(t).replace(tzinfo=tz).isoformat(timespec="minutes") for t in hores]
+    res = previsio_models(hores_tz, per_model, ahora)
+    if res is None:
+        return None
+    try:
+        filas = files(C.RIERA_ESTACIO, ahora, 24, lector)
+        fins = filas[-1][0] + MITJA_HORA if filas else None
+        res["xv_24h"] = acumulat(filas, fins, 24) if fins else None
+        res["xv_fins"] = fins.astimezone().isoformat(timespec="minutes") if fins else None
+    except Exception:
+        res["xv_24h"], res["xv_fins"] = None, None
+    estat = {}
+    try:
+        with open(ESTAT_PREVISIO, encoding="utf-8") as f:
+            estat = json.load(f)
+    except (OSError, ValueError):
+        pass
+    if res["nivell"]:
+        res["inici"] = estat.get("inici") if estat.get("inici") else res["generat"]
+        estat = {"inici": res["inici"], "darrer": res["generat"], "mm_3h_max": res["mm_3h_max"]}
+    else:
+        estat = {}
+    try:
+        os.makedirs(ESTAT_DIR, exist_ok=True)
+        with open(ESTAT_PREVISIO + ".tmp", "w", encoding="utf-8") as f:
+            json.dump(estat, f)
+        os.replace(ESTAT_PREVISIO + ".tmp", ESTAT_PREVISIO)
+    except OSError:
+        pass
+    apunta_previsio(res)
+    return res
+
+
+def apunta_previsio(res):
+    try:
+        os.makedirs(DIR, exist_ok=True)
+        nou = not os.path.exists(REGISTRE_PREVISIO)
+        with open(REGISTRE_PREVISIO, "a", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=CAMPS_PREVISIO)
+            if nou:
+                w.writeheader()
+            w.writerow({"t": res["generat"], "nivell": res["nivell"] or "", "mm_3h_max": res["mm_3h_max"],
+                        "mm_3h_mitjana": res["mm_3h_mitjana"], "finestra_ini": res["finestra_3h"]["ini"],
+                        "finestra_fi": res["finestra_3h"]["fi"], "mm_6h_max": res["mm_6h_max"],
+                        "mm_6h_mitjana": res["mm_6h_mitjana"], "model_max": res.get("model_max") or "",
+                        "xv_24h": "" if res.get("xv_24h") is None else res["xv_24h"]})
+    except OSError:
+        pass
+
+
+def resum_previsio(registre_xv=None):
+    """Per dies: el màxim previst en 3 hores (l'últim de cada dia abans de la
+    finestra) i el que va caure a Sant Cugat (registre/meteocat-XV.csv), per
+    decidir el llindar amb dades (ADR 0107)."""
+    if not os.path.exists(REGISTRE_PREVISIO):
+        return "Encara no hi ha cap previsió apuntada."
+    with open(REGISTRE_PREVISIO, encoding="utf-8") as f:
+        files_ = list(csv.DictReader(f))
+    xv = {}
+    ruta = registre_xv or os.path.join(DIR, f"meteocat-{C.RIERA_ESTACIO}.csv")
+    if os.path.exists(ruta):
+        with open(ruta, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                try:
+                    xv[r["fins"][:13]] = float(r["pluja_mm"])
+                except (KeyError, ValueError):
+                    pass
+    per_dia = {}
+    for r in files_:
+        d = r["finestra_fi"][:10]
+        v = float(r["mm_3h_max"] or 0)
+        if v >= per_dia.get(d, (0, None))[0]:
+            per_dia[d] = (v, r["t"])
+    linies = [f"{'dia':10} {'previst 3h':>10} {'real 3h':>8}  (XV, màxim del dia)"]
+    hores = sorted(xv)
+    for d in sorted(per_dia):
+        del_dia = [h for h in hores if h.startswith(d)]
+        real = max((sum(xv.get(h2, 0) for h2 in hores[max(0, hores.index(h) - 2):hores.index(h) + 1]) for h in del_dia),
+                   default=None)
+        linies.append(f"{d:10} {per_dia[d][0]:10.1f} {('%.1f' % real) if real is not None else '  —':>8}")
+    n_poss = sum(1 for d, (v, _) in per_dia.items() if v >= C.RIERA_PREVISIO_MM)
+    linies.append(f"Dies amb {C.RIERA_PREVISIO_MM} mm o més previstos: {n_poss} de {len(per_dia)}.")
+    return "\n".join(linies)
+
+
 def resum():
     if not os.path.exists(REGISTRO):
         return "Encara no hi ha cap episodi apuntat."
@@ -631,6 +798,11 @@ if __name__ == "__main__":
         print(json.dumps(llegeix_estat(), ensure_ascii=False, indent=1))
     elif ordre == "resum":
         print(resum())
+    elif ordre == "previsio":
+        import prevision as P
+        print(json.dumps(previsio(P.AHORA), ensure_ascii=False, indent=1))
+    elif ordre == "previsio-resum":
+        print(resum_previsio())
     elif ordre == "respostes":
         print(respostes())
     else:
