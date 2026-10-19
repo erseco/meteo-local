@@ -119,7 +119,39 @@ def modelos(desde, errors=None):
                         h[f"{camp}_{m}"] = serie
         except Exception as ex:
             print(f"No he pogut llegir els núvols de {m}:", ex, file=sys.stderr)
+    # El vent cada 15 minuts, per a la mitjana de cada hora (vent_hora): el
+    # vent horari és el d'un instant, el de l'hora en punt, i en una hora de
+    # tempesta sortia «3 (37)» (revisor, 19-10-2026). Si falla, el de l'hora.
+    q = urllib.parse.urlencode({
+        "latitude": C.CASA[0], "longitude": C.CASA[1], "minutely_15": "wind_speed_10m",
+        "models": "meteofrance_seamless", "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
+    try:
+        m15 = json.loads(P.get_reintenta(f"https://api.open-meteo.com/v1/forecast?{q}"))["minutely_15"]
+        h["vent_15min"] = {t: v for t, v in zip(m15["time"], m15["wind_speed_10m"]) if v is not None}
+    except Exception as ex:
+        print("No he pogut llegir el vent cada 15 minuts:", ex, file=sys.stderr)
     return h, e
+
+
+def vent_hora(h, i):
+    """El vent mitjà del tram que acaba a l'hora i (km/h): la mitjana dels
+    valors cada 15 minuts de la hora, pels trapezis (els dos extrems hi compten
+    la meitat); sense, la mitjana del principi i el final, com la
+    temperatura; i sense el principi, el de l'hora. Juanjo, 19-10-2026: «sí,
+    hazlo» (la llegenda en diu «mitjana» i era un instant)."""
+    hores = h.get("wind_speed_10m_meteofrance_seamless") or []
+    fi = h["time"][i]
+    m15 = h.get("vent_15min") or {}
+    if m15:
+        t = dt.datetime.fromisoformat(fi)
+        punts = [m15.get((t - dt.timedelta(minutes=15 * k)).strftime("%Y-%m-%dT%H:%M")) for k in range(4, -1, -1)]
+        if all(v is not None for v in punts):
+            return round((punts[0] / 2 + sum(punts[1:4]) + punts[4] / 2) / 4, 1)
+    ara = hores[i] if i < len(hores) else None
+    abans = hores[i - 1] if 0 < i <= len(hores) else None
+    if ara is not None and abans is not None:
+        return round((ara + abans) / 2, 1)
+    return ara
 
 
 def indice_uv(desde):
@@ -523,7 +555,7 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
             "avisos": avisos_mostrats(ini, fin, avisos),
             "nuvols": nuvols_ara if n == 0 and nuvols_ara is not None else NV.mescla(NV.valors_hora(h, i)),
             "codi": valor("weather_code", i),
-            "vent": valor("wind_speed_10m", i), "ratxa": valor("wind_gusts_10m", i),
+            "vent": vent_hora(h, i), "ratxa": valor("wind_gusts_10m", i),
             "neu": valor("snowfall", i)})
     return filas
 

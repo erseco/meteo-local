@@ -303,3 +303,21 @@ Comprobados en el código los leves de la noche del 18 al 19:
 
 Pruebas: `tests/test_bot.py` (18,5 → 19; 17,6 frente a 19,4 → 1) y
 `tests/test_trens.py` (`test_incidencia_resolta_que_es_recupera_va_amb_retard`).
+
+## Cambio del 19-10-2026 (3.155.0): el viento de cada hora, la media de la hora
+
+El revisor vio en la tabla por horas «3 (37)» en la fila de 17 a 18 (y antes
+otro parecido de madrugada): el viento era el de un instante, el de AROME a la
+hora en punto (`wind_speed_10m`), y la racha, la máxima de toda la hora; en
+una hora de tormenta, con el viento a ráfagas, el instante podía caer en una
+calma. La leyenda decía «la mitjana». Juanjo, tras preguntar si había riesgo
+de pasarse del límite de Open-Meteo (no: unas 2.900 peticiones al día en el
+peor caso, de 10.000; esta añade unas 240): «sí, hazlo y publica». Ahora
+`casa.vent_hora` da la media de la hora con el viento cada 15 minutos de
+AROME (`minutely_15`, una petición más por pasada), por trapecios; sin esos
+datos, la media del principio y el final de la hora, como la temperatura. La
+racha no cambia. Con los datos del 19-10-2026, la fila de 17 a 18 pasó de «3
+(37)» a «9 (37)». La leyenda dice ahora «La mitjana de l'hora en km/h i,
+entre parèntesis, la ratxa més forta de l'hora». Prueba:
+`tests/test_casa_fonts.py` (`VentHora`).
+

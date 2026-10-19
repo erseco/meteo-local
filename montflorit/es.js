@@ -244,7 +244,7 @@ var IDIOMA = {
     "Hi compta la pluja que el radar veu acostar-se.": "Cuenta la lluvia que el radar ve acercarse.",
     "Barra de color": "Barra de color",
     "Hores amb avís, del color del nivell.": "Horas con aviso, del color del nivel.",
-    "La mitjana en km/h i, entre parèntesis, les ratxes.": "La media en km/h y, entre paréntesis, las rachas.",
+    "La mitjana de l’hora en km/h i, entre parèntesis, la ratxa més forta de l’hora.": "La media de la hora en km/h y, entre paréntesis, la racha más fuerte de la hora.",
     "Més enllà de 24 hores, la previsió és menys segura.": "Más allá de 24 horas, la previsión es menos segura.",
     // El perill de cada tram i hora (ADR 0076).
     "Temps a Montflorit: avís {0} per {1} (no oficial)": "Temps a Montflorit: aviso {0} por {1} (no oficial)",

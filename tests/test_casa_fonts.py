@@ -61,3 +61,22 @@ class Fonts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class VentHora(unittest.TestCase):
+    """El vent de cada fila, la mitjana de l'hora (19-10-2026): abans, el d'un
+    instant, i en una hora de tempesta sortia «3 (37)»."""
+
+    def test_mitjana_de_la_hora(self):
+        import casa
+        h = {"time": ["2026-10-19T17:00", "2026-10-19T18:00"],
+             "wind_speed_10m_meteofrance_seamless": [12.7, 3.3],
+             "vent_15min": {"2026-10-19T17:00": 12.7, "2026-10-19T17:15": 12.1, "2026-10-19T17:30": 7.1,
+                            "2026-10-19T17:45": 1.1, "2026-10-19T18:00": 3.3}}
+        # Pels trapezis: (12,7/2 + 12,1 + 7,1 + 1,1 + 3,3/2) / 4 = 7,1, no el 3,3 de les 18 h.
+        self.assertEqual(casa.vent_hora(h, 1), 7.1)
+        # Sense els de 15 minuts, la mitjana del principi i el final.
+        self.assertEqual(casa.vent_hora({**h, "vent_15min": {}}, 1), 8.0)
+        # I sense el principi, el de l'hora.
+        self.assertEqual(casa.vent_hora({**h, "vent_15min": {}}, 0), 12.7)
+

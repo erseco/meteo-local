@@ -1128,7 +1128,7 @@ function taula(hores, mesurada, riscos, sol) {
     terme('+1, +2…', T('Les temperatures són les de vora la riera, la zona més freda del barri. La xifra diu quants graus més sol fer a la part alta, que canvia segons l’hora del dia i l’època de l’any: surt del que han mesurat les estacions del barri a cada hora els últims 30 dies.'), 'alta');
   }
   if (visibles.some((f) => avisHora(f))) terme(T('Barra de color'), T('Hores amb avís, del color del nivell.'));
-  terme(T('Vent'), T('La mitjana en km/h i, entre parèntesis, les ratxes.'));
+  terme(T('Vent'), T('La mitjana de l’hora en km/h i, entre parèntesis, la ratxa més forta de l’hora.'));
   // Si la taula travessa un canvi d'hora, la franja de 2 a 3 surt dues
   // vegades (octubre) o no hi és (març): es diu per què (Juanjo, 13-10-2026).
   const desfasos = visibles.map((f) => new Date(f.hora).getTimezoneOffset());
