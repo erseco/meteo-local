@@ -75,6 +75,25 @@ function botoCompartir(id, titol, text = '') {
   return b;
 }
 
+// Fins quan s'havia vist «Perill» en obrir la pàgina: les fitxes publicades o
+// actualitzades després porten «Nou», com els avisos de la portada, i el
+// mateix criteri que el punt vermell (comu.perillsNous). Es llegeix un cop,
+// perquè les repintades de la mateixa visita no ho esborrin (Juanjo,
+// 19-10-2026: «al entrar no sé qué es lo nuevo porque hay muchos mensajes
+// activos, hay que marcar como nuevo lo que sea nuevo»).
+let VIST_ABANS;
+
+function vistAbans() {
+  if (VIST_ABANS === undefined) {
+    try { VIST_ABANS = localStorage.getItem(CLAU_PERILL_VIST); } catch (_) { VIST_ABANS = null; }
+  }
+  return VIST_ABANS;
+}
+
+function esNou(e, ara) {
+  return perillsNous([e], vistAbans(), ara).length > 0;
+}
+
 function fitxa(e, ara) {
   const text = e[idiomaText()] || e.ca;
   const [primera, ...resta] = trossos(text);
@@ -85,6 +104,7 @@ function fitxa(e, ara) {
   const art = element('article', `avis-item episodi ${CLASSE_CERCLE[cercle] || 'compte'}${fi ? ' acabat' : ''}`);
   art.id = idFitxa(e);
   const titol = element('p', 'episodi-titol');
+  if (!fi && esNou(e, ara)) titol.append(element('span', 'avis-nou', T('Nou')));
   titol.append(...nodesLinia(primera));
   const cap = element('div', 'episodi-cap');
   const textFi = fi && (e[`fi_${idiomaText()}`] || e.fi_ca);
@@ -279,7 +299,9 @@ function pinta(dades, ara = new Date()) {
     }
   }
   $('perill').replaceChildren(...peces);
-  // Vist fins ara: la pestanya ja no ha de senyalar res d'abans (comu.js).
+  // Vist fins ara: la pestanya ja no ha de senyalar res d'abans (comu.js);
+  // el «Nou» de les fitxes es manté amb el que hi havia en obrir (vistAbans).
+  vistAbans();
   try { localStorage.setItem(CLAU_PERILL_VIST, ara.toISOString()); } catch (_) {}
   $('avis-dades').hidden = true;
   if (dades.versio) posaVersio(dades.versio);

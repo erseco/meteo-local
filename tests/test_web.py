@@ -33,7 +33,7 @@ const ctx = vm.createContext({
     documentElement: { dataset: {} } },
   matchMedia: () => ({ matches: false, addEventListener() {} }), addEventListener() {}, AbortController,
   localStorage: { getItem: () => null, setItem() {} }, navigator: {}, location: { pathname: '/', hash: '' },
-  history: { replaceState() {} }, window: { addEventListener() {} },
+  history: { replaceState() {} }, window: { addEventListener() {} }, setInterval: () => 0, clearInterval() {},
   fetch: () => new Promise(() => {}), setTimeout: () => 0, clearTimeout() {},
 });
 for (const f of ['comu.js', ...(['casa.js', 'consultes.js'].includes(pagina) ? ['grafica.js'] : []), pagina]) vm.runInContext(fs.readFileSync(`${web}/${f}`, 'utf8'), ctx);
@@ -854,6 +854,18 @@ class Web(unittest.TestCase):
         self.assertEqual(nous(None), ["2026-10-12T05:00+02:00"])
         self.assertEqual(nous("2026-10-12T05:10:00+02:00"), [])
         self.assertEqual(self.avalua(ara, "perillsNous([{inici: '2026-10-11T19:30+02:00', fi: '2026-10-11T19:36+02:00'}], null)"), [])
+        # Un avís actualitzat després de l'última visita també és nou (19-10-2026): l'hora de
+        # publicació és la de «Nou» a «Avisos actius» (darrer, o el comunicat d'un pla).
+        actualitzat = [{"clau": "smp:pluja", "inici": "2026-10-11T19:30+02:00", "darrer": "2026-10-12T05:20+02:00"}]
+        self.assertEqual(self.avalua(ara, f"perillsNous({json.dumps(actualitzat)}, '2026-10-12T05:10:00+02:00').length"), 1)
+        self.assertEqual(self.avalua(ara, f"perillsNous({json.dumps(actualitzat)}, '2026-10-12T05:25:00+02:00').length"), 0)
+        # I a «Perill», la fitxa porta «Nou» amb el mateix criteri, amb el vist d'en obrir.
+        expr = ("desats = {'meteo.perill-vist-fins': '2026-10-12T05:10:00+02:00'};"
+                "localStorage.getItem = (k) => desats[k] || null; localStorage.setItem = (k, v) => { desats[k] = v; };"
+                f"[esNou({json.dumps(actualitzat[0])}, new Date('{ara}')), "
+                f"esNou({json.dumps({'clau': 'smp:x', 'inici': '2026-10-11T19:30+02:00'})}, new Date('{ara}')), "
+                f"esNou({json.dumps({'clau': 'smp:y', 'inici': '2026-10-12T05:00+02:00', 'fi': '2026-10-12T05:05+02:00'})}, new Date('{ara}'))]")
+        self.assertEqual(self.avalua(ara, expr, pagina="perill.js"), [True, False, False])
 
     def test_grafica_pluja_forta_i_torrencial(self):
         # ADR 0096: les barres de la gràfica, amb les intensitats de Meteocat (les de la columna «Cel»).

@@ -1527,10 +1527,16 @@ marcaNovetats();
 // 12-10-2026; ADR 0074).
 const CLAU_PERILL_VIST = 'meteo.perill-vist-fins';
 
+// Nou: actiu i publicat o actualitzat (publicacioEpisodi: l'hora de «Nou» a
+// «Avisos actius») després de l'última visita a «Perill». Fins a la 3.146.0
+// només comptava el començament: el punt vermell no sortia per una
+// actualització, i a «Perill» res deia què era nou (Juanjo, 19-10-2026: «hay
+// que marcar como nuevo lo que sea nuevo»).
 function perillsNous(historial, vist, ara = new Date()) {
   return (historial || []).filter((e) => {
     const actiu = !e.fi && !(e.fins && new Date(e.fins) <= ara);
-    return actiu && (!vist || new Date(e.inici).getTime() > new Date(vist).getTime());
+    const hora = e.clau ? publicacioEpisodi(e).hora : new Date(e.darrer || e.inici);
+    return actiu && (!vist || hora.getTime() > new Date(vist).getTime());
   });
 }
 

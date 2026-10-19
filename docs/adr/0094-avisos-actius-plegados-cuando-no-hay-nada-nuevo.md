@@ -175,3 +175,21 @@ llega, el bloque sale plegado, salvo un rojo. «Si surts» no cambia.
 Validación: `tests/test_perills.py` (plegado la segunda vez, abierto con algo
 nuevo o rojo); Chromium y Firefox, escritorio y móvil, primera visita abierta
 con «Nou» y la siguiente plegada.
+
+## Cambio del 19-10-2026 (3.147.0): «Nou» también en las fichas de «Perill», con el criterio del punto rojo
+
+Juanjo, tras ver el punto rojo de «Perill»: «al entrar no sé qué es lo nuevo
+porque hay muchos mensajes activos, hay que marcar como nuevo lo que sea
+nuevo». El punto rojo (ADR 0071 y 0074) solo contaba el comienzo de una
+situación posterior a la última visita, y en «Perill» ninguna ficha decía
+cuál era. Ahora el punto rojo y las fichas usan el mismo criterio que el
+«Nou» de «Avisos actius»: una situación activa publicada **o actualizada**
+(`publicacioEpisodi`: `darrer`, o el comunicado de un plan) después de la
+última visita a «Perill». En «Perill», esas fichas llevan el chip «Nou»
+delante del título; el «visto hasta» se lee una vez al abrir la página, de
+modo que las repintadas de la misma visita no lo borran, y se guarda al
+pintar, como antes. Validación: `tests/test_web.py`
+(`test_punt_de_perill_nomes_amb_un_perill_actiu`: una actualización
+posterior a la visita es nueva; `esNou` en «Perill» con el visto de al
+abrir), y la página en Chromium y Firefox.
+
