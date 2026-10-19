@@ -94,6 +94,19 @@ function esNou(e, ara) {
   return perillsNous([e], vistAbans(), ara).length > 0;
 }
 
+// A «Ara», les fitxes amb «Nou» al capdavant, de la publicada o actualitzada
+// més tard a la més antiga; darrere, les altres, de la que va començar més
+// tard a la més antiga (Juanjo, 19-10-2026: «se etiqueta con nou lo que se
+// acaba de añadir, pero me aparece en último lugar, debe aparecer en primer
+// lugar»). Una actualització d'un episodi antic és nova però havia començat
+// abans, i quedava a baix. A la visita següent ja no és «Nou» i torna al seu
+// lloc per data.
+function ordreActius(actius, ara) {
+  const hora = (e) => (e.clau ? publicacioEpisodi(e).hora : new Date(e.darrer || e.inici));
+  const nous = actius.filter((e) => esNou(e, ara)).sort((a, b) => hora(b) - hora(a));
+  return [...nous, ...actius.filter((e) => !nous.includes(e))];
+}
+
 function fitxa(e, ara) {
   const text = e[idiomaText()] || e.ca;
   const [primera, ...resta] = trossos(text);
@@ -258,7 +271,7 @@ function nomMes(iso) {
 
 function pinta(dades, ara = new Date()) {
   const historial = [...(dades.historial || [])].sort((a, b) => new Date(b.inici) - new Date(a.inici));
-  const actius = historial.filter((e) => !finalDe(e, ara));
+  const actius = ordreActius(historial.filter((e) => !finalDe(e, ara)), ara);
   const limit = new Date(ara.getTime() - DIES_RECENTS * 86400000);
   const acabats = historial.filter((e) => finalDe(e, ara));
   const recents = acabats.filter((e) => new Date(e.inici) >= limit);

@@ -193,3 +193,21 @@ pintar, como antes. Validación: `tests/test_web.py`
 posterior a la visita es nueva; `esNou` en «Perill» con el visto de al
 abrir), y la página en Chromium y Firefox.
 
+
+## Cambio del 19-10-2026 (3.155.1): en «Perill», lo nuevo primero
+
+Juanjo: «se etiqueta con nou lo que se acaba de añadir, pero me aparece en
+último lugar, debe aparecer en primer lugar», y «luego ya se ordena otra vez
+por fecha… pero al entrar tiene que estar lo nuevo en primer lugar». Las
+fichas de «Ara» iban por la hora de comienzo, y una actualización de un
+episodio antiguo (el comunicado nuevo de un plan, un aviso que cambia) lleva
+«Nou» pero había empezado antes, así que quedaba abajo. Ahora
+(`perill.ordreActius`) las fichas con «Nou» van delante, de la publicada o
+actualizada más tarde a la más antigua, y detrás las demás, por comienzo como
+antes. Como «Nou» se calcula con el «visto hasta» de al abrir, el orden se
+mantiene durante la visita; en la siguiente ya no son nuevas y vuelven a su
+sitio por fecha. Validación: `tests/test_web.py`
+(`test_punt_de_perill_nomes_amb_un_perill_actiu`: la actualizada pasa delante
+de la que empezó después y ya se había visto) y el historial publicado del
+19-10-2026, con una visita simulada tres horas antes: el plan INUNCAT del 15,
+actualizado, sale primero.

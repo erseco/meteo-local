@@ -922,6 +922,14 @@ class Web(unittest.TestCase):
                 f"esNou({json.dumps({'clau': 'smp:x', 'inici': '2026-10-11T19:30+02:00'})}, new Date('{ara}')), "
                 f"esNou({json.dumps({'clau': 'smp:y', 'inici': '2026-10-12T05:00+02:00', 'fi': '2026-10-12T05:05+02:00'})}, new Date('{ara}'))]")
         self.assertEqual(self.avalua(ara, expr, pagina="perill.js"), [True, False, False])
+        # I a «Ara», les noves primer (19-10-2026): l'actualitzada, tot i haver començat abans,
+        # passa davant de la que va començar més tard i ja s'havia vist.
+        actius = [{"clau": "smp:vist", "inici": "2026-10-12T05:00+02:00"}, actualitzat[0],
+                  {"clau": "smp:nou", "inici": "2026-10-12T05:15+02:00"}]
+        expr = ("desats = {'meteo.perill-vist-fins': '2026-10-12T05:10:00+02:00'};"
+                "localStorage.getItem = (k) => desats[k] || null; localStorage.setItem = (k, v) => { desats[k] = v; };"
+                f"ordreActius({json.dumps(actius)}, new Date('{ara}')).map((e) => e.clau)")
+        self.assertEqual(self.avalua(ara, expr, pagina="perill.js"), ["smp:pluja", "smp:nou", "smp:vist"])
 
     def test_grafica_pluja_forta_i_torrencial(self):
         # ADR 0096: les barres de la gràfica, amb les intensitats de Meteocat (les de la columna «Cel»).
