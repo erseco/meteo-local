@@ -198,10 +198,19 @@ def veina_ara(estacio, filas, ahora=None):
     if ahora - ultima["t"] > dt.timedelta(minutes=ARA_MAX_MIN):
         raise RuntimeError(f"l'última lectura és de les {ultima['t']:%H:%M}")
     hora = ultima["t"]
+    # Toda la lluvia sale de las mismas lecturas y hasta el mismo instante
+    # (hora, con sus segundos), también la de hoy: la suma de lo que sube el
+    # total desde la medianoche local, porque el total del día de Weather
+    # Underground no siempre vuelve a cero a medianoche. Hasta la 3.145.0 la
+    # de hoy se calculaba en casa.py hasta la hora sin segundos y perdía la
+    # última lectura: el 19-10-2026 a las 06:09, 0,1 mm de hoy con 0,2 en la
+    # última hora (ADR 0085).
     v = {"estacio": estacio, "nom": C.VEINES.get(estacio, {}).get("nom", estacio),
          "hora": hora.isoformat(timespec="minutes"),
          **{k: ultima.get(k) for k in ("temperatura", "humitat", "rosada", "pressio", "vent", "ratxa",
-                                       "intensitat", "pluja_avui")},
+                                       "intensitat")},
+         "pluja_avui_wu": ultima.get("pluja_avui"),
+         "pluja_avui": E.pluja_entre(filas, hora.replace(hour=0, minute=0, second=0, microsecond=0), hora),
          "pluja_15min": E.pluja_entre(filas, hora - dt.timedelta(minutes=C.PLOU_ARA_MIN), hora),
          "pluja_30min": E.pluja_entre(filas, hora - dt.timedelta(minutes=30), hora),
          "pluja_1h": E.pluja_entre(filas, hora - dt.timedelta(hours=1), hora),

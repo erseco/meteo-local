@@ -94,3 +94,16 @@ La lluvia de los últimos 15 minutos seguía siendo la de casa, y la de la
 en la hora. Ahora va también por consenso, con las mismas estaciones, y la de
 casa queda en `pluja_15min_estacio`. «Plou» sigue siendo que llueva en una
 estación que cuenta.
+
+## Cambio del 19-10-2026 (3.145.1): la lluvia de hoy de cada vecina, de las mismas lecturas
+
+A las 06:09, en la primera lluvia del día, «Ara» daba 0,1 mm de hoy y 0,2 en
+la última hora (lo vio otra sesión de Claude por encargo de Juanjo). La de hoy
+de cada vecina se sumaba en `casa.py` hasta la hora de la última lectura sin
+segundos, y las lecturas de Weather Underground los llevan (06:04:54): la
+última, la del salto, quedaba fuera. Ahora `wunderground.veina_ara` calcula
+la lluvia de hoy con las mismas lecturas y hasta el mismo instante que la de
+15 minutos, 30 minutos, una hora y tres horas (el total de WU queda en
+`pluja_avui_wu`), y la mediana de la red se hace con las mismas estaciones
+para las cinco cifras: no se cruzan. Prueba:
+`tests/test_wunderground.py` (`test_la_pluja_d_avui_compta_l_ultima_lectura_amb_segons`).

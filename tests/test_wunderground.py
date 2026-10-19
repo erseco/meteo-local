@@ -53,7 +53,7 @@ class Puja(unittest.TestCase):
 
 def obs(hhmm, tot, temp=12.0, vent=1, dia="2026-10-10"):
     """Una observación de la API (all/1day), en UTC."""
-    return {"stationID": "ICERDA6", "obsTimeUtc": f"{dia}T{hhmm}:00Z", "humidityAvg": 90,
+    return {"stationID": "ICERDA6", "obsTimeUtc": f"{dia}T{hhmm}{'' if ':' in hhmm[3:] else ':00'}Z", "humidityAvg": 90,
             "metric": {"tempAvg": temp, "dewptAvg": temp - 1, "pressureMax": 1018.2, "pressureMin": 1018.0,
                        "windspeedAvg": vent, "windgustHigh": vent * 2, "precipRate": 0.0, "precipTotal": tot}}
 
@@ -69,11 +69,12 @@ class Veines(unittest.TestCase):
 
     def test_plou_si_ha_recollit_pluja_en_els_darrers_minuts(self):
         ara = dt.datetime(2026, 10, 10, 6, 22, tzinfo=TZ)
-        seca = W.files([obs("03:50", 1.0), obs("04:05", 1.0), obs("04:20", 1.0)])
+        # Llovió 1 mm de madrugada; la de hoy es lo que sube el total desde la medianoche local.
+        seca = W.files([obs("22:00", 0.0, dia="2026-10-09"), obs("02:50", 1.0), obs("04:05", 1.0), obs("04:20", 1.0)])
         v = W.veina_ara("ICERDA6", seca, ara)
         self.assertFalse(v["plou"])
         self.assertEqual((v["estacio"], v["compta"], v["hora"]), ("ICERDA6", True, "2026-10-10T06:20+02:00"))
-        self.assertEqual((v["pluja_15min"], v["pluja_1h"], v["pluja_avui"]), (0.0, 0.0, 1.0))
+        self.assertEqual((v["pluja_15min"], v["pluja_1h"], v["pluja_avui"], v["pluja_avui_wu"]), (0.0, 0.0, 1.0, 1.0))
         # 0,3 mm entre les 06:05 i les 06:20: plou. La d'una hora abans no compta.
         moll = W.files([obs("03:50", 0.0), obs("04:05", 1.0), obs("04:20", 1.3)])
         v = W.veina_ara("ICERDA6", moll, ara)
@@ -82,6 +83,18 @@ class Veines(unittest.TestCase):
         # El dia de l'estació canvia (l'acumulat torna a zero): el que hi ha després compta.
         reinici = W.files([obs("03:50", 55.1), obs("04:05", 0.2), obs("04:20", 0.4)])
         self.assertEqual(W.veina_ara("ICERDA6", reinici, ara)["pluja_1h"], 0.4)
+
+    def test_la_pluja_d_avui_compta_l_ultima_lectura_amb_segons(self):
+        # 19-10-2026, 06:09: les lectures de WU porten segons (06:04:54) i la
+        # d'avui, calculada fins a l'hora sense segons, perdia el salt de
+        # l'última lectura: 0,1 mm d'avui amb 0,2 en l'última hora.
+        ara = dt.datetime(2026, 10, 19, 6, 9, tzinfo=TZ)
+        fs = W.files([obs("22:04:46", 0.0, dia="2026-10-18"), obs("03:54:46", 0.0, dia="2026-10-19"),
+                      obs("03:59:58", 0.0, dia="2026-10-19"), obs("04:04:46", 0.25, dia="2026-10-19")])
+        v = W.veina_ara("ICERDA18", fs, ara)
+        self.assertEqual(v["hora"], "2026-10-19T06:04+02:00")
+        self.assertEqual((v["pluja_15min"], v["pluja_1h"], v["pluja_avui"]), (0.2, 0.2, 0.2))
+        self.assertGreaterEqual(v["pluja_avui"], v["pluja_1h"])
 
     def test_una_lectura_vella_no_val(self):
         ara = dt.datetime(2026, 10, 10, 6, 22, tzinfo=TZ)

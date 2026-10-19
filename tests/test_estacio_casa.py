@@ -68,9 +68,10 @@ class Ecowitt(unittest.TestCase):
         def veina(est, pluja_1h, plou=False, rosada=15, intensitat=None, compta=True):
             files = [lectura("00:05", 3.0, dia="2026-10-13"), lectura("05:00", 3.0, dia="2026-10-13"),
                      lectura("06:00", 3.0 + pluja_1h, dia="2026-10-13")]
+            # Como wunderground.veina_ara: la de hoy, de las mismas lecturas (el total de WU, aparte).
             return {"estacio": est, "hora": files[-1]["t"].isoformat(timespec="minutes"), "files": files,
-                    "pluja_1h": pluja_1h, "pluja_avui": 99.0, "plou": plou, "compta": compta,
-                    "rosada": rosada, "intensitat": intensitat}
+                    "pluja_1h": pluja_1h, "pluja_avui": pluja_1h, "pluja_avui_wu": 99.0, "plou": plou,
+                    "compta": compta, "rosada": rosada, "intensitat": intensitat}
         casa_ = {"pluja_1h": 0.0, "pluja_avui": 0.0, "plou": False, "intensitat": 0.0,
                  "temperatura": 18.0, "humitat": 70, "rosada": 12.0}
         veines = [veina("A", 4.0, True, 15, 6.0), veina("B", 2.0, True, 15, 2.0), veina("C", 3.0, False, 16),
@@ -79,7 +80,7 @@ class Ecowitt(unittest.TestCase):
         # La mediana de casa (0, su cero no es fiable) y de las tres que cuentan (2, 3, 4).
         self.assertEqual(r["pluja_1h"], 2.5)
         self.assertEqual(r["pluja_1h_estacio"], 0.0)
-        # Hoy, por incrementos desde medianoche (el total de 99 de la vecina no cuenta).
+        # Hoy, la mediana de las mismas cifras de cada estación (el total de 99 de WU no cuenta).
         self.assertEqual(r["pluja_avui"], 2.5)
         # Llueve, con la intensidad mediana de las que la marcan y cuentan (A y B).
         self.assertTrue(r["plou"])

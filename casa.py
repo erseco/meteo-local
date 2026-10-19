@@ -230,16 +230,6 @@ def ajusta_hores(hores, pluja, ahora):
     return hores
 
 
-def pluja_avui_veina(v):
-    """La lluvia de hoy de una vecina, sumando lo que sube su total desde
-    medianoche: el total del día de Weather Underground no siempre vuelve a
-    cero a medianoche local."""
-    if not v.get("files"):
-        return v.get("pluja_avui")
-    hora = dt.datetime.fromisoformat(v["hora"])
-    return E.pluja_entre(v["files"], hora.replace(hour=0, minute=0, second=0, microsecond=0), hora)
-
-
 def _mediana(valors):
     valors = [x for x in valors if x is not None]
     return round(statistics.median(valors), 1) if valors else None
@@ -254,12 +244,11 @@ def consens_pluja(casa, veines=None):
     estacions = ([casa] if casa else []) + [v for v in veines or [] if v.get("compta")]
     # También la de 15 minutos: si no, quedaba la de casa sola y podía ser
     # mayor que la de la última hora (revisor, 18-10-2026: 0,3 mm en 15
-    # minutos y 0 en la hora). Con las mismas estaciones, las medianas no se
-    # cruzan.
-    return {**{c: _mediana([e.get(c) for e in estacions])
-               for c in ("pluja_15min", "pluja_30min", "pluja_1h", "pluja_3h")},
-            "pluja_avui": _mediana([casa.get("pluja_avui") if e is casa else pluja_avui_veina(e)
-                                    for e in estacions])}
+    # minutos y 0 en la hora). Con las mismas estaciones y cada una con sus
+    # cifras de las mismas lecturas (wunderground.veina_ara), las medianas no
+    # se cruzan: la de hoy no baja de la de la última hora si la hora es de hoy.
+    return {c: _mediana([e.get(c) for e in estacions])
+            for c in ("pluja_15min", "pluja_30min", "pluja_1h", "pluja_3h", "pluja_avui")}
 
 
 def consens(ara_casa, casa, veines=None):
