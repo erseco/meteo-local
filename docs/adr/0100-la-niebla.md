@@ -82,3 +82,17 @@ respuesta sirve (Juanjo: «30 minutos no es demasiado? la situación puede haber
 cambiado totalmente»; descartados los botones que caducan, que perderían
 respuestas). El mensaje dice «Apuntado a las 19:42: …». Las respuestas de antes
 pasan sus datos a `pregunta_…` y quedan sin los del momento de responder.
+
+## Cambio del 19-10-2026 (3.150.2): las respuestas, aparte de las pasadas
+
+Juanjo respondió varias veces a la pregunta de la llovizna (plugim, de las
+09:28) y el mensaje no decía «Apuntado». El reloj del NAS leía las respuestas
+en la misma vuelta que las publicaciones, después de ellas: con lluvia (cada
+6 minutos) y código nuevo, el bucle estuvo casi todo el rato publicando y la
+lectura esperaba minutos (la de la riera, solo dentro de cada pasada). Ahora
+`nas/reloj.sh` lee las de la niebla, la llovizna y la riera en un bucle aparte
+cada 15 segundos (`respostes_rapides`), y `confirmacio.respostes` lleva un
+candado para que dos lecturas a la vez no apunten la misma respuesta dos
+veces. Sin preguntas pendientes de las últimas 24 horas no se consulta
+Telegram.
+

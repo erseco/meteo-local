@@ -10,6 +10,7 @@ seu fitxer de preguntes i el de respostes, al registre.
 """
 import csv
 import datetime as dt
+import fcntl
 import json
 import os
 import urllib.parse
@@ -89,6 +90,16 @@ def al_dia(confirmacions, camps):
 
 
 def respostes(prefix, preguntes, confirmacions, textos, camps, telegram, ara, estat_ara=None):
+    """_respostes amb un cadenat: el rellotge del NAS les llegeix cada pocs
+    segons en un bucle a part (19-10-2026) i la riera també en cada passada;
+    dues lectures alhora apuntarien la mateixa resposta dues vegades."""
+    os.makedirs(os.path.dirname(confirmacions) or ".", exist_ok=True)
+    with open(confirmacions + ".lock", "w") as cadenat:
+        fcntl.flock(cadenat, fcntl.LOCK_EX)
+        return _respostes(prefix, preguntes, confirmacions, textos, camps, telegram, ara, estat_ara)
+
+
+def _respostes(prefix, preguntes, confirmacions, textos, camps, telegram, ara, estat_ara=None):
     """Les respostes als botons d'una pregunta, una vegada cadascuna, a
     confirmacions. La resposta val per al moment en què es respon, no per al
     de la pregunta (Juanjo, 18-10-2026: «si respondo a destiempo… la situación

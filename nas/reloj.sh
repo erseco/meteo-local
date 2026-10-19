@@ -60,13 +60,25 @@ prepara() {
   fi
 }
 
-# Las respuestas de Juanjo a la pregunta de la niebla, cada minuto, para que
-# el mensaje diga enseguida que se han apuntado (boira.py, ADR 0100). Sin
-# preguntas pendientes, no hace nada.
-respostes_boira() {
-  (cd "$REPO" && python3 boira.py respostes >/dev/null 2>&1) || true
-  # Y las del plugim que solo ve el radar (plugim.py, ADR 0019).
-  (cd "$REPO" && python3 plugim.py respostes >/dev/null 2>&1) || true
+# Las respuestas de Juanjo a los botones (niebla, boira.py, ADR 0100;
+# llovizna que solo ve el radar, plugim.py, ADR 0019; desbordamiento de la
+# riera, riera.py, ADR 0027), cada RESPOSTES_S segundos y aparte del bucle de
+# las pasadas, para que el mensaje diga enseguida que se han apuntado. Dentro
+# del bucle esperaban a que acabara la publicación: con lluvia (cada 6
+# minutos) y código nuevo, el «Apuntado» tardaba minutos (Juanjo,
+# 19-10-2026: «he respondido varias veces pero no veo el mensaje de
+# confirmación»). Sin preguntas pendientes, no consultan Telegram;
+# confirmacio.respostes lleva un candado.
+RESPOSTES_S=15
+respostes_rapides() {
+  while true; do
+    if [ -d "$REPO/.git" ]; then
+      for m in boira plugim riera; do
+        (cd "$REPO" && timeout 60 python3 "$m.py" respostes >/dev/null 2>&1) || true
+      done
+    fi
+    sleep "$RESPOSTES_S"
+  done
 }
 
 # Los avisos privados que Telegram no aceptó, mientras tengan sentido.
@@ -154,6 +166,7 @@ toca_desde() {   # toca_desde <minuto anterior, epoch> <minuto de ahora, epoch>
 }
 
 registro "reloj en marcha"
+respostes_rapides &
 ultim_minut=0
 while true; do
   # Espera al principio del minuto siguiente.
@@ -184,7 +197,6 @@ while true; do
     verificacion || registro "la verificación de las $(hora_verificacion) ha fallado: se repetirá mañana"
   fi
   [ -d "$REPO/.git" ] && reintenta_avisos
-  [ -d "$REPO/.git" ] && respostes_boira
   [ -d "$REPO/.git" ] && respostes_revisor
   # La copia del registro, una vez al día a partir de HORA_COPIA.
   if [ -f "$REPO/nas/copia-registre.sh" ] && [[ "$ahora" > "$HORA_COPIA" || "$ahora" = "$HORA_COPIA" ]] \
