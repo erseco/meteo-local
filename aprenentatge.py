@@ -684,7 +684,7 @@ def diari(avui=None, avisa=True):
     if text_xv:
         print(text_xv)
         if avisa:
-            subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", text_xv], check=False)
+            subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", text_xv], check=False)
     if metode(nou) == metode(en_us):
         # Mismo método, más datos: se pone al día sin avisar.
         if per_desar(nou) != per_desar(en_us) and not os.path.exists(ATURA):
@@ -698,7 +698,7 @@ def diari(avui=None, avisa=True):
     text = explica(en_us, nou, vp, vt)
     print(text)
     if avisa:
-        subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", text], check=False)
+        subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", text], check=False)
 
 
 def avis_sant_cugat(vp):
@@ -1106,7 +1106,7 @@ def aprén_sortir(avui, avisa=True):
                           f"{round(v['risc'] * 100)} % ({dades[b]['hores']} hores, {dades[b]['hores_pluja']} amb pluja).")
         text = "\n".join(linies)
         if avisa:
-            subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", text], check=False)
+            subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", text], check=False)
     return text
 
 
@@ -1117,7 +1117,7 @@ def avis_sortir(avisa=True):
         return None
     text = text_resum_sortir(r)
     if avisa:
-        subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", text], check=False)
+        subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", text], check=False)
     os.makedirs(DIR, exist_ok=True)
     open(AVIS_SORTIR, "w").close()
     return text

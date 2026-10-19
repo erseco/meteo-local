@@ -257,7 +257,7 @@ def comprova(marca, avisa=True, get_json=None):
     if text:
         print(text)
         if avisa:
-            subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", text], check=False)
+            subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", text], check=False)
     return error
 
 

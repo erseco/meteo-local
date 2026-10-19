@@ -296,7 +296,7 @@ def apren(ara=None, avisa=True, registre=None, directori=None):
         print(text)
         open(marca, "w").close()
         if avisa:
-            subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", text], check=False)
+            subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", text], check=False)
     return model
 
 

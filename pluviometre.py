@@ -187,7 +187,7 @@ def vigila(ahora=None, avisa=True):
     texto = mensaje(r, v)
     print(texto)
     if avisa:
-        subprocess.run(["avisar-juanjo", "--asunto", "pluviómetro de casa", texto], check=True)
+        subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "pluviómetro de casa", texto], check=True)
     os.remove(ESTADO)
     return v
 

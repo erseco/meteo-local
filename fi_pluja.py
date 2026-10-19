@@ -255,7 +255,7 @@ def aprèn(pluja, regs, avisa=True, avui=None):
          f"triar-la: {err_validat:.0f} minuts, amb la regla actual {err_actual:.0f} ({len(eps)} episodis). "
          "S'aplicarà demà; per aturar-ho, demana-ho a Claude abans.")
     if avisa:
-        subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", t], check=False)
+        subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", t], check=False)
     return t
 
 
@@ -279,7 +279,7 @@ def verifica(avisa=True, avui=None):
         if n >= MIN_EPISODIS:
             t = text(resultat(casos, n))
             if avisa:
-                subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", t], check=False)
+                subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", t], check=False)
             os.makedirs(APRENENTATGE, exist_ok=True)
             open(AVIS, "w").close()
             fets.append(t)

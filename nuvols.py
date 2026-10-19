@@ -337,7 +337,7 @@ def verifica(avui=None, avisa=True):
         if avis:
             print(avis)
             if avisa:
-                subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", avis], check=False)
+                subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", avis], check=False)
     actual = pesos()
     c = compara(parelles(avui), actual)
     nous = decideix(c, actual)
@@ -359,7 +359,7 @@ def verifica(avui=None, avisa=True):
                 f"de Sabadell en {c['dies']} dies).")
         print(text)
         if avisa:
-            subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", text], check=False)
+            subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", text], check=False)
     else:
         print("Núvols: es queden els pesos.", json.dumps(c, ensure_ascii=False))
     return estat

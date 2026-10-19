@@ -173,7 +173,7 @@ def _pregunta(ara, casa_json):
     text = (f"¿Hay niebla junto a la riera ahora? La estación de casa marca un {round(hum)} % de humedad "
             f"y no llueve.{sabadell} Con tu respuesta se comprueba si la previsión acierta la niebla.")
     teclat = {"inline_keyboard": [[{"text": t, "callback_data": f"boira:{k}"} for k, t in RESPOSTES.items()]]}
-    r, cfg = telegram("sendMessage", chat_id=json.load(open(CONFIG_BOT))["chat_id"], text=text, reply_markup=teclat)
+    r, cfg = telegram("sendMessage", chat_id=json.load(open(CONFIG_BOT))["chat_id"], text=CF.capcalera(text), reply_markup=teclat)
     CF.afegeix(PREGUNTES, ["t", "missatge", "humitat", "sabadell"],
              {"t": ara.isoformat(timespec="minutes"), "missatge": r["message_id"], "humitat": hum,
               "sabadell": int(bool(sabadell))})

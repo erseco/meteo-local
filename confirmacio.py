@@ -26,6 +26,13 @@ def telegram(metode, config=None, **params):
         return json.load(r).get("result"), c
 
 
+def capcalera(text):
+    """La pregunta, amb la capçalera dels altres avisos d'un programa (la
+    d'avisar-juanjo): qui escriu i quan. Juanjo, 19-10-2026: «cualquier ia que
+    me escriba debe identificarse de algún modo, así conozco el contexto»."""
+    return f"⚙️ Temps a Montflorit · {dt.datetime.now():%Y-%m-%d %H:%M}\n\n{text}"
+
+
 def files(ruta):
     if not os.path.exists(ruta):
         return []

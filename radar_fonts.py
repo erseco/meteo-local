@@ -142,7 +142,7 @@ def verifica(avui=None, avisa=True):
                 f"{c['dies_pluja']} dies; Brier {c['brier_' + nova]} contra {c['brier_' + actual]}).")
         print(text)
         if avisa:
-            subprocess.run(["avisar-juanjo", "--asunto", "meteo-local", text], check=False)
+            subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", text], check=False)
     else:
         print(f"Radar: es queda {noms[actual]}.", json.dumps(c, ensure_ascii=False))
     return estat

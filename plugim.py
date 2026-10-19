@@ -78,7 +78,7 @@ def _pregunta(ara, casa_json):
             f"(Meteocat, {px.get('meteocat')} puntos; RainViewer, {px.get('rainviewer')}, a 3 km o menos) "
             "y ninguna estación la mide. Con tu respuesta se comprueba si el radar acierta la llovizna.")
     teclat = {"inline_keyboard": [[{"text": t, "callback_data": f"plugim:{k}"} for k, t in RESPOSTES.items()]]}
-    r, cfg = telegram("sendMessage", chat_id=json.load(open(CONFIG_BOT))["chat_id"], text=text, reply_markup=teclat)
+    r, cfg = telegram("sendMessage", chat_id=json.load(open(CONFIG_BOT))["chat_id"], text=CF.capcalera(text), reply_markup=teclat)
     CF.afegeix(PREGUNTES, ["t", "missatge"] + CAMPS,
                {"t": ara.isoformat(timespec="minutes"), "missatge": r["message_id"], **{k: px.get(k) for k in CAMPS}})
     return r["message_id"]

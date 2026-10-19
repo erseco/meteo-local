@@ -79,6 +79,7 @@ class Confirmacio(unittest.TestCase):
         self.assertEqual(PG.pregunta(ARA, self.casa), 52)
         text = self.crides[0][1]["text"]
         self.assertIn("Meteocat, 31 puntos; RainViewer, 27", text)
+        self.assertTrue(text.startswith("⚙️ Temps a Montflorit · "))
         self.assertIsNone(PG.pregunta(ARA + dt.timedelta(hours=1), self.casa))   # no fins d'aquí a 3 h
         # Només la resposta del plugim, no la de la boira. Respon més tard: val
         # per a aquell moment, amb les dades d'aleshores (Juanjo, 18-10-2026).

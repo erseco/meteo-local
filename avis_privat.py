@@ -38,7 +38,10 @@ def ara_():
 def _executa(text, assumpte):
     """True si avisar-juanjo lo ha entregado (código 0)."""
     try:
+        # Firma el programa, no Claude (Juanjo, 19-10-2026); por la variable y no
+        # con --de, que el avisar-juanjo de la reserva no entiende.
         return subprocess.run([ORDRE, "--asunto", assumpte, text], check=False, timeout=120,
+                              env={**os.environ, "AVISAR_AGENTE": "Temps a Montflorit"},
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
     except (OSError, subprocess.SubprocessError):
         return False

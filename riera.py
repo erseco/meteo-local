@@ -562,7 +562,7 @@ def pregunta_desbordament(fila, ara=None):
     teclat = {"inline_keyboard": [[{"text": t, "callback_data": f"riera:{k}"} for k, t in RESPOSTES.items()]]}
     with open(_config_bot(), encoding="utf-8") as f:
         chat = json.load(f)["chat_id"]
-    r, _ = telegram("sendMessage", chat_id=chat, text=text, reply_markup=teclat)
+    r, _ = telegram("sendMessage", chat_id=chat, text=CF.capcalera(text), reply_markup=teclat)
     CF.afegeix(PREGUNTES, ["t", "missatge"] + CAMPS_PREGUNTA,
                {"t": ara.isoformat(timespec="minutes"), "missatge": r["message_id"], "inici": fila["inici"],
                 "fi": fila["fi"], "index_max": fila["index_max"], "nivell": nivell})
