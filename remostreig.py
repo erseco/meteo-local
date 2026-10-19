@@ -17,6 +17,8 @@ import numpy as np
 
 REMOSTREJOS = 2000       # remostrejos per blocs
 SEGURETAT = 0.95         # proporció de remostrejos en què el nou ha de guanyar
+MIN_DIES_ENTRENAMENT = 7     # dies anteriors, com a mínim, per avaluar un dia (ADR 0106)
+EPISODI_BUIT_H = 6           # hores seques que separen dos episodis de pluja
 
 
 def seguretat(errors_nou, errors_actual, blocs, llavor=0):
@@ -37,3 +39,42 @@ def seguretat(errors_nou, errors_actual, blocs, llavor=0):
 def guanya(s):
     """Si amb aquesta seguretat el nou substitueix l'actual."""
     return s is not None and s >= SEGURETAT
+
+
+# --- La validació: avanç temporal (ADR 0106) -----------------------------------------
+
+def episodis(moments, plou, buit_h=EPISODI_BUIT_H):
+    """L'episodi de pluja de cada cas (1, 2, …; 0 si no plou): les hores
+    observades amb pluja separades per buit_h hores seques o menys formen un
+    episodi. moments: l'hora observada de cada cas (ISO); plou: si hi va
+    ploure."""
+    import datetime as dt
+    hores = sorted({m for m, p in zip(moments, plou) if p})
+    de, k, anterior = {}, 0, None
+    for h in hores:
+        t = dt.datetime.fromisoformat(h)
+        if anterior is None or t - anterior > dt.timedelta(hours=buit_h):
+            k += 1
+        de[h], anterior = k, t
+    return np.array([de.get(m, 0) for m in moments])
+
+
+def avanc(dies, episodi=None, min_dies=MIN_DIES_ENTRENAMENT):
+    """Validació amb avanç temporal: per cada dia, (entrenament, avaluació)
+    com a màscares. S'entrena amb els dies anteriors (min_dies com a mínim) i
+    s'avalua el dia, com farà el programa, que es reajusta cada dia i
+    s'aplica als següents; la validació creuada per setmanes entrenava amb
+    setmanes posteriors a l'avaluada. Un episodi de pluja que creua la
+    mitjanit s'aparta de l'entrenament del dia que avalua la seva part
+    final: si no, el model ja l'hauria vist. dies: el dia de l'hora
+    observada de cada cas; episodi: el d'episodis(), opcional."""
+    dies = np.asarray(dies)
+    for d in sorted(set(dies)):
+        ent, aval = dies < d, dies == d
+        if len(set(dies[ent])) < min_dies:
+            continue
+        if episodi is not None:
+            del_dia = set(np.asarray(episodi)[aval]) - {0}
+            if del_dia:
+                ent = ent & ~np.isin(episodi, list(del_dia))
+        yield ent, aval

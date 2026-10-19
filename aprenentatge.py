@@ -61,7 +61,7 @@ HISTORIAL = os.path.join(DIR, "historial.csv")
 # un 5 % menos de error (MILLORA_MINIMA).
 MIN_HORES_PLUJA = 30        # horas con lluvia medida en casa
 MIN_DIES_TEMPERATURA = 14
-SETMANES_VALIDACIO = 4      # grupos de semanas para la validación cruzada
+SETMANES_VALIDACIO = 4      # grupos de semanas de la validación cruzada del archivo (calibracio/)
 PERSISTENCIA_H = 4          # horas en que cuenta lo medido al prever (lluvia, sequedad)
 # Cuánto dura el error de temperatura que tenía el modelo al prever: una
 # parte se pierde en unas horas, otra en un día (ADR 0017).
@@ -430,21 +430,17 @@ def mostres():
     return res
 
 
-def grupo_semana(m):
-    """Grupo de validación por la semana de la hora observada: así todas las
-    previsiones de una misma hora caen en el mismo grupo (auditoría del
-    08-10-2026; antes iba por la fecha de emisión)."""
-    d = dt.date.fromisoformat(m["fins"][:10])
-    return (d.isocalendar()[0] * 53 + d.isocalendar()[1]) % SETMANES_VALIDACIO
-
-
 def valida_pluja(ms, arxiu, noms=RASGOS_PROPIS):
-    """Error (Brier) en validación cruzada por semanas del modelo propio (con
-    los rasgos noms) y, con las mismas muestras, del archivo tal como lo
-    publica la web (prob_pluja: con los avisos o con ECMWF cuando la pasada
-    los tiene; ADR 0104). Hasta la 3.143.0 el competidor eran los
-    coeficientes de tres modelos solos, que la web no usa en la mitad de las
-    horas (evaluación de los métodos del 18-10-2026)."""
+    """Error (Brier) del modelo propio (con los rasgos noms) con avance
+    temporal (remostreig.avanc, ADR 0106: cada día se predice con el modelo
+    ajustado con los días anteriores, y un episodio de lluvia que cruza la
+    medianoche no entra en el ajuste del día que lo evalúa) y, con las mismas
+    muestras evaluadas, del archivo tal como lo publica la web (prob_pluja:
+    con los avisos o con ECMWF cuando la pasada los tiene; ADR 0104). Hasta
+    la 3.145.1 la validación era cruzada en cuatro grupos de semanas, que
+    podía ajustar con semanas posteriores a la evaluada; hasta la 3.143.0 el
+    competidor eran los coeficientes de tres modelos solos (evaluación de los
+    métodos del 18-10-2026). None sin días bastantes para evaluar ninguno."""
     ms = [m for m in ms if m["obs_pluja"] is not None and rasgos(m, noms) is not None]
     if not ms:
         return None
@@ -452,34 +448,34 @@ def valida_pluja(ms, arxiu, noms=RASGOS_PROPIS):
     y = np.array([m["obs_pluja"] >= C.UMBRAL_MM for m in ms], dtype=float)
     variants = variants_arxiu()
     p_abans = np.array([prob_pluja({"pluja": arxiu}, m, variants) for m in ms])
-    grupo = np.array([grupo_semana(m) for m in ms])
-    if len(set(grupo)) < 2:         # sin semanas aparte, no se puede comprobar
+    fins = [m["fins"] for m in ms]
+    dies = np.array([f[:10] for f in fins])
+    p = np.full(len(y), np.nan)
+    for ent, aval in R.avanc(dies, R.episodis(fins, y > 0)):
+        p[aval] = y[ent].mean() if y[ent].sum() == 0 else predecir(ajustar(x[ent], y[ent]), x[aval])
+    s = ~np.isnan(p)
+    if not s.any():
         return None
-    p = np.zeros(len(y))
-    for g in set(grupo):
-        ent = grupo != g
-        if y[ent].sum() == 0:
-            p[~ent] = y[ent].mean()
-        else:
-            p[~ent] = predecir(ajustar(x[ent], y[ent]), x[~ent])
     # Horas observadas distintas con lluvia: cada hora se prevé muchas veces y
     # no cuenta más por eso (auditoría del 08-10-2026).
-    hores_pluja = len({m["fins"] for m, plou in zip(ms, y) if plou})
-    dies = [m["fins"][:10] for m in ms]
+    hores_pluja = len({f for f, plou in zip(fins, y) if plou})
     return {"mostres": len(y), "hores_pluja": hores_pluja, "rasgos": noms,
-            "error": float(np.mean((p - y) ** 2)),
-            "error_abans": float(np.mean((p_abans - y) ** 2)),
+            "avaluades": int(s.sum()), "dies_avaluats": len(set(dies[s])),
+            "hores_pluja_avaluades": len({f for f, plou, e in zip(fins, y, s) if plou and e}),
+            "error": float(np.mean((p[s] - y[s]) ** 2)),
+            "error_abans": float(np.mean((p_abans[s] - y[s]) ** 2)),
             # Con qué seguridad gana al que publica la web: remuestreos por
             # días de la hora observada (ADR 0105).
-            "seguretat": R.seguretat((p - y) ** 2, (p_abans - y) ** 2, dies),
-            "_errors": ((p - y) ** 2).tolist(), "_dies": dies,
+            "seguretat": R.seguretat((p[s] - y[s]) ** 2, (p_abans[s] - y[s]) ** 2, dies[s]),
+            "_errors": ((p[s] - y[s]) ** 2).tolist(), "_dies": dies[s].tolist(),
             "w": ajustar(x, y).tolist() if y.sum() else None}
 
 
 def valida_temperatura(ms, arxiu_t):
-    """Error medio absoluto en validación cruzada por semanas: la corrección
-    ajustada con el registro propio frente a la del archivo (o, sin ella, la
-    temperatura sin corregir), con las mismas horas."""
+    """Error medio absoluto con avance temporal (remostreig.avanc, ADR 0106):
+    la corrección ajustada con el registro propio de los días anteriores
+    frente a la del archivo (o, sin ella, la temperatura sin corregir), con
+    las mismas horas evaluadas."""
     ms = [m for m in ms if m["obs_temp"] is not None and rasgos(m, RASGOS_TEMPERATURA) is not None]
     if not ms:
         return None
@@ -487,20 +483,20 @@ def valida_temperatura(ms, arxiu_t):
     modelo = np.array([m["temperature_2m"] for m in ms])
     obs = np.array([m["obs_temp"] for m in ms])
     error = modelo - obs
-    grupo = np.array([grupo_semana(m) for m in ms])
-    if len(set(grupo)) < 2:
+    dia = np.array([m["fins"][:10] for m in ms])
+    pred = np.full(len(error), np.nan)
+    for ent, aval in R.avanc(dia):             # avance temporal (ADR 0106)
+        pred[aval] = x[aval] @ ajustar_ridge(x[ent], error[ent])
+    s = ~np.isnan(pred)
+    if not s.any():
         return None
-    pred = np.zeros(len(error))
-    for g in set(grupo):
-        ent = grupo != g
-        pred[~ent] = x[~ent] @ ajustar_ridge(x[ent], error[ent])
     abans = np.array([temperatura({"temperatura": arxiu_t}, m) for m in ms])
     xs = np.array([rasgos(m, RASGOS_TEMPERATURA_SENSE_ESTACIO) for m in ms])
     dies = len({m["emes"][:10] for m in ms})
-    return {"mostres": len(ms), "dies": dies,
-            "error": float(np.mean(np.abs(error - pred))),
-            "error_abans": float(np.mean(np.abs(abans - obs))),
-            "seguretat": R.seguretat(np.abs(error - pred), np.abs(abans - obs), [m["fins"][:10] for m in ms]),
+    return {"mostres": len(ms), "dies": dies, "avaluades": int(s.sum()), "dies_avaluats": len(set(dia[s])),
+            "error": float(np.mean(np.abs(error[s] - pred[s]))),
+            "error_abans": float(np.mean(np.abs(abans[s] - obs[s]))),
+            "seguretat": R.seguretat(np.abs(error[s] - pred[s]), np.abs(abans[s] - obs[s]), dia[s]),
             "w": ajustar_ridge(x, error).tolist(), "w_sense_estacio": ajustar_ridge(xs, error).tolist()}
 
 

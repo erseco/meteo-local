@@ -241,8 +241,8 @@ Cuando el registro reúna **30 horas con lluvia** (horas observadas distintas:
 cada hora se prevé muchas veces, con distintas antelaciones, y no cuenta más
 por eso), se ajusta un modelo propio con todas las señales de la tabla,
 incluidas las que el archivo no tiene. Sustituye al del archivo solo si,
-en semanas que no ha visto, acierta mejor que lo que la web publica con el
-archivo (apartado 8). En otoño llueve unas
+en días que no ha visto (cada uno predicho con los anteriores), acierta mejor
+que lo que la web publica con el archivo (apartado 8). En otoño llueve unas
 25 horas al mes (entre 9 y 48 en Sabadell y Sant Cugat desde 2024): puede
 tardar de uno a varios meses.
 
@@ -711,14 +711,21 @@ Cada día, a las 16:00, el servidor completa las horas que falten de la
 estación de casa y ejecuta `aprenentatge.py diari`:
 
 1. Vuelve a ajustar los dos modelos con todo lo registrado.
-2. **Los comprueba en semanas que no ha visto** (validación cruzada: los días
-   se reparten en cuatro grupos por semanas; cada grupo se predice con un
-   modelo ajustado con los otros tres). Las semanas enteras evitan que dos
-   días seguidos, muy parecidos, caigan uno en el ajuste y otro en la
-   comprobación. El grupo lo fija la hora observada, no el momento en que se
-   hizo la previsión: así todas las previsiones de una misma hora caen en el
-   mismo grupo y ninguna observación se usa a la vez para ajustar y
-   comprobar.
+2. **Los comprueba con avance temporal** (ADR 0106; `remostreig.avanc`):
+   cada día se predice con el modelo ajustado solo con los días anteriores,
+   siete como mínimo, como hará el programa, que se reajusta cada día y se
+   aplica a los días siguientes. Hasta la 3.145.1 la comprobación era una
+   validación cruzada en cuatro grupos de semanas, que podía ajustar con
+   semanas posteriores a la evaluada: útil para la relación estadística, pero
+   no reproduce una actualización en el tiempo. El día lo fija la hora
+   observada, no el momento en que se hizo la previsión: así todas las
+   previsiones de una misma hora se evalúan juntas y ninguna observación se
+   usa a la vez para ajustar y comprobar. Un episodio de lluvia que cruza la
+   medianoche (horas con lluvia separadas por 6 horas secas o menos) se
+   aparta del ajuste del día que evalúa su parte final: si no, el modelo ya
+   lo habría visto. Los siete primeros días del registro solo sirven para
+   ajustar: el error se mide en los demás, para el candidato y para lo que
+   publica la web por igual.
 3. Lo compara con **lo que publica la web** con las mismas horas. Para la
    lluvia, el modelo del archivo tal como se usa al publicar: el que lleva
    ECMWF cuando la pasada lo tiene, o el de los avisos si está adoptado
@@ -737,7 +744,7 @@ estación de casa y ejecuta `aprenentatge.py diari`:
    programa (`remostreig.py`): se remuestrean los días con reposición 2.000
    veces (*bootstrap*), días enteros porque las horas de un mismo día se
    parecen y no son casos independientes, y en cada remuestreo se compara el
-   error del candidato, en las semanas no vistas, con el del que se usa. El
+   error del candidato, en los días evaluados, con el del que se usa. El
    candidato gana si se equivoca menos en al menos el 95 % de los
    remuestreos:
    $`\Pr^{*}\!\left(\sum_{d \in D^{*}} E_{\text{nuevo}}(d) < \sum_{d \in D^{*}} E_{\text{actual}}(d)\right) \ge 0\text{,}95`$,
@@ -826,16 +833,17 @@ una se resuelve el sistema de Lagrange con la suma igual a 1, y de las
 soluciones con todos los pesos positivos se queda la de menor error. Con
 cuatro modelos son 15 sistemas.
 
-**Cómo se comprueban.** Como la lluvia y la temperatura, en semanas que no
-han visto (validación cruzada): las horas se reparten en cuatro grupos por la
-semana de la hora observada, y cada grupo se predice con pesos ajustados con
-los otros tres. Los pesos de ahora, fijos, se aplican a las mismas horas.
+**Cómo se comprueban.** Como la lluvia y la temperatura, con avance
+temporal (apartado 8, ADR 0106): cada día se predice con los pesos ajustados
+con los días anteriores, siete como mínimo (hasta la 3.145.1, validación
+cruzada en cuatro grupos de semanas). Los pesos de ahora, fijos, se aplican a
+las mismas horas.
 
 **Cuándo se cambian.** Solo si la mejora es segura, no por un margen fijo. Se
 remuestrean los días con reposición 2.000 veces (*bootstrap*); los días
 enteros, porque las horas de un mismo día se parecen y no son casos
 independientes. En cada remuestreo se compara el error cuadrático medio de
-los pesos ajustados, en las semanas no vistas, con el de los de ahora. Si los
+los pesos ajustados, en los días evaluados, con el de los de ahora. Si los
 ajustados se equivocan menos en al menos el 95 % de los remuestreos, y hay al
 menos 300 horas observadas en 14 días distintos, pasan a usarse los ajustados
 con todos los datos. Se avisa a Juanjo, y también si pasa más de un día sin

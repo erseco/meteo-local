@@ -363,22 +363,25 @@ class Diari(unittest.TestCase):
             with open(os.path.join(A.REGISTRE, nom), "w") as f:
                 f.write("\n".join(filas) + "\n")
 
-    def test_horas_de_lluvia_unicas_y_grupos_por_hora_observada(self):
+    def test_horas_de_lluvia_unicas_y_avance_temporal(self):
         # Auditoría del 08-10-2026: dos horas con lluvia previstas 24 veces contaban 48.
+        # ADR 0106: cada día se evalúa con el modelo de los días anteriores (7 como mínimo).
         ms = []
-        for d in (dt.datetime(2026, 9, 7, 18), dt.datetime(2026, 9, 14, 18)):
+        for dia in range(1, 11):
+            d = dt.datetime(2026, 9, dia, 18)
             for k in range(24):
                 for plou in (True, False):
                     fins = d + dt.timedelta(hours=0 if plou else 1)
                     ms.append({**hora(fins.isoformat(timespec="minutes"), mm=2 if plou else 0, antelacio=k + 1),
                                "emes": (fins - dt.timedelta(hours=k + 1)).isoformat(timespec="minutes") + "+02:00",
-                               "obs_pluja": 2 if plou else 0, "obs_temp": None, "pluja_1h_emes": 0})
+                               "obs_pluja": 2 if (plou and dia in (3, 8)) else 0, "obs_temp": None, "pluja_1h_emes": 0})
         v = A.valida_pluja(ms, A.modelo_arxiu())
         self.assertEqual(v["hores_pluja"], 2)
-        self.assertEqual(v["mostres"], 96)
-        # La misma hora observada, emitida el domingo o el lunes: mismo grupo.
-        g = [A.grupo_semana({"emes": e, "fins": "2026-10-12T01:00"}) for e in ("2026-10-11T23:00+02:00", "2026-10-12T00:00+02:00")]
-        self.assertEqual(g[0], g[1])
+        self.assertEqual(v["mostres"], 480)
+        # Se evalúan los días 8, 9 y 10 (los siete primeros solo entrenan); con lluvia, el 8.
+        self.assertEqual((v["dies_avaluats"], v["avaluades"], v["hores_pluja_avaluades"]), (3, 144, 1))
+        # Con menos de ocho días no se evalúa nada.
+        self.assertIsNone(A.valida_pluja([m for m in ms if m["fins"] < "2026-09-08"], A.modelo_arxiu()))
 
     def test_sant_cugat_entra_en_las_muestras_y_se_valida_aparte(self):
         self.registra(20)
@@ -401,27 +404,28 @@ class Diari(unittest.TestCase):
         # Auditoría del 09-10-2026: la variante de Sant Cugat se comparaba con
         # el base medido en todas las horas, aunque ella solo tuviera la mitad.
         ms = []
-        for setmana in range(4):
-            for k in range(28):
-                fins = dt.datetime(2026, 9, 7 + 7 * setmana, 6) + dt.timedelta(hours=k)
+        for dia in range(20):
+            for k in range(12):
+                fins = dt.datetime(2026, 9, 1 + dia, 6) + dt.timedelta(hours=k)
                 plou = k % 4 == 0
                 ms.append({**hora(fins.isoformat(timespec="minutes"), mm=2.0 if plou else 0.0, antelacio=1),
                            "emes": (fins - dt.timedelta(hours=1)).isoformat(timespec="minutes") + "+02:00",
                            "obs_pluja": 1.0 if plou else 0.0, "pluja_1h_emes": 0.0,
-                           "pluja_1h_xv": (1.0 if plou else 0.0) if setmana >= 2 else None})
+                           "pluja_1h_xv": (1.0 if plou else 0.0) if dia % 2 else None})
         arxiu = A.modelo_arxiu()
         base, xv = A.valida_pluja(ms, arxiu), A.valida_variant(ms, arxiu, A.RASGOS_PROPIS_XV)
         self.assertEqual(base["mostres"], len(ms))
         self.assertEqual((xv["mostres"], xv["mostres_base"]), (len(ms) // 2, len(ms) // 2))
         self.assertIsNotNone(xv["error_base"])
+        self.assertEqual(len(xv["_errors"]), xv["avaluades"])
 
     def test_el_competidor_es_el_que_publica_la_web(self):
         # Evaluación del 18-10-2026 (ADR 0104): el candidato se comparaba con los
         # coeficientes de tres modelos, y la web publica con ECMWF cuando la pasada lo tiene.
         ms = []
-        for setmana in range(4):
-            for k in range(28):
-                fins = dt.datetime(2026, 9, 7 + 7 * setmana, 6) + dt.timedelta(hours=k)
+        for dia in range(12):
+            for k in range(12):
+                fins = dt.datetime(2026, 9, 1 + dia, 6) + dt.timedelta(hours=k)
                 plou = k % 4 == 0
                 m = {**hora(fins.isoformat(timespec="minutes"), mm=2.0 if plou else 0.0, antelacio=1),
                      "emes": (fins - dt.timedelta(hours=1)).isoformat(timespec="minutes") + "+02:00",
@@ -431,13 +435,16 @@ class Diari(unittest.TestCase):
                 ms.append(m)
         arxiu = A.modelo_arxiu()
         v = A.valida_pluja(ms, arxiu)
-        y = np.array([m["obs_pluja"] >= C.UMBRAL_MM for m in ms], dtype=float)
-        publicat = np.array([A.prob_pluja({"pluja": arxiu}, m) for m in ms])
-        tres = np.array([A.predecir(np.array(arxiu["w"]), np.array(A.rasgos(m, arxiu["rasgos"]))) for m in ms])
+        # El competidor se mide en las mismas muestras evaluadas (los días 8 a 12).
+        avaluades = [m for m in ms if m["fins"] >= "2026-09-08"]
+        self.assertEqual(v["avaluades"], len(avaluades))
+        y = np.array([m["obs_pluja"] >= C.UMBRAL_MM for m in avaluades], dtype=float)
+        publicat = np.array([A.prob_pluja({"pluja": arxiu}, m) for m in avaluades])
+        tres = np.array([A.predecir(np.array(arxiu["w"]), np.array(A.rasgos(m, arxiu["rasgos"]))) for m in avaluades])
         self.assertAlmostEqual(v["error_abans"], float(np.mean((publicat - y) ** 2)))
         self.assertNotAlmostEqual(v["error_abans"], float(np.mean((tres - y) ** 2)))
         self.assertIn("seguretat", v)
-        self.assertEqual(len(v["_errors"]), len(ms))
+        self.assertEqual(len(v["_errors"]), len(avaluades))
 
     def test_la_variant_nomes_guanya_si_millora_el_base_a_les_seves_hores(self):
         from unittest.mock import patch

@@ -67,7 +67,6 @@ ARA_MAX_MIN = 45
 DIES = 30
 MIN_HORES = 300          # horas observadas con los cuatro modelos, como mínimo
 MIN_DIES = 14            # en días distintos
-SETMANES_VALIDACIO = 4   # grupos de semanas de la validación cruzada
 REMOSTREJOS, SEGURETAT = R.REMOSTREJOS, R.SEGURETAT     # la regla común (ADR 0105)
 
 
@@ -266,13 +265,6 @@ def ajusta(x, y):
     return millor[1]
 
 
-def grup_setmana(fins):
-    """Grupo de validación por la semana de la hora observada, como la lluvia
-    y la temperatura (aprenentatge.grupo_semana)."""
-    any_, setmana, _ = dt.date.fromisoformat(fins[:10]).isocalendar()
-    return (any_ * 53 + setmana) % SETMANES_VALIDACIO
-
-
 def compara(ps, actual):
     """La mezcla ajustada frente a la de ahora, en semanas que no ha visto
     (validación cruzada), y con qué seguridad es mejor: la proporción de
@@ -288,18 +280,21 @@ def compara(ps, actual):
         res[f"error_{nom}"] = round(error(matriu, obs, {m: float(m == nom) for m in MODELS}), 1)
     w = ajusta(matriu, obs)
     res["ajustats"] = {m: round(float(x), 3) for m, x in zip(MODELS, w)}
-    grup = np.array([grup_setmana(f) for f, _, _ in ps])
-    if len(set(grup)) < 2:
+    # Avance temporal (ADR 0106): cada día se predice con los pesos
+    # ajustados con los días anteriores.
+    dies = np.array([f[:10] for f, _, _ in ps])
+    pred = np.full(len(obs), np.nan)
+    for ent, aval in R.avanc(dies):
+        pred[aval] = matriu[aval] @ ajusta(matriu[ent], obs[ent])
+    s = ~np.isnan(pred)
+    if not s.any():
         return res
-    pred = np.zeros(len(obs))
-    for g in set(grup):
-        ent = grup != g
-        pred[~ent] = matriu[~ent] @ ajusta(matriu[ent], obs[ent])
     pred_actual = matriu @ np.array([actual[m] for m in MODELS])
-    res["error_ajustats"] = round(float(np.mean(np.abs(pred - obs))), 1)
+    res["dies_avaluats"] = len(set(dies[s]))
+    res["error_ajustats"] = round(float(np.mean(np.abs(pred[s] - obs[s]))), 1)
     # El remuestreo, por días enteros: las horas de un mismo día se parecen
     # y no son casos independientes (la regla común, remostreig).
-    res["seguretat"] = R.seguretat((pred - obs) ** 2, (pred_actual - obs) ** 2, [f[:10] for f, _, _ in ps])
+    res["seguretat"] = R.seguretat((pred[s] - obs[s]) ** 2, (pred_actual[s] - obs[s]) ** 2, dies[s])
     return res
 
 

@@ -107,5 +107,6 @@
 | [0103](0103-la-cantidad-de-lluvia-maximo-por-hora-y-esperada-en-los-totales.md) | La cantidad de lluvia: el máximo de modelos por hora y la esperada en los totales | aceptado |
 | [0104](0104-el-candidato-compite-con-lo-que-publica-la-web.md) | El candidato compite con lo que publica la web | aceptado |
 | [0105](0105-una-sola-regla-de-mejora-remuestreo-por-bloques.md) | Una sola regla de mejora: remuestreo por bloques de días o episodios | aceptado |
+| [0106](0106-validacion-con-avance-temporal.md) | Validación con avance temporal: cada día se evalúa con el modelo de los días anteriores | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

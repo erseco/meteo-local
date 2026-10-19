@@ -10,6 +10,36 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import remostreig as R  # noqa: E402
 
 
+class Avanc(unittest.TestCase):
+    def test_entrena_amb_els_dies_anteriors(self):
+        dies = [f"2026-10-{d:02d}" for d in range(1, 11) for _ in range(3)]
+        passos = list(R.avanc(dies))
+        # Els set primers dies només entrenen; s'avaluen el 8, el 9 i el 10.
+        self.assertEqual(len(passos), 3)
+        ent, aval = passos[0]
+        self.assertEqual(sorted(set(np.array(dies)[aval])), ["2026-10-08"])
+        self.assertEqual(sorted(set(np.array(dies)[ent])), [f"2026-10-{d:02d}" for d in range(1, 8)])
+        # Mai res posterior al dia avaluat.
+        for ent, aval in passos:
+            self.assertLess(max(np.array(dies)[ent]), min(np.array(dies)[aval]))
+        self.assertEqual(list(R.avanc(dies[:9])), [])
+
+    def test_un_episodi_que_creua_la_mitjanit_no_entrena_el_dia_que_l_avalua(self):
+        moments = [f"2026-10-{d:02d}T{h:02d}:00" for d in range(1, 10) for h in (6, 12, 18, 23)] + ["2026-10-09T00:00"]
+        moments.sort()
+        plou = [m in ("2026-10-08T23:00", "2026-10-09T00:00", "2026-10-03T12:00") for m in moments]
+        ep = R.episodis(moments, plou)
+        self.assertEqual(sorted(set(ep)), [0, 1, 2])
+        self.assertEqual(ep[moments.index("2026-10-08T23:00")], ep[moments.index("2026-10-09T00:00")])
+        self.assertNotEqual(ep[moments.index("2026-10-03T12:00")], ep[moments.index("2026-10-09T00:00")])
+        dies = [m[:10] for m in moments]
+        ent, aval = [p for p in R.avanc(dies, ep) if "2026-10-09" in set(np.array(dies)[p[1]])][0]
+        # L'hora de les 23 del dia 8, del mateix episodi, queda fora de l'entrenament del dia 9.
+        self.assertFalse(ent[moments.index("2026-10-08T23:00")])
+        self.assertTrue(ent[moments.index("2026-10-08T18:00")])
+        self.assertTrue(ent[moments.index("2026-10-03T12:00")])
+
+
 class Seguretat(unittest.TestCase):
     def test_guanya_sempre_i_mai(self):
         dies = [f"2026-10-{d:02d}" for d in range(1, 11) for _ in range(24)]
