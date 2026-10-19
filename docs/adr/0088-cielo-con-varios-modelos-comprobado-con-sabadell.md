@@ -78,6 +78,9 @@ observado.
 - **Radiación del satélite o de una estación de Meteocat**: solo valen de
   día y dan una estimación, no una observación de las nubes. Juanjo eligió
   Sabadell para las dos cosas.
+- **La máscara de nubes del satélite** (medido el 19-10-2026, ver el
+  apartado del final): ve el cielo del barrio mejor que Sabadell, pero no
+  mejora los pesos y para la hora en curso llega tarde.
 - **Contar las horas sin capas como cielo despejado**: con CAVOK o NSC puede
   haber nubes altas. Contadas como 0 %, todos los modelos parecen equivocarse
   unos 40 puntos de cielo tapado.
@@ -147,3 +150,34 @@ observado.
 - En local, el 13-10-2026 a las 16:52, la hora de 16 a 17 pasó de «Serè»
   (AROME, 14 %) a 75 % observado, «Molt ennuvolat»; las siguientes, a la media
   de los cuatro (45 y 48 %).
+
+
+## Comprobación del 19-10-2026: la máscara de nubes del satélite
+
+Juanjo preguntó si había algún registro de nubes, en concreto del satélite,
+que sirviera para el cielo y el sol. Se midió con 92 días (del 18-07 al
+18-10-2026), fuera del repositorio: la máscara de nubes de Meteosat (MSG,
+cada 15 minutos, del servicio público de EUMETSAT, EUMETView) a 10 km o menos
+de casa, el METAR de Sabadell, los cuatro modelos del archivo de Open-Meteo y,
+como referencia independiente, la radiación de la estación de Meteocat de
+Sant Cugat - CAR (sol tapado: menos del 70 % de la de cielo despejado de esa
+hora). Medida: Brier, el % de nubes como probabilidad de sol tapado.
+
+- **Como observación, el satélite gana**: Brier 0,091 frente a 0,118 del
+  METAR (836 horas de día). En el 16 % de las horas sin capas en el METAR ve
+  medio cielo tapado o más, y de día esas horas tenían el sol tapado la mitad
+  de las veces; con el satélite despejado, nunca.
+- **Para los pesos, no**: ajustados con el satélite, Brier 0,1353 frente a
+  0,1385; gana en el 89 % de los remuestreos por días, por debajo del 95 %
+  (ADR 0105).
+- **Para la hora en curso, depende del retraso**: con la imagen de hace 30,
+  60, 90 y 120 minutos, un 38, 28, 15 y 6 % mejor que ahora (seguridad del
+  100, 100, 97 y 76 %). En EUMETView, la de MSG llegaba con unos 90 minutos
+  (una lectura); la del satélite nuevo (MTG), en unos 30, pero allí no da la
+  máscara de nubes, solo imágenes compuestas en color.
+
+Decisión (Juanjo, 19-10-2026): no se usa. Solo mejoraría el icono de la hora
+en curso, a cambio de una fuente más que vigilar, sin servicio documentado.
+Se retoma si EUMETSAT publica la máscara de nubes de MTG con poco retraso:
+los programas del análisis están con el informe personal de Juanjo del
+19-10-2026 («Las nubes vistas desde el satélite»).
