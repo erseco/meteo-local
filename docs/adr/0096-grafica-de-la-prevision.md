@@ -285,3 +285,18 @@ antelación) va con botones y vuelve a lo de siempre al cerrar. El viento
 sale apagado. Clave nueva, `meteo.grafica.3`: la 2 guardaba «vent: true»
 para todos al tocar cualquier opción, sin que nadie lo eligiera; de ella se
 conservan la parte baja y la parte alta.
+
+## Cambio del 19-10-2026 (3.153.0): una fila por fuente y fenómeno en las barras de avisos
+
+Juanjo: «las barras las veo desordenadas, ¿cómo se podrían ordenar?». Cada
+aviso (fuente, nivel y fenómeno) era una barra con su texto entero, ordenadas
+del nivel más alto al más bajo y colocadas en la primera fila donde cabían: el
+mismo aviso de Meteocat por lluvia salía partido en tres trozos repartidos en
+dos filas, y el texto se salía de la barra. Ahora (`filesAvis`) hay una fila por
+fuente y fenómeno, siempre en el orden Meteocat, AEMET, esta web, con el nombre
+encima en pequeño («Meteocat · pluja») y, debajo, los tramos seguidos con el
+color de su nivel y el nivel dentro si cabe («moderat», «alt», «groc»); el
+texto entero, al tocar el tramo. Dos fenómenos de la misma fuente con los
+mismos tramos comparten fila. Con los avisos del 19-10-2026, dos filas en vez
+de tres.
+
