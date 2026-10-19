@@ -32,7 +32,9 @@ partes («hazlo así»).
   «Perill», con el enlace), **Ara** (una línea con el nivel y la lluvia
   medida: «Sense risc de crescuda ara…», en verde), **Properes hores** (la
   previsión, con el recuadro «És una previsió en fase de proves…» que dice
-  qué es el aviso de la riera y de dónde sale) y un solo desplegable «Més
+  qué es el aviso de la riera y de dónde sale; desde la 3.161.1, solo con
+  «Risc de crescuda possible»: en verde no hay nada que matizar, Juanjo,
+  19-10-2026) y un solo desplegable «Més
   informació» con el detalle (radar, índice, Fabra, cada modelo, las 24
   horas), los episodios con aviso, los desbordamientos conocidos, el enlace
   al mapa de la riera (montflorit.github.io/riera/) y cómo se deciden el

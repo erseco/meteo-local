@@ -46,9 +46,13 @@ function quanPrevisio(p) {
     ? T`demà entre les ${h(f.ini)} i les ${h(f.fi)} h` : T`entre les ${h(f.ini)} i les ${h(f.fi)} h`;
 }
 
+// La nota de «fase de proves» només amb risc: si els models no hi veuen res,
+// no hi ha res a matisar (Juanjo, 19-10-2026: «esto solo debe aparecer cuando
+// hay algun riesgo si está en verde, no»).
 function pintaPrevisio(p) {
   const cos = $('previsio-cos');
   const detall = $('previsio-detall');
+  $('previsio-nota').hidden = !(p && p.nivell === 'possible');
   if (!p) {
     cos.replaceChildren(element('p', 'avis', T('Ara no hi ha previsió dels models per a la conca.')));
     detall.replaceChildren();
@@ -148,6 +152,7 @@ function pinta(dades) {
     $('ara-detall').replaceChildren();
     $('previsio-cos').replaceChildren();
     $('previsio-detall').replaceChildren();
+    $('previsio-nota').hidden = true;
   } else {
     pintaAra(dades);
     pintaPrevisio(dades.riera_previsio);

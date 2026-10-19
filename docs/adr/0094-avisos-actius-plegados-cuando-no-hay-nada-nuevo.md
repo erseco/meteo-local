@@ -211,3 +211,17 @@ sitio por fecha. Validación: `tests/test_web.py`
 de la que empezó después y ya se había visto) y el historial publicado del
 19-10-2026, con una visita simulada tres horas antes: el plan INUNCAT del 15,
 actualizado, sale primero.
+
+## Cambio del 19-10-2026 (3.161.1): pulsar un aviso le quita el «Nou»
+
+Juanjo, 19-10-2026: «cuando pulso en un aviso que tiene la etiqueta nou,
+debe desaparecer el nou, ahora cuando vuelvo sigue estando». El «Nou» se
+calculaba una vez al abrir la página (`LLEGITS_ABANS`), y al volver atrás el
+navegador puede enseñar la página tal como estaba, sin volver a ejecutar
+nada (memoria caché de atrás y adelante). Ahora, al pulsar una línea con
+«Nou», se le quita en ese momento y no vuelve en las repintadas de la misma
+visita; y al volver de esa memoria (`pageshow` con `persisted`),
+`treuNousVistos` quita el «Nou» de lo que ya se había mostrado, como al
+recargar. Validado en Chromium y Firefox, a 360 y 1.280 px: cinco «Nou» al
+abrir, cuatro tras pulsar uno, ninguno al volver de la memoria (simulada con
+el evento, porque el navegador de pruebas no la usa).

@@ -973,9 +973,15 @@ function marcaPublicacio(curts, desDe, ara) {
     if (!ambHistorial) continue;
     const clau = `${c.dataset.clau}|${pub ? pub.hora.toISOString() : ''}`;
     ara_.push(clau);
+    c.dataset.llegit = clau;
     if (!LLEGITS_ABANS.has(clau)) {
       const nou = element('span', 'avis-nou', T('Nou'));
       c.insertBefore(nou, c.firstChild);
+      // En pulsar-lo ja s'ha vist: fora el «Nou», també a les repintades
+      // d'aquesta visita (Juanjo, 19-10-2026: «cuando pulso en un aviso que
+      // tiene la etiqueta nou, debe desaparecer el nou»).
+      const a = c.querySelector('a.detall');
+      if (a) a.addEventListener('click', () => { nou.remove(); LLEGITS_ABANS.add(clau); });
     }
   }
   if (ambHistorial) {
@@ -1591,6 +1597,16 @@ if (!/(^|\/)perill\.html$/.test(location.pathname) && document.querySelectorAll(
   document.addEventListener('visibilitychange', () => { if (!document.hidden) miraPerill(); });
 }
 
+// Els avisos de la portada que ja s'havien mostrat en aquest dispositiu (el
+// que hi ha apuntat ara) perden el «Nou», com en tornar a carregar la pàgina.
+function treuNousVistos() {
+  const llegits = new Set(llegeixLlegits());
+  if (LLEGITS_ABANS) for (const c of llegits) LLEGITS_ABANS.add(c);
+  for (const c of document.querySelectorAll('.avis-item[data-llegit]')) {
+    if (llegits.has(c.dataset.llegit)) c.querySelector('.avis-nou')?.remove();
+  }
+}
+
 // En tornar enrere, el navegador pot restaurar la pàgina tal com era (memòria
 // cau d'enrere i endavant), sense tornar a executar res: el punt vermell i el
 // «Nou!» seguien allà després d'haver obert «Perill» (Juanjo, 16-10-2026). Es
@@ -1598,6 +1614,7 @@ if (!/(^|\/)perill\.html$/.test(location.pathname) && document.querySelectorAll(
 addEventListener('pageshow', (e) => {
   if (!e.persisted) return;
   marcaNovetats();
+  treuNousVistos();
   if (HISTORIAL_PERILL && !/(^|\/)perill\.html$/.test(location.pathname)) senyalaPerill(HISTORIAL_PERILL);
   if (!/(^|\/)riera\.html$/.test(location.pathname)) senyalaRiera(PREVISIO_RIERA, HISTORIAL_PERILL);
 });
