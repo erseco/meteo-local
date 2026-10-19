@@ -387,7 +387,10 @@ function dibuixaGrafica(fig) {
   };
   // Els avisos, una fila per font i fenomen (filesAvis): el nom, a l'esquerra
   // de la barra si hi cap (Juanjo, 19-10-2026: «en el caso de que quepa se
-  // podría poner delante? así ahorramos una fila más»), i si no, a sobre.
+  // podría poner delante? así ahorramos una fila más»); si no, a la dreta
+  // del darrer tram, si hi cap (Juanjo: «que te parece poner el servicio
+  // que da el aviso a la derecha si hay espacio y no cabe a la izquierda?»),
+  // i si tampoc, a sobre.
   const filesA = filesAvis(files);
   const ambAvis = filesA.length > 0;
   const yAvis = 0;
@@ -396,9 +399,11 @@ function dibuixaGrafica(fig) {
   let yFila = yAvis;
   for (const fila of filesA) {
     fila.nom = `${NOM_FONT()[fila.font] || fila.font} · ${fila.noms.join(', ')}`;
-    fila.davant = x(fila.trams[0].ini) - 6 >= mesura(fila.nom);
+    const llarg = mesura(fila.nom);
+    fila.davant = x(fila.trams[0].ini) - 6 >= llarg;
+    fila.darrere = !fila.davant && x(fila.trams[fila.trams.length - 1].fi) + 6 + llarg <= W;
     fila.y = yFila;
-    fila.yBarra = fila.davant ? yFila : yFila + hNom;
+    fila.yBarra = fila.davant || fila.darrere ? yFila : yFila + hNom;
     yFila = fila.yBarra + hBarra + 4;
   }
   const hAvis = ambAvis ? yFila - 4 - yAvis : 0;
@@ -481,6 +486,9 @@ function dibuixaGrafica(fig) {
     const x0f = x(fila.trams[0].ini);
     if (fila.davant) {
       g.append(svg('text', { class: 'g-avis-nom', x: x0f - 5, y: fila.yBarra + 12, 'text-anchor': 'end' }, fila.nom));
+    } else if (fila.darrere) {
+      g.append(svg('text', { class: 'g-avis-nom', x: x(fila.trams[fila.trams.length - 1].fi) + 5, y: fila.yBarra + 12 },
+        fila.nom));
     } else {
       g.append(svg('text', { class: 'g-avis-nom', x: x0f > W / 2 ? W - 2 : Math.max(2, x0f),
         y: fila.y + 10, 'text-anchor': x0f > W / 2 ? 'end' : 'start' }, fila.nom));

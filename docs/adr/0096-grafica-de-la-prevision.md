@@ -315,3 +315,10 @@ botones de las horas y «Com encerta» en una fila, y la leyenda y los
 interruptores más pequeños. En un móvil de 412 px la ventana ocupa 576 px y
 no hace falta desplazar; en el ordenador no cambia.
 
+En la 3.154.1, si el nombre no cabe delante de la barra, va detrás del
+último tramo, si cabe (Juanjo: «¿qué te parece poner el servicio que da el
+aviso a la derecha si hay espacio y no cabe a la izquierda?»); solo si no cabe
+en ningún lado, encima. Sin flecha: en la misma línea y pegado a la barra ya
+se lee que es suyo. Con los avisos del 19-10-2026, en un móvil de 412 px los
+dos nombres van a la derecha y las barras ocupan dos líneas en vez de cuatro.
+
