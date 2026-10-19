@@ -264,3 +264,13 @@ aparte si también ve lluvia («…, i pluja probable a la tornada (9 h)»); a
 pie, «Ara plou al barri, segons …: porta paraigua». El nivell no cambia.
 Prueba: `tests/test_web.py` (`test_si_ara_plou_ho_diu_i_qui_ho_veu`).
 
+Corrección en la 3.149.0 (el mismo día): a las 07:0x, con los datos de las
+06:57, «Si surts» volvía a decir «Pluja probable a l'anada (7 h)» lloviendo:
+pasada la hora en punto, la hora en curso de esos datos (de 6 a 7, la que
+llevaba `plou_ara`) ya no cuenta y «Ara» es la de 7 a 8. Ahora sale del
+estado único de la lluvia de ahora (`pluja_ara`: «plou», con «les estacions»
+o, si el radar también la pone encima, «les estacions i el radar»;
+«radar_sobre», «el radar»), y solo con «Surto: Ara» (Juanjo: «esto solo hay
+que tenerlo en cuenta cuando surto está en ara»); con una hora posterior, la
+previsión como siempre.
+

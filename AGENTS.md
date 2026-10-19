@@ -30,8 +30,10 @@ Al cambiar algo:
   (lo que se muestra, las horas de salir, la ropa, los horarios), en hora
   local. Lo que se guarda, en hora local.
 - **Las alertas de peligro van todas juntas en todas partes** (ADR 0093): la
-  portada, «Si surts», «Perill», /avisos_actius y el resumen del día (bot y
-  «Consultes»). Un tipo de alerta nuevo se añade a `bot.TIPUS_PERILL` y a
+  portada, «Perill», /avisos_actius y el resumen del día (bot y «Consultes»).
+  «Si surts» no las repite: una línea dice cuántas pueden afectar la
+  conducción y lleva a «Perill» (`sortir.liniaAvisosConduccio`, 3.149.0).
+  Un tipo de alerta nuevo se añade a `bot.TIPUS_PERILL` y a
   `tests/test_perills.py`, que falla si algún sitio se lo deja. Por fenómeno
   manda Meteocat; AEMET, para lo que Meteocat no cubre (`smp.marca_coberts`).
 - **Todo lo que dice la web tiene que cuadrar** (ADR 0101): la lluvia de

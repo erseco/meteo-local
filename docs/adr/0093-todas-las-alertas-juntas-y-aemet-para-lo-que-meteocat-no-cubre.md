@@ -196,3 +196,32 @@ diciendo que está dentro de otro aviso de AEMET (con el enlace a su ficha,
 lo ha retirado. Si AEMET no se ha podido leer, no se toca nada. Validación:
 `tests/test_smp.py` y una pasada en seco con los datos del momento, que
 cierra las dos fichas y alarga la de tormentas de hoy hasta las 03:59.
+
+## Cambio del 19-10-2026 (3.149.0): «Si surts» remite a «Perill»
+
+Juanjo: «en si surts salen todas las alertas, prefiero simplificarlo. si hay
+alertas que afectan a la conduccion lo mejor es que remita a la pestaña
+perill. hay que mirar los textos de si surt porque alguno hace referencia a
+ver alertas más arriba, ya no estará ahí». «Si surts» deja de mostrar
+«Avisos actius»: en su lugar, una sola línea con la franja del peor nivel,
+«Hi ha N avisos de perill que poden afectar la conducció: mira'ls a
+Perill», que enlaza con la pestaña. Cuentan los planes de Protección Civil,
+Meteocat y AEMET por fenómeno (como las líneas cortas de la portada), la
+riera, los incendios y el tiempo extremo propio; no cuentan la calor, el mar
+(fenómenos costeros), el Pla Alfa y los cierres de espacios forestales
+(acceso a pie al bosque) ni los cortes de luz, que siguen en la portada y en
+«Perill». Sin ninguno, no hay línea. Las tres notas que decían «vegeu l'avís
+de dalt» (plan de Protección Civil, riera, incendio) pasan a una sola frase
+en la misma línea: «El consell de cada mitjà surt del temps previst i del
+trànsit: no té en compte l'alerta de Protecció Civil, el perill de la riera
+de Sant Cugat ni l'incendi proper» (solo lo que haya); y «Com es decideix» lo
+explica sin «es diu a dalt». La tabla del contexto queda así para «Si surts»:
+ninguna alerta entera, todas las de conducción contadas. La versión completa
+de «Avisos actius» (los textos enteros, plegados), que solo usaba «Si surts»,
+se quita de `web/comu.js`; la portada sigue con las líneas cortas.
+Validación: `tests/test_web.py`
+(`test_si_surts_nomes_remet_a_perill_amb_els_avisos_de_conduccio`, la nota
+de lo que no tienen en cuenta) y `tests/test_perills.py` (la portada sigue
+con todas; «Si surts», con la línea); la página en Chromium y Firefox,
+móvil y escritorio, y axe-core.
+

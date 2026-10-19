@@ -832,14 +832,16 @@ function avisosAemet(dades) {
   return (dades.avisos || []).filter((a) => !a.cobert);
 }
 
-// curts: a la portada, només les línies curtes; cadascuna porta a la fitxa
-// del seu avís (Juanjo, 17-10-2026: «quita lo de desplegar, que muestre la
-// información como sale ahora plegado y al pulsar lleva al detalle del aviso,
-// es para simplificar la pagina inicial»). I plegades sota el títol, amb el
-// nombre d'avisos, si no n'hi ha cap amb «Nou» ni cap de vermell (Juanjo,
-// 18-10-2026: «quiero que esto aparezca plegado a no ser que haya algo
-// nuevo»; ADR 0094).
-function blocAvisos(dades, { ara = new Date(), curts: nomesCurts = false } = {}) {
+// «Avisos actius» de la portada: només les línies curtes; cadascuna porta a
+// la fitxa del seu avís (Juanjo, 17-10-2026: «quita lo de desplegar, que
+// muestre la información como sale ahora plegado y al pulsar lleva al detalle
+// del aviso, es para simplificar la pagina inicial»). I plegades sota el
+// títol, amb el nombre d'avisos, si no n'hi ha cap amb «Nou» ni cap de
+// vermell (Juanjo, 18-10-2026: «quiero que esto aparezca plegado a no ser que
+// haya algo nuevo»; ADR 0094). Fins a la 3.148.0, «Si surts» en mostrava els
+// textos sencers; ara hi surt una sola línia que remet a «Perill» (sortir.js,
+// liniaAvisosConduccio).
+function blocAvisos(dades, { ara = new Date() } = {}) {
   const aemet = avisosAemet(dades);
   const perills = [...blocPlans(dades.plans), ...blocSmp(dades.smp),
     ...(aemet.length ? blocAvisosAemet(aemet, ara) : []),
@@ -851,61 +853,21 @@ function blocAvisos(dades, { ara = new Date(), curts: nomesCurts = false } = {})
   const empremta = curts.map((c) => c.dataset.clau).sort().join('\n');
   const sec = element('section', 'avisos-actius');
   sec.setAttribute('aria-label', T('Avisos actius'));
-  if (nomesCurts) {
-    const plec = element('details', 'avisos-plec');
-    const resum = element('summary');
-    resum.append(element('h2', 'seccio', T`Avisos actius (${curts.length})`));
-    const llista = element('div', 'avisos-curts');
-    llista.append(...curts);
-    plec.append(resum, llista);
-    const nou = curts.some((c) => c.querySelector('.avis-nou') || nivellDe(c) === 'vermell');
-    plec.open = PLEC_AVISOS && PLEC_AVISOS.empremta === empremta ? PLEC_AVISOS.obert : nou;
-    plec.addEventListener('toggle', () => { PLEC_AVISOS = { empremta, obert: plec.open }; });
-    sec.append(plec);
-    return sec;
-  }
   const plec = element('details', 'avisos-plec');
   const resum = element('summary');
   resum.append(element('h2', 'seccio', T`Avisos actius (${curts.length})`));
-  plec.append(resum, ...perills.map((i) => ambDetall(i, hrefDe(i))),
-    ...talls.map((i) => ambDetall(i, 'consultes.html#llum')));
-  plec.open = obertAvisos(empremta, curts.some((c) => nivellDe(c) === 'vermell'));
-  if (plec.open) marcaAvisosVistos(empremta);
-  plec.addEventListener('toggle', () => {
-    PLEC_AVISOS = { empremta, obert: plec.open };
-    marcaAvisosVistos(empremta);
-  });
   const llista = element('div', 'avisos-curts');
   llista.append(...curts);
-  sec.append(plec, llista);
+  plec.append(resum, llista);
+  const nou = curts.some((c) => c.querySelector('.avis-nou') || nivellDe(c) === 'vermell');
+  plec.open = PLEC_AVISOS && PLEC_AVISOS.empremta === empremta ? PLEC_AVISOS.obert : nou;
+  plec.addEventListener('toggle', () => { PLEC_AVISOS = { empremta, obert: plec.open }; });
+  sec.append(plec);
   return sec;
 }
 
-// «Avisos actius» plegat quan no hi ha res de nou (Juanjo, 16-10-2026: «la
-// primera vez que se entra la tarjeta Avisos actius aparece desplegada, pero,
-// si no hay cambios, las veces sucesivas aparecería plegada, indicando entre
-// paréntesis el número de avisos»; ADR 0094). Plegat, una línia per avís amb
-// la franja del seu nivell, perquè es vegi quins són sense tocar res; obert,
-// els textos sencers. Es desplega sol la primera vegada i quan canvia el
-// conjunt (un avís nou, un nivell que puja, un que acaba); un avís vermell
-// no es plega mai. El que s'ha vist es recorda al dispositiu, per a «El
-// temps» i «Si surts» alhora; dins d'una mateixa pàgina, mana com l'ha deixat
-// la persona mentre els avisos no canviïn.
-const CLAU_AVISOS_VISTOS = 'meteo.avisos-vistos';
-let PLEC_AVISOS = null;   // {empremta, obert}: com l'ha deixat la persona en aquesta pàgina
-
-function avisosVistos() {
-  try { return localStorage.getItem(CLAU_AVISOS_VISTOS); } catch (e) { return null; }
-}
-
-function marcaAvisosVistos(empremta) {
-  try { localStorage.setItem(CLAU_AVISOS_VISTOS, empremta); } catch (e) { /* sense memòria, cada vegada desplegat */ }
-}
-
-function obertAvisos(empremta, vermell) {
-  if (PLEC_AVISOS && PLEC_AVISOS.empremta === empremta) return PLEC_AVISOS.obert;
-  return vermell || avisosVistos() !== empremta;
-}
+// Com l'ha deixat la persona en aquesta pàgina, mentre els avisos no canviïn.
+let PLEC_AVISOS = null;   // {empremta, obert}
 
 const NIVELLS_AVIS = ['vermell', 'taronja', 'groc', 'prealerta', 'compte'];
 function nivellDe(item) {

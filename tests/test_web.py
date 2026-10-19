@@ -547,31 +547,31 @@ class Web(unittest.TestCase):
         self.assertIn("Cap a les 20\u00a0h s’acaba l’avís oficial.", consells)
 
     def test_si_ara_plou_ho_diu_i_qui_ho_veu(self):
-        # 19-10-2026, 06:40, plovent: «Si surts» deia «Pluja probable a l'anada (6 h)». Si l'hora en curs
-        # porta plou_ara, es diu que plou i qui ho veu (estacions, radar o tots dos), i la tornada a part.
-        def tram(ara, estacio=True, radar=False, tornada=0.82):
-            return [{"hora": "2026-10-19T06:00", "probabilitat": 1.0, "pluja_mm": 0.7, "temperatura": 13, "avisos": [],
-                     "plou_ara": ara, "segons_estacio": estacio and ara, "segons_radar": radar and ara},
-                    {"hora": "2026-10-19T07:00", "probabilitat": 1.0, "pluja_mm": 3.8, "temperatura": 13, "avisos": []},
+        # 19-10-2026, plovent: «Si surts» deia «Pluja probable a l'anada (6 h)», i a les 7, amb les dades de
+        # les 6:57, «a l'anada (7 h)»: l'hora en curs de la taula ja no hi era. Si se surt ara i l'estat de
+        # la pluja d'ara (pluja_ara, el de la portada) diu que plou, es diu i qui ho veu; només amb «Ara».
+        def tram(tornada=0.82):
+            return [{"hora": "2026-10-19T07:00", "probabilitat": 0.3, "pluja_mm": 0.7, "temperatura": 13, "avisos": []},
                     {"hora": "2026-10-19T08:00", "probabilitat": 0.65, "pluja_mm": 1.8, "temperatura": 14, "avisos": []},
                     {"hora": "2026-10-19T09:00", "probabilitat": tornada, "pluja_mm": 3.0, "temperatura": 14, "avisos": []}]
-        def avalua(mitja, **k):
-            return self.avalua("2026-10-19T06:40:00+02:00", f"avalua({json.dumps(mitja)}, {json.dumps(tram(**k))}, [])", "sortir.js")
-        moto = avalua("moto", ara=True)
+        def avalua(mitja, estat="plou", radar=None, tornada=0.82, futur=False):
+            entorn = {"hores": tram(tornada), "ara": {}, "pluja_ara": {"estat": estat}, "radar": radar}
+            return self.avalua("2026-10-19T07:05:00+02:00", f"avalua({json.dumps(mitja)}, {json.dumps(tram(tornada))}, [], "
+                               f"{json.dumps(futur)}, [], {json.dumps(entorn)})", "sortir.js")
+        moto = avalua("moto")
         self.assertEqual(moto["nivell"], "no")
         self.assertEqual(moto["motius"], ["Ara plou al barri, segons les estacions, i pluja probable a la tornada (9\u00a0h)."])
-        self.assertEqual(avalua("bici", ara=True, estacio=True, radar=True, tornada=0.05)["motius"],
-                         ["Ara plou al barri, segons les estacions i el radar."])
-        self.assertEqual(avalua("bici", ara=True, estacio=False, radar=True, tornada=0.05)["motius"],
-                         ["Ara plou al barri, segons el radar."])
-        # Sense pluja a la tornada, només l'ara; i en cotxe, amb «condueix amb compte».
-        self.assertEqual(avalua("moto", ara=True, tornada=0.05)["motius"], ["Ara plou al barri, segons les estacions."])
-        self.assertEqual(avalua("cotxe", ara=True, tornada=0.05)["motius"], ["Ara plou al barri, segons les estacions: condueix amb compte."])
-        # A peu, també.
-        self.assertEqual(avalua("peu", ara=True)["motius"], ["Ara plou al barri, segons les estacions: porta paraigua."])
-        # Sense plou_ara, com sempre.
-        self.assertEqual(avalua("moto", ara=False)["motius"], ["Pluja probable a l’anada i a la tornada."])
-        self.assertEqual(avalua("peu", ara=False)["motius"], ["Pot ploure mentre ets fora: porta paraigua."])
+        sobre = {"arriba": "2026-10-19T07:04:00+02:00"}
+        self.assertEqual(avalua("bici", radar=sobre, tornada=0.05)["motius"], ["Ara plou al barri, segons les estacions i el radar."])
+        self.assertEqual(avalua("bici", estat="radar_sobre", radar=sobre, tornada=0.05)["motius"], ["Ara plou al barri, segons el radar."])
+        # Sense pluja a la tornada, només l'ara; en cotxe, amb «condueix amb compte»; a peu, el paraigua.
+        self.assertEqual(avalua("moto", tornada=0.05)["motius"], ["Ara plou al barri, segons les estacions."])
+        self.assertEqual(avalua("cotxe", tornada=0.05)["motius"], ["Ara plou al barri, segons les estacions: condueix amb compte."])
+        self.assertEqual(avalua("peu")["motius"], ["Ara plou al barri, segons les estacions: porta paraigua."])
+        # Si no plou ara, o si se surt més tard, com sempre.
+        self.assertEqual(avalua("moto", estat="no")["motius"], ["Pluja probable a la tornada (9\u00a0h)."])
+        self.assertEqual(avalua("moto", futur=True)["motius"], ["Pluja probable a la tornada (9\u00a0h)."])
+        self.assertEqual(avalua("peu", futur=True)["motius"], ["Pot ploure mentre ets fora: porta paraigua."])
 
     def test_pausa_en_el_risc_de_pluja_no_es_el_final(self):
         # Revisor, 18-10-2026: «Cap a les 15 h s'acaba el risc de pluja» amb pluja possible de 16 a 0 h.
@@ -861,14 +861,43 @@ class Web(unittest.TestCase):
         self.assertEqual(self.avalua(ara, f"avaluaPublic({json.dumps(trens)}, true).motius", "sortir.js"),
                          ["Cap incidència als trens de Cerdanyola.", "Són els trens d’ara, no els de l’hora triada."])
         plans = [{"pla": "INUNCAT", "nom": "d'inundacions", "fase": "emergència"}]
-        # El pla ja surt a «Avisos actius»: aquí, una línia sense repetir-lo (08-10-2026).
-        self.assertEqual(self.avalua(ara, f"avisPlaSortida({json.dumps(plans)})", "sortir.js"),
-                         "El consell de cada mitjà surt del temps previst i del trànsit: no té en compte l’emergència de Protecció Civil (vegeu l’avís de dalt).")
+        # El pla no surt sencer a «Si surts» (19-10-2026): la línia que remet a «Perill» diu
+        # què no tenen en compte els consells, sense «vegeu l'avís de dalt», que ja no hi és.
+        nota = lambda d: self.avalua(ara, f"noTeEnCompte({json.dumps(d)})", "sortir.js")
+        self.assertEqual(nota({"plans": plans}),
+                         "El consell de cada mitjà surt del temps previst i del trànsit: no té en compte l’emergència de Protecció Civil.")
         plans[0]["fase"] = "alerta"
-        self.assertIn("no té en compte l’alerta de Protecció Civil", self.avalua(ara, f"avisPlaSortida({json.dumps(plans)})", "sortir.js"))
+        self.assertEqual(nota({"plans": plans, "perill_riera": [{}], "entorn": {"incendis": [{}]}}),
+                         "El consell de cada mitjà surt del temps previst i del trànsit: no té en compte l’alerta de Protecció "
+                         "Civil, el perill de la riera de Sant Cugat ni l’incendi proper.")
         plans[0]["fase"] = "prealerta"
-        self.assertIsNone(self.avalua(ara, f"avisPlaSortida({json.dumps(plans)})", "sortir.js"))
-        self.assertIsNone(self.avalua(ara, "avisPlaSortida(undefined)", "sortir.js"))
+        self.assertIsNone(nota({"plans": plans}))
+        self.assertIsNone(nota({}))
+
+    def test_si_surts_nomes_remet_a_perill_amb_els_avisos_de_conduccio(self):
+        # Juanjo, 19-10-2026: «en si surts salen todas las alertas, prefiero simplificarlo. si hay alertas
+        # que afectan a la conduccion lo mejor es que remita a la pestaña perill». No compten la calor,
+        # el mar, el Pla Alfa ni els tancaments forestals.
+        ara = "2026-10-19T09:00:00+02:00"
+        aemet = lambda tipo, nivel: {"zona": "Prelitoral de Barcelona", "tipo": tipo, "nivel": nivel,
+                                     "inicio": "2026-10-19T08:00:00+02:00", "fin": "2026-10-19T20:00:00+02:00"}
+        dades = {"plans": [{"pla": "INUNCAT", "nom": "d'inundacions", "fase": "alerta"}],
+                 "smp": {"fenomens": [{"fenomen": "pluja", "nivell": "alt", "dies": []},
+                                      {"fenomen": "calor", "nivell": "mig", "dies": []}]},
+                 "avisos": [aemet("tempestes", "groc"), aemet("calor", "taronja")],
+                 "entorn": {"pla_alfa": {"avui": 4}, "tancaments": [], "incendis": []},
+                 "riscos": [{"clau": "calor", "tipus": "calor", "nivell": "groc", "valor": 37, "unitat": "°C"}]}
+        claus = self.avalua(ara, f"avisosConduccio({json.dumps(dades)}).map((i) => i.dataset.clau.split(':')[0] + ':' + i.dataset.clau.split(':')[1])",
+                            "sortir.js")
+        self.assertEqual(claus, ["pla:INUNCAT", "smp:pluja", "aemet:groc"])
+        # Sense cap que afecti la conducció, no hi ha línia.
+        sense = {"smp": {"fenomens": [{"fenomen": "calor", "nivell": "mig", "dies": []}]}, "entorn": {"pla_alfa": {"avui": 4}}}
+        self.assertEqual(self.avalua(ara, f"avisosConduccio({json.dumps(sense)}).length", "sortir.js"), 0)
+        self.assertIsNone(self.avalua(ara, f"liniaAvisosConduccio({json.dumps(sense)})", "sortir.js"))
+        with open(os.path.join(WEB, "sortir.js"), encoding="utf-8") as f:
+            codi = f.read()
+        self.assertNotIn("blocAvisos(", codi)
+        self.assertNotIn("avís de dalt", codi.replace("// a «l'avís de dalt»", ""))
 
     def test_punt_de_perill_nomes_amb_un_perill_actiu(self):
         # ADR 0074: el punt vermell, només mentre la situació és activa i no s'ha vist;

@@ -103,23 +103,26 @@ function plouRodes(f) {
   return sobre(f, llindars(f).pluja, MM_PLUJA) || f.plou_ara;
 }
 
-// Si ara plou (plou_ara de l'hora en curs: l'únic estat de la pluja, ADR
-// 0101), es diu que plou i qui ho veu (les estacions, el radar o tots dos),
-// no «pluja probable a l'anada (6 h)» (Juanjo, 19-10-2026: «si llueve, debe
-// decir que llueve sea por radar, estaciones o ambas»). I la tornada, si
-// també hi veu pluja, com fins ara.
-function fontPlou(f) {
-  if (f.segons_estacio && f.segons_radar) return T('les estacions i el radar');
-  if (f.segons_radar) return T('el radar');
-  if (f.segons_estacio) return T('les estacions');
-  return null;
+// Si se surt ara i ara plou, es diu que plou i qui ho veu (les estacions, el
+// radar o tots dos), no «pluja probable a l'anada (7 h)» (Juanjo, 19-10-2026:
+// «si llueve, debe decir que llueve sea por radar, estaciones o ambas» i
+// «esto solo hay que tenerlo en cuenta cuando surto está en ara»). Surt de
+// l'estat únic de la pluja d'ara (pluja_ara, ADR 0101), el de la portada, no
+// de la marca de l'hora en curs de la taula: passada l'hora en punt, amb les
+// dades d'abans, «Ara» és ja l'hora següent i la marca no hi és.
+function fontPlujaAra(plujaAra, radar, ara = new Date()) {
+  const estat = (plujaAra || {}).estat;
+  if (estat === 'radar_sobre') return T('el radar');
+  if (estat !== 'plou') return null;
+  const arriba = (radar || {}).arriba;
+  return arriba && new Date(arriba) <= new Date(ara.getTime() + 5 * 60000)
+    ? T('les estacions i el radar') : T('les estacions');
 }
 
-function textPlujaProbable(anada, tornada, cond) {
-  if (!anada.plou_ara) return T`Pluja probable ${quan(anada, tornada, cond)}`;
-  const font = fontPlou(anada);
-  const ara = font ? T`Ara plou al barri, segons ${font}` : T('Ara plou al barri');
-  return cond(tornada) && !tornada.plou_ara ? T`${ara}, i pluja probable a la tornada (${hora(tornada)} h)` : ara;
+function textPlujaProbable(anada, tornada, cond, araPlou) {
+  if (!araPlou) return T`Pluja probable ${quan(anada, tornada, cond)}`;
+  const ara = T`Ara plou al barri, segons ${araPlou}`;
+  return cond(tornada) ? T`${ara}, i pluja probable a la tornada (${hora(tornada)}\u00a0h)` : ara;
 }
 
 // Pluja per sota del 20 % (C.PROB_ATENCION), on la taula i el resum diuen
@@ -182,9 +185,11 @@ function avalua(mitja, tram, trens, futur, transit, entorn) {
   const tMin = temps.length ? Math.min(...temps) : null;
 
   const nomesAvis = (cond) => viatge.filter(cond).every(senseDades);
+  // Només si se surt ara (futur fals): la pluja que cau en aquest moment.
+  const araPlou = !futur && entorn ? fontPlujaAra(entorn.pluja_ara, entorn.radar) : null;
   if (mitja === 'bici' || mitja === 'moto') {
-    if (viatge.some(plouRodes)) {
-      puja('no', `${textPlujaProbable(anada, tornada, plouRodes)}.`);
+    if (araPlou || viatge.some(plouRodes)) {
+      puja('no', `${textPlujaProbable(anada, tornada, plouRodes, araPlou)}.`);
     } else if (viatge.some(mullaRodes)) {
       const moto = mitja === 'moto';
       if (viatge.filter(mullaRodes).every(nomesAvisRodes)) {
@@ -214,11 +219,11 @@ function avalua(mitja, tram, trens, futur, transit, entorn) {
     else if (tres && tres.mm > PLUJA_COTXE_3H[1]) puja('no', T`Fins a ${mm3}\u00a0mm de pluja en 3 hores (${tresTxt}): millor no agafar el cotxe.`);
     else if (ara30 > PLUJA_COTXE_30MIN[0]) puja('compte', T`Ara plou amb força al barri (${mm30}\u00a0mm en mitja hora): condueix amb compte.`);
     else if (tres && tres.mm > PLUJA_COTXE_3H[0]) puja('compte', T`Fins a ${mm3}\u00a0mm de pluja en 3 hores (${tresTxt}): condueix amb compte.`);
-    else if (viatge.some(plouClar)) {
+    else if (araPlou || viatge.some(plouClar)) {
       // El nivell, el de sempre; el text, el mateix que en moto (ADR 0047): «Pluja
       // probable» només si la probabilitat ho diu, i l'avís, si és l'únic que la veu.
       const dades = (f) => sobre(f, llindars(f).risc, MM_RISC) || f.plou_ara;
-      if (viatge.some(plouRodes)) puja('compte', T`${textPlujaProbable(anada, tornada, plouRodes)}: condueix amb compte.`);
+      if (araPlou || viatge.some(plouRodes)) puja('compte', T`${textPlujaProbable(anada, tornada, plouRodes, araPlou)}: condueix amb compte.`);
       else if (viatge.some(dades)) {
         puja('compte', pocaPluja(viatge.filter(dades)) ? T`Poca probabilitat de pluja ${quan(anada, tornada, dades)}: condueix amb compte.`
           : T`Pot ploure ${quan(anada, tornada, dades)}: condueix amb compte.`);
@@ -235,10 +240,9 @@ function avalua(mitja, tram, trens, futur, transit, entorn) {
   else if (ll.ratxa[0] != null && ratxa >= ll.ratxa[0]) puja('compte', T`Ratxes de vent de fins a ${Math.round(ratxa)} km/h.`);
   if (tMin != null && ll.fred[1] != null && tMin <= ll.fred[1]) puja('no', T`${graus(tMin)}: hi pot haver gel.`);
   else if (tMin != null && ll.fred[0] != null && tMin <= ll.fred[0]) puja('compte', T`${graus(tMin)}: compte amb el gel a primera hora.`);
-  if (mitja === 'peu' && anada.plou_ara) {
+  if (mitja === 'peu' && araPlou) {
     // Si ara plou, també a peu es diu, com en els vehicles (19-10-2026).
-    const font = fontPlou(anada);
-    puja('compte', font ? T`Ara plou al barri, segons ${font}: porta paraigua.` : T('Ara plou al barri: porta paraigua.'));
+    puja('compte', T`Ara plou al barri, segons ${araPlou}: porta paraigua.`);
   } else if (mitja === 'peu' && tram.some(mulla)) {
     puja('compte', tram.filter(mulla).every(senseDades)
       ? T('Avís oficial per pluja mentre ets fora: ni el radar, ni les estacions, ni els models hi veuen pluja. Per si de cas, porta paraigua.')
@@ -494,31 +498,68 @@ function posaResumTriats() {
 }
 const TEXT_NIVELL = { be: 'Bé', compte: 'Compte', no: 'Millor no' };
 
-// Amb un pla de Protecció Civil en alerta o emergència, els veredictes no
-// canvien (surten de la pluja i el vent previstos, ADR 0008), però a sobre es
-// diu ben clar què demana el pla (Juanjo, 07-10-2026). Null si no n'hi ha cap.
-function avisPlaSortida(plans) {
-  const pla = (plans || []).find((p) => p.fase === 'emergència') || (plans || []).find((p) => p.fase === 'alerta');
-  if (!pla) return null;
-  // El pla ja surt sencer a «Avisos actius»: aquí només el que cal saber
-  // dels veredictes (Juanjo, 08-10-2026: «sale repetido»).
-  return pla.fase === 'emergència'
-    ? T('El consell de cada mitjà surt del temps previst i del trànsit: no té en compte l’emergència de Protecció Civil (vegeu l’avís de dalt).')
-    : T('El consell de cada mitjà surt del temps previst i del trànsit: no té en compte l’alerta de Protecció Civil (vegeu l’avís de dalt).');
+// Els avisos de perill no es repeteixen aquí: una sola línia diu quants n'hi
+// ha que poden afectar la conducció i porta a «Perill» (Juanjo, 19-10-2026:
+// «en si surts salen todas las alertas, prefiero simplificarlo. si hay alertas
+// que afectan a la conduccion lo mejor es que remita a la pestaña perill»;
+// ADR 0093). No hi compten la calor, el mar, el Pla Alfa i els tancaments
+// d'espais forestals (l'accés a peu al bosc) ni els talls de llum, que
+// segueixen a la portada i a «Perill».
+const SENSE_CONDUCCIO = new Set(['calor', 'mar', 'costaners']);
+
+// Meteocat, un per fenomen, com a «Avisos actius» de la portada (curtsSmp):
+// només la clau i el color, que és el que es compta.
+function smpPerFenomen(smp) {
+  const fenomens = ((smp || {}).fenomens || []).filter((f) => COLOR_SMP[f.nivell]);
+  const llista = fenomens.length ? fenomens : ((smp || {}).linies || []).filter((l) => COLOR_SMP[l.nivell]);
+  return llista.map((f, n) => ({ dataset: { clau: `smp:${f.fenomen || `linia${n}`}` }, className: `avis-item ${COLOR_SMP[f.nivell]}` }));
 }
 
-// Com el pla: la riera i un incendi a prop no canvien els veredictes, que
-// surten del temps i del trànsit, però es diu, perquè «Bé en tots els mitjans»
-// no es llegeixi com que no hi ha cap perill (inventari del 18-10-2026).
-function altresPerills(dades) {
-  const res = [];
-  if ((dades.perill_riera || []).length) {
-    res.push(T('El consell de cada mitjà no té en compte el perill de la riera de Sant Cugat (vegeu l’avís de dalt).'));
-  }
-  if (((dades.entorn || {}).incendis || []).length) {
-    res.push(T('El consell de cada mitjà no té en compte l’incendi proper (vegeu l’avís de dalt).'));
-  }
-  return res;
+function avisosConduccio(dades, ara = new Date()) {
+  const aemet = avisosAemet(dades);
+  const items = [...blocPlans(dades.plans), ...smpPerFenomen(dades.smp),
+    ...(aemet.length ? blocAvisosAemet(aemet, ara) : []), ...blocRiera(HISTORIAL_PERILL, ara),
+    ...blocEntorn(dades.entorn), blocRiscos(dades.riscos)].filter(Boolean);
+  return items.filter((i) => {
+    const clau = i.dataset.clau || '';
+    if (/^(alfa|tancat):/.test(clau)) return false;
+    if (clau.startsWith('smp:')) return !SENSE_CONDUCCIO.has(clau.split(':')[1]);
+    if (clau.startsWith('aemet:')) return clau.split(':')[2].split(',').some((t) => !SENSE_CONDUCCIO.has(t));
+    if (clau.startsWith('risc:')) return (dades.riscos || []).some((r) => !SENSE_CONDUCCIO.has(r.tipus));
+    return true;
+  });
+}
+
+// El pla de Protecció Civil, la riera i un incendi a prop no canvien els
+// veredictes, que surten del temps i del trànsit (ADR 0008), però es diu a la
+// mateixa línia, perquè «Bé en tots els mitjans» no es llegeixi com que no hi
+// ha cap perill (Juanjo, 07-10-2026; inventari del 18-10-2026). Abans remetia
+// a «l'avís de dalt», que ja no hi és.
+function noTeEnCompte(dades) {
+  const pla = (dades.plans || []).find((p) => p.fase === 'emergència') || (dades.plans || []).find((p) => p.fase === 'alerta');
+  const coses = [
+    pla && (pla.fase === 'emergència' ? T('l’emergència de Protecció Civil') : T('l’alerta de Protecció Civil')),
+    (dades.perill_riera || []).length && T('el perill de la riera de Sant Cugat'),
+    ((dades.entorn || {}).incendis || []).length && T('l’incendi proper'),
+  ].filter(Boolean);
+  if (!coses.length) return null;
+  const llista = coses.length === 1 ? coses[0] : `${coses.slice(0, -1).join(', ')}${T(' ni ')}${coses[coses.length - 1]}`;
+  return T`El consell de cada mitjà surt del temps previst i del trànsit: no té en compte ${llista}.`;
+}
+
+function liniaAvisosConduccio(dades, ara = new Date()) {
+  const avisos = avisosConduccio(dades, ara);
+  if (!avisos.length) return null;
+  const n = avisos.length;
+  const pitjor = ['vermell', 'taronja', 'groc', 'prealerta'].find((c) => avisos.some((a) => nivellDe(a) === c)) || 'compte';
+  const p = element('p', `avis-item avisos-conduccio ${pitjor}`);
+  const a = element('a', null, T('Perill'));
+  a.href = 'perill.html';
+  p.append(n === 1 ? T('Hi ha 1 avís de perill que pot afectar la conducció: mira’l a ')
+    : T`Hi ha ${n} avisos de perill que poden afectar la conducció: mira’ls a `, a, '.');
+  const nota = noTeEnCompte(dades);
+  if (nota) p.append(' ', nota);
+  return p;
 }
 
 function pintaSortida() {
@@ -540,7 +581,7 @@ function pintaSortida() {
   const veredictes = [];
   for (const [clau, nom, icon] of MITJANS) {
     if (fora.has(clau)) continue;
-    const v = avalua(clau, tram, trens, i > 0, transit, { hores, ara: dades.ara_casa });
+    const v = avalua(clau, tram, trens, i > 0, transit, { hores, ara: dades.ara_casa, pluja_ara: dades.pluja_ara, radar: dades.radar });
     veredictes.push([nom, v]);
     const li = element('li', 'mitja ' + v.nivell);
     const cap = element('p', 'mitja-cap');
@@ -568,8 +609,6 @@ function pintaSortida() {
   }
   const parts = llista.children.length ? [llista]
     : [element('p', 'nota', T('Tria a dalt els mitjans que vols veure.'))];
-  const pla = avisPlaSortida(dades.plans);
-  for (const t of [...altresPerills(dades), pla].filter(Boolean)) parts.unshift(element('p', 'avis avis-pc', t));
   const cs = consells(tram, ara);
   if (cs.length) {
     const ul = element('ul', 'consells');
@@ -634,13 +673,13 @@ function horesVigents(hores, ara) {
   return (hores || []).filter((f) => new Date(f.fins) > ara);
 }
 
-// Els avisos vigents; es tornen a pintar quan arriba l'historial de «Perill»,
-// per la riera (ADR 0076).
+// La línia dels avisos que poden afectar la conducció; es torna a pintar quan
+// arriba l'historial de «Perill», per la riera (ADR 0076).
 function repintaAvisos() {
   if (!DADES || dadesVelles(DADES)) return;
-  $('avisos').querySelector('.avisos-actius')?.remove();
-  const actius = blocAvisos(DADES);
-  if (actius) $('avisos').prepend(actius);
+  $('avisos').querySelector('.avisos-conduccio')?.remove();
+  const linia = liniaAvisosConduccio(DADES);
+  if (linia) $('avisos').prepend(linia);
 }
 
 function pinta(dades) {

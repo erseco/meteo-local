@@ -111,7 +111,8 @@ class Perills(unittest.TestCase):
         if not shutil.which("node"):
             self.skipTest("cal Node")
         # Les dues pàgines fan servir el mateix bloc, sense afegir-hi ni treure'n res.
-        for pagina, crida in (("casa.js", "blocAvisos(dades, { curts: true })"), ("sortir.js", "blocAvisos(DADES)")):
+        # «Si surts» ja no els mostra: una línia que remet a «Perill» (19-10-2026; test_web).
+        for pagina, crida in (("casa.js", "blocAvisos(dades)"), ("sortir.js", "liniaAvisosConduccio(DADES)")):
             with open(os.path.join(ARREL, "web", pagina), encoding="utf-8") as f:
                 self.assertIn(crida, f.read(), pagina)
         # Les línies d'alerta del resum del dia (bot i «Consultes»), sense la marca del nivell.
@@ -123,10 +124,8 @@ class Perills(unittest.TestCase):
         self.assertTots(r["text"], "ca", B.TIPUS_PERILL, "«Avisos actius» de la web")
         # Plegat, una línia per avís: tampoc no se'n pot deixar cap (ADR 0094).
         self.assertTots(r["curts"], "ca", B.TIPUS_PERILL, "«Avisos actius» plegat")
-        # Es desplega la primera vegada i quan canvia el conjunt; si no, plegat; vermell, sempre obert.
-        # A la portada, plegat sota el títol si no hi ha res de nou (Juanjo, 18-10-2026).
-        self.assertEqual(r["plec"], [True, False, True, True, "details", False, True, True],
-                         "quan es desplega «Avisos actius» (a «Si surts» i a la portada)")
+        # A la portada, plegat sota el títol si no hi ha res de nou (Juanjo, 18-10-2026); vermell, sempre obert.
+        self.assertEqual(r["plec"], ["details", False, True, True], "quan es desplega «Avisos actius» a la portada")
         # Cada alerta porta a la seva fitxa de «Perill», perquè s'hi destaqui
         # (Juanjo, 16-10-2026: «con este enlace no me sale el resalte»): a
         # «Avisos actius» i a les línies del resum.
@@ -211,16 +210,14 @@ vm.runInContext(`HISTORIAL_PERILL = ${JSON.stringify(historial.filter((e) => e.t
 ctx.__pocs = { ...dades, entorn: null };
 ctx.__mes = { ...ctx.__pocs, riscos: [{ ...dades.riscos[0], nivell: 'taronja' }] };
 ctx.__vermell = { ...ctx.__pocs, entorn: dades.entorn };
-const obert = (nom) => vm.runInContext(`blocAvisos(${nom}).fills[0].open`, ctx);
 // A la portada (18-10-2026), en cada visita: plegat si no hi ha cap «Nou» (la
 // segona vegada que es veu el mateix);
 // obert si n'hi ha o si n'hi ha cap de vermell.
 const portada = (nom) => vm.runInContext(
-  `LLEGITS_ABANS = null; PLEC_AVISOS = null; blocAvisos(${nom}, { curts: true }).fills[0]`, ctx);
-const plec = [obert('__pocs'), obert('__pocs'), obert('__mes'), obert('__vermell'),
-  portada('__vermell').tag, (portada('__pocs'), portada('__pocs').open), portada('__mes').open,
+  `LLEGITS_ABANS = null; PLEC_AVISOS = null; blocAvisos(${nom}).fills[0]`, ctx);
+const plec = [portada('__vermell').tag, (portada('__pocs'), portada('__pocs').open), portada('__mes').open,
   portada('__vermell').open];
-console.log(JSON.stringify({ text: bloc.textContent, curts: bloc.fills[1].textContent, detalls: detalls(bloc),
+console.log(JSON.stringify({ text: bloc.textContent, curts: bloc.fills[0].textContent, detalls: detalls(bloc),
   sensePla, linies: liniesFitxa, plec }));
 """
 
