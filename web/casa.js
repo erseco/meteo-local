@@ -1164,7 +1164,7 @@ function taula(hores, mesurada, riscos, sol) {
     terme('+1, +2…', T('Les temperatures són les de vora la riera, la zona més freda del barri. La xifra diu quants graus més sol fer a la part alta, que canvia segons l’hora del dia i l’època de l’any: surt del que han mesurat les estacions del barri a cada hora els últims 30 dies.'), 'alta');
   }
   if (visibles.some((f) => avisHora(f))) terme(T('Barra de color'), T('Hores amb avís, del color del nivell.'));
-  terme(T('Vent'), T('La mitjana de l’hora en km/h i, entre parèntesis, la ratxa més forta de l’hora.'));
+  terme(T('Vent'), T('La mitjana de l’hora en km/h i, entre parèntesis, la ratxa més forta de l’hora, la del model que en preveu més.'));
   if (visibles.some((f) => f.vent != null && f.ratxa && nivellRatxa(f.ratxa))) {
     terme(T('Ratxa en color'), T('Passa el llindar groc (72\u00a0km/h) o taronja (108\u00a0km/h) dels avisos de Meteocat i dona l’avís de vent fort. La «i» porta a l’avís, amb d’on surt i quant s’hi pot confiar.'));
   }

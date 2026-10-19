@@ -176,6 +176,18 @@ añadir una i de info que lleve a la explicación de la alerta».
   la de cada modelo va detrás. Aprobado por Juanjo («sí, aplícalo y
   publícalo»).
 
+- **La racha, la del modelo que da más** (3.157.0). En la pasada de las
+  13:43 del 19-10-2026, la previsión combinada de Météo-France daba 66 km/h
+  de 17 a 18 h, con AROME HD a 92 y AROME a 89: el aviso desapareció aunque
+  dos de tres modelos pasaban el umbral, porque la combinada mezcla modelos
+  y rebaja los picos. Ahora la racha de cada hora es la más fuerte de los
+  modelos finos (`casa.ratxa_modelos`), como los mm de lluvia
+  (`lluvia_modelos`); sin ninguno, la combinada. Vale para todo lo que la
+  usa: el aviso, la tabla, la gráfica, las etiquetas de los tramos y «Si
+  surts» (bici, moto y a pie, que así es más prudente). El aviso dice
+  «Origen: el model que en preveu més, AROME HD.» y, detrás, cuántos la
+  ven. Juanjo: «hazlo». Prueba: `tests/test_casa_fonts.py` (`RatxaHora`).
+
 Validación: `tests/test_riscos.py` (`FontTest`), `tests/test_web.py`
 (`test_ratxa_de_l_avis_a_la_taula` y el umbral naranja igual al de
 `config`); la web generada con los datos del 19-10-2026 en Chromium y

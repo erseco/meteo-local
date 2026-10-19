@@ -391,6 +391,17 @@ def lluvia_modelos(h, i):
     return max(v) if v else (h.get("precipitation_meteofrance_seamless", [0] * (i + 1))[i] or 0.0)
 
 
+def ratxa_modelos(h, i):
+    """Ratxa de l'hora i: la més forta dels models fins, com la pluja
+    (lluvia_modelos). La previsió combinada de Météo-France barreja els seus
+    models i rebaixa els pics: el 19-10-2026 a les 13:43 donava 66 km/h de 17 a
+    18 h amb AROME HD a 92 i AROME a 89, i l'avís de vent fort desapareixia
+    (Juanjo: «hazlo»). Sense cap model fi, la combinada."""
+    v = [h.get(f"wind_gusts_10m_{m}", [None] * (i + 1))[i] for m in C.MODELOS_FINOS]
+    v = [x for x in v if x is not None]
+    return max(v) if v else h.get("wind_gusts_10m_meteofrance_seamless", [None] * (i + 1))[i]
+
+
 def persistencia(mm_ultima_hora, k):
     """Probabilidad y lluvia mediana k horas después de una hora con esa
     lluvia, según el histórico (None si no ha llovido)."""
@@ -555,7 +566,7 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
             "avisos": avisos_mostrats(ini, fin, avisos),
             "nuvols": nuvols_ara if n == 0 and nuvols_ara is not None else NV.mescla(NV.valors_hora(h, i)),
             "codi": valor("weather_code", i),
-            "vent": vent_hora(h, i), "ratxa": valor("wind_gusts_10m", i),
+            "vent": vent_hora(h, i), "ratxa": ratxa_modelos(h, i),
             # La de cada model fi, perquè l'avís de vent fort digui quants la
             # veuen (Juanjo, 19-10-2026: «indicar el origen de la alerta y a
             # ser posible la validez que tiene»; riscos.font).

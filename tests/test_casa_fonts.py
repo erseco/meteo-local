@@ -80,3 +80,13 @@ class VentHora(unittest.TestCase):
         # I sense el principi, el de l'hora.
         self.assertEqual(casa.vent_hora({**h, "vent_15min": {}}, 0), 12.7)
 
+
+class RatxaHora(unittest.TestCase):
+    def test_la_del_model_que_en_preveu_mes(self):
+        # 19-10-2026, 13:43: la combinada de Météo-France, 66 km/h; AROME HD, 92,5, i AROME, 89,3.
+        h = {"wind_gusts_10m_meteofrance_seamless": [65.9], "wind_gusts_10m_meteofrance_arome_france_hd": [92.5],
+             "wind_gusts_10m_meteofrance_arome_france": [89.3], "wind_gusts_10m_icon_eu": [11.5]}
+        self.assertEqual(casa.ratxa_modelos(h, 0), 92.5)
+        # Sense cap model fi, la combinada.
+        self.assertEqual(casa.ratxa_modelos({"wind_gusts_10m_meteofrance_seamless": [65.9]}, 0), 65.9)
+

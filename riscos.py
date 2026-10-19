@@ -130,13 +130,18 @@ def font(tipus, origen, ratxes=None):
     Les ratxes, amb quants dels models fins hi arriben (ratxes: {model: la
     més forta del tram})."""
     if tipus == "ratxa":
-        # La xifra de l'avís és la previsió combinada de Météo-France (barreja
-        # els seus models i suavitza els pics); la de cada model va a part
+        # La xifra de l'avís és la del model que en preveu més (casa.ratxa_modelos,
+        # com la pluja); darrere, quants models la veuen i fins a quant cadascun
         # (Juanjo, 19-10-2026: «que significa esta frase…?», davant de «2 hi
-        # arriben (AROME HD, 92; AROME, 89; ICON-EU, 12 km/h)»).
-        ca = ["Origen: la previsió combinada de Météo-France per a Montflorit."]
-        es = ["Origen: la previsión combinada de Météo-France para Montflorit."]
+        # arriben (AROME HD, 92; AROME, 89; ICON-EU, 12 km/h)», i «hazlo»).
         vals = {NOMS_MODELS.get(m, m): v for m, v in (ratxes or {}).items() if v is not None}
+        if vals:
+            qui = max(vals, key=vals.get)
+            ca = [f"Origen: el model que en preveu més, {qui}."]
+            es = [f"Origen: el modelo que prevé más, {qui}."]
+        else:
+            ca = ["Origen: el model que en preveu més dels que es consulten (AROME HD, AROME i ICON-EU)."]
+            es = ["Origen: el modelo que prevé más de los que se consultan (AROME HD, AROME e ICON-EU)."]
         if vals:
             llindar = num(C.RISC_LLINDARS["ratxa"][0])
             n, total = sum(1 for v in vals.values() if nivell("ratxa", v)), len(vals)

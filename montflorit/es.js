@@ -244,7 +244,7 @@ var IDIOMA = {
     "Hi compta la pluja que el radar veu acostar-se.": "Cuenta la lluvia que el radar ve acercarse.",
     "Barra de color": "Barra de color",
     "Hores amb avís, del color del nivell.": "Horas con aviso, del color del nivel.",
-    "La mitjana de l’hora en km/h i, entre parèntesis, la ratxa més forta de l’hora.": "La media de la hora en km/h y, entre paréntesis, la racha más fuerte de la hora.",
+    "La mitjana de l’hora en km/h i, entre parèntesis, la ratxa més forta de l’hora, la del model que en preveu més.": "La media de la hora en km/h y, entre paréntesis, la racha más fuerte de la hora, la del modelo que prevé más.",
     "Avís de vent fort: d’on surt": "Aviso de viento fuerte: de dónde sale",
     "Ratxa de {0} km/h, avís de vent fort: d’on surt": "Racha de {0} km/h, aviso de viento fuerte: de dónde sale",
     "Ratxa en color": "Racha en color",

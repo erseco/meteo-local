@@ -159,7 +159,7 @@ class FontTest(unittest.TestCase):
     def test_ratxa_amb_els_models_que_hi_arriben(self):
         f = RS.font("ratxa", "previsio", {"meteofrance_arome_france_hd": 92.5, "meteofrance_arome_france": 36.0,
                                           "icon_eu": 11.5})
-        self.assertIn("Origen: la previsió combinada de Météo-France per a Montflorit.", f["ca"])
+        self.assertIn("Origen: el model que en preveu més, AROME HD.", f["ca"])
         self.assertIn("només 1 també preveu ratxes de més de 72 km/h: AROME HD, fins a 92 km/h; AROME, només 36 km/h, "
                       "i ICON-EU, només 12 km/h. Previsió poc segura.", f["ca"])
         self.assertIn("solo 1 también prevé rachas de más de 72 km/h", f["es"])
