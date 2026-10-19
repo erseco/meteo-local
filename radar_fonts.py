@@ -30,6 +30,7 @@ import subprocess
 import sys
 
 import nowcast as N
+import remostreig as R
 
 DIR = os.environ.get("REGISTRE_DIR", "/estat/registre")
 DIES = 30
@@ -37,7 +38,9 @@ DE_MIN, FINS_MIN = 10, 60       # antelaciones que se comparan (desde la pasada)
 TOLERANCIA_MIN = 4              # observación a menos de esto de la hora prevista
 MIN_PLUJA = 30                  # casos con lluvia medida, como mínimo
 MIN_DIES = 3                    # en días distintos
-MILLORA = 0.95                  # error de la otra, como mucho este factor del actual
+# Cuánto tiene que mejorar la otra fuente lo decide la regla común (remostreig:
+# gana en el 95 % de los remuestreos por días; ADR 0105). Hasta la 3.144.0, un
+# 5 % menos de error (MILLORA = 0.95).
 
 
 def plou(salida):
@@ -105,16 +108,20 @@ def compara(files):
     if ps:
         for i, nom in ((0, "meteocat"), (1, "rainviewer")):
             res[f"brier_{nom}"] = round(sum((p[i] - p[2]) ** 2 for p in ps) / len(ps), 4)
+            # Con qué seguridad gana a la otra: remuestreos por días (ADR 0105).
+            res[f"seguretat_{nom}"] = R.seguretat([(p[i] - p[2]) ** 2 for p in ps],
+                                                  [(p[1 - i] - p[2]) ** 2 for p in ps], [str(p[3]) for p in ps])
     return res
 
 
 def decideix(c, actual):
-    """La fuente que toca: la otra, si hay bastantes casos de lluvia y
-    tiene al menos un 5 % menos de error; si no, la de ahora."""
+    """La fuente que toca: la otra, si hay bastantes casos de lluvia y gana
+    a la de ahora en al menos el 95 % de los remuestreos por días; si no, la
+    de ahora."""
     if c["amb_pluja"] < MIN_PLUJA or c["dies_pluja"] < MIN_DIES:
         return actual
     altra = "meteocat" if actual == "rainviewer" else "rainviewer"
-    return altra if c[f"brier_{altra}"] < MILLORA * c[f"brier_{actual}"] else actual
+    return altra if R.guanya(c.get(f"seguretat_{altra}")) else actual
 
 
 def verifica(avui=None, avisa=True):

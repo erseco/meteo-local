@@ -41,6 +41,7 @@ import numpy as np
 
 import config as C
 import prevision as P
+import remostreig as R
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 ARXIU = os.path.join(AQUI, "calibracio", "pluja_casa.json")
@@ -54,11 +55,12 @@ PROPOSAT = os.path.join(DIR, "proposat.json")
 ATURA = os.path.join(DIR, "atura")
 HISTORIAL = os.path.join(DIR, "historial.csv")
 
-# Cuándo hay bastantes datos propios y cuánto tiene que mejorar un método
-# para sustituir al que se usa (en semanas que no ha visto).
+# Cuándo hay bastantes datos propios para que un método pueda sustituir al
+# que se usa. Cuánto tiene que mejorar lo decide la regla común (remostreig:
+# gana en el 95 % de los remuestreos por días; ADR 0105). Hasta la 3.144.0,
+# un 5 % menos de error (MILLORA_MINIMA).
 MIN_HORES_PLUJA = 30        # horas con lluvia medida en casa
 MIN_DIES_TEMPERATURA = 14
-MILLORA_MINIMA = 0.05       # 5 % menos de error
 SETMANES_VALIDACIO = 4      # grupos de semanas para la validación cruzada
 PERSISTENCIA_H = 4          # horas en que cuenta lo medido al prever (lluvia, sequedad)
 # Cuánto dura el error de temperatura que tenía el modelo al prever: una
@@ -463,9 +465,14 @@ def valida_pluja(ms, arxiu, noms=RASGOS_PROPIS):
     # Horas observadas distintas con lluvia: cada hora se prevé muchas veces y
     # no cuenta más por eso (auditoría del 08-10-2026).
     hores_pluja = len({m["fins"] for m, plou in zip(ms, y) if plou})
+    dies = [m["fins"][:10] for m in ms]
     return {"mostres": len(y), "hores_pluja": hores_pluja, "rasgos": noms,
             "error": float(np.mean((p - y) ** 2)),
             "error_abans": float(np.mean((p_abans - y) ** 2)),
+            # Con qué seguridad gana al que publica la web: remuestreos por
+            # días de la hora observada (ADR 0105).
+            "seguretat": R.seguretat((p - y) ** 2, (p_abans - y) ** 2, dies),
+            "_errors": ((p - y) ** 2).tolist(), "_dies": dies,
             "w": ajustar(x, y).tolist() if y.sum() else None}
 
 
@@ -493,6 +500,7 @@ def valida_temperatura(ms, arxiu_t):
     return {"mostres": len(ms), "dies": dies,
             "error": float(np.mean(np.abs(error - pred))),
             "error_abans": float(np.mean(np.abs(abans - obs))),
+            "seguretat": R.seguretat(np.abs(error - pred), np.abs(abans - obs), [m["fins"][:10] for m in ms]),
             "w": ajustar_ridge(x, error).tolist(), "w_sense_estacio": ajustar_ridge(xs, error).tolist()}
 
 
@@ -508,13 +516,16 @@ def valida_variant(ms, arxiu, noms):
         base = valida_pluja(sub, arxiu)
         v["error_base"] = base["error"] if base else None
         v["mostres_base"] = base["mostres"] if base else None
+        v["seguretat_base"] = R.seguretat(v["_errors"], base["_errors"], v["_dies"]) if base else None
     return v
 
 
 # --- Decisión diaria -------------------------------------------------------------------
 
-def millora(v):
-    return v["error"] < (1 - MILLORA_MINIMA) * v["error_abans"]
+def millora(v, clau="seguretat"):
+    """Si el candidato gana con seguridad al que se usa: en al menos el 95 %
+    de los remuestreos por días (remostreig, ADR 0105)."""
+    return R.guanya(v.get(clau))
 
 
 def candidat(ms, arxiu, arxiu_t, avui):
@@ -530,23 +541,25 @@ def candidat(ms, arxiu, arxiu_t, avui):
 
     def val(v):
         return bool(v and v["hores_pluja"] >= MIN_HORES_PLUJA and v["w"] and millora(v))
-    # Una variante, solo si en sus mismas horas mejora también al base en
-    # MILLORA_MINIMA; entre varias, la que más lo mejora en proporción. Si
-    # ninguna, el base, si mejora al archivo.
+    # Una variante, solo si en sus mismas horas gana también al base con la
+    # misma seguridad; entre varias, la que más lo mejora en proporción. Si
+    # ninguna, el base, si gana al archivo.
     variants = [v for v in ((vp or {}).get("xv"), (vp or {}).get("avis"), (vp or {}).get("veines"))
-                if val(v) and v.get("error_base") and v["error"] < (1 - MILLORA_MINIMA) * v["error_base"]]
+                if val(v) and v.get("error_base") and millora(v, "seguretat_base")]
     v = max(variants, key=lambda v: 1 - v["error"] / v["error_base"]) if variants else vp if val(vp) else None
     if v:
         model["pluja"] = {"origen": "local", "des_de": ms[0]["emes"][:10], "fins": avui,
                           "rasgos": v["rasgos"], "w": v["w"], "error": v["error"],
                           "error_abans": v["error_abans"], "mostres": v["mostres"],
-                          "error_base": v.get("error_base")}
+                          "error_base": v.get("error_base"), "seguretat": v.get("seguretat"),
+                          "seguretat_base": v.get("seguretat_base")}
     if vt and vt["dies"] >= MIN_DIES_TEMPERATURA and millora(vt):
         model["temperatura"] = {"origen": "casa", "des_de": ms[0]["emes"][:10], "fins": avui,
                                 "rasgos": RASGOS_TEMPERATURA, "w": vt["w"],
                                 "rasgos_sense_estacio": RASGOS_TEMPERATURA_SENSE_ESTACIO,
                                 "w_sense_estacio": vt["w_sense_estacio"], "error": vt["error"],
-                                "error_abans": vt["error_abans"], "mostres": vt["mostres"]}
+                                "error_abans": vt["error_abans"], "mostres": vt["mostres"],
+                                "seguretat": vt.get("seguretat")}
     return model, vp, vt
 
 
@@ -566,7 +579,9 @@ def explica(abans, nou, vp, vt):
                       else " i els avisos oficials" if "avis_aemet" in p["rasgos"] else "")
             linies.append(f"Pluja: passa a aprendre de l'estació de casa{amb_xv} "
                           f"({p['mostres']} mostres). "
-                          f"Error {p['error']:.4f} en setmanes no vistes, abans {p['error_abans']:.4f}."
+                          f"Error {p['error']:.4f} en setmanes no vistes, abans {p['error_abans']:.4f}"
+                          + (f" (guanya en el {round(100 * p['seguretat'])} % dels remostrejos per dies)."
+                             if p.get("seguretat") is not None else ".")
                           + (f" Sense aquest rasgo, a les mateixes hores: {p['error_base']:.4f}."
                              if p.get("error_base") else ""))
         else:
@@ -574,7 +589,9 @@ def explica(abans, nou, vp, vt):
     if metode(abans)[1] != metode(nou)[1]:
         if nou["temperatura"] and nou["temperatura"]["origen"] != "arxiu":
             linies.append(f"Temperatura: es corregeix amb el registre propi ({vt['dies']} dies). "
-                          f"Error mitjà {vt['error']:.2f} °C, amb la correcció de l'arxiu {vt['error_abans']:.2f} °C.")
+                          f"Error mitjà {vt['error']:.2f} °C, amb la correcció de l'arxiu {vt['error_abans']:.2f} °C"
+                          + (f" (guanya en el {round(100 * vt['seguretat'])} % dels remostrejos per dies)."
+                             if vt.get("seguretat") is not None else "."))
         else:
             linies.append("Temperatura: torna a la correcció de l'arxiu; la del registre propi ja no millora.")
     linies.append("Per aturar-ho, demana-ho a Claude abans de demà.")

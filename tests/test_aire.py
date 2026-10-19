@@ -33,7 +33,8 @@ class Factors(unittest.TestCase):
         self.assertEqual(adoptats["nitrogen_dioxide"]["error"], 0.0)
         self.assertEqual(adoptats["nitrogen_dioxide"]["error_sense"], 10.0)
         self.assertEqual(list(descartats), ["ozone"])
-        self.assertGreater(descartats["ozone"]["error"], A.AIRE_MILLORA * descartats["ozone"]["error_sense"])
+        self.assertLess(descartats["ozone"]["seguretat"], 0.95)
+        self.assertEqual(adoptats["nitrogen_dioxide"]["seguretat"], 1.0)
         self.assertEqual(A.factors(model, mesures), adoptats)
 
     def test_sense_prou_hores_o_estacions_no_es_corregeix(self):

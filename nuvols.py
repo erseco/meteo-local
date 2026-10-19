@@ -41,6 +41,8 @@ import sys
 
 import numpy as np
 
+import remostreig as R
+
 DIR = os.environ.get("REGISTRE_DIR", "/estat/registre")
 APRENENTATGE = os.environ.get("APRENENTATGE_DIR", "/estat/aprenentatge")
 PESOS = os.path.join(APRENENTATGE, "nuvols-pesos.json")
@@ -66,8 +68,7 @@ DIES = 30
 MIN_HORES = 300          # horas observadas con los cuatro modelos, como mínimo
 MIN_DIES = 14            # en días distintos
 SETMANES_VALIDACIO = 4   # grupos de semanas de la validación cruzada
-REMOSTREJOS = 2000       # remuestreos por días del bootstrap
-SEGURETAT = 0.95         # proporción de remuestreos en que la nueva tiene que ganar
+REMOSTREJOS, SEGURETAT = R.REMOSTREJOS, R.SEGURETAT     # la regla común (ADR 0105)
 
 
 def percentatge(metar):
@@ -297,14 +298,8 @@ def compara(ps, actual):
     pred_actual = matriu @ np.array([actual[m] for m in MODELS])
     res["error_ajustats"] = round(float(np.mean(np.abs(pred - obs))), 1)
     # El remuestreo, por días enteros: las horas de un mismo día se parecen
-    # y no son casos independientes.
-    dies = np.array([f[:10] for f, _, _ in ps])
-    unics, idx = np.unique(dies, return_inverse=True)
-    guany = np.bincount(idx, (pred_actual - obs) ** 2 - (pred - obs) ** 2, len(unics))
-    n = np.bincount(idx, minlength=len(unics))
-    tria = np.random.default_rng(0).integers(0, len(unics), (REMOSTREJOS, len(unics)))
-    millora = guany[tria].sum(axis=1) / n[tria].sum(axis=1)
-    res["seguretat"] = round(float(np.mean(millora > 0)), 3)
+    # y no son casos independientes (la regla común, remostreig).
+    res["seguretat"] = R.seguretat((pred - obs) ** 2, (pred_actual - obs) ** 2, [f[:10] for f, _, _ in ps])
     return res
 
 

@@ -44,6 +44,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import aprenentatge as A  # noqa: E402
+import remostreig as R  # noqa: E402
 import config as C  # noqa: E402
 import smp as SMP  # noqa: E402
 from calibracio.analitza import leer_obs, leer_prev  # noqa: E402
@@ -54,8 +55,7 @@ from calibracio.pluja_casa import creuada, fiabilitat  # noqa: E402
 LOCAL = ZoneInfo("Europe/Madrid")
 UTC = dt.timezone.utc
 SALIDA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pluja_casa_avisos.json")
-REMOSTREJOS = 2000
-SEGURETAT = 0.95
+REMOSTREJOS, SEGURETAT = R.REMOSTREJOS, R.SEGURETAT     # la regla común (ADR 0105)
 # Los fenómenos de AEMET que cuentan, como en la página (casa.senyals_avis):
 # lluvia y tormentas, con su código de Meteoalerta.
 FENOMENS_AEMET = ("PR", "TO")
@@ -162,15 +162,10 @@ def muestras(amb_meteocat):
 
 
 def seguretat(p_nou, p_base, y, dies, rng):
-    """Proporción de remuestreos por días en que el nuevo se equivoca menos."""
-    unics, idx = np.unique(dies, return_inverse=True)
-    e_nou = np.bincount(idx, (p_nou - y) ** 2, len(unics))
-    e_base = np.bincount(idx, (p_base - y) ** 2, len(unics))
-    guanya = 0
-    for _ in range(REMOSTREJOS):
-        m = rng.integers(0, len(unics), len(unics))
-        guanya += e_nou[m].sum() < e_base[m].sum()
-    return guanya / REMOSTREJOS
+    """Proporción de remuestreos por días en que el nuevo se equivoca menos
+    (la regla común, remostreig; rng, por compatibilidad con las cifras
+    guardadas: la semilla 97)."""
+    return R.seguretat((p_nou - y) ** 2, (p_base - y) ** 2, dies, llavor=97)
 
 
 def desviacio(f):

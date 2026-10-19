@@ -106,5 +106,6 @@
 | [0102](0102-una-sola-verdad-de-la-lluvia-observada.md) | Una sola verdad de la lluvia observada | aceptado |
 | [0103](0103-la-cantidad-de-lluvia-maximo-por-hora-y-esperada-en-los-totales.md) | La cantidad de lluvia: el máximo de modelos por hora y la esperada en los totales | aceptado |
 | [0104](0104-el-candidato-compite-con-lo-que-publica-la-web.md) | El candidato compite con lo que publica la web | aceptado |
+| [0105](0105-una-sola-regla-de-mejora-remuestreo-por-bloques.md) | Una sola regla de mejora: remuestreo por bloques de días o episodios | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

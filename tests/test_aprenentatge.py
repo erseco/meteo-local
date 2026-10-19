@@ -436,24 +436,35 @@ class Diari(unittest.TestCase):
         tres = np.array([A.predecir(np.array(arxiu["w"]), np.array(A.rasgos(m, arxiu["rasgos"]))) for m in ms])
         self.assertAlmostEqual(v["error_abans"], float(np.mean((publicat - y) ** 2)))
         self.assertNotAlmostEqual(v["error_abans"], float(np.mean((tres - y) ** 2)))
+        self.assertIn("seguretat", v)
+        self.assertEqual(len(v["_errors"]), len(ms))
 
     def test_la_variant_nomes_guanya_si_millora_el_base_a_les_seves_hores(self):
         from unittest.mock import patch
         arxiu = A.modelo_arxiu()
-        base = {"mostres": 100, "hores_pluja": 40, "rasgos": A.RASGOS_PROPIS, "error": 0.10, "error_abans": 0.12, "w": [0.0]}
-        # Menys error que el base de totes les hores, però no que el base a les seves: no guanya.
-        xv = {**base, "rasgos": A.RASGOS_PROPIS_XV, "mostres": 50, "error": 0.09, "error_base": 0.09, "mostres_base": 50}
+        base = {"mostres": 100, "hores_pluja": 40, "rasgos": A.RASGOS_PROPIS, "error": 0.10, "error_abans": 0.12,
+                "seguretat": 0.99, "w": [0.0]}
+        # Guanya l'arxiu, però no el base a les seves hores amb seguretat: no entra (ADR 0105).
+        xv = {**base, "rasgos": A.RASGOS_PROPIS_XV, "mostres": 50, "error": 0.09, "error_base": 0.095,
+              "mostres_base": 50, "seguretat_base": 0.8}
         ms = [{"emes": "2026-09-01T00:00+02:00"}]
         with patch.object(A, "valida_pluja", return_value=dict(base)), patch.object(A, "valida_temperatura", return_value=None), \
              patch.object(A, "valida_variant", side_effect=[xv, None, None]):
             model, vp, _ = A.candidat(ms, arxiu, None, "2026-10-09")
         self.assertEqual(model["pluja"]["rasgos"], A.RASGOS_PROPIS)
-        # Amb un 5 % menys d'error que el base a les mateixes hores, sí.
+        # Si guanya el base en el 95 % dels remostrejos, sí.
         with patch.object(A, "valida_pluja", return_value=dict(base)), patch.object(A, "valida_temperatura", return_value=None), \
-             patch.object(A, "valida_variant", side_effect=[{**xv, "error": 0.08}, None, None]):
+             patch.object(A, "valida_variant", side_effect=[{**xv, "seguretat_base": 0.96}, None, None]):
             model, vp, _ = A.candidat(ms, arxiu, None, "2026-10-09")
         self.assertEqual(model["pluja"]["rasgos"], A.RASGOS_PROPIS_XV)
-        self.assertEqual(model["pluja"]["error_base"], 0.09)
+        self.assertEqual(model["pluja"]["seguretat_base"], 0.96)
+        self.assertEqual(model["pluja"]["error_base"], 0.095)
+        # I el base sol, si no guanya l'arxiu amb seguretat, tampoc.
+        with patch.object(A, "valida_pluja", return_value={**base, "seguretat": 0.9}), \
+             patch.object(A, "valida_temperatura", return_value=None), \
+             patch.object(A, "valida_variant", return_value=None):
+            model, vp, _ = A.candidat(ms, arxiu, None, "2026-10-09")
+        self.assertEqual(model["pluja"]["origen"], "arxiu")
 
     def test_verifica_tots_els_mitjans_un_cop_per_hora(self):
         # Cada hora, previsions d'1 a 9 hores abans; plou de 12 a 13 h i a les

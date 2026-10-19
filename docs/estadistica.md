@@ -257,8 +257,9 @@ se valida solo con las muestras que llevan ese dato y, con esas mismas
 muestras, se ajusta y valida otra vez el modelo sin él: un error medido en
 horas distintas no se puede comparar (hasta el 09-10-2026 se comparaba con
 el error del modelo base en todas las horas; ADR 0057). La variante se
-adopta si mejora al modelo base en sus mismas horas en un 5 % como mínimo,
-además de mejorar al archivo. Al prever, la lluvia de Sant Cugat es la de
+adopta si gana al modelo base en sus mismas horas con la regla común del
+apartado 8 (el 95 % de los remuestreos por días; hasta la 3.144.0, un 5 %
+menos de error), además de ganar al archivo. Al prever, la lluvia de Sant Cugat es la de
 la última media hora medida que usa la riera (apartado 12), si tiene menos
 de 2 horas; sin ella, en las cuatro primeras horas se usa el modelo del
 archivo. Cuando la variante llegue a las 30 horas de lluvia, se comunica
@@ -731,8 +732,19 @@ estación de casa y ejecuta `aprenentatge.py diari`:
    reajusta cada día con todo lo registrado (punto 5), así que entre dos
    métodos propios la comparación es la de los dos ajustados y comprobados
    en las mismas semanas.
-4. **Solo cambia si el error baja al menos un 5 %**:
-   $`E_{\text{nuevo}} < 0\text{,}95 \, E_{\text{actual}}`$. Un método nuevo se
+4. **Solo cambia si la mejora es segura, no por un margen fijo** (ADR 0105;
+   hasta la 3.144.0, un 5 % menos de error). Es la misma regla para todo el
+   programa (`remostreig.py`): se remuestrean los días con reposición 2.000
+   veces (*bootstrap*), días enteros porque las horas de un mismo día se
+   parecen y no son casos independientes, y en cada remuestreo se compara el
+   error del candidato, en las semanas no vistas, con el del que se usa. El
+   candidato gana si se equivoca menos en al menos el 95 % de los
+   remuestreos:
+   $`\Pr^{*}\!\left(\sum_{d \in D^{*}} E_{\text{nuevo}}(d) < \sum_{d \in D^{*}} E_{\text{actual}}(d)\right) \ge 0\text{,}95`$,
+   con $`D^{*}`$ cada remuestreo de días y $`E(d)`$ el error acumulado del
+   día. Una mejora grande que depende de un solo día no es segura; una
+   pequeña y constante sí. El 95 % no es la probabilidad de acertar en el
+   futuro: dice que con estos datos la ventaja no es azar. Un método nuevo se
    propone, se comunica con las cifras y se aplica al día siguiente, salvo
    que se pare antes (apartado 19).
 5. Si el método no cambia, los pesos se ponen al día con los datos nuevos.
@@ -759,8 +771,9 @@ B_R = \frac{1}{n}\sum_{i=1}^{n} (p_{R,i} - o_i)^2
 ```
 
 Cuanto más baja, mejor. Con al menos 30 casos con lluvia en 3 días
-distintos, se cambia de radar si el otro cumple la misma regla del 5 %:
-$`B_{\text{otro}} < 0\text{,}95 \, B_{\text{actual}}`$. Con RainViewer como
+distintos, se cambia de radar si el otro cumple la regla común del apartado
+8: se equivoca menos en al menos el 95 % de los remuestreos por días (hasta
+la 3.144.0, un 5 % menos de error). Con RainViewer como
 preferido, su imagen se usa siempre que no sea más vieja que la de Meteocat
 (hasta la 3.128.0, solo si era 10 minutos más nueva); con Meteocat, la de
 RainViewer solo si es más de 15 minutos más nueva.
@@ -882,8 +895,11 @@ E_{\text{val}} = \frac{1}{N} \sum_{j} \sum_{i \in j} \left| t_{\text{fi}}^{(u_j,
 
 donde $`i`$ recorre las pasadas del episodio $`j`$, $`N`$ es el total de pasadas y
 $`E_{-j}`$ es el error medio sin el episodio $`j`$. Con tres episodios o más, si
-$`E_{\text{val}}`$ es al menos un 5 % menor que el error de la regla en uso
-(que, al estar fija, se mide sin sesgo en todos los episodios), se propone
+la regla elegida se equivoca menos que la regla en uso (que, al estar fija,
+se mide sin sesgo en todos los episodios) en al menos el 95 % de los
+remuestreos por episodios, los mismos casos con las dos reglas (la regla
+común del apartado 8, con el episodio como bloque; hasta la 3.144.0, un 5 %
+menos de error), se propone
 la combinación mejor con todos los episodios, se comunica con las cifras y
 se aplica al día siguiente, salvo que se pare antes, como el aprendizaje de
 la lluvia y la temperatura (apartado 8). Hasta el 09-10-2026 la regla se
@@ -892,8 +908,9 @@ día (ADR 0049). Con cinco episodios, el resultado se comunica una vez, para
 decidir si se sigue mostrando «en entrenament».
 
 **Limitación conocida.** Con pocos episodios, $`E_{\text{val}}`$ sigue
-siendo una cifra con mucha incertidumbre; por eso se exige el 5 % de mejora
-y la propuesta espera un día.
+siendo una cifra con mucha incertidumbre, y el remuestreo de tres o cinco
+episodios es grueso: con tres, basta ganar en los tres; por eso la propuesta
+espera un día y se puede parar.
 
 ## 10. Aviso antes de llover
 
@@ -1256,9 +1273,11 @@ E_{\text{corr}} = \frac{1}{N} \sum_{d} \sum_{t \in d} \left| f_c^{(-d)} \hat m_{
 E_{\text{cru}} = \frac{1}{N} \sum_{t} \left| \hat m_{c,t} - \bar m_{c,t} \right|.
 ```
 
-El factor se aplica solo si $`E_{\text{corr}} < 0\text{,}95\, E_{\text{cru}}`$;
+El factor se aplica solo si el modelo corregido se equivoca menos que el
+sin corregir en al menos el 95 % de los remuestreos por días (la regla común
+del apartado 8; hasta la 3.144.0, $`E_{\text{corr}} < 0\text{,}95\, E_{\text{cru}}`$);
 si no, ese contaminante se muestra tal como lo da el modelo, y la
-corrección descartada queda guardada con sus dos errores
+corrección descartada queda guardada con sus dos errores y su seguridad
 (`aire-correccio.json`). Hasta el 09-10-2026 el factor se aplicaba sin esta
 comprobación (ADR 0054).
 

@@ -89,11 +89,16 @@ class Compara(unittest.TestCase):
         self.assertEqual(RF.decideix(c, "rainviewer"), "meteocat")
         self.assertEqual(RF.decideix(RF.compara(episodis("rainviewer")), "meteocat"), "rainviewer")
 
-    def test_cal_millorar_un_5_per_cent(self):
-        c = {"amb_pluja": 100, "dies_pluja": 5, "brier_meteocat": 0.097, "brier_rainviewer": 0.1}
+    def test_cal_guanyar_amb_seguretat(self):
+        # ADR 0105: no un 5 % menys d'error, sinó guanyar en el 95 % dels remostrejos per dies.
+        c = {"amb_pluja": 100, "dies_pluja": 5, "brier_meteocat": 0.09, "brier_rainviewer": 0.1,
+             "seguretat_meteocat": 0.9, "seguretat_rainviewer": 0.1}
         self.assertEqual(RF.decideix(c, "rainviewer"), "rainviewer")
-        c["brier_meteocat"] = 0.094
+        c["seguretat_meteocat"] = 0.95
         self.assertEqual(RF.decideix(c, "rainviewer"), "meteocat")
+        # Un dia que l'encerta i tres que no: la seguretat ho diu.
+        c = RF.compara(episodis("meteocat", dies=1) + episodis("rainviewer", dies=3))
+        self.assertLess(c["seguretat_meteocat"], 0.95)
 
     def test_amb_pocs_casos_no_canvia(self):
         c = RF.compara(episodis("meteocat", dies=2))

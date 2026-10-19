@@ -18,9 +18,10 @@ Por eso:
   la de lo previsto. Solo si lo miden al menos dos estaciones
   (`AIRE_ESTACIONS_MIN`): hoy, el NO₂ y el ozono. Y solo si acierta más:
   para cada día, el factor calculado con los demás días se aplica a ese y se
-  mide el error contra lo medido; si el error corregido no baja al menos un
-  5 % (`AIRE_MILLORA`) respecto al del modelo sin corregir, el factor se
-  descarta (auditoría del 09-10-2026: antes se aplicaba sin comprobarlo).
+  mide el error contra lo medido; si el corregido no gana al modelo sin
+  corregir en al menos el 95 % de los remuestreos por días (`remostreig`,
+  ADR 0105; hasta la 3.144.0, un 5 % menos de error), el factor se descarta
+  (auditoría del 09-10-2026: antes se aplicaba sin comprobarlo).
   Las concentraciones del modelo se multiplican por ese
   factor y el índice se recalcula con la tabla del índice europeo (EAQI) de
   Open-Meteo: para cada contaminante, interpolado dentro de su tramo, y el
@@ -45,6 +46,7 @@ import urllib.request
 
 import config as C
 import prevision as P
+import remostreig as R
 
 API = "https://air-quality-api.open-meteo.com/v1/air-quality"
 XVPCA = "https://analisi.transparenciacatalunya.cat/resource/tasf-thgu.json"
@@ -68,7 +70,6 @@ AIRE_HORES_MIN = 72          # horas emparejadas por contaminante para corregir
 # mide Montcada, junto a la cementera, y su factor (2,5 el 09-10-2026) diría
 # más de Montcada que de Montflorit.
 AIRE_ESTACIONS_MIN = 2
-AIRE_MILLORA = 0.95          # el error corregido, un 5 % menor como mínimo, en días no usados
 CACHE = os.path.join(os.environ.get("AIRE_DIR", "/estat"), "aire-correccio.json")
 UA = {"User-Agent": "Temps a Montflorit (https://meteo-montflorit.github.io/)"}
 
@@ -136,13 +137,15 @@ def per_hora(files):
 def valida_factor(parelles):
     """Error medio (µg/m³) del modelo corregido y sin corregir, en días que
     no sirvieron para calcular el factor: para cada día, el factor sale de
-    los demás y se aplica a ese (validación dejando un día fuera)."""
+    los demás y se aplica a ese (validación dejando un día fuera); y la
+    seguridad con que el corregido gana (remostreig, ADR 0105)."""
     per_dia = {}
     for t, m, p in parelles:
         per_dia.setdefault(t[:10], []).append((m, p))
     tot_m, tot_p = sum(m for _, m, _ in parelles), sum(p for _, _, p in parelles)
     corregit = cru = 0.0
     n = 0
+    e_corregit, e_cru, dies = [], [], []
     for dia, items in per_dia.items():
         m_d, p_d = sum(m for m, _ in items), sum(p for _, p in items)
         if tot_p - p_d <= 0:
@@ -152,14 +155,19 @@ def valida_factor(parelles):
             corregit += abs(f * p - m)
             cru += abs(p - m)
             n += 1
-    return (corregit / n, cru / n) if n else (None, None)
+            e_corregit.append(abs(f * p - m))
+            e_cru.append(abs(p - m))
+            dies.append(dia)
+    if not n:
+        return None, None, None
+    return corregit / n, cru / n, R.seguretat(e_corregit, e_cru, dies)
 
 
 def factors(model_hores, mesures, tot=False):
     """Para cada contaminante, la suma de lo medido (media de las estaciones
     de cada hora) entre la del modelo, en las horas que tienen las dos cosas,
     si al aplicarlo a días no usados para calcularlo el error baja al menos
-    AIRE_MILLORA. Con tot, también los descartados y por qué."""
+    con seguridad (remostreig). Con tot, también los descartados y por qué."""
     res, descartats = {}, {}
     for c in CONTAMINANTS:
         parelles = []
@@ -172,10 +180,10 @@ def factors(model_hores, mesures, tot=False):
         previst = sum(p for _, _, p in parelles)
         if len(parelles) < AIRE_HORES_MIN or previst <= 0 or len(estacions) < AIRE_ESTACIONS_MIN:
             continue
-        error, error_sense = valida_factor(parelles)
+        error, error_sense, seguretat = valida_factor(parelles)
         dades = {"factor": round(sum(m for _, m, _ in parelles) / previst, 2), "hores": len(parelles),
-                 "error": round(error, 1), "error_sense": round(error_sense, 1)}
-        if error is not None and error_sense and error < AIRE_MILLORA * error_sense:
+                 "error": round(error, 1), "error_sense": round(error_sense, 1), "seguretat": seguretat}
+        if error is not None and error_sense and R.guanya(seguretat):
             res[c] = dades
         else:
             descartats[c] = dades

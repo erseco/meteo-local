@@ -43,6 +43,8 @@ import os
 import subprocess
 import sys
 
+import remostreig as R
+
 DIR = os.environ.get("REGISTRE_DIR", "/estat/registre")
 APRENENTATGE = os.environ.get("APRENENTATGE_DIR", "/estat/aprenentatge")
 AVIS = os.path.join(APRENENTATGE, "avis-fi-pluja")
@@ -52,7 +54,9 @@ ATURA = os.path.join(APRENENTATGE, "atura")
 PER_DEFECTE = {"llindar": 0.2, "passos": 3}       # 20 %, 15 minutos
 VARIANTS = [{"llindar": l, "passos": p} for l in (0.1, 0.2, 0.3) for p in (2, 3, 4)]
 MIN_EPISODIS_CANVI = 3
-MILLORA = 0.95
+# Cuánto tiene que mejorar la regla elegida lo decide la regla común
+# (remostreig: gana en el 95 % de los remuestreos por episodios; ADR 0105).
+# Hasta la 3.144.0, un 5 % menos de error (MILLORA = 0.95).
 PAS_MIN = 5
 BUIT_MIN = 30           # una pausa más corta no acaba el episodio
 MIN_EPISODIS = 5
@@ -181,20 +185,31 @@ def error(casos):
     return sum(errors_casos(casos)) / len(casos) if casos else None
 
 
-def error_validat(pluja, regs):
+def errors_per_cas(pluja, regs, actual=None):
     """El error honesto de «elegir la mejor variante»: para cada episodio, la
     variante que menos se equivoca en los demás, juzgada solo en ese
-    (validación dejando un episodio fuera); la media de todos los casos.
-    Hasta la auditoría del 09-10-2026 la variante se elegía y se medía con
-    los mismos episodios."""
+    (validación dejando un episodio fuera). Por caso, (episodio, error de la
+    variante elegida, error de la regla actual), para compararlos por
+    episodios (remostreig, ADR 0105). Hasta la auditoría del 09-10-2026 la
+    variante se elegía y se medía con los mismos episodios."""
     per_variant = [compara(pluja, regs, v)[0] for v in VARIANTS]
-    errors = []
+    casos_actual = compara(pluja, regs, actual or regla())[0]
+    res = []
     for ep in episodis(pluja):
         fora = [[c for c in casos if c["episodi"] != ep[0]] for casos in per_variant]
         if not fora[0]:
             continue
         k = min(range(len(VARIANTS)), key=lambda k: error(fora[k]))
-        errors += errors_casos([c for c in per_variant[k] if c["episodi"] == ep[0]])
+        # Los mismos casos (pasadas) en el mismo orden con las dos reglas.
+        triada = errors_casos([c for c in per_variant[k] if c["episodi"] == ep[0]])
+        amb_actual = errors_casos([c for c in casos_actual if c["episodi"] == ep[0]])
+        res += [(ep[0].isoformat(), e, a) for e, a in zip(triada, amb_actual)]
+    return res
+
+
+def error_validat(pluja, regs):
+    """La media del error de elegir la mejor variante, por casos."""
+    errors = [e for _, e, _ in errors_per_cas(pluja, regs)]
     return sum(errors) / len(errors) if errors else None
 
 
@@ -238,8 +253,11 @@ def aprèn(pluja, regs, avisa=True, avui=None):
     actual = regla()
     err_actual = error(compara(pluja, regs, actual)[0])
     millor = min(VARIANTS, key=lambda v: error(compara(pluja, regs, v)[0]) or 0)
-    err_validat = error_validat(pluja, regs)
-    if millor == actual or err_actual is None or err_validat is None or err_validat >= MILLORA * err_actual:
+    casos = errors_per_cas(pluja, regs, actual)
+    err_validat = sum(e for _, e, _ in casos) / len(casos) if casos else None
+    # Gana si se equivoca menos en el 95 % de los remuestreos por episodios.
+    seguretat = R.seguretat([e for _, e, _ in casos], [a for _, _, a in casos], [ep for ep, _, _ in casos])
+    if millor == actual or err_actual is None or err_validat is None or not R.guanya(seguretat):
         return None
     p = llegeix_proposta()
     if p and (p["llindar"], p["passos"]) == (millor["llindar"], millor["passos"]):
@@ -247,12 +265,13 @@ def aprèn(pluja, regs, avisa=True, avui=None):
     os.makedirs(APRENENTATGE, exist_ok=True)
     with open(PROPOSAT + ".tmp", "w", encoding="utf-8") as f:
         json.dump({**millor, "error_min": round(err_validat, 1), "error_abans": round(err_actual, 1),
-                   "episodis": len(eps), "dia": avui}, f)
+                   "seguretat": seguretat, "episodis": len(eps), "dia": avui}, f)
     os.replace(PROPOSAT + ".tmp", PROPOSAT)
     t = (f"Temps a Montflorit, final de la pluja segons el radar: proposta de donar-la per acabada amb menys del "
          f"{round(millor['llindar'] * 100)} % durant {millor['passos'] * PAS_MIN} minuts (ara, "
          f"{round(actual['llindar'] * 100)} % i {actual['passos'] * PAS_MIN}). Error mitjà en episodis no usats per "
-         f"triar-la: {err_validat:.0f} minuts, amb la regla actual {err_actual:.0f} ({len(eps)} episodis). "
+         f"triar-la: {err_validat:.0f} minuts, amb la regla actual {err_actual:.0f} ({len(eps)} episodis; "
+         f"guanya en el {round(100 * seguretat)} % dels remostrejos per episodis). "
          "S'aplicarà demà; per aturar-ho, demana-ho a Claude abans.")
     if avisa:
         subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", t], check=False)
