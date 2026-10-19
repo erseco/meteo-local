@@ -148,7 +148,11 @@ class Revisio(unittest.TestCase):
         self.assertIn("Observat ara", antes)
         self.assertNotIn("Observat ara", ahora)
         self.assertIn("dilluns 19", ahora)
-        self.assertNotIn("<b>", text)
+        # Con la cabecera de los mensajes de IA, y el texto escapado debajo.
+        cap, cos = text.split("\n\n", 1)
+        self.assertIn("🤖 <b>Claude</b>", cap)
+        self.assertIn("revisor", cap)
+        self.assertNotIn("<b>", cos)
         self.assertIn(FITXA, RV.llegeix(RV.CORRECCIONS, {})["fitxes"])
         # A la següent pasada, sense res de nou, no es desperta.
         self.assertIsNone(self.revisa(ARA + dt.timedelta(minutes=6), [problema])[0])

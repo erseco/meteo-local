@@ -451,10 +451,19 @@ def chat_juanjo():
     return llegeix(CONFIG_BOT, {}).get("chat_id")
 
 
+def envia(text, **params):
+    """A Juanjo, con la cabecera de los demás mensajes de IA del bot (la de
+    avisar-juanjo): quién escribe, cuándo y de qué. Juanjo, 19-10-2026: «el
+    revisor no se identifica al escribirme como hacen el resto de mensajes de IA»."""
+    cap = f"🤖 <b>Claude</b> · {ara():%Y-%m-%d %H:%M} · <b>Temps a Montflorit, revisor</b>"
+    return telegram("sendMessage", chat_id=chat_juanjo(), text=f"{cap}\n\n{html.escape(text[:3800])}",
+                    parse_mode="HTML", **params)
+
+
 def missatge(p, accio, abans=None, despres=None):
     """El mensaje de un problema: dónde, qué, por qué; y lo hecho o propuesto,
     con el texto de antes y el de después (Juanjo, 18-10-2026: «sí, añádelo»)."""
-    t = [f"Temps a Montflorit, revisor: {p.get('on', '')}", "", p.get("que", "")]
+    t = [p.get("on", ""), "", p.get("que", "")]
     if p.get("per_que"):
         t += ["", p["per_que"]]
     tros = lambda x: netja(x)[:1500]  # noqa: E731
@@ -527,8 +536,7 @@ def revisa(casa_json, avisos_json, moment=None, prova=False, demana_=None, pagin
             if accio in ("corregit", "proposta"):
                 n = str(max([int(k) for k in preguntes] + [0]) + 1)
                 try:
-                    r, _ = telegram("sendMessage", chat_id=chat_juanjo(), text=missatge(p, accio, abans, despres),
-                                    reply_markup=botons(n, accio))
+                    r, _ = envia(missatge(p, accio, abans, despres), reply_markup=botons(n, accio))
                     preguntes[n] = {"missatge": r["message_id"], "accio": accio, "correccio": c,
                                     "t": moment.isoformat(timespec="minutes")}
                 except Exception as ex:
@@ -537,15 +545,14 @@ def revisa(casa_json, avisos_json, moment=None, prova=False, demana_=None, pagin
                 resum_juanjo.append(p)
         lleus = sum(1 for x in fets if x.get("accio") == "codi" and x.get("gravetat") not in ("alta", "mitjana"))
         if resum_juanjo:
-            text = [f"Temps a Montflorit, revisor ({motiu}): {len(resum_juanjo)} incoherencia(s) que hay que "
-                    "arreglar en el código."]
+            text = [f"Revisión ({motiu}): {len(resum_juanjo)} incoherencia(s) que hay que arreglar en el código."]
             for p in resum_juanjo:
                 text += ["", f"{'Grave' if p.get('gravetat') == 'alta' else 'Media'}. {p.get('on', '')}: "
                              f"{p.get('que', '')}"]
             if lleus:
                 text += ["", f"Y {lleus} leve(s), en el registro."]
             try:
-                telegram("sendMessage", chat_id=chat_juanjo(), text="\n".join(text)[:3900])
+                envia("\n".join(text))
             except Exception as ex:
                 fets.append({"error_telegram": str(ex)})
         estat["informats"] = (estat.get("informats") or []) + [
