@@ -546,6 +546,33 @@ class Web(unittest.TestCase):
                                f"consells({json.dumps(tram(0.01))}, new Date())", "sortir.js")
         self.assertIn("Cap a les 20\u00a0h s’acaba l’avís oficial.", consells)
 
+    def test_si_ara_plou_ho_diu_i_qui_ho_veu(self):
+        # 19-10-2026, 06:40, plovent: «Si surts» deia «Pluja probable a l'anada (6 h)». Si l'hora en curs
+        # porta plou_ara, es diu que plou i qui ho veu (estacions, radar o tots dos), i la tornada a part.
+        def tram(ara, estacio=True, radar=False, tornada=0.82):
+            return [{"hora": "2026-10-19T06:00", "probabilitat": 1.0, "pluja_mm": 0.7, "temperatura": 13, "avisos": [],
+                     "plou_ara": ara, "segons_estacio": estacio and ara, "segons_radar": radar and ara},
+                    {"hora": "2026-10-19T07:00", "probabilitat": 1.0, "pluja_mm": 3.8, "temperatura": 13, "avisos": []},
+                    {"hora": "2026-10-19T08:00", "probabilitat": 0.65, "pluja_mm": 1.8, "temperatura": 14, "avisos": []},
+                    {"hora": "2026-10-19T09:00", "probabilitat": tornada, "pluja_mm": 3.0, "temperatura": 14, "avisos": []}]
+        def avalua(mitja, **k):
+            return self.avalua("2026-10-19T06:40:00+02:00", f"avalua({json.dumps(mitja)}, {json.dumps(tram(**k))}, [])", "sortir.js")
+        moto = avalua("moto", ara=True)
+        self.assertEqual(moto["nivell"], "no")
+        self.assertEqual(moto["motius"], ["Ara plou al barri, segons les estacions, i pluja probable a la tornada (9\u00a0h)."])
+        self.assertEqual(avalua("bici", ara=True, estacio=True, radar=True, tornada=0.05)["motius"],
+                         ["Ara plou al barri, segons les estacions i el radar."])
+        self.assertEqual(avalua("bici", ara=True, estacio=False, radar=True, tornada=0.05)["motius"],
+                         ["Ara plou al barri, segons el radar."])
+        # Sense pluja a la tornada, només l'ara; i en cotxe, amb «condueix amb compte».
+        self.assertEqual(avalua("moto", ara=True, tornada=0.05)["motius"], ["Ara plou al barri, segons les estacions."])
+        self.assertEqual(avalua("cotxe", ara=True, tornada=0.05)["motius"], ["Ara plou al barri, segons les estacions: condueix amb compte."])
+        # A peu, també.
+        self.assertEqual(avalua("peu", ara=True)["motius"], ["Ara plou al barri, segons les estacions: porta paraigua."])
+        # Sense plou_ara, com sempre.
+        self.assertEqual(avalua("moto", ara=False)["motius"], ["Pluja probable a l’anada i a la tornada."])
+        self.assertEqual(avalua("peu", ara=False)["motius"], ["Pot ploure mentre ets fora: porta paraigua."])
+
     def test_pausa_en_el_risc_de_pluja_no_es_el_final(self):
         # Revisor, 18-10-2026: «Cap a les 15 h s'acaba el risc de pluja» amb pluja possible de 16 a 0 h.
         def tram(probs):

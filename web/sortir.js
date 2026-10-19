@@ -103,6 +103,25 @@ function plouRodes(f) {
   return sobre(f, llindars(f).pluja, MM_PLUJA) || f.plou_ara;
 }
 
+// Si ara plou (plou_ara de l'hora en curs: l'únic estat de la pluja, ADR
+// 0101), es diu que plou i qui ho veu (les estacions, el radar o tots dos),
+// no «pluja probable a l'anada (6 h)» (Juanjo, 19-10-2026: «si llueve, debe
+// decir que llueve sea por radar, estaciones o ambas»). I la tornada, si
+// també hi veu pluja, com fins ara.
+function fontPlou(f) {
+  if (f.segons_estacio && f.segons_radar) return T('les estacions i el radar');
+  if (f.segons_radar) return T('el radar');
+  if (f.segons_estacio) return T('les estacions');
+  return null;
+}
+
+function textPlujaProbable(anada, tornada, cond) {
+  if (!anada.plou_ara) return T`Pluja probable ${quan(anada, tornada, cond)}`;
+  const font = fontPlou(anada);
+  const ara = font ? T`Ara plou al barri, segons ${font}` : T('Ara plou al barri');
+  return cond(tornada) && !tornada.plou_ara ? T`${ara}, i pluja probable a la tornada (${hora(tornada)} h)` : ara;
+}
+
 // Pluja per sota del 20 % (C.PROB_ATENCION), on la taula i el resum diuen
 // «sense pluja»: «Si surts» ho avisa amb el seu llindar après, però amb
 // «poca probabilitat», no amb «pot ploure» (inventari del 18-10-2026).
@@ -165,7 +184,7 @@ function avalua(mitja, tram, trens, futur, transit, entorn) {
   const nomesAvis = (cond) => viatge.filter(cond).every(senseDades);
   if (mitja === 'bici' || mitja === 'moto') {
     if (viatge.some(plouRodes)) {
-      puja('no', T`Pluja probable ${quan(anada, tornada, plouRodes)}.`);
+      puja('no', `${textPlujaProbable(anada, tornada, plouRodes)}.`);
     } else if (viatge.some(mullaRodes)) {
       const moto = mitja === 'moto';
       if (viatge.filter(mullaRodes).every(nomesAvisRodes)) {
@@ -199,7 +218,7 @@ function avalua(mitja, tram, trens, futur, transit, entorn) {
       // El nivell, el de sempre; el text, el mateix que en moto (ADR 0047): «Pluja
       // probable» només si la probabilitat ho diu, i l'avís, si és l'únic que la veu.
       const dades = (f) => sobre(f, llindars(f).risc, MM_RISC) || f.plou_ara;
-      if (viatge.some(plouRodes)) puja('compte', T`Pluja probable ${quan(anada, tornada, plouRodes)}: condueix amb compte.`);
+      if (viatge.some(plouRodes)) puja('compte', T`${textPlujaProbable(anada, tornada, plouRodes)}: condueix amb compte.`);
       else if (viatge.some(dades)) {
         puja('compte', pocaPluja(viatge.filter(dades)) ? T`Poca probabilitat de pluja ${quan(anada, tornada, dades)}: condueix amb compte.`
           : T`Pot ploure ${quan(anada, tornada, dades)}: condueix amb compte.`);
@@ -216,7 +235,11 @@ function avalua(mitja, tram, trens, futur, transit, entorn) {
   else if (ll.ratxa[0] != null && ratxa >= ll.ratxa[0]) puja('compte', T`Ratxes de vent de fins a ${Math.round(ratxa)} km/h.`);
   if (tMin != null && ll.fred[1] != null && tMin <= ll.fred[1]) puja('no', T`${graus(tMin)}: hi pot haver gel.`);
   else if (tMin != null && ll.fred[0] != null && tMin <= ll.fred[0]) puja('compte', T`${graus(tMin)}: compte amb el gel a primera hora.`);
-  if (mitja === 'peu' && tram.some(mulla)) {
+  if (mitja === 'peu' && anada.plou_ara) {
+    // Si ara plou, també a peu es diu, com en els vehicles (19-10-2026).
+    const font = fontPlou(anada);
+    puja('compte', font ? T`Ara plou al barri, segons ${font}: porta paraigua.` : T('Ara plou al barri: porta paraigua.'));
+  } else if (mitja === 'peu' && tram.some(mulla)) {
     puja('compte', tram.filter(mulla).every(senseDades)
       ? T('Avís oficial per pluja mentre ets fora: ni el radar, ni les estacions, ni els models hi veuen pluja. Per si de cas, porta paraigua.')
       : pocaPluja(tram.filter(mulla)) ? T('Poca probabilitat de pluja mentre ets fora: porta paraigua per si de cas.')

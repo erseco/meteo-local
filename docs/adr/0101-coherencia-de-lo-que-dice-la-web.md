@@ -250,3 +250,17 @@ autobús entre Terrassa Nord y Manresa se corrige en el código (ADR 0029).
   decía que no venía lluvia. Ahora el radar solo sube una hora si su
   probabilidad llega a `PROB_ATENCION` (ADR 0019). En el registro de octubre,
   de 36 horas marcadas por el radar, esta era la única por debajo.
+
+## Cambio del 19-10-2026 (3.148.0): «Si surts» dice que llueve si llueve
+
+A las 06:40, lloviendo (`pluja_ara.estat` «plou», según las estaciones),
+«Si surts» decía en bici, moto y coche «Pluja probable a l'anada (6 h)», y a
+pie «Pot ploure mentre ets fora». Juanjo: «si llueve, debe decir que llueve
+sea por radar, estaciones o ambas». Ahora, si la hora de salida lleva
+`plou_ara` (la misma verdad de la lluvia de la portada y la tabla), el motivo
+dice «Ara plou al barri, segons les estacions / el radar / les estacions i
+el radar» (de `segons_estacio` y `segons_radar` de la hora), y la vuelta
+aparte si también ve lluvia («…, i pluja probable a la tornada (9 h)»); a
+pie, «Ara plou al barri, segons …: porta paraigua». El nivell no cambia.
+Prueba: `tests/test_web.py` (`test_si_ara_plou_ho_diu_i_qui_ho_veu`).
+
