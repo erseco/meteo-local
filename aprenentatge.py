@@ -256,15 +256,22 @@ def carrega():
     return model
 
 
-def prob_pluja(model, d):
+def variants_arxiu():
+    """Las variantes del archivo que la web usa antes que el de tres modelos,
+    por orden: la de los avisos si está adoptada (ADR 0097) y la de ECMWF
+    (ADR 0086). Leídas una vez cuando hay que predecir muchas horas."""
+    return [m for m in (modelo_arxiu_avisos(), modelo_arxiu_ecmwf()) if m]
+
+
+def prob_pluja(model, d, variants=None):
     """Probabilidad de lluvia. Con el modelo del archivo, el que lleva los
     avisos oficiales si está adoptado y la pasada los tiene (ADR 0097); si
     no, el que lleva ECMWF si la pasada lo tiene (ADR 0086). Si el modelo
     propio necesita la estación de casa y no hay dato, la del archivo."""
     m = (model or {}).get("pluja")
     if m and m.get("origen") == "arxiu":
-        for me in (modelo_arxiu_avisos(), modelo_arxiu_ecmwf()):
-            xe = rasgos(d, me["rasgos"]) if me else None
+        for me in variants_arxiu() if variants is None else variants:
+            xe = rasgos(d, me["rasgos"])
             if xe is not None:
                 return float(predecir(np.array(me["w"]), np.array(xe)))
     x = rasgos(d, m["rasgos"]) if m else None
@@ -431,13 +438,18 @@ def grupo_semana(m):
 
 def valida_pluja(ms, arxiu, noms=RASGOS_PROPIS):
     """Error (Brier) en validación cruzada por semanas del modelo propio (con
-    los rasgos noms) y del archivo, con las mismas muestras."""
+    los rasgos noms) y, con las mismas muestras, del archivo tal como lo
+    publica la web (prob_pluja: con los avisos o con ECMWF cuando la pasada
+    los tiene; ADR 0104). Hasta la 3.143.0 el competidor eran los
+    coeficientes de tres modelos solos, que la web no usa en la mitad de las
+    horas (evaluación de los métodos del 18-10-2026)."""
     ms = [m for m in ms if m["obs_pluja"] is not None and rasgos(m, noms) is not None]
     if not ms:
         return None
     x = np.array([rasgos(m, noms) for m in ms])
     y = np.array([m["obs_pluja"] >= C.UMBRAL_MM for m in ms], dtype=float)
-    xa = np.array([rasgos(m, arxiu["rasgos"]) for m in ms])
+    variants = variants_arxiu()
+    p_abans = np.array([prob_pluja({"pluja": arxiu}, m, variants) for m in ms])
     grupo = np.array([grupo_semana(m) for m in ms])
     if len(set(grupo)) < 2:         # sin semanas aparte, no se puede comprobar
         return None
@@ -453,7 +465,7 @@ def valida_pluja(ms, arxiu, noms=RASGOS_PROPIS):
     hores_pluja = len({m["fins"] for m, plou in zip(ms, y) if plou})
     return {"mostres": len(y), "hores_pluja": hores_pluja, "rasgos": noms,
             "error": float(np.mean((p - y) ** 2)),
-            "error_abans": float(np.mean((predecir(np.array(arxiu["w"]), xa) - y) ** 2)),
+            "error_abans": float(np.mean((p_abans - y) ** 2)),
             "w": ajustar(x, y).tolist() if y.sum() else None}
 
 

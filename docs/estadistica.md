@@ -240,8 +240,9 @@ marca en falso (de 0 a 2 horas de 1.643).
 Cuando el registro reúna **30 horas con lluvia** (horas observadas distintas:
 cada hora se prevé muchas veces, con distintas antelaciones, y no cuenta más
 por eso), se ajusta un modelo propio con todas las señales de la tabla,
-incluidas las que el archivo no tiene. Sustituye al del archivo solo si
-acierta mejor en semanas que no ha visto (apartado 8). En otoño llueve unas
+incluidas las que el archivo no tiene. Sustituye al del archivo solo si,
+en semanas que no ha visto, acierta mejor que lo que la web publica con el
+archivo (apartado 8). En otoño llueve unas
 25 horas al mes (entre 9 y 48 en Sabadell y Sant Cugat desde 2024): puede
 tardar de uno a varios meses.
 
@@ -717,11 +718,19 @@ estación de casa y ejecuta `aprenentatge.py diari`:
    hizo la previsión: así todas las previsiones de una misma hora caen en el
    mismo grupo y ninguna observación se usa a la vez para ajustar y
    comprobar.
-3. Lo compara con lo que se usa ahora con las mismas horas: el modelo del
-   archivo para la lluvia; la corrección del año de casa para la
-   temperatura. Las variantes de la lluvia (Sant Cugat, las vecinas, los avisos) se
-   comparan además con el modelo sin su señal ajustado a sus mismas horas,
-   y solo ganan si lo mejoran en la misma proporción (apartado 2).
+3. Lo compara con **lo que publica la web** con las mismas horas. Para la
+   lluvia, el modelo del archivo tal como se usa al publicar: el que lleva
+   ECMWF cuando la pasada lo tiene, o el de los avisos si está adoptado
+   (apartado 2.2), no los coeficientes de los tres modelos solos, que la web
+   no usa en la mitad de las horas (hasta la 3.143.0 el competidor era ese;
+   ADR 0104). Para la temperatura, la corrección del año de casa, que es la
+   misma función que corrige la tabla. Las variantes de la lluvia (Sant
+   Cugat, las vecinas, los avisos) se comparan además con el modelo sin su
+   señal ajustado a sus mismas horas, y solo ganan si lo mejoran en la misma
+   proporción (apartado 2). El modelo propio en uso no se congela: se
+   reajusta cada día con todo lo registrado (punto 5), así que entre dos
+   métodos propios la comparación es la de los dos ajustados y comprobados
+   en las mismas semanas.
 4. **Solo cambia si el error baja al menos un 5 %**:
    $`E_{\text{nuevo}} < 0\text{,}95 \, E_{\text{actual}}`$. Un método nuevo se
    propone, se comunica con las cifras y se aplica al día siguiente, salvo

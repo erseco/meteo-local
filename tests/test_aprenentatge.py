@@ -8,6 +8,7 @@ import random
 import sys
 import tempfile
 import unittest
+import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import aprenentatge as A  # noqa: E402
@@ -413,6 +414,28 @@ class Diari(unittest.TestCase):
         self.assertEqual(base["mostres"], len(ms))
         self.assertEqual((xv["mostres"], xv["mostres_base"]), (len(ms) // 2, len(ms) // 2))
         self.assertIsNotNone(xv["error_base"])
+
+    def test_el_competidor_es_el_que_publica_la_web(self):
+        # Evaluación del 18-10-2026 (ADR 0104): el candidato se comparaba con los
+        # coeficientes de tres modelos, y la web publica con ECMWF cuando la pasada lo tiene.
+        ms = []
+        for setmana in range(4):
+            for k in range(28):
+                fins = dt.datetime(2026, 9, 7 + 7 * setmana, 6) + dt.timedelta(hours=k)
+                plou = k % 4 == 0
+                m = {**hora(fins.isoformat(timespec="minutes"), mm=2.0 if plou else 0.0, antelacio=1),
+                     "emes": (fins - dt.timedelta(hours=1)).isoformat(timespec="minutes") + "+02:00",
+                     "obs_pluja": 1.0 if plou else 0.0, "pluja_1h_emes": 0.0}
+                if k % 2:
+                    m[f"pluja_{C.MODEL_ECMWF}"] = 1.5 if plou else 0.0
+                ms.append(m)
+        arxiu = A.modelo_arxiu()
+        v = A.valida_pluja(ms, arxiu)
+        y = np.array([m["obs_pluja"] >= C.UMBRAL_MM for m in ms], dtype=float)
+        publicat = np.array([A.prob_pluja({"pluja": arxiu}, m) for m in ms])
+        tres = np.array([A.predecir(np.array(arxiu["w"]), np.array(A.rasgos(m, arxiu["rasgos"]))) for m in ms])
+        self.assertAlmostEqual(v["error_abans"], float(np.mean((publicat - y) ** 2)))
+        self.assertNotAlmostEqual(v["error_abans"], float(np.mean((tres - y) ** 2)))
 
     def test_la_variant_nomes_guanya_si_millora_el_base_a_les_seves_hores(self):
         from unittest.mock import patch
