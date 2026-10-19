@@ -854,7 +854,13 @@ def recoger(anterior=None):
         salida["aprenentatge"] = A.resum_pagina(model)
         salida["hores"] = previsio(P.AHORA, h, e, avisos, model, casa, nc, planes, salida.get("riera"), veines,
                                    nuvols_ara)
-        PA.a_les_hores(salida["hores"], taula_alta)
+        PA.a_les_hores(salida["hores"], taula_alta, PA.ajust_nit())
+        if R.hay_registro():
+            try:
+                PA.apunta_nit(salida["hores"], P.AHORA)
+            except Exception as ex:
+                # Només el registre: a la pàgina no li afecta.
+                print(f"registre de les nits: {ex}", file=sys.stderr)
         salida["models"] = comprobacion_modelos(P.AHORA, h, (casa or {}).get("files", []),
                                                 (salida.get("ara_casa") or {}).get("pluja_3h"))
     except Exception as ex:

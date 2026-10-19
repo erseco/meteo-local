@@ -410,6 +410,29 @@ arriba:
   mínimo; si no, la de partida (`calibracio/part_alta.json`, verano y otoño
   de 2026: de +0,1 a +0,4 °C de noche y de +1,4 a +1,9 °C de 12 a 18 h en
   horario de verano, de 10 a 16 h en tiempo universal).
+  **De noche** (de 17 a 8 h en tiempo universal; desde el 19-10-2026), la
+  mediana se corrige con las nubes $`N`$ (%), el viento $`V`$ (km/h) y la
+  temperatura $`T`$ (°C) previstos de la propia fila:
+
+```math
+\Delta'_h = \Delta_h + \beta_0 + \beta_1 c + \beta_2 v + \beta_3 c\,v + \beta_4 \min(T, 15),
+\qquad c = 1 - \tfrac{N}{100},\quad v = \max\!\left(0,\ 1 - \tfrac{V}{15}\right)
+```
+
+  con $`\beta = (-0{,}12;\ -0{,}21;\ 0{,}22;\ 1{,}01;\ -0{,}02)`$, ajustados por
+  mínimos cuadrados con las horas de noche de tres inviernos (2023-2026,
+  ICERDA6 como riera, ICERDA18 e ICERDA28 como parte alta, ICON-EU emitido el
+  día anterior; `calibracio/part_alta.json`, «ajust_nit»). Con el cielo
+  despejado y en calma, la inversión deja la parte alta unos 2 °C por encima
+  y la mediana de 30 días, que mezcla todo tipo de noches, da 1-1,5; con
+  nubes o viento casi no cambia. Validado por semanas y dejando fuera cada
+  invierno: en las 32 noches con la riera a 0 °C o menos, el error de la
+  mínima de arriba baja de 1,03 a 0,85 °C (gana en el 99 % de los
+  remuestreos) y «glaçada vora la riera» acierta 26 de 32 (23 sin el
+  ajuste). Como la web usa la estación de casa, las nubes de cuatro modelos y
+  el viento de AROME, el invierno 2026-27 se vigila: `part_alta.py nit-resum`
+  compara lo que dio la web con el ajuste y sin él (registre/part-alta-nit.csv)
+  con lo medido.
   Cada fila lleva la media de $`\Delta`$ en sus dos extremos, y el tramo dice
   la diferencia de su máxima (de día) o de su mínima (de noche) si,
   redondeada, llega a un grado; el resumen del día, la máxima de arriba. Si la mínima de la riera llega a 0 °C y la de arriba no, la

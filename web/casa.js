@@ -1174,7 +1174,7 @@ function taula(hores, mesurada, riscos, sol) {
   // La part alta, només si algun tram la diu, amb l'etiqueta tal com surt
   // (ADR 0087; Juanjo, 13-10-2026: «por qué ha desaparecido la explicación»).
   if (trams.some((t) => arrodoneixAlta(t.difAlta) || t.fenomens.some(([nom]) => nom === NOM_FENOMEN.glaçadaRiera()))) {
-    terme('+1, +2…', T('Les temperatures són les de vora la riera, la zona més freda del barri. La xifra diu quants graus més sol fer a la part alta, que canvia segons l’hora del dia i l’època de l’any: surt del que han mesurat les estacions del barri a cada hora els últims 30 dies.'), 'alta');
+    terme('+1, +2…', T('Les temperatures són les de vora la riera, la zona més freda del barri. La xifra diu quants graus més sol fer a la part alta, que canvia segons l’hora del dia i l’època de l’any: surt del que han mesurat les estacions del barri a cada hora els últims 30 dies i, de nit, també dels núvols i el vent previstos, perquè amb el cel serè i sense vent l’aire fred s’acumula vora la riera.'), 'alta');
   }
   if (visibles.some((f) => avisHora(f))) terme(T('Barra de color'), T('Hores amb avís, del color del nivell.'));
   terme(T('Vent'), T('La mitjana de l’hora en km/h i, entre parèntesis, la ratxa més forta de l’hora, la del model que en preveu més.'));

@@ -22,6 +22,55 @@ def veina(est, t, rosada=10, minuts=5, plou=False):
             "plou": plou, "compta": est != "ICERDA48", "intensitat": 0.0, "files": []}
 
 
+class AjustNit(unittest.TestCase):
+    """El ajuste de las noches de helada (19-10-2026, ADR 0087): nubes, viento y temperatura."""
+
+    def setUp(self):
+        self.ajust = PA.ajust_nit()
+
+    def test_els_coeficients_de_l_informe(self):
+        self.assertEqual(self.ajust["coef"], [-0.12, -0.21, 0.22, 1.01, -0.02])
+        self.assertEqual(self.ajust["hores"], set(range(17, 24)) | set(range(0, 8)))
+
+    def test_seré_i_en_calma_suma_i_amb_núvols_i_vent_no(self):
+        sere = PA.correccio_nit({"nuvols": 5, "vent": 2, "temperatura": 1}, self.ajust)
+        tapat = PA.correccio_nit({"nuvols": 100, "vent": 20, "temperatura": 8}, self.ajust)
+        self.assertAlmostEqual(sere, 0.68, places=2)
+        self.assertAlmostEqual(tapat, -0.28, places=2)
+        self.assertEqual(PA.correccio_nit({"nuvols": None, "vent": 2, "temperatura": 1}, self.ajust), 0.0)
+
+    def test_nomes_a_les_hores_de_nit(self):
+        taula = {h: 1.0 for h in range(24)}
+        # 01-12-2026, hora d'hivern (UTC+1): la fila de 2 a 3 és de 1 a 2 UTC; la de 12 a 13, de dia.
+        nit = {"hora": "2026-12-01T02:00", "fins": "2026-12-01T03:00", "nuvols": 5, "vent": 2, "temperatura": 1}
+        dia = {"hora": "2026-12-01T12:00", "fins": "2026-12-01T13:00", "nuvols": 5, "vent": 2, "temperatura": 1}
+        PA.a_les_hores([nit, dia], taula, self.ajust)
+        self.assertEqual((nit["dif_alta"], nit["dif_alta_base"]), (1.7, 1.0))
+        self.assertEqual(dia["dif_alta"], 1.0)
+        self.assertNotIn("dif_alta_base", dia)
+        # Sense ajust, com abans.
+        f = {**nit}
+        f.pop("dif_alta"), f.pop("dif_alta_base")
+        PA.a_les_hores([f], taula)
+        self.assertEqual(f["dif_alta"], 1.0)
+
+    def test_registre_i_resum(self):
+        ara = dt.datetime(2026, 12, 1, 18, 0, tzinfo=dt.timezone(dt.timedelta(hours=1)))
+        files = [{"hora": "2026-12-01T22:00", "fins": "2026-12-01T23:00", "dif_alta": 1.7, "dif_alta_base": 1.0,
+                  "nuvols": 5, "vent": 2, "temperatura": 1},
+                 # Massa a prop: no s'apunta.
+                 {"hora": "2026-12-01T19:00", "fins": "2026-12-01T20:00", "dif_alta": 1.7, "dif_alta_base": 1.0}]
+        with tempfile.TemporaryDirectory() as d:
+            ruta = os.path.join(d, "nit.csv")
+            PA.apunta_nit(files, ara, ruta)
+            casa_h = {"2026-12-01T22:00": -1.0, "2026-12-01T23:00": -1.0}
+            veines = {e: {"2026-12-01T22:00": 1.0, "2026-12-01T23:00": 1.0} for e in PA.ALTES}
+            r = PA.resum_nit(ruta, casa_h, veines)
+        # Mesura: +2,0. Sense l'ajust, 1,0 d'error; amb l'ajust, 0,3.
+        self.assertIn("Hores de nit apuntades: 1", r)
+        self.assertIn("Hores amb la riera a 0 °C o menys (1): error 1.00 °C sense l'ajust, 0.30 °C amb l'ajust", r)
+
+
 class PartAlta(unittest.TestCase):
     def test_ara_mesurada(self):
         vs = [veina("ICERDA6", 18), veina("ICERDA18", 20), veina("ICERDA28", 21), veina("ICERDA48", 22)]

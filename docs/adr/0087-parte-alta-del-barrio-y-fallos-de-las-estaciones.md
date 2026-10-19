@@ -174,3 +174,45 @@ Versión 3.78.0.
   (casa marcaba 18,1) y 18,4 °C con la parte alta.
 - `probar-web` en Chromium, Firefox y WebKit, móvil y escritorio, y axe-core
   sin errores en catalán y castellano.
+
+## Cambio del 19-10-2026 (3.159.0): el ajuste de las noches de helada
+
+Juanjo (13-10-2026): las noches de helada había que afinarlas, y «pensé que
+de esto te encargabas tú de ir bajando cada día poco a poco los datos». El
+NAS bajó del 13 al 18 de octubre los tres últimos inviernos hora a hora de las
+vecinas, y el análisis (informe personal del 19-10-2026, «Heladas en la riera
+y en la parte alta») mostró que la mediana de 30 días se queda corta en las
+noches despejadas y en calma: la parte alta queda unos 2 °C por encima de la
+riera y la web daba 1-1,5. Juanjo: «sí, adóptalo y vigílalo este invierno».
+
+- **El ajuste** (`part_alta.correccio_nit`): en las horas de noche (de 17 a
+  8 h en tiempo universal), la diferencia de la fila es la mediana de 30 días
+  más $`\beta_0 + \beta_1 c + \beta_2 v + \beta_3 c v + \beta_4 \min(T,15)`$,
+  con $`c`$ la parte de cielo despejado, $`v`$ la calma
+  ($`\max(0, 1 - V/15)`$) y $`T`$ la temperatura previstas en la propia fila.
+  Los cinco coeficientes, fijos, en `calibracio/part_alta.json`
+  («ajust_nit»). Una noche despejada y en calma suma unos 0,7 °C a 1 °C; una
+  nubosa y con viento resta unos 0,3. De día no cambia nada.
+- **La evidencia**: 310 noches de tres inviernos (2023-2026), ICERDA6 como
+  riera (no hay datos horarios de casa de esos inviernos), la media de
+  ICERDA18 e ICERDA28 como parte alta, y la previsión ICON-EU emitida el día
+  anterior. Validado por semanas (4.000 remuestreos) y dejando fuera cada
+  invierno: en las 32 noches con la riera a 0 °C o menos, el error de la
+  mínima de arriba baja de 1,03 a 0,85 °C y gana en el 99 %; «glaçada vora la
+  riera», 26 de 32 frente a 23.
+- **Riesgos e hipótesis**: el análisis usó ICERDA6 y ICON-EU; la web usa la
+  estación de casa, las nubes de cuatro modelos (ADR 0088) y el viento medio
+  de AROME. Que la corrección sirva igual es una hipótesis. Por eso, desde
+  hoy, cada pasada apunta en `registre/part-alta-nit.csv` lo que dio la web
+  con el ajuste y sin él (la última previsión hecha 3 horas antes o más), y
+  `part_alta.py nit-resum` lo compara con lo medido (vecinas de arriba menos
+  casa), en todas las horas de noche y en las de helada. Se decide con el
+  invierno 2026-27, a partir del 01-03-2027: si no acierta más que la
+  mediana sola, se retira. Está en el inventario de automatismos del NAS.
+- **Textos**: «Com es llegeix la previsió» («+1, +2…»), «D'on surt» y «Com
+  funciona» dicen que de noche cuentan las nubes y el viento, y que se vigila
+  este invierno.
+
+Validación: `tests/test_part_alta.py` (`AjustNit`: coeficientes, noche
+despejada y en calma +0,68 y nubosa con viento −0,28, solo en las horas de
+noche, registro y resumen).

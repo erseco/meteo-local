@@ -86,12 +86,138 @@ def per_hores(ahora, casa_hores=None, veines_hores=None, eps=None):
     return res
 
 
-def a_les_hores(hores, taula):
+def ajust_nit():
+    """Los coeficientes del ajuste de las noches (calibracio/part_alta.json,
+    «ajust_nit»), o None."""
+    try:
+        with open(INICIAL, encoding="utf-8") as f:
+            a = json.load(f)["ajust_nit"]
+        return {"hores": set(a["hores_utc"]), "coef": a["coef"]}
+    except (OSError, ValueError, KeyError):
+        return None
+
+
+def correccio_nit(f, ajust):
+    """Lo que la noche de la fila suma a la mediana de 30 días (Juanjo,
+    19-10-2026: «sí, adóptalo y vigílalo este invierno»). Con el cielo
+    despejado y en calma, la inversión deja la riera unos 2 °C por debajo de
+    la parte alta y la mediana, que mezcla todo tipo de noches, da 1-1,5; con
+    nubes o viento el aire se mezcla y casi no cambia. Las nubes, el viento y
+    la temperatura, los de la propia fila; sin alguno, 0."""
+    n, v, t = f.get("nuvols"), f.get("vent"), f.get("temperatura")
+    if not ajust or n is None or v is None or t is None:
+        return 0.0
+    c, calma = 1 - n / 100, max(0.0, 1 - v / 15)
+    return sum(b * x for b, x in zip(ajust["coef"], (1, c, calma, c * calma, min(t, 15))))
+
+
+def a_les_hores(hores, taula, ajust=None):
     """Pone a cada fila de la previsión «dif_alta»: la de su hora (la
-    temperatura de la fila es la media de sus dos extremos)."""
+    temperatura de la fila es la media de sus dos extremos) y, en los
+    extremos de noche, con el ajuste de las nubes y el viento (ajust_nit);
+    «dif_alta_base», sin él, para vigilarlo (registre_nit)."""
     for f in hores or []:
-        a = taula.get(hora_solar(f["hora"]))
-        b = taula.get(hora_solar(f["fins"]))
-        vals = [x for x in (a, b) if x is not None]
+        extrems = [(taula.get(hora_solar(f[k])), hora_solar(f[k])) for k in ("hora", "fins")]
+        base = [x for x, _ in extrems if x is not None]
+        corr = correccio_nit(f, ajust)
+        vals = [x + (corr if ajust and h in ajust["hores"] else 0) for x, h in extrems if x is not None]
         f["dif_alta"] = round(sum(vals) / len(vals), 1) if vals else None
+        if ajust and any(h in ajust["hores"] for _, h in extrems):
+            f["dif_alta_base"] = round(sum(base) / len(base), 1) if base else None
     return hores
+
+
+# --- La vigilancia del ajuste de las noches, el invierno 2026-27 -----------
+# Juanjo, 19-10-2026: «vigílalo este invierno». El análisis usó ICERDA6 como
+# riera y ICON-EU; la web usa la estación de casa, las nubes de cuatro modelos
+# y el viento de AROME. Para cada hora de noche se apunta lo que dio la web
+# con el ajuste y sin él, la última previsión hecha 3 horas antes o más, y el
+# resumen la compara con lo medido (casa y las vecinas de arriba).
+REGISTRE_NIT = os.path.join(DIR, "part-alta-nit.csv")
+CAMPS_NIT = ["hora", "fins", "emes", "dif_base", "dif_ajust", "nuvols", "vent", "temperatura"]
+ANTELACIO_H = 3
+
+
+def apunta_nit(hores, ahora, ruta=None):
+    import csv
+    ruta = ruta or REGISTRE_NIT
+    files = {}
+    try:
+        with open(ruta, encoding="utf-8") as f:
+            files = {r["hora"]: r for r in csv.DictReader(f)}
+    except OSError:
+        pass
+    canvi = False
+    for f in hores or []:
+        if f.get("dif_alta_base") is None or f.get("dif_alta") is None:
+            continue
+        if dt.datetime.fromisoformat(f["hora"]).astimezone() - ahora < dt.timedelta(hours=ANTELACIO_H):
+            continue
+        files[f["hora"]] = {"hora": f["hora"], "fins": f["fins"], "emes": ahora.isoformat(timespec="minutes"),
+                            "dif_base": f["dif_alta_base"], "dif_ajust": f["dif_alta"], "nuvols": f.get("nuvols"),
+                            "vent": f.get("vent"), "temperatura": f.get("temperatura")}
+        canvi = True
+    if not canvi:
+        return
+    os.makedirs(os.path.dirname(ruta), exist_ok=True)
+    with open(ruta + ".tmp", "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=CAMPS_NIT)
+        w.writeheader()
+        w.writerows(files[k] for k in sorted(files))
+    os.replace(ruta + ".tmp", ruta)
+
+
+def resum_nit(ruta=None, casa_hores=None, veines_hores=None):
+    """Error medio de la diferencia de la parte alta, con el ajuste y sin él,
+    contra la medida (mediana de las vecinas de arriba − casa, media de los dos
+    extremos de la fila), en todas las horas de noche y en las de helada junto
+    a la riera (casa a 0 °C o menos)."""
+    import csv
+    ruta = ruta or REGISTRE_NIT
+    if casa_hores is None:
+        casa_hores = SE._llegeix_hores(os.path.join(DIR, "estacio-casa.csv"))
+    if veines_hores is None:
+        veines_hores = {e: SE._llegeix_hores(os.path.join(DIR, f"veina-{e}.csv")) for e in ALTES}
+
+    def mesura(c):
+        m = mediana_alta([veines_hores.get(e, {}).get(c) for e in ALTES])
+        return None if m is None or casa_hores.get(c) is None else m - casa_hores[c]
+
+    try:
+        with open(ruta, encoding="utf-8") as f:
+            files = list(csv.DictReader(f))
+    except OSError:
+        return "Encara no hi ha registre de les nits."
+    grups = {"totes": [], "gelada": []}
+    for r in files:
+        reals = [mesura(r[k]) for k in ("hora", "fins")]
+        if None in reals:
+            continue
+        real = sum(reals) / 2
+        e = (abs(float(r["dif_base"]) - real), abs(float(r["dif_ajust"]) - real))
+        grups["totes"].append(e)
+        if min(casa_hores[r["hora"]], casa_hores[r["fins"]]) <= 0:
+            grups["gelada"].append(e)
+    if not grups["totes"]:
+        return f"{len(files)} hores de nit apuntades, encara sense mesura per comparar."
+    linies = [f"Hores de nit apuntades: {len(files)} (des de {files[0]['hora'][:10]})."]
+    for nom, text in (("totes", "Totes les hores de nit"), ("gelada", "Hores amb la riera a 0 °C o menys")):
+        es = grups[nom]
+        if es:
+            base = sum(a for a, _ in es) / len(es)
+            ajust = sum(b for _, b in es) / len(es)
+            millor = sum(1 for a, b in es if b < a)
+            linies.append(f"{text} ({len(es)}): error {base:.2f} °C sense l'ajust, {ajust:.2f} °C amb l'ajust; "
+                          f"l'ajust s'apropa més en {millor} ({100 * millor / len(es):.0f} %).")
+        else:
+            linies.append(f"{text}: cap encara.")
+    return "\n".join(linies)
+
+
+if __name__ == "__main__":
+    import sys
+    if sys.argv[1:] == ["nit-resum"]:
+        print(resum_nit())
+    else:
+        print("Ús: python3 part_alta.py nit-resum")
+
