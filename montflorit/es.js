@@ -245,6 +245,10 @@ var IDIOMA = {
     "Barra de color": "Barra de color",
     "Hores amb avís, del color del nivell.": "Horas con aviso, del color del nivel.",
     "La mitjana de l’hora en km/h i, entre parèntesis, la ratxa més forta de l’hora.": "La media de la hora en km/h y, entre paréntesis, la racha más fuerte de la hora.",
+    "Avís de vent fort: d’on surt": "Aviso de viento fuerte: de dónde sale",
+    "Ratxa de {0} km/h, avís de vent fort: d’on surt": "Racha de {0} km/h, aviso de viento fuerte: de dónde sale",
+    "Ratxa en color": "Racha en color",
+    "Passa el llindar groc (72\u00a0km/h) o taronja (108\u00a0km/h) dels avisos de Meteocat i dona l’avís de vent fort. La «i» porta a l’avís, amb d’on surt i quant s’hi pot confiar.": "Pasa el umbral amarillo (72\u00a0km/h) o naranja (108\u00a0km/h) de los avisos de Meteocat y da el aviso de viento fuerte. La «i» lleva al aviso, con de dónde sale y cuánto se puede confiar en él.",
     "Més enllà de 24 hores, la previsió és menys segura.": "Más allá de 24 horas, la previsión es menos segura.",
     // El perill de cada tram i hora (ADR 0076).
     "Temps a Montflorit: avís {0} per {1} (no oficial)": "Temps a Montflorit: aviso {0} por {1} (no oficial)",

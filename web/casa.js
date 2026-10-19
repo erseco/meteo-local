@@ -45,6 +45,8 @@ const TRAMS = [[7, 14, 'Matí'], [14, 21, 'Tarda'], [21, 7, 'Nit']];
 // els baixos de Meteocat, superats «amb més que»): abans 70 km/h i 36 °C, i
 // l'etiqueta sortia sense l'avís corresponent (inventari del 18-10-2026).
 const FENOMENS = { pluja_forta: INTENSITAT_PLUJA[1], pluja_torrencial: INTENSITAT_PLUJA[2], ratxa: 72, calor: 36.8, glaçada: 0 };
+// El llindar taronja de les ratxes (config.RISC_LLINDARS, l'alt de Meteocat).
+const RATXA_TARONJA = 108;
 // Els noms, amb T() literal perquè les proves de traducció els trobin.
 const NOM_TRAM = { Matí: () => T('Matí'), Tarda: () => T('Tarda'), Nit: () => T('Nit') };
 const NOM_TRAM_DEMA = { Matí: () => T('Demà matí'), Tarda: () => T('Demà tarda'), Nit: () => T('Demà nit') };
@@ -967,6 +969,39 @@ function origenTram(t) {
   return parts.length ? `${parts.join('. ')}.` : '';
 }
 
+// La ratxa que passa el llindar de l'avís de vent fort, del color del nivell
+// i amb una «i» que porta a l'avís, on diu d'on surt i quant s'hi pot confiar
+// (Juanjo, 19-10-2026: «me sale una alerta de viento fuerte… en la tabla sin
+// embargo no sale nada» i «se puede añadir una i de info que lleve a la
+// explicación de la alerta»). Sense avís actiu (més enllà de les 24 hores que
+// mira), a l'explicació general.
+function nivellRatxa(ratxa) {
+  return ratxa > RATXA_TARONJA ? 'taronja' : ratxa > FENOMENS.ratxa ? 'groc' : null;
+}
+
+function celVent(f) {
+  const td = element('td', 'num');
+  if (f.vent == null) return td;
+  const n = f.ratxa && nivellRatxa(f.ratxa);
+  if (!n) {
+    td.textContent = `${Math.round(f.vent)}${f.ratxa ? ` (${Math.round(f.ratxa)})` : ''}`;
+    return td;
+  }
+  const a = element('a', `ratxa-forta ${n}`);
+  const desti = () => {
+    const fitxa = fitxaPerill((h) => h.clau === 'propi');
+    return fitxa === 'perill.html' ? 'com-funciona.html#temps-extrem' : fitxa;
+  };
+  a.href = desti();
+  // L'historial de «Perill» pot arribar després de pintar la taula.
+  a.addEventListener('click', () => { a.href = desti(); });
+  a.title = T('Avís de vent fort: d’on surt');
+  a.setAttribute('aria-label', T`Ratxa de ${Math.round(f.ratxa)} km/h, avís de vent fort: d’on surt`);
+  a.append(`${Math.round(f.ratxa)}`, icona('i-info'));
+  td.append(`${Math.round(f.vent)} (`, a, ')');
+  return td;
+}
+
 function taulaTram(t, obert, solHora) {
   const det = element('details', `tram-hores${t.perill ? ` amb-perill ${t.perill.nivell}` : ''}`);
   det.open = obert;
@@ -1031,11 +1066,12 @@ function taulaTram(t, obert, solHora) {
       prob.style.setProperty('--prob', `${pct}%`);
     }
     tr.append(prob);
-    tr.append(element('td', 'num', f.vent == null ? ''
-      : `${Math.round(f.vent)}${f.ratxa ? ` (${Math.round(f.ratxa)})` : ''}`));
+    tr.append(celVent(f));
     cos.append(tr);
   });
   taula.append(cos);
+  // Amb una ratxa de l'avís, la xifra porta la «i»: la columna de vent, més ampla.
+  if (t.files.some((f) => f.vent != null && f.ratxa && nivellRatxa(f.ratxa))) taula.classList.add('amb-ratxa-forta');
   contenidor.append(taula);
   det.append(contenidor);
   // Plegada, la barra de l'avís no té alçada: s'ajusta en obrir-la.
@@ -1129,6 +1165,9 @@ function taula(hores, mesurada, riscos, sol) {
   }
   if (visibles.some((f) => avisHora(f))) terme(T('Barra de color'), T('Hores amb avís, del color del nivell.'));
   terme(T('Vent'), T('La mitjana de l’hora en km/h i, entre parèntesis, la ratxa més forta de l’hora.'));
+  if (visibles.some((f) => f.vent != null && f.ratxa && nivellRatxa(f.ratxa))) {
+    terme(T('Ratxa en color'), T('Passa el llindar groc (72\u00a0km/h) o taronja (108\u00a0km/h) dels avisos de Meteocat i dona l’avís de vent fort. La «i» porta a l’avís, amb d’on surt i quant s’hi pot confiar.'));
+  }
   // Si la taula travessa un canvi d'hora, la franja de 2 a 3 surt dues
   // vegades (octubre) o no hi és (març): es diu per què (Juanjo, 13-10-2026).
   const desfasos = visibles.map((f) => new Date(f.hora).getTimezoneOffset());

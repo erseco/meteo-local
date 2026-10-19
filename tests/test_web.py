@@ -667,6 +667,23 @@ class Web(unittest.TestCase):
         m = re.search(r"const FENOMENS = \{[^}]*ratxa: ([\d.]+), calor: ([\d.]+)", codi)
         self.assertEqual((float(m.group(1)), float(m.group(2))),
                          (C.RISC_LLINDARS["ratxa"][0], C.RISC_LLINDARS["calor"][0]))
+        m = re.search(r"const RATXA_TARONJA = ([\d.]+);", codi)
+        self.assertEqual(float(m.group(1)), C.RISC_LLINDARS["ratxa"][1])
+
+    def test_ratxa_de_l_avis_a_la_taula(self):
+        # 19-10-2026: l'avís de vent fort (77 km/h) i, a la taula, «13 (77)» com qualsevol
+        # altra xifra. La ratxa que passa el llindar, del color del nivell i amb l'enllaç.
+        ara = "2026-10-19T13:15:00+02:00"
+        # Un DOM mínim que guarda el text i els fills (el de l'arnès no en guarda).
+        expr = ("element = (tag, cls, text) => { const n = {tag, className: cls || '', fills: text ? [text] : [],"
+                " setAttribute() {}, addEventListener() {}, append(...x) { this.fills.push(...x); },"
+                " set textContent(t) { this.fills = [t]; },"
+                " get textContent() { return this.fills.map((f) => typeof f === 'string' ? f : (f.textContent || '')).join(''); } };"
+                " return n; };"
+                "[celVent({vent: 13.4, ratxa: 76.6}), celVent({vent: 5, ratxa: 72}), celVent({vent: 20, ratxa: 110})]"
+                ".map((td) => [td.textContent, (td.fills.find((f) => f.tag === 'a') || {className: ''}).className])")
+        self.assertEqual(self.avalua(ara, expr, "casa.js"),
+                         [["13 (77)", "ratxa-forta groc"], ["5 (72)", ""], ["20 (110)", "ratxa-forta taronja"]])
 
     def test_com_encerta_amb_recompte(self):
         # 18-10-2026: el dia sumava els encerts de pluja i de sec («23 de 24») encara

@@ -190,12 +190,18 @@ def text_perill(nous, ahora):
     # si fos de l'aplicació); el nivell ja el diu el cercle.
     ca = [negreta("Temps a Montflorit: avís de perill per " + " i ".join(dict.fromkeys(QUE_CA[t] for t in tipus))
                   + " al barri", pitjor)]
-    ca += [html.escape(r["text"], quote=False) for r in nous]
-    ca.append("Calculat per aquesta aplicació, no oficial.")
+    # Cada risc, amb d'on surt i quant s'hi pot confiar (riscos.font): abans,
+    # «Calculat per aquesta aplicació» d'unes ratxes que només preveia AROME
+    # (Juanjo, 19-10-2026).
+    font = lambda r, l: [html.escape(r["font"][l], quote=False)] if r.get("font") else []  # noqa: E731
+    for r in nous:
+        ca += [html.escape(r["text"], quote=False)] + font(r, "ca")
+    ca.append("Avís no oficial.")
     es = [negreta("Temps a Montflorit: aviso de peligro por " + " y ".join(dict.fromkeys(QUE_ES[t] for t in tipus))
                   + " en el barrio", pitjor)]
-    es += [html.escape(linia_risc_es(r, ahora), quote=False) for r in nous]
-    es.append("Calculado por esta aplicación, no oficial.")
+    for r in nous:
+        es += [html.escape(linia_risc_es(r, ahora), quote=False)] + font(r, "es")
+    es.append("Aviso no oficial.")
     return {"ca": "\n".join(ca), "es": "\n".join(es)}, pitjor
 
 

@@ -151,3 +151,30 @@ class Trams(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FontTest(unittest.TestCase):
+    # Juanjo, 19-10-2026: «hay que indicar el origen de la alerta y a ser posible la validez
+    # que tiene» i «dado que viene de un modelo no debe decir que la ha calculado nuestra web».
+    def test_ratxa_amb_els_models_que_hi_arriben(self):
+        f = RS.font("ratxa", "previsio", {"meteofrance_arome_france_hd": 92.5, "meteofrance_arome_france": 36.0,
+                                          "icon_eu": 11.5})
+        self.assertIn("Origen: previsió de Météo-France per a Montflorit.", f["ca"])
+        self.assertIn("només 1 hi arriba (AROME HD, 92; AROME, 36; ICON-EU, 12 km/h): previsió poc segura", f["ca"])
+        self.assertIn("solo llega 1", f["es"])
+        tots = RS.font("ratxa", "previsio", {"meteofrance_arome_france_hd": 80, "icon_eu": 75})
+        self.assertIn("Hi coincideixen els 2 models", tots["ca"])
+
+    def test_cada_risc_porta_font(self):
+        for tipus, origen in (("pluja_30min", "ara"), ("pluja_3h", "ara"), ("pluja_3h", "previsio"),
+                              ("pluja_24h", "previsio"), ("calor", "ara"), ("fred", "previsio"),
+                              ("neu_24h", "previsio"), ("ratxa", "previsio")):
+            f = RS.font(tipus, origen)
+            self.assertTrue(f and f["ca"] and f["es"], (tipus, origen))
+            self.assertNotIn("aquesta", f["ca"])
+
+    def test_el_risc_de_ratxa_porta_els_models_del_tram(self):
+        h = hores({3: {"ratxa": 75, "ratxes_models": {"icon_eu": 20, "meteofrance_arome_france_hd": 90}}})
+        r = salida(h)["riscos"][0]
+        self.assertIn("ICON-EU, 20", r["font"]["ca"])
+

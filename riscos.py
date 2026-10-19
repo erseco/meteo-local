@@ -82,7 +82,7 @@ TEXTOS = {
 }
 
 
-def risc(tipus, origen, valor, ini=None, fin=None, ahora=None):
+def risc(tipus, origen, valor, ini=None, fin=None, ahora=None, ratxes=None):
     n = nivell(tipus, valor)
     if not n:
         return None
@@ -93,7 +93,66 @@ def risc(tipus, origen, valor, ini=None, fin=None, ahora=None):
     return {"clau": f"{origen}:{tipus}", "tipus": tipus, "origen": origen, "nivell": n,
             "valor": round(valor, 1), "llindar": llindar, "unitat": UNITATS[tipus],
             "des_de": ini and ini.isoformat(timespec="minutes"),
-            "fins": fin and fin.isoformat(timespec="minutes"), "text": text}
+            "fins": fin and fin.isoformat(timespec="minutes"), "text": text,
+            "font": font(tipus, origen, ratxes)}
+
+
+# D'on surt cada risc i quant s'hi pot confiar, a la línia de sota (Juanjo,
+# 19-10-2026: «hay que indicar el origen de la alerta y a ser posible la
+# validez que tiene» i «dado que viene de un modelo no debe decir que la ha
+# calculado nuestra web»). Abans, el missatge deia «Calculat per aquesta
+# aplicació» d'unes ratxes que només preveia AROME.
+NOMS_MODELS = {"meteofrance_arome_france_hd": "AROME HD", "meteofrance_arome_france": "AROME",
+               "icon_eu": "ICON-EU"}
+MF = ("previsió de Météo-France per a Montflorit",
+      "previsión de Météo-France para Montflorit")
+FONTS = {
+    ("ara", "pluja"): ("Mesurat: la mediana de les estacions del barri.",
+                       "Medido: la mediana de las estaciones del barrio."),
+    ("ara", "temp"): ("Mesurat: les estacions de la part baixa del barri.",
+                      "Medido: las estaciones de la parte baja del barrio."),
+    ("previsio", "pluja"): ("Origen: la pluja del model que en dona més (AROME HD, AROME o ICON-EU) i, les "
+                            "primeres hores, el radar i les estacions del barri. Els mil·límetres diuen com seria "
+                            "la pluja; si n'hi haurà, ho diu la probabilitat de la taula.",
+                            "Origen: la lluvia del modelo que da más (AROME HD, AROME o ICON-EU) y, las primeras "
+                            "horas, el radar y las estaciones del barrio. Los milímetros dicen cómo sería la "
+                            "lluvia; si la habrá, lo dice la probabilidad de la tabla."),
+    ("previsio", "temp"): (f"Origen: {MF[0]}, corregida amb el que ha mesurat una estació del barri vora la "
+                           "riera. L'error mitjà és d'un grau.",
+                           f"Origen: {MF[1]}, corregida con lo que ha medido una estación del barrio junto a "
+                           "la riera. El error medio es de un grado."),
+    ("previsio", "neu_24h"): (f"Origen: {MF[0]}.", f"Origen: {MF[1]}."),
+}
+
+
+def font(tipus, origen, ratxes=None):
+    """{"ca", "es"}: d'on surt el risc i, si se sap, quant s'hi pot confiar.
+    Les ratxes, amb quants dels models fins hi arriben (ratxes: {model: la
+    més forta del tram})."""
+    if tipus == "ratxa":
+        ca, es = [f"Origen: {MF[0]}."], [f"Origen: {MF[1]}."]
+        vals = {NOMS_MODELS.get(m, m): v for m, v in (ratxes or {}).items() if v is not None}
+        if vals:
+            n = sum(1 for v in vals.values() if nivell("ratxa", v))
+            llista = "; ".join(f"{m}, {num(v)}" for m, v in vals.items())
+            if n == len(vals):
+                ca.append(f"Hi coincideixen els {n} models consultats ({llista} km/h).")
+                es.append(f"Coinciden los {n} modelos consultados ({llista} km/h).")
+            else:
+                qui_ca = "cap hi arriba" if n == 0 else "només 1 hi arriba" if n == 1 else f"{n} hi arriben"
+                qui_es = "no llega ninguno" if n == 0 else "solo llega 1" if n == 1 else f"llegan {n}"
+                fiable_ca = ": previsió poc segura" if 2 * n < len(vals) else ""
+                fiable_es = ": previsión poco segura" if 2 * n < len(vals) else ""
+                ca.append(f"Dels {len(vals)} models consultats, {qui_ca} ({llista} km/h){fiable_ca}.")
+                es.append(f"De los {len(vals)} modelos consultados, {qui_es} ({llista} km/h){fiable_es}.")
+        ca.append("Una ratxa prevista pot arribar abans, després o en un altre lloc, sobretot amb tempesta.")
+        es.append("Una racha prevista puede llegar antes, después o en otro lugar, sobre todo con tormenta.")
+        return {"ca": " ".join(ca), "es": " ".join(es)}
+    clau = (origen if origen == "ara" else "previsio",
+            "pluja" if tipus.startswith("pluja") else "temp" if tipus in TEMPERATURES else tipus)
+    if clau not in FONTS:
+        return None
+    return dict(zip(("ca", "es"), FONTS[clau]))
 
 
 TRAM_PAUSA_H = 2
@@ -135,7 +194,17 @@ def de_la_previsio(hores, ahora):
                             ("fred", lambda f: f.get("temperatura"))):
         t = pitjor_tram(hores, tipus, valor_de)
         if t:
-            res.append(risc(tipus, "previsio", t[0], t[1], t[2], ahora))
+            ratxes = None
+            if tipus == "ratxa":
+                # La més forta de cada model en les hores del tram.
+                dins = [f for f in hores if t[1] <= dt.datetime.fromisoformat(f["hora"]) < t[2]]
+                ratxes = {}
+                for f in dins:
+                    for m, v in (f.get("ratxes_models") or {}).items():
+                        if v is not None and (ratxes.get(m) is None or v > ratxes[m]):
+                            ratxes[m] = v
+                        ratxes.setdefault(m, None)
+            res.append(risc(tipus, "previsio", t[0], t[1], t[2], ahora, ratxes))
     # La lluvia, en las horas seguidas que más acumulan: 3 y 24. La media
     # hora de Meteocat no se puede prever con modelos que dan horas enteras.
     # Només les hores en què la pàgina diu que pot ploure (probabilitat del

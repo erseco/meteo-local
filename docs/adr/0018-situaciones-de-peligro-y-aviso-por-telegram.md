@@ -128,3 +128,38 @@ deprisa.
 nivel, final tras 3 horas y fuente caída), `probar-web` en Chromium, Firefox y
 WebKit, escritorio, móvil y tableta, claro y oscuro, con un riesgo simulado, y
 axe-core sin fallos en las dos páginas.
+
+## Cambio del 19-10-2026 (3.156.0): cada aviso dice de dónde sale y cuánto fiarse; la racha, resaltada en la tabla
+
+Juanjo, ante «Vent fort previst: ratxes de fins a 77 km/h» con la tabla en
+«13 (77)» como cualquier otra cifra: «en la tabla sin embargo no sale nada»;
+y luego: «hay que indicar el origen de la alerta y a ser posible la validez
+que tiene… dado que viene de un modelo no debe decir que la ha calculado
+nuestra web», y «para este tipo de alertas puntuales en la tabla se puede
+añadir una i de info que lleve a la explicación de la alerta».
+
+- **Origen y fiabilidad** (`riscos.font`, en catalán y castellano): cada
+  riesgo lleva una línea con su fuente. Las rachas: la previsión de
+  Météo-France para Montflorit y cuántos de los tres modelos finos (AROME HD,
+  AROME, ICON-EU) pasan el umbral en el mismo tramo, con la racha de cada
+  uno (`casa.py` guarda `ratxes_models` en cada hora); si llega menos de la
+  mitad, «previsió poc segura». La lluvia prevista: la del modelo que da más
+  y, las primeras horas, el radar y las estaciones. La temperatura prevista:
+  Météo-France corregida con una estación del barrio (error medio de un
+  grado, «Com funciona»). Lo medido: las estaciones del barrio. El mensaje
+  del aviso (Telegram, notificaciones y ficha de «Perill») pone esa línea
+  bajo cada riesgo y acaba en «Avís no oficial.», en lugar de «Calculat per
+  aquesta aplicació, no oficial.». «Com funciona» lo explica; el enlace
+  «Què vol dir aquest avís» sigue llevando allí.
+- **La tabla**: la racha que pasa el umbral amarillo (72 km/h) o naranja
+  (108 km/h) va en el color del nivel, con una «i» (icono `info` de Lucide)
+  que lleva a la ficha del aviso en «Perill» o, sin aviso activo (más allá
+  de las 24 horas), a «Com funciona». La leyenda lo explica. En móvil, la
+  columna de viento se ensancha solo en los tramos que lo llevan.
+
+Validación: `tests/test_riscos.py` (`FontTest`), `tests/test_web.py`
+(`test_ratxa_de_l_avis_a_la_taula` y el umbral naranja igual al de
+`config`); la web generada con los datos del 19-10-2026 en Chromium y
+Firefox, móvil (412 y 320 px) y escritorio, claro y oscuro; axe-core sin
+fallos con la tabla desplegada. A 320 px la tabla ya se desplazaba de lado
+antes del cambio (ancho mínimo de 19rem).

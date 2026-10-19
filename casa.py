@@ -556,6 +556,10 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
             "nuvols": nuvols_ara if n == 0 and nuvols_ara is not None else NV.mescla(NV.valors_hora(h, i)),
             "codi": valor("weather_code", i),
             "vent": vent_hora(h, i), "ratxa": valor("wind_gusts_10m", i),
+            # La de cada model fi, perquè l'avís de vent fort digui quants la
+            # veuen (Juanjo, 19-10-2026: «indicar el origen de la alerta y a
+            # ser posible la validez que tiene»; riscos.font).
+            "ratxes_models": {m: h.get(f"wind_gusts_10m_{m}", [None] * (i + 1))[i] for m in C.MODELOS_FINOS},
             "neu": valor("snowfall", i)})
     return filas
 
