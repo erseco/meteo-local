@@ -140,3 +140,16 @@ cada cuánto se actualiza y por qué. El modo aviso sigue igual en el servidor.
 Desde la 3.68.2, el «?» ya no dice «just després de cada imatge nova del radar
 de Meteocat» (Juanjo: «esto sobra»): solo cada cuánto se actualiza y cuándo.
 
+## Cambio del 19-10-2026 (3.148.1): las horas que el reloj no pudo mirar
+
+A las 06:56, lloviendo, la web decía «Actualitzat a les 06:50 · propera:
+06:51» (lo vio Juanjo). Una pasada fuera de horario, por código nuevo en
+main, empezó a las 06:50:05 y acabó a las 06:51:37: el reloj solo mira el
+minuto en que vuelve a empezar la vuelta, así que la hora de las 06:51 no se
+miró nunca y no hubo pasada hasta la de las 06:57 (publicada a las 06:58).
+Pasaba igual con cualquier pasada que cruzara una hora del horario. Ahora
+`nas/reloj.sh` mira todos los minutos desde el último que miró (media hora
+como mucho; al arrancar, solo el de ahora) y, si alguno tocaba, hace una
+pasada. Probado con `que_toca.py` y el horario de hoy: de 06:50 a 06:52 toca
+(06:51 saltada); de 06:52 a 06:53 no; de 06:51 a 06:52, ya mirada, no.
+

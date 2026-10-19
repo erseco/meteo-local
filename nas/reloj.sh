@@ -138,16 +138,34 @@ hora_verificacion() {
 
 if [ "${1:-}" = "--ara" ]; then pasada; exit; fi
 
+# Las horas que tocaban mientras el reloj estaba ocupado también cuentan: el
+# 19-10-2026, la pasada por código nuevo de las 06:50 duró hasta las 06:51:37,
+# la de las 06:51 no se miró nunca y la web dijo «propera: 06:51» hasta las
+# 06:58. Se miran todos los minutos desde el último mirado (media hora como
+# mucho) y, si alguno tocaba, una sola pasada.
+toca_desde() {   # toca_desde <minuto anterior, epoch> <minuto de ahora, epoch>
+  local m=$(( $1 + 60 ))
+  if [ "$1" -eq 0 ] || [ $(( $2 - $1 )) -gt 1800 ]; then m=$2; fi
+  while [ "$m" -le "$2" ]; do
+    [ "$(cd "$REPO" && python3 que_toca.py "$(date -d "@$m" +%H:%M)" "$ESTAT_DIR/casa.json")" = casa ] && return 0
+    m=$(( m + 60 ))
+  done
+  return 1
+}
+
 registro "reloj en marcha"
+ultim_minut=0
 while true; do
   # Espera al principio del minuto siguiente.
   sleep $(( 60 - 10#$(date +%S) ))
   ahora=$(date +%H:%M)
+  minut=$(( $(date +%s) / 60 * 60 ))
   if [ ! -d "$REPO/.git" ]; then
     prepara
   else
-    [ "$(cd "$REPO" && python3 que_toca.py "$ahora" "$ESTAT_DIR/casa.json")" = casa ] && pasada
+    toca_desde "$ultim_minut" "$minut" && pasada
   fi
+  ultim_minut=$minut
   # Código nuevo en main: se publica ya, sin esperar a la próxima hora, si
   # sus pruebas han pasado (prepara solo mueve la copia entonces).
   if [ -d "$REPO/.git" ] && hay_cambios; then
