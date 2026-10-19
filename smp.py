@@ -21,10 +21,18 @@ franjas («00-06», «06-12», «12-18», «18-00») y las comarcas afectadas
 (idComarca) y su grado de peligro. Como el mapa de meteo.cat, cuentan los
 avisos vigentes que no son preavisos, y el grado de 1 a 6: 1-2 moderado,
 3-4 alto, 5-6 muy alto (script.min.js de meteo.cat, _crearAvisosCombinatsLayer).
+
+Desde la 3.161.0 (ADR 0109), si la página falla, los mismos episodios se leen
+de la API (/smp/episodis-oberts), con la clave que Meteocat dio sabiendo que
+es para mostrarlos en esta web. La cuota es de 1.500 consultas al mes: la
+API se consulta como mucho cada API_CADA_MIN minutos y, entre tanto, se usa
+la última respuesta.
 """
 import datetime as dt
 import json
+import os
 import re
+import urllib.request
 
 import config as C
 
@@ -396,42 +404,126 @@ def per_fenomen(avisos, ahora=None):
     return res
 
 
-def llegeix(get, ahora):
+URL_API = "https://api.meteo.cat/pronostic/v2/smp/episodis-oberts?data={}Z"
+# 1.500 consultas al mes: una cada 30 minutos son 1.488 en un mes de 31 días.
+API_CADA_MIN = 30
+CACHE_API = os.path.join(os.environ.get("CACHE_WEB", "/estat/cache-web"), "smp-api.json")
+
+
+def clau_api():
+    """La clave de la API: METEOCAT_API_KEY en el entorno o en
+    ~/.config/meteo-local/meteocat.env. No está en el repositorio."""
+    if os.environ.get("METEOCAT_API_KEY"):
+        return os.environ["METEOCAT_API_KEY"]
+    try:
+        with open(os.path.expanduser("~/.config/meteo-local/meteocat.env"), encoding="utf-8") as f:
+            for linea in f:
+                k, _, v = linea.strip().partition("=")
+                if k == "METEOCAT_API_KEY" and v:
+                    return v
+    except OSError:
+        pass
+    return None
+
+
+def baixa_api(url, clau):
+    req = urllib.request.Request(url, headers={"User-Agent": "meteo-local", "X-Api-Key": clau})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return r.read().decode("utf-8")
+
+
+def episodis_api(ahora, clau=None, baixa=baixa_api, cache=CACHE_API):
+    """Los episodios abiertos según la API: la última respuesta si tiene menos
+    de API_CADA_MIN minutos; si no, una consulta nueva, que se guarda."""
+    try:
+        with open(cache, encoding="utf-8") as f:
+            desat = json.load(f)
+        if ahora - dt.datetime.fromisoformat(desat["hora"]) < dt.timedelta(minutes=API_CADA_MIN):
+            return desat["episodis"]
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    clau = clau or clau_api()
+    if not clau:
+        raise ValueError("sense clau de l'API de Meteocat")
+    llista = json.loads(baixa(URL_API.format(ahora.date().isoformat()), clau))
+    if not isinstance(llista, list):
+        raise ValueError("l'API de Meteocat no torna la llista d'episodis")
+    try:
+        os.makedirs(os.path.dirname(cache) or ".", exist_ok=True)
+        with open(cache + ".tmp", "w", encoding="utf-8") as f:
+            json.dump({"hora": ahora.isoformat(), "episodis": llista}, f)
+        os.replace(cache + ".tmp", cache)
+    except OSError:
+        pass
+    return llista
+
+
+def avisos_de(get, ahora, api=episodis_api):
+    """(avisos de la comarca, None) de la página o, si falla, (avisos, error de
+    la página) de la API. Si fallan las dos, la excepción dice las dos cosas."""
+    try:
+        return de_la_comarca(episodis(get(URL))), None
+    except Exception as ex:
+        falla = str(ex) or type(ex).__name__
+        if api is None:
+            raise
+        try:
+            return de_la_comarca(api(ahora)), falla
+        except Exception as ex_api:
+            raise ValueError(f"{falla}; API: {str(ex_api) or type(ex_api).__name__}") from ex
+
+
+def llegeix(get, ahora, api=episodis_api):
     """Lo que se publica: {hora, avisos (los de la comarca, enteros), linies (los
-    textos, solo con lo que queda), fenomens (el resumen por fenómeno)}."""
-    avisos = de_la_comarca(episodis(get(URL)))
+    textos, solo con lo que queda), fenomens (el resumen por fenómeno)} y, si
+    se ha leído de la API, falla_pagina (por qué no se ha podido de la página)."""
+    avisos, falla = avisos_de(get, ahora, api)
     hora = ahora.strftime("%H:%M")
-    return {"hora": ahora.isoformat(timespec="minutes"), "avisos": avisos,
-            "linies": textos(pendents(avisos, ahora), hora),
-            "fenomens": per_fenomen(avisos, ahora)}
+    res = {"hora": ahora.isoformat(timespec="minutes"), "avisos": avisos,
+           "linies": textos(pendents(avisos, ahora), hora),
+           "fenomens": per_fenomen(avisos, ahora)}
+    if falla:
+        res["falla_pagina"] = falla
+    return res
 
 
-def comprova(get, marca, avisa=True):
+def comprova(get, marca, avisa=True, api=episodis_api):
     """La prueba diaria (aprenentatge.diari): como la página no es una API, si
     deja de traer los avisos, o trae algo que no se sabe leer, se le dice una
     vez a Juanjo, y otra cuando vuelve. Desde la 3.87.0 lo mismo se mira en
     cada pasada (avisos_bot.py), con la misma marca, y se le dice en el momento."""
     try:
-        de_la_comarca(episodis(get(URL)))
-        error = None
+        _, error = avisos_de(get, dt.datetime.now().astimezone(), api)
+        reserva = error is not None
     except Exception as ex:
-        error = str(ex) or type(ex).__name__
-    marca_falla(marca, error, avisa)
+        error, reserva = str(ex) or type(ex).__name__, False
+    marca_falla(marca, error, avisa, reserva)
     return error
 
 
-def marca_falla(marca, error, avisa=True):
+def marca_falla(marca, error, avisa=True, reserva=False):
     """Apunta si la lectura falla y se lo dice a Juanjo al empezar y al acabar
-    el fallo, una sola vez cada cosa. Mientras falla, avisan los de AEMET
-    (ADR 0092). Devuelve el texto enviado, o None."""
-    import os
+    el fallo, y cuando cambia: con la página caída, si los avisos llegan por la
+    API (reserva) o no llega nada y avisan los de AEMET (ADR 0092). La marca
+    guarda «api» o «cap» (vacía, de antes de la 3.161.0: «cap»). Devuelve el
+    texto enviado, o None."""
+    abans = None
+    if os.path.exists(marca):
+        with open(marca, encoding="utf-8") as f:
+            abans = f.read().strip() or "cap"
+    ara = None if not error else "api" if reserva else "cap"
     text = None
-    if error and not os.path.exists(marca):
+    if ara and ara != abans:
         os.makedirs(os.path.dirname(marca) or ".", exist_ok=True)
-        open(marca, "w").close()
-        text = (f"Temps a Montflorit: no es poden llegir els avisos de perill de Meteocat ({error}). "
-                "Mentrestant, els veïns reben els avisos de l'AEMET. Mira smp.py.")
-    elif not error and os.path.exists(marca):
+        with open(marca, "w", encoding="utf-8") as f:
+            f.write(ara)
+        if ara == "api":
+            text = (f"Temps a Montflorit: no es pot llegir la pàgina d'avisos de perill de Meteocat ({error}). "
+                    f"Mentrestant es llegeixen de l'API, cada {API_CADA_MIN} minuts. Mira smp.py.")
+        else:
+            text = (f"Temps a Montflorit: no es poden llegir els avisos de perill de Meteocat ({error}). "
+                    "Mentrestant, els veïns reben els avisos de l'AEMET. Mira smp.py.")
+    elif not ara and abans:
         os.remove(marca)
         text = "Temps a Montflorit: els avisos de perill de Meteocat es tornen a llegir."
     if text:

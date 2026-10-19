@@ -438,6 +438,10 @@ class Smp(unittest.TestCase):
             self.assertIn("no es poden llegir els avisos de perill de Meteocat ('list' object", falla[0])
             self.assertIn("els veïns reben els avisos de l'AEMET", falla[0])
             self.assertEqual(passa({"smp": None, "errors": []}), [])
+            # La pàgina continua caiguda, però els avisos arriben de l'API.
+            api = passa({"smp": {"avisos": [], "linies": [], "falla_pagina": "x"}})
+            self.assertEqual(len(api), 1)
+            self.assertIn("es llegeixen de l'API", api[0])
             self.assertEqual(passa({"smp": {"avisos": [], "linies": []}}),
                              ["Temps a Montflorit: els avisos de perill de Meteocat es tornen a llegir."])
             self.assertEqual(passa({"smp": {"avisos": [], "linies": []}}), [])
@@ -446,14 +450,69 @@ class Smp(unittest.TestCase):
     def test_prova_diaria(self):
         with tempfile.TemporaryDirectory() as dir:
             marca = os.path.join(dir, "smp-falla")
-            self.assertIsNotNone(smp.comprova(lambda url: "<html></html>", marca, avisa=False))
+            self.assertIsNotNone(smp.comprova(lambda url: "<html></html>", marca, avisa=False, api=None))
             self.assertTrue(os.path.exists(marca))
-            self.assertIsNone(smp.comprova(lambda url: pagina([]), marca, avisa=False))
+            self.assertIsNone(smp.comprova(lambda url: pagina([]), marca, avisa=False, api=None))
             self.assertFalse(os.path.exists(marca))
             # Una forma que no se sap llegir també és una fallada (el 16-10-2026
             # la prova diària només mirava que hi hagués la llista).
             self.assertIsNotNone(smp.comprova(lambda url: pagina([[{"avisos": [{"estat": "Vigent", "evolucions": [
-                {"periodes": [{"nom": "x", "afectacions": [afectacio(40, 3)]}]}]}]}]]), marca, avisa=False))
+                {"periodes": [{"nom": "x", "afectacions": [afectacio(40, 3)]}]}]}]}]]), marca, avisa=False, api=None))
+            # Amb la pàgina caiguda i l'API bé, la marca diu «api».
+            os.remove(marca)
+            self.assertIsNotNone(smp.comprova(lambda url: "<html></html>", marca, avisa=False, api=lambda ara: EPISODIS))
+            with open(marca, encoding="utf-8") as f:
+                self.assertEqual(f.read(), "api")
+
+    def test_reserva_de_l_api(self):
+        # Si la pàgina falla, els mateixos episodis de l'API (ADR 0109).
+        s = smp.llegeix(lambda url: "<html></html>", MATI, api=lambda ara: EPISODIS)
+        self.assertEqual(s["avisos"], smp.llegeix(lambda url: pagina(EPISODIS), MATI, api=None)["avisos"])
+        self.assertIn("no porta els avisos", s["falla_pagina"])
+        self.assertNotIn("falla_pagina", smp.llegeix(lambda url: pagina(EPISODIS), MATI, api=None))
+
+        def cau(ara):
+            raise ValueError("HTTP Error 429")
+        with self.assertRaises(ValueError) as e:
+            smp.llegeix(lambda url: "<html></html>", MATI, api=cau)
+        self.assertIn("no porta els avisos", str(e.exception))
+        self.assertIn("API: HTTP Error 429", str(e.exception))
+
+    def test_l_api_com_a_molt_cada_mitja_hora(self):
+        with tempfile.TemporaryDirectory() as dir:
+            cache = os.path.join(dir, "smp-api.json")
+            urls = []
+
+            def baixa(url, clau):
+                urls.append((url, clau))
+                return json.dumps(EPISODIS)
+            self.assertEqual(smp.episodis_api(MATI, "k", baixa, cache), EPISODIS)
+            self.assertEqual(urls, [("https://api.meteo.cat/pronostic/v2/smp/episodis-oberts?data=2026-10-10Z", "k")])
+            smp.episodis_api(MATI + dt.timedelta(minutes=29), "k", baixa, cache)
+            self.assertEqual(len(urls), 1)
+            smp.episodis_api(MATI + dt.timedelta(minutes=30), "k", baixa, cache)
+            self.assertEqual(len(urls), 2)
+            # Una resposta que no és la llista no es desa.
+            with self.assertRaises(ValueError):
+                smp.episodis_api(MATI + dt.timedelta(hours=2), "k", lambda url, clau: '{"message": "x"}', cache)
+            with self.assertRaises(ValueError):
+                smp.episodis_api(MATI + dt.timedelta(hours=2), "", baixa, os.path.join(dir, "buida.json"))
+
+    def test_marca_amb_l_api(self):
+        with tempfile.TemporaryDirectory() as dir:
+            marca = os.path.join(dir, "smp-falla")
+            api = smp.marca_falla(marca, "x", avisa=False, reserva=True)
+            self.assertIn("es llegeixen de l'API, cada 30 minuts", api)
+            self.assertIsNone(smp.marca_falla(marca, "x", avisa=False, reserva=True))
+            cap = smp.marca_falla(marca, "x; API: y", avisa=False)
+            self.assertIn("els veïns reben els avisos de l'AEMET", cap)
+            self.assertIsNone(smp.marca_falla(marca, "x", avisa=False))
+            self.assertIn("API", smp.marca_falla(marca, "x", avisa=False, reserva=True))
+            self.assertIn("es tornen a llegir", smp.marca_falla(marca, None, avisa=False))
+            self.assertFalse(os.path.exists(marca))
+            # Una marca buida (d'abans de l'API) és «cap».
+            open(marca, "w").close()
+            self.assertIsNone(smp.marca_falla(marca, "x", avisa=False))
 
 
 if __name__ == "__main__":

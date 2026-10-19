@@ -1,6 +1,6 @@
 # 67. Avisos de peligro de Meteocat para el Vallès Occidental, junto a los planes
 
-Fecha: 2026-10-10 · Estado: aceptado (cuándo se leen, cambiado por el ADR 0071; la lectura y cómo avisan, por el ADR 0092)
+Fecha: 2026-10-10 · Estado: aceptado (cuándo se leen, cambiado por el ADR 0071; la lectura y cómo avisan, por el ADR 0092; la API de reserva, por el ADR 0109)
 
 ## Contexto
 

@@ -1135,11 +1135,13 @@ def actualitza(casa_json, sortida, ahora=None, anterior=None, avisa=True):
     # Si no se ha podido leer Meteocat, a Juanjo en el momento, no al día
     # siguiente (ADR 0092): mientras tanto avisan los de AEMET.
     if "smp" in salida:
-        error = None
+        error, reserva = None, False
         if salida["smp"] is None:
             error = next((e[5:] for e in salida.get("errors") or [] if e.startswith("smp: ")), "sense dades")
+        elif salida["smp"].get("falla_pagina"):
+            error, reserva = salida["smp"]["falla_pagina"], True
         try:
-            SMP.marca_falla(MARCA_SMP, error, avisa)
+            SMP.marca_falla(MARCA_SMP, error, avisa, reserva)
         except OSError:
             pass
     try:
