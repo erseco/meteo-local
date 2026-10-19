@@ -159,11 +159,18 @@ class FontTest(unittest.TestCase):
     def test_ratxa_amb_els_models_que_hi_arriben(self):
         f = RS.font("ratxa", "previsio", {"meteofrance_arome_france_hd": 92.5, "meteofrance_arome_france": 36.0,
                                           "icon_eu": 11.5})
-        self.assertIn("Origen: previsió de Météo-France per a Montflorit.", f["ca"])
-        self.assertIn("només 1 hi arriba (AROME HD, 92; AROME, 36; ICON-EU, 12 km/h): previsió poc segura", f["ca"])
-        self.assertIn("solo llega 1", f["es"])
+        self.assertIn("Origen: la previsió combinada de Météo-France per a Montflorit.", f["ca"])
+        self.assertIn("només 1 també preveu ratxes de més de 72 km/h: AROME HD, fins a 92 km/h; AROME, només 36 km/h, "
+                      "i ICON-EU, només 12 km/h. Previsió poc segura.", f["ca"])
+        self.assertIn("solo 1 también prevé rachas de más de 72 km/h", f["es"])
+        # El cas del 19-10-2026 a les 13:33, amb el text que va aprovar Juanjo.
+        dos = RS.font("ratxa", "previsio", {"meteofrance_arome_france_hd": 92.5, "meteofrance_arome_france": 89,
+                                            "icon_eu": 11.5})
+        self.assertIn("Dels 3 models que es consulten, 2 també preveuen ratxes de més de 72 km/h: AROME HD, fins a "
+                      "92 km/h, i AROME, fins a 89 km/h; ICON-EU, només 12 km/h. Una ratxa", dos["ca"])
         tots = RS.font("ratxa", "previsio", {"meteofrance_arome_france_hd": 80, "icon_eu": 75})
-        self.assertIn("Hi coincideixen els 2 models", tots["ca"])
+        self.assertIn("Els 2 models que es consulten també preveuen ratxes de més de 72 km/h: AROME HD, fins a 80 km/h, "
+                      "i ICON-EU, fins a 75 km/h.", tots["ca"])
 
     def test_cada_risc_porta_font(self):
         for tipus, origen in (("pluja_30min", "ara"), ("pluja_3h", "ara"), ("pluja_3h", "previsio"),
@@ -176,5 +183,5 @@ class FontTest(unittest.TestCase):
     def test_el_risc_de_ratxa_porta_els_models_del_tram(self):
         h = hores({3: {"ratxa": 75, "ratxes_models": {"icon_eu": 20, "meteofrance_arome_france_hd": 90}}})
         r = salida(h)["riscos"][0]
-        self.assertIn("ICON-EU, 20", r["font"]["ca"])
+        self.assertIn("ICON-EU, només 20 km/h", r["font"]["ca"])
 

@@ -130,21 +130,44 @@ def font(tipus, origen, ratxes=None):
     Les ratxes, amb quants dels models fins hi arriben (ratxes: {model: la
     més forta del tram})."""
     if tipus == "ratxa":
-        ca, es = [f"Origen: {MF[0]}."], [f"Origen: {MF[1]}."]
+        # La xifra de l'avís és la previsió combinada de Météo-France (barreja
+        # els seus models i suavitza els pics); la de cada model va a part
+        # (Juanjo, 19-10-2026: «que significa esta frase…?», davant de «2 hi
+        # arriben (AROME HD, 92; AROME, 89; ICON-EU, 12 km/h)»).
+        ca = ["Origen: la previsió combinada de Météo-France per a Montflorit."]
+        es = ["Origen: la previsión combinada de Météo-France para Montflorit."]
         vals = {NOMS_MODELS.get(m, m): v for m, v in (ratxes or {}).items() if v is not None}
         if vals:
-            n = sum(1 for v in vals.values() if nivell("ratxa", v))
-            llista = "; ".join(f"{m}, {num(v)}" for m, v in vals.items())
-            if n == len(vals):
-                ca.append(f"Hi coincideixen els {n} models consultats ({llista} km/h).")
-                es.append(f"Coinciden los {n} modelos consultados ({llista} km/h).")
+            llindar = num(C.RISC_LLINDARS["ratxa"][0])
+            n, total = sum(1 for v in vals.values() if nivell("ratxa", v)), len(vals)
+            dalt = [(m, v) for m, v in vals.items() if nivell("ratxa", v)]
+            baix = [(m, v) for m, v in vals.items() if not nivell("ratxa", v)]
+
+            def uneix(trossos, i):
+                return trossos[0] if len(trossos) == 1 else "; ".join(trossos[:-1]) + f", {i} " + trossos[-1]
+
+            # Els que hi arriben, units; darrere d'un punt i coma, els altres.
+            def llista(i, fins, nomes):
+                grups = [uneix([f"{m}, {paraula} {num(v)} km/h" for m, v in g], i)
+                         for g, paraula in ((dalt, fins), (baix, nomes)) if g]
+                return "; ".join(grups)
+
+            l_ca, l_es = llista("i", "fins a", "només"), llista("y", "hasta", "solo")
+            if n == total:
+                ca.append(f"Els {total} models que es consulten també preveuen ratxes de més de {llindar} km/h: {l_ca}.")
+                es.append(f"Los {total} modelos que se consultan también prevén rachas de más de {llindar} km/h: {l_es}.")
+            elif n == 0:
+                ca.append(f"Cap dels {total} models que es consulten no preveu ratxes de més de {llindar} km/h: "
+                          f"{l_ca}. Previsió poc segura.")
+                es.append(f"Ninguno de los {total} modelos que se consultan prevé rachas de más de {llindar} km/h: "
+                          f"{l_es}. Previsión poco segura.")
             else:
-                qui_ca = "cap hi arriba" if n == 0 else "només 1 hi arriba" if n == 1 else f"{n} hi arriben"
-                qui_es = "no llega ninguno" if n == 0 else "solo llega 1" if n == 1 else f"llegan {n}"
-                fiable_ca = ": previsió poc segura" if 2 * n < len(vals) else ""
-                fiable_es = ": previsión poco segura" if 2 * n < len(vals) else ""
-                ca.append(f"Dels {len(vals)} models consultats, {qui_ca} ({llista} km/h){fiable_ca}.")
-                es.append(f"De los {len(vals)} modelos consultados, {qui_es} ({llista} km/h){fiable_es}.")
+                verb_ca, verb_es = ("preveu", "prevé") if n == 1 else ("preveuen", "prevén")
+                nomes_ca, nomes_es = ("només ", "solo ") if 2 * n < total else ("", "")
+                ca.append(f"Dels {total} models que es consulten, {nomes_ca}{n} també {verb_ca} ratxes de més de "
+                          f"{llindar} km/h: {l_ca}." + (" Previsió poc segura." if 2 * n < total else ""))
+                es.append(f"De los {total} modelos que se consultan, {nomes_es}{n} también {verb_es} rachas de más de "
+                          f"{llindar} km/h: {l_es}." + (" Previsión poco segura." if 2 * n < total else ""))
         ca.append("Una ratxa prevista pot arribar abans, després o en un altre lloc, sobretot amb tempesta.")
         es.append("Una racha prevista puede llegar antes, después o en otro lugar, sobre todo con tormenta.")
         return {"ca": " ".join(ca), "es": " ".join(es)}

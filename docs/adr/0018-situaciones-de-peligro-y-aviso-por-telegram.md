@@ -165,6 +165,17 @@ añadir una i de info que lleve a la explicación de la alerta».
   pasada a otra (cuántos modelos llegan) está siempre al día. Prueba:
   `tests/test_historial.py`.
 
+- **La frase de los modelos, clara** (3.156.2). Juanjo, ante «Dels 3 models
+  consultats, 2 hi arriben (AROME HD, 92; AROME, 89; ICON-EU, 12 km/h)»:
+  «que significa esta frase…?». No decía a qué llegaban, faltaban unidades y
+  los 77 km/h del aviso no cuadraban con los 92 y 89 de los modelos. Ahora:
+  «Origen: la previsió combinada de Météo-France per a Montflorit. Dels 3
+  models que es consulten, 2 també preveuen ratxes de més de 72 km/h: AROME
+  HD, fins a 92 km/h, i AROME, fins a 89 km/h; ICON-EU, només 12 km/h.» La
+  cifra del aviso es la combinada (mezcla los modelos y suaviza los picos);
+  la de cada modelo va detrás. Aprobado por Juanjo («sí, aplícalo y
+  publícalo»).
+
 Validación: `tests/test_riscos.py` (`FontTest`), `tests/test_web.py`
 (`test_ratxa_de_l_avis_a_la_taula` y el umbral naranja igual al de
 `config`); la web generada con los datos del 19-10-2026 en Chromium y
