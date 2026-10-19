@@ -18,8 +18,11 @@ y en [castellano](https://meteo-montflorit.github.io/es/). Tiene cuatro páginas
   con el resumen de cada una (probabilidad de lluvia, temperaturas y
   fenómenos destacables; ADR 0041), con los avisos de AEMET y los planes de
   Protección Civil (ADR 0007 y 0024), y junto a cada plan si Meteocat tiene
-  aviso de peligro para el Vallès Occidental (ADR 0067). Cada aviso y la
-  línea de los trenes llevan «›» a su detalle dentro de la web (ADR 0075).
+  aviso de peligro para el Vallès Occidental (ADR 0067). Cada aviso lleva
+  «›» a su detalle dentro de la web (ADR 0075). Desde la 3.152.0, tras «Ara»
+  (con el radar, compacto si no es urgente) va la gráfica de la previsión,
+  luego el resumen del día y los tramos; los trenes no salen en la portada
+  (ADR 0074).
   «Avisos actius» sale desplegado la primera vez y cuando cambia el conjunto
   de avisos (o hay uno rojo); si no, plegado, con el número de avisos y una
   línea corta por aviso (ADR 0094).

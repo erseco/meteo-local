@@ -271,3 +271,17 @@ siempre en la hora en curso.
 - 3.95.0 y 3.96.0, con datos simulados de tormenta: los mismos navegadores,
   tamaños y temas, y axe-core sin incidencias. En un móvil de 320 px, un
   primer bloque de menos de 3 horas no lleva icono ni cifra.
+
+## Cambio del 19-10-2026 (3.152.0): el viento, apagado por defecto, y dos clases de opciones
+
+Juanjo: «por defecto no debería mostrar el viento» y «en la configuración
+debería marcarse de forma diferente lo que queda fijado y lo que no cuando
+se sale de la configuración, mi propuesta es hacer lo permanente con
+selectores, pero decide tú». En la vista en grande, lo que se recuerda en el
+dispositivo y vale para todas las gráficas de la web (Vent, Part baixa, Part
+alta) va con interruptores, abajo, bajo «Es recorda per a totes les
+gràfiques»; lo de esa visita (Avui / Demà / Tot, «Com encerta», la
+antelación) va con botones y vuelve a lo de siempre al cerrar. El viento
+sale apagado. Clave nueva, `meteo.grafica.3`: la 2 guardaba «vent: true»
+para todos al tocar cualquier opción, sin que nadie lo eligiera; de ella se
+conservan la parte baja y la parte alta.

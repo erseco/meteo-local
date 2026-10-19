@@ -232,3 +232,24 @@ de los trenes va debajo del recuadro del radar, para que el tiempo, la lluvia
 prevista y el radar queden juntos (Juanjo: «la informacion de la lluvia mejor
 toda junta lo de los trenes ponlo debajo del radar»). Sin recuadro del radar,
 sigue en su sitio, con el resto del resumen.
+
+## Cambio del 19-10-2026 (3.152.0): la gráfica, justo después de «Ara»
+
+Juanjo: «me gustaría que el gráfico con los datos de hoy y la previsión de
+mañana saliese lo más al principio posible para que en móvil se pudiese ver
+sin desplazamiento, o casi», y que se mirara cómo lo hacen las aplicaciones
+del tiempo. Google Weather (rediseño de 2023) y Apple Weather ponen arriba lo
+de ahora en corto, enseguida la previsión hora a hora y después la lista por
+días y las tarjetas de detalle. La portada queda así: «Actualitzat…»,
+«Avisos actius» (plegado si no hay nada nuevo), **Ara** (temperatura, lluvia,
+viento, humedad y presión, y el radar), **Previsió** (la gráfica con
+«Opcions»), el resumen del día en una tarjeta aparte y **Per hores** (los
+tramos). El radar, que es de ahora, va en «Ara» y no después de la previsión
+(Juanjo: «has puesto el radar que es de ahora después de la previsión de
+mañana, no es incoherente?»), y compacto si no es urgente: el titular en una
+línea, con el mapa pequeño, y el resto plegado bajo el titular; entero si
+llueve encima o la lluvia llega en menos de una hora. Los trenes salen de la
+portada (Juanjo: «para ahorrar espacio quita los trenes de esta pantalla
+principal, el que quiera los consulta en su sitio»): siguen en «Si surts» y
+«Consultes». Medido en un móvil de 412 px con los avisos plegados: sin el
+recuadro del radar, la gráfica cabe entera; con él, se ve el principio.

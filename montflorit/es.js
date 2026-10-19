@@ -408,6 +408,8 @@ var IDIOMA = {
     "publicat {0} {1}": "publicado {0} {1}",
     "ahir": "ayer",
     "Nou": "Nuevo",
+    "Per hores": "Por horas",
+    "Es recorda per a totes les gràfiques": "Se recuerda para todas las gráficas",
     "Hi ha un avís de la riera nou": "Hay un aviso de la riera nuevo",
     "Risc de crescuda possible.": "Riesgo de crecida posible.",
     "Previsió de cada model, en 3 hores: ": "Previsión de cada modelo, en 3 horas: ",

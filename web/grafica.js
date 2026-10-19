@@ -837,14 +837,19 @@ function dibuixaGrafica(fig) {
 // con posibilidad de alguna configuració»): a sobre de la pàgina, amb marge,
 // i amb la seva adreça (#grafica) per compartir-la. Es tria quines hores (avui,
 // demà o totes) i si s'hi veu el vent; es recorda en aquest dispositiu. ---
-// El vent surt per defecte a totes les gràfiques de la web (la portada, la
-// vista en gran i «Consultes») i es treu amb «Vent» de la vista en gran; es
-// recorda per a totes (Juanjo, 17-10-2026: «el viento aparecerá marcado por
-// defecto, aunque el usuario lo podrá quitar» i «también en la página
-// inicial»). Clau nova: l'anterior desava «vent: false» sense que ningú
-// l'hagués triat, només per haver canviat les hores.
-const CLAU_GRAFICA = 'meteo.grafica.2';
-const ambVentTriat = () => llegeixOpcionsGrafica().vent !== false;
+// Dues menes d'opcions (Juanjo, 19-10-2026: «debería marcarse de forma
+// diferente lo que queda fijado y lo que no cuando se sale de la
+// configuración, mi propuesta es hacer lo permanente con selectores»): les que
+// es recorden en aquest dispositiu i valen per a totes les gràfiques de la web
+// (el vent, la part baixa i la part alta), amb interruptors; i les d'aquesta
+// visita (quines hores, «Com encerta», l'antelació), amb botons, que tornen a
+// ser les de sempre en tancar. El vent, per defecte, no (Juanjo, 19-10-2026:
+// «por defecto no debería mostrar el viento»; fins a la 3.150.2 sortia).
+// Clau nova: la 2 desava «vent: true» per a tothom en canviar qualsevol cosa,
+// sense que ningú ho hagués triat; d'allà es conserven la part baixa i l'alta.
+const CLAU_GRAFICA = 'meteo.grafica.3';
+const CLAU_GRAFICA_VELLA = 'meteo.grafica.2';
+const ambVentTriat = () => llegeixOpcionsGrafica().vent === true;
 const altaTriada = () => llegeixOpcionsGrafica().alta === true;
 const baixaTriada = () => llegeixOpcionsGrafica().baixa !== false;
 
@@ -859,12 +864,20 @@ function horesVista(tram) {
 }
 
 function llegeixOpcionsGrafica() {
-  try { return JSON.parse(localStorage.getItem(CLAU_GRAFICA)) || {}; } catch (_) { return {}; }
+  try {
+    const ara = JSON.parse(localStorage.getItem(CLAU_GRAFICA));
+    if (ara) return ara;
+    const vella = JSON.parse(localStorage.getItem(CLAU_GRAFICA_VELLA)) || {};
+    return { ...(vella.alta === true ? { alta: true } : {}), ...(vella.baixa === false ? { baixa: false } : {}) };
+  } catch (_) { return {}; }
 }
 
 function vistaGrafica() {
   if (!HORES_GRAFICA || document.querySelector('dialog.vista-grafica')) return;
-  const opcions = { tram: 'tot', vent: true, ...llegeixOpcionsGrafica() };
+  // Les que es recorden (fixes) i les d'aquesta visita, que comencen sempre igual.
+  const fixes = { vent: false, baixa: true, alta: false, ...llegeixOpcionsGrafica() };
+  const opcions = { tram: 'tot', passat: false, antelacio: 1, get vent() { return fixes.vent; },
+    get alta() { return fixes.alta; }, get baixa() { return fixes.baixa; } };
   const dlg = element('dialog', 'vista-grafica');
   dlg.setAttribute('aria-labelledby', 'vg-titol');
   const cap = element('div', 'vg-cap');
@@ -952,16 +965,21 @@ function vistaGrafica() {
   const trams = [['avui', T('Avui')], ['dema', T('Demà')], ['tot', T('Tot')]]
     .filter(([clau]) => clau === 'tot' || horesVista(clau).length >= 3);
   if (!trams.some(([clau]) => clau === opcions.tram)) opcions.tram = 'tot';
-  const vent = element('button', 'vg-opcio');
-  vent.type = 'button';
-  vent.append(icona('i-wind'), T('Vent'));
+  // Les que es recorden, amb interruptors, com a «Avisos».
+  const interruptor = (clau, icon, text) => {
+    const fila = element('label', 'vg-fixa');
+    const c = element('input', 'interruptor');
+    c.type = 'checkbox';
+    c.setAttribute('role', 'switch');
+    c.checked = Boolean(fixes[clau]);
+    c.addEventListener('change', () => { fixes[clau] = c.checked; desa(); dibuixa(); });
+    fila.append(icona(icon), element('span', null, text), c);
+    return fila;
+  };
+  const vent = interruptor('vent', 'i-wind', T('Vent'));
   const ambVent = HORES_GRAFICA.some((f) => f.vent != null);
-  const baixa = element('button', 'vg-opcio');
-  baixa.type = 'button';
-  baixa.append(icona('i-waves'), T('Part baixa'));
-  const alta = element('button', 'vg-opcio');
-  alta.type = 'button';
-  alta.append(icona('i-mountain'), T('Part alta'));
+  const baixa = interruptor('baixa', 'i-waves', T('Part baixa'));
+  const alta = interruptor('alta', 'i-mountain', T('Part alta'));
   // El passat (les hores d'avui ja passades, la previsió de les 7 i l'encert),
   // només amb aquest botó: per defecte, la previsió sola, sense barrejar-la
   // (Juanjo, 17-10-2026: «debe salir como antes, la estimación pasada hazla
@@ -970,14 +988,12 @@ function vistaGrafica() {
   encerta.type = 'button';
   encerta.append(icona('i-target'), T('Com encerta'));
   const ambDifAlta = HORES_GRAFICA.some((f) => f.dif_alta != null);
+  // Només es desen les que es recorden.
   const desa = () => {
-    try { localStorage.setItem(CLAU_GRAFICA, JSON.stringify(opcions)); } catch (_) {}
+    try { localStorage.setItem(CLAU_GRAFICA, JSON.stringify(fixes)); } catch (_) {}
   };
   const dibuixa = async () => {
     for (const b of tramsBotons.children) b.setAttribute('aria-pressed', String(b.dataset.tram === opcions.tram));
-    vent.setAttribute('aria-pressed', String(opcions.vent));
-    alta.setAttribute('aria-pressed', String(Boolean(opcions.alta)));
-    baixa.setAttribute('aria-pressed', String(opcions.baixa !== false));
     encerta.setAttribute('aria-pressed', String(Boolean(opcions.passat)));
     const a = Math.min(ANTELACIO_MAX, Math.max(1, opcions.antelacio || 1));
     antelacio.hidden = !opcions.passat;
@@ -994,6 +1010,7 @@ function vistaGrafica() {
     titol.textContent = dia ? T('Historial') : T('Previsió');
     // Als dies passats, només el botó del passat.
     for (const b of barra.children) b.hidden = Boolean(dia) && b !== encerta;
+    fixesEl.hidden = Boolean(dia);
     fig._amaga?.();
     if (dia) {
       // Un dia passat: el que es va mesurar, sencer.
@@ -1038,41 +1055,38 @@ function vistaGrafica() {
     const b = element('button', 'vg-opcio', text);
     b.type = 'button';
     b.dataset.tram = clau;
-    b.addEventListener('click', () => { opcions.tram = clau; desa(); dibuixa(); });
+    b.addEventListener('click', () => { opcions.tram = clau; dibuixa(); });
     tramsBotons.append(b);
   }
-  vent.addEventListener('click', () => { opcions.vent = !opcions.vent; desa(); dibuixa(); });
-  alta.addEventListener('click', () => { opcions.alta = !opcions.alta; desa(); dibuixa(); });
-  baixa.addEventListener('click', () => { opcions.baixa = opcions.baixa === false; desa(); dibuixa(); });
   // Sense «Com encerta», de nou avui i la previsió de sempre (Juanjo,
   // 17-10-2026: «si se desmarca el botón com encerta … debe volver al día de
   // hoy y mostrar la predicción estándar»).
   encerta.addEventListener('click', () => {
     opcions.passat = !opcions.passat;
     if (!opcions.passat) dia = null;
-    desa();
     dibuixa();
   });
   const canviaAntelacio = (d) => {
     opcions.antelacio = Math.min(ANTELACIO_MAX, Math.max(1, (opcions.antelacio || 1) + d));
-    desa();
     dibuixa();
   };
   menys.addEventListener('click', () => canviaAntelacio(-1));
   mes.addEventListener('click', () => canviaAntelacio(1));
   const barra = element('div', 'vg-opcions');
-  barra.append(tramsBotons);
-  if (ambVent) barra.append(vent);
-  barra.append(baixa);
-  if (ambDifAlta) barra.append(alta);
-  barra.append(encerta);
+  barra.append(tramsBotons, encerta);
+  // Les que es recorden, a part i dites (Juanjo, 19-10-2026).
+  const fixesEl = element('fieldset', 'vg-fixes');
+  fixesEl.append(element('legend', null, T('Es recorda per a totes les gràfiques')));
+  if (ambVent) fixesEl.append(vent);
+  fixesEl.append(baixa);
+  if (ambDifAlta) fixesEl.append(alta);
 
   // Dalt, què es veu; a sota, la navegació en el temps junta, el dia i
   // l'antelació, en una fila si hi caben (Juanjo, 17-10-2026: «así la
   // navegación temporal queda junta»).
   const temps = element('div', 'vg-temps');
   temps.append(navega, antelacio);
-  dlg.append(cap, barra, temps, fig, encertEl);
+  dlg.append(cap, barra, temps, fig, encertEl, fixesEl);
   // Un toc fora de la finestra la tanca, com Esc.
   dlg.addEventListener('click', (e) => {
     if (e.target !== dlg) return;

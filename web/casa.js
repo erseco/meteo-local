@@ -326,28 +326,33 @@ function blocAra(casa, radarDades, vent, veines, hores, resum) {
   // Els trens, sota el radar: el temps i la pluja, junts (Juanjo, 17-10-2026:
   // «la informacion de la lluvia mejor toda junta lo de los trenes ponlo
   // debajo del radar»).
-  let trens = [];
+  // El resum del dia, en una targeta a part que va després de la gràfica, com
+  // fan les aplicacions del temps (Google, Apple): ara en curt, de seguida la
+  // previsió hora a hora, i després el detall (Juanjo, 19-10-2026: «me
+  // gustaría que el gráfico… saliese lo más al principio posible»). El radar
+  // i els trens, que són d'ara, es queden a «Ara», abans de la gràfica
+  // (Juanjo: «has puesto el radar que es de ahora después de la previsión de
+  // mañana, no es incoherente?»).
+  const avui = element('section', 'decisio targeta ara avui-detall');
+  avui.setAttribute('aria-label', T('Avui'));
   if (resum) {
-    const totes = pintaResum(resum).slice(1);
-    // Sense requadre del radar, al seu lloc de sempre.
-    trens = radar ? totes.filter((f) => LINIA_TRENS.test((f.textContent || '').trim())) : [];
-    const linies = totes.filter((f) => !trens.includes(f));
+    // Sense els trens: a la portada no hi caben, i qui els vulgui els té a «Si
+    // surts» i a «Consultes» (Juanjo, 19-10-2026: «para ahorrar espacio quita
+    // los trenes de esta pantalla principal, el que quiera los consulta en su
+    // sitio»).
+    const linies = pintaResum(resum).slice(1).filter((f) => !LINIA_TRENS.test((f.textContent || '').trim()));
     if (linies.length) {
       const cos = element('div', 'resta-dia');
       cos.append(...ambDetalls(linies));
       if (comptePluja) posaComptePluja(cos, hores);
-      sec.append(cos);
+      avui.append(cos);
     }
   } else if (comptePluja) {
     const prevista = liniaPlujaPrevista(hores);
-    if (prevista) sec.append(prevista);
+    if (prevista) avui.append(prevista);
   }
   if (radar) sec.append(radar);
-  if (trens.length) {
-    const cos = element('div', 'resta-dia sota-radar');
-    cos.append(...ambDetalls(trens));
-    sec.append(cos);
-  }
+  sec._avui = avui.childNodes.length ? avui : null;
   return sec;
 }
 
@@ -614,6 +619,18 @@ function blocRadar(r, plou, hores) {
   const detall = element('p', 'radar-detall');
   detall.append(...ambEnllacRadar(T`Radar de ${font} de les ${horaCurta(r.hora)}${mov}`, r, font));
   cos.append(detall);
+  // Compacte si no és urgent: el titular en una línia i la resta plegada a
+  // sota, perquè la gràfica es vegi sense desplaçar (Juanjo, 19-10-2026: «sí,
+  // hazlo así»). Sencer si plou a sobre o la pluja arriba en menys d'una hora.
+  const urgent = aSobre || (estat === 'arriba' && r.arriba
+    && new Date(r.arriba) - new Date() < 60 * 60000);
+  if (!urgent && cos.children.length > 1) {
+    const plec = element('details', 'radar-plec');
+    const resum = element('summary', 'radar-text');
+    resum.append(...p.childNodes);
+    plec.append(resum, ...[...cos.children].slice(1));
+    cos.replaceChildren(plec);
+  }
   caixa.append(cos);
   if (r.mapa) caixa.append(miniaturaMapa(r, font));
   return caixa;
@@ -1051,23 +1068,28 @@ function taula(hores, mesurada, riscos, sol) {
   });
   const graf = grafica(hores);
   const botons = element('div', 'cap-previsio-botons');
-  // La gràfica en gran, amb les seves opcions, que valen per a tota la web
+  // La gràfica, en una secció pròpia que va just després d'«Ara» (pinta;
+  // 19-10-2026), amb «Opcions»: la gràfica en gran, amb les seves opcions
   // (Juanjo, 17-10-2026: «no me gusta esa doble flecha… o un botón de
-  // configuración… decide tú»): «Opcions», amb la icona d'ajustos de Lucide.
+  // configuración… decide tú»), amb la icona d'ajustos de Lucide.
   if (graf) {
+    const secG = element('section', 'previsio previsio-grafica');
+    const capG = element('div', 'cap-previsio');
     const amplia = element('button', 'boto-tot');
     amplia.type = 'button';
     amplia.title = T('Opcions de la gràfica');
     amplia.setAttribute('aria-label', T('Opcions de la gràfica'));
-    // Al mòbil, només la icona: amb el text, els dos botons no caben al costat del títol.
     amplia.append(icona('i-sliders-horizontal'), element('span', 'text-amplia', T('Opcions')));
     amplia.addEventListener('click', vistaGrafica);
-    botons.append(amplia);
+    const botonsG = element('div', 'cap-previsio-botons');
+    botonsG.append(amplia);
+    capG.append(element('h2', 'perque', T('Previsió')), botonsG);
+    secG.append(capG, graf);
+    sec._grafica = secG;
   }
   botons.append(boto);
-  cap.append(element('h2', 'perque', T('Previsió')), botons);
+  cap.append(element('h2', 'perque', T('Per hores')), botons);
   sec.append(cap);
-  if (graf) sec.append(graf);
   const solHora = solPerHora(sol);
   trams.forEach((t) => sec.append(taulaTram(t, obertDeSortida(t), solHora)));
   // Les notes, plegades: només les que diuen alguna cosa de les hores d'ara.
@@ -1191,10 +1213,13 @@ function pinta(dades) {
   const ara = dades.ara_casa && blocAra(dades.ara_casa, radarAmbPluja, dades.vent, dades.veines, dades.hores,
     textResum(dades, 'avui'));
   if (ara) cont.append(ara);
+  const previsio = dades.hores && taula(dades.hores, dades.temperatura_mesurada, dades.riscos, dades.sol);
+  // La gràfica, just després d'«Ara» (19-10-2026); el detall del dia, després.
+  if (previsio && previsio._grafica) cont.append(previsio._grafica);
+  if (ara && ara._avui) cont.append(ara._avui);
   if (OFERTA_AVISOS) cont.append(OFERTA_AVISOS);
   const resum = blocsResum(dades, !ara);
   cont.append(...resum);
-  const previsio = dades.hores && taula(dades.hores, dades.temperatura_mesurada, dades.riscos, dades.sol);
   if (previsio) {
     cont.append(previsio);
     dibuixaGrafiques();
