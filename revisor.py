@@ -194,6 +194,12 @@ class Text(html.parser.HTMLParser):
             self.fora += 1
         if tag in self.BLOCS:
             self.trossos.append("\n")
+        # La barra d'avís de la taula per hores: si fa una sola fila no hi cap
+        # el text i queda buida, però el botó el porta sencer (19-10-2026: el
+        # revisor creia que la fila 6–7 no tenia avís).
+        a = dict(attrs)
+        if tag == "button" and "boto-franja" in (a.get("class") or "") and not self.fora:
+            self.trossos.append(f" {a.get('aria-label') or ''} ")
 
     def handle_endtag(self, tag):
         if tag in self.FORA and self.fora:

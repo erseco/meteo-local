@@ -107,8 +107,9 @@ function comparaTemp(files, nit, mesurada, totes) {
     abans.push(v);
   }
   const ara = files.map((f) => f.temperatura);
-  const d = nit ? Math.min(...ara) - Math.min(...abans) : Math.max(...ara) - Math.max(...abans);
-  return Math.sign(d) * Math.floor(Math.abs(d) + 0.5);
+  // Se restan las cifras ya redondeadas, las que se leen en las cabeceras.
+  return nit ? Math.round(Math.min(...ara)) - Math.round(Math.min(...abans))
+    : Math.round(Math.max(...ara)) - Math.round(Math.max(...abans));
 }
 
 function textComparacio(n, esDema) {

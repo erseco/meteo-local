@@ -300,7 +300,8 @@ def canvia(sub, dada):
 # --- Resumen y tiempo ahora -------------------------------------------------------
 
 def graus(t):
-    return f"{round(t)} °C".replace("-", "−")
+    # Redondeo como Math.round de la web (round() de Python lleva 18,5 a 18).
+    return f"{math.floor(t + 0.5)} °C".replace("-", "−")
 
 
 def franges(hores):
@@ -520,7 +521,7 @@ def text_pluja_prevista(dades, idioma, moment):
             continue
         h = round((ini - ara_n).total_seconds() / 3600)
         p = f.get("probabilitat")
-        pct = f" ({round(p * 100)} %)" if p is not None else ""
+        pct = f" ({math.floor(p * 100 + 0.5)} %)" if p is not None else ""
         segura = p is None or p >= 0.5
         if idioma == "es":
             quan = "dentro de menos de una hora" if h < 1 else "dentro de una hora" if h == 1 else f"dentro de unas {h} horas"
@@ -616,8 +617,8 @@ def text_franges(pluges, idioma):
     parts = []
     for n, (a, b, p) in enumerate(pluges):
         nom = ("lluvia" if es else "pluja") if p >= 0.5 else ("posible lluvia" if es else "possible pluja")
-        prob = ((f"probabilidad hasta el {round(p * 100)} %" if es else f"probabilitat fins al {round(p * 100)} %") if not n
-                else (f"hasta el {round(p * 100)} %" if es else f"fins al {round(p * 100)} %"))
+        prob = ((f"probabilidad hasta el {math.floor(p * 100 + 0.5)} %" if es else f"probabilitat fins al {math.floor(p * 100 + 0.5)} %") if not n
+                else (f"hasta el {math.floor(p * 100 + 0.5)} %" if es else f"fins al {math.floor(p * 100 + 0.5)} %"))
         parts.append(f"{nom} de {a.hour} a {b.hour} h ({prob})")
     return "; ".join(parts)
 
@@ -676,8 +677,10 @@ def compara_temp(dades, files, nit=False):
             return None
         abans.append(v)
         ara.append(f["temperatura"])
-    d = (min(ara) - min(abans)) if nit else (max(ara) - max(abans))
-    return int(math.copysign(math.floor(abs(d) + 0.5), d))
+    # Se restan las cifras ya redondeadas, las que se leen en las cabeceras
+    # (revisor, 19-10-2026: 15–18 frente a 14–19 decía «2° més»).
+    r = lambda x: math.floor(x + 0.5)
+    return (r(min(ara)) - r(min(abans))) if nit else (r(max(ara)) - r(max(abans)))
 
 
 def text_comparacio(n, idioma, respecte):

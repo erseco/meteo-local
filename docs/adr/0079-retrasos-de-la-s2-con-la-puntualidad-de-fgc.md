@@ -62,3 +62,14 @@ Versión 3.70.0.
 - 401 pruebas en verde, con `test_retard_de_la_s2` (un tren no basta; 2 tarde
   y 1 puntual, sí; 2 tarde y 3 puntuales, no; los de hace más de media hora y
   los de lejos de la estación no cuentan).
+
+## Cambio del 19-10-2026 (3.151.0): Rodalies, cuando se recupera
+
+De Renfe no hay puntualidad, pero el 19-10 la R4 salía «amb incidències»
+con un único aviso: «Un cop resolta la incidència… els trens recuperen
+progressivament els seus horaris habituals de pas» (lo señaló el revisor,
+ADR 0101). Los trenes aún van tarde, pero no hay incidencia abierta: si todos
+los avisos que quedan coinciden con `trens.RECUPERA` («resolta la
+incidència», «recuperen progressivament» y sus formas en castellano), la línea
+sale «amb retard», sin número de trenes. Con otro aviso abierto, sigue «amb
+incidències». Explicado en «Com es decideix» de «Si surts».

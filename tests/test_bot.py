@@ -225,7 +225,7 @@ class Resum(unittest.TestCase):
         avui = [fila(10, 14, 20.0), fila(10, 15, 23.4)]
         mes = {"2026-10-09T14:00": 19.0, "2026-10-09T15:00": 20.0, "2026-10-09T16:00": 21.0}
         d = {"temperatura_mesurada": mes, "hores": avui}
-        self.assertEqual(B.compara_temp(d, avui), 3)                        # 23,4 contra 20,5
+        self.assertEqual(B.compara_temp(d, avui), 2)                        # 23,4 contra 20,5: es lleu 23 i 21
         self.assertEqual(B.text_comparacio(3, "ca", "ahir"), ", 3 graus més que ahir")
         self.assertEqual(B.text_comparacio(-2, "es", "avui"), ", 2 grados menos que hoy")
         self.assertEqual(B.text_comparacio(1, "ca", "ahir"), ", semblant a la d'ahir")     # menys de 2 graus
@@ -242,13 +242,20 @@ class Resum(unittest.TestCase):
         self.assertEqual(B.text_temperatura([dict(f, dif_alta=0.4) for f in avui], "ca", "Temperatura"),
                          "Temperatura: entre 20 °C i 23 °C.")
         # La nit compara la mínima; si falta una hora del dia abans, no es diu res.
-        self.assertEqual(B.compara_temp(d, avui, nit=True), 1)
+        self.assertEqual(B.compara_temp(d, avui, nit=True), 0)              # 20 contra 19,5: es llegeix 20 i 20
         self.assertIsNone(B.compara_temp({"temperatura_mesurada": {"2026-10-09T14:00": 19.0}, "hores": avui}, avui))
         self.assertIsNone(B.compara_temp({"hores": avui}, avui))            # sense estació (la reserva)
         # Demà contra avui: les hores que encara no han passat, previstes.
         dema = [fila(11, 15, 18.0)]
         d = {"temperatura_mesurada": mes, "hores": avui + dema}
         self.assertEqual(B.compara_temp(d, dema), -5)                      # 18 contra 23,4
+        # Es resten les xifres arrodonides, les de les capçaleres (revisor, 19-10-2026:
+        # 15–18 avui i 14–19 demà deia «2° més»); i 18,5 és 19, com Math.round de la web.
+        avui2 = [fila(19, 15, 17.6)]
+        dema2 = [fila(20, 15, 19.4)]
+        self.assertEqual(B.compara_temp({"temperatura_mesurada": mes, "hores": avui2 + dema2}, dema2), 1)
+        self.assertEqual(B.graus(18.5), "19 °C")
+        self.assertEqual(B.graus(-2.5), "−2 °C")
 
     def test_ara_nomes_amb_l_estacio_del_barri(self):
         # Des de la 3.44.0 l'única estació és la particular (ADR 0058): el que marca mana.

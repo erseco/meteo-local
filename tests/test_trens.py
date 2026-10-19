@@ -193,6 +193,18 @@ class Estat(unittest.TestCase):
         parcial = self.avis(["R4"], "Servei ferroviari entre Montcada i Cerdanyola.", inici="2026-10-12T07:40+02:00")
         self.assertEqual(T.estat_linia("R4", mou, None, [parcial], ara)["estat"], "incidencies")
 
+    def test_incidencia_resolta_que_es_recupera_va_amb_retard(self):
+        # Revisor, 19-10-2026: l'R4 sortia «amb incidències» amb un avís que diu que ja s'ha resolt.
+        ara = ARA.replace(day=19, hour=8)
+        rec = self.avis(["R4"], "Un cop resolta la incidència a la infraestructura a l'estació de Montcada Bifurcació, "
+                        "els trens recuperen progressivament els seus horaris habituals de pas.", inici="2026-10-19T07:50+02:00")
+        rec["font"] = "rodalies"
+        mou = [tren("R4", *C.TRENS_ESTACIONS["R4"])]
+        self.assertEqual(T.estat_linia("R4", mou, None, [rec], ara)["estat"], "retard")
+        # Amb un altre avís obert, segueix «amb incidències».
+        altre = self.avis(["R4"], "Servei ferroviari entre Montcada i Cerdanyola.", inici="2026-10-19T07:55+02:00")
+        self.assertEqual(T.estat_linia("R4", mou, None, [rec, altre], ara)["estat"], "incidencies")
+
     def test_els_generals_de_rodalies_decideixen_i_els_de_renfe_no(self):
         ara = ARA.replace(day=12, hour=8)
         bus = self.avis(["R1", "R4", "R7"], "Servei alternatiu per carretera en tot el seu recorregut.",

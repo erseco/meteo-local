@@ -385,6 +385,12 @@ SERVEI = re.compile(r"carretera|circulaci[oó]n? (ferrovi|normali)|servei ferrov
 # «Circulació normalitzada» (13-10-2026, R8).
 NORMAL = re.compile(r"^\s*((servei|circulaci[oó]n?|servicio) ferrovi\w* (a|en) (tot|todo) (el|su) (seu )?(recorregut|recorrido)"
                     r"|circulaci[oó]n? normali(tz|z)ada)\.?\s*$", re.I)
+# Un avís que diu que la incidència ja s'ha resolt i que els trens recuperen
+# els horaris: els trens encara van tard, però no hi ha cap incidència oberta.
+# Si és l'únic, la línia surt «amb retard» (revisor, 19-10-2026: la R4 sortia
+# «amb incidències» amb «Un cop resolta la incidència… els trens recuperen
+# progressivament els seus horaris»).
+RECUPERA = re.compile(r"resolt[ae]? la incid[eè]ncia|resuelta la incidencia|recupere?n? progressivament|recuperan progresivamente", re.I)
 
 
 def vigent(a, ara):
@@ -502,7 +508,12 @@ def estat_linia(linia, mouen, vist, avisos, ara):
         estat = "bus"
     elif circula:
         incidencies = [t for t in propis + generals if not (NORMAL.match(t.get("ca") or "") or NORMAL.match(t.get("es") or ""))]
-        estat = "incidencies" if incidencies else "circula"
+        if not incidencies:
+            estat = "circula"
+        elif all(RECUPERA.search(t.get("ca") or "") or RECUPERA.search(t.get("es") or "") for t in incidencies):
+            estat = "retard"
+        else:
+            estat = "incidencies"
     elif de_dia and ferroviari:
         estat, no_vist = "incidencies", True
     else:

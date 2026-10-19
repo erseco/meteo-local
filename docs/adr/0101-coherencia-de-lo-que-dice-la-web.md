@@ -274,3 +274,32 @@ o, si el radar también la pone encima, «les estacions i el radar»;
 que tenerlo en cuenta cuando surto está en ara»); con una hora posterior, la
 previsión como siempre.
 
+
+## Cambio del 19-10-2026 (3.151.0): hallazgos leves del revisor
+
+Comprobados en el código los leves de la noche del 18 al 19:
+
+- **Redondeo distinto en el bot y en la web.** El resumen decía «entre 13 °C
+  i 18 °C» y la tabla, 19 °C a las 17 h: el valor era 18,5, que `round()` de
+  Python lleva a 18 (al par) y `Math.round` a 19. `bot.graus` y los
+  porcentajes del resumen redondean ahora como la web (`floor(x + 0,5)`).
+- **La comparación con el día de antes restaba sin redondear.** «Demà tarda
+  14–19 °C · 2° més que avui» con «Tarda 15–18 °C»: restaba 19,4 − 17,6 = 1,8
+  y redondeaba el resultado. Ahora `comparaTemp` y `bot.compara_temp` restan
+  las cifras ya redondeadas, las que se leen en las cabeceras (19 − 18 = 1,
+  «semblant»). Con el día de ayer medido, que no se muestra, la diferencia
+  puede variar en un grado respecto a la de antes; se prefiere que cuadre con
+  lo que se lee.
+- **Falsa alarma del revisor: la fila 6–7 sin aviso.** Una barra de aviso de
+  una sola fila no tiene sitio para el texto y queda vacía (`ajustaFranges`);
+  el texto completo está en el `aria-label` del botón, que el revisor no leía.
+  `revisor.Text` lo lee ahora. Las franjas de Meteocat estaban bien.
+- **«R4 · Amb incidències» con una incidencia ya resuelta.** Ver ADR 0079: un
+  aviso que solo dice que la incidencia se ha resuelto y los trenes recuperan
+  los horarios pone la línea «amb retard».
+- **Viento «2 (30)»**: no es un fallo de cálculo; el viento de AROME es el
+  instantáneo al final de la hora y la racha, el máximo de la hora. Queda por
+  decidir con Juanjo.
+
+Pruebas: `tests/test_bot.py` (18,5 → 19; 17,6 frente a 19,4 → 1) y
+`tests/test_trens.py` (`test_incidencia_resolta_que_es_recupera_va_amb_retard`).
