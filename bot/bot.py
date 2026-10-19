@@ -788,23 +788,30 @@ def text_avisos_aemet(dades, idioma, dia, moment):
     # Els que toquen el dia (també els que van començar abans: auditoria del 08-10-2026).
     inici_dia = dt.datetime.combine(dia, dt.time.min, tzinfo=moment.tzinfo)
     # Sense els que cobreix Meteocat: llavors surt el seu (ADR 0093).
-    avisos = [a for a in dades.get("avisos") or [] if dt.datetime.fromisoformat(a["fin"]) > max(moment, inici_dia)
-              and dt.datetime.fromisoformat(a["inicio"]) < inici_dia + dt.timedelta(days=1) and not a.get("cobert")]
+    # I dels que cobreix en part, només les hores que no cobreix (smp.visible;
+    # el bot viu a IONOS sense els mòduls del projecte).
+    visibles = [{**a, "inicio": a.get("inicio_visible") or a["inicio"], "fin": a.get("fin_visible") or a["fin"]}
+                for a in dades.get("avisos") or [] if not a.get("cobert")]
+    avisos = [a for a in visibles if dt.datetime.fromisoformat(a["fin"]) > max(moment, inici_dia)
+              and dt.datetime.fromisoformat(a["inicio"]) < inici_dia + dt.timedelta(days=1)]
     res = []
     for nivell in ("vermell", "taronja", "groc"):
         dels = [a for a in avisos if a["nivel"] == nivell]
         if not dels:
             continue
         tipus = sorted({a["tipo"] for a in dels})
-        ini = min(dt.datetime.fromisoformat(a["inicio"]) for a in dels).strftime("%H:%M")
+        inici = min(dt.datetime.fromisoformat(a["inicio"]) for a in dels)
+        ini = inici.strftime("%H:%M")
+        # Avui, «fins a les…» només si ja ha començat; si comença més tard, de quina a quina.
+        ja = dia == moment.date() and inici <= moment
         fi = (max(dt.datetime.fromisoformat(a["fin"]) for a in dels) + dt.timedelta(seconds=1)).strftime("%H:%M")
         if idioma == "es":
             nom = {"vermell": "rojo", "taronja": "naranja", "groc": "amarillo"}[nivell]
             que = " y ".join(TIPUS_AEMET_ES.get(x, x) for x in tipus)
-            quan = f"hasta las {fi}" if dia == moment.date() else f"de {ini} a {fi}"
+            quan = f"hasta las {fi}" if ja else f"de {ini} a {fi}"
             res.append(f"{CERCLE_AVIS[nivell]} AEMET: aviso {nom} por {que} en el Vallès {quan}.")
         else:
-            quan = f"fins a les {fi}" if dia == moment.date() else f"de {ini} a {fi}"
+            quan = f"fins a les {fi}" if ja else f"de {ini} a {fi}"
             que = " i ".join(TIPUS_AEMET_CA.get(x, x) for x in tipus)
             res.append(f"{CERCLE_AVIS[nivell]} AEMET: avís {nivell} per {que} al Vallès {quan}.")
     return res

@@ -234,35 +234,81 @@ def hores_avis(a):
     return {f"{d}:{h}" for d, franges in a["dies"].items() for i, fi in franges for h in range(i, fi)}
 
 
-def hores_aemet(a):
-    """Les hores que cobreix un avís de l'AEMET, en hora local."""
+def _hores_aemet(a):
+    """L'inici de cada hora d'un avís de l'AEMET, en hora local, en ordre."""
     t = dt.datetime.fromisoformat(a["inicio"]).astimezone().replace(minute=0, second=0, microsecond=0)
     fi = dt.datetime.fromisoformat(a["fin"]).astimezone()
-    res = set()
+    res = []
     while t < fi:
-        res.add(f"{t.date().isoformat()}:{t.hour}")
+        res.append(t)
         t += dt.timedelta(hours=1)
     return res
 
 
-def cobreix(avisos_smp, a):
-    """Si Meteocat té avís del mateix fenomen en alguna hora de l'avís de
-    l'AEMET a: llavors mana el de Meteocat."""
+def clau_hora(t):
+    return f"{t.date().isoformat()}:{t.hour}"
+
+
+def hores_aemet(a):
+    """Les hores que cobreix un avís de l'AEMET, en hora local."""
+    return {clau_hora(t) for t in _hores_aemet(a)}
+
+
+def hores_cobertes(avisos_smp, a):
+    """Les hores de l'avís de l'AEMET a en què Meteocat té avís del mateix
+    fenomen: en aquestes, mana el de Meteocat."""
     f = FENOMEN_AEMET.get(a.get("tipo"))
     if not f:
-        return False
+        return set()
     hores = hores_aemet(a)
-    return any(fenomen(m["meteor"]) == f and hores & hores_avis(m) for m in avisos_smp or [])
+    res = set()
+    for m in avisos_smp or []:
+        if fenomen(m["meteor"]) == f:
+            res |= hores & hores_avis(m)
+    return res
+
+
+def cobreix(avisos_smp, a):
+    """Si Meteocat cobreix totes les hores de l'avís de l'AEMET a."""
+    hores = hores_aemet(a)
+    return bool(hores) and hores <= hores_cobertes(avisos_smp, a)
 
 
 def marca_coberts(avisos, smp):
-    """Marca «cobert» els avisos de l'AEMET que cobreix Meteocat. Sense lectura
-    de Meteocat (smp None), cap: surten tots."""
+    """Per fenomen i per hores, mana Meteocat; l'AEMET, en les que Meteocat
+    no cobreix (ADR 0093). Un avís de l'AEMET cobert del tot porta «cobert» i
+    no surt; si només n'hi cobreix unes hores, «inicio_visible» i
+    «fin_visible» diuen de quina a quina es mostra (de la primera a l'última
+    que no cobreix). Fins a la 3.153.2 n'hi havia prou amb una hora coberta
+    per amagar-lo sencer: el groc de pluja del 20-10 de 4 a 7 h no sortia a
+    les 6, quan Meteocat ja no avisava. Sense lectura de Meteocat (smp None),
+    surten tots sencers."""
     for a in avisos or []:
-        a.pop("cobert", None)
-        if smp is not None and cobreix(smp.get("avisos"), a):
+        for k in ("cobert", "inicio_visible", "fin_visible"):
+            a.pop(k, None)
+        if smp is None:
+            continue
+        cobertes = hores_cobertes(smp.get("avisos"), a)
+        if not cobertes:
+            continue
+        hores = _hores_aemet(a)
+        lliures = [t for t in hores if clau_hora(t) not in cobertes]
+        if not lliures:
             a["cobert"] = "meteocat"
+            continue
+        ini, fi = dt.datetime.fromisoformat(a["inicio"]), dt.datetime.fromisoformat(a["fin"])
+        if lliures[0] > hores[0]:
+            a["inicio_visible"] = lliures[0].astimezone(ini.tzinfo).isoformat()
+        if lliures[-1] < hores[-1]:
+            a["fin_visible"] = (lliures[-1] + dt.timedelta(hours=1) - dt.timedelta(seconds=1)).astimezone(fi.tzinfo).isoformat()
     return avisos
+
+
+def visible(a):
+    """L'avís de l'AEMET amb les hores que es mostren (marca_coberts)."""
+    if not (a.get("inicio_visible") or a.get("fin_visible")):
+        return a
+    return {**a, "inicio": a.get("inicio_visible") or a["inicio"], "fin": a.get("fin_visible") or a["fin"]}
 
 
 def graus_pluja(ini, smp):

@@ -1294,8 +1294,8 @@ function avisosMesEnlla(fiIso) {
       }
     }
   }
-  for (const a of d.avisos || []) {
-    if (a.cobert || new Date(a.inicio) < fi) continue;
+  for (const a of avisosAemet(d)) {
+    if (new Date(a.inicio) < fi) continue;
     const dia = a.inicio.slice(0, 10);
     afegeix(dia, { nivell: a.nivel, nom: TD(a.tipo), font: 'aemet', fenomen: a.tipo });
   }

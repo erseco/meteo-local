@@ -225,3 +225,25 @@ de lo que no tienen en cuenta) y `tests/test_perills.py` (la portada sigue
 con todas; «Si surts», con la línea); la página en Chromium y Firefox,
 móvil y escritorio, y axe-core.
 
+## Cambio del 19-10-2026 (3.154.0): AEMET, oculto solo en las horas que cubre Meteocat
+
+`smp.cobreix` marcaba un aviso de AEMET como cubierto, y lo ocultaba entero,
+en cuanto Meteocat tenía aviso del mismo fenómeno en una sola de sus horas.
+Caso real (lo vio la sesión que revisaba los hallazgos del revisor, por
+encargo de Juanjo): el amarillo de lluvia de AEMET del día 20, de 4 a 6:59, no
+salía en la hora de 6 a 7, aunque Meteocat avisaba hasta las 6. Contradecía la
+regla de Juanjo del 16-10-2026 («si meteocat no tiene aviso y aemet sí, debe
+salir aemet, prima la información y seguridad de los usuarios»). Ahora
+`smp.marca_coberts` marca «cobert» solo si Meteocat cubre todas las horas; si
+cubre algunas, el aviso lleva `inicio_visible` y `fin_visible` (de la primera
+a la última hora que Meteocat no cubre) y se muestra con esas horas en la
+franja de la tabla por horas (`casa.avisos_del_tramo`), en «Avisos actius» y
+la gráfica (`comu.avisosAemet`), en el aviso y la ficha de «Perill»
+(`avisos_bot`, con la clave del aviso entero, para no repetir avisos si
+Meteocat cambia sus horas) y en el resumen del bot (`bot.text_avisos_aemet`).
+Si las horas que no cubre no son seguidas, se muestra de la primera a la
+última. De paso, el resumen del bot dice «de 06:00 a 07:00» y no «fins a les
+07:00» cuando el aviso de hoy aún no ha empezado. Prueba:
+`tests/test_smp.py` (`test_l_aemet_surt_a_les_hores_que_meteocat_no_cobreix`,
+el caso del día 20).
+

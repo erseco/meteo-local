@@ -191,7 +191,8 @@ class Resum(unittest.TestCase):
         r = B.resum(dades(), "ca", ARA)
         self.assertIn("Ara mateix: 16 °C, no plou.", r)
         self.assertIn("Possible pluja de 12 a 15 h (probabilitat fins al 40 %).", r)
-        self.assertIn("AEMET: avís groc per tempestes al Vallès fins a les 20:00.", r)
+        # Encara no ha començat (de 12 a 20 h): de quina a quina, no «fins a les 20:00» (19-10-2026).
+        self.assertIn("AEMET: avís groc per tempestes al Vallès de 12:00 a 20:00.", r)
         self.assertIn("Trens de Cerdanyola: 🔴 R4 sense trens.", r)
         self.assertIn("Posible lluvia de 12 a 15 h", B.resum(dades(), "es", ARA))
 

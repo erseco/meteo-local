@@ -375,7 +375,9 @@ def avisos_del_tramo(ini, fin, avisos, tots=True):
     sin los que cubre Meteocat (lo que se muestra, ADR 0093)."""
     res = {}
     for a in avisos or []:
-        a_ini, a_fin = (dt.datetime.fromisoformat(a[k]) for k in ("inicio", "fin"))
+        # Sense els que cobreix Meteocat, només les hores que no cobreix (smp.visible).
+        v = a if tots else SMP.visible(a)
+        a_ini, a_fin = (dt.datetime.fromisoformat(v[k]) for k in ("inicio", "fin"))
         if a["zona"] == C.ZONA_AVISOS and a_ini < fin and a_fin > ini and (tots or not a.get("cobert")):
             res.setdefault(a["nivel"], set()).add(a["tipo"])
     return [{"nivell": n, "tipus": sorted(t)} for n, t in res.items()]

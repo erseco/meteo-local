@@ -723,8 +723,10 @@ def decideix(estat, salida, ahora):
                     continue
                 abans = of["aemet"].get(k)
                 if abans is None or RS.NIVELLS.index(a["nivel"]) > RS.NIVELLS.index(abans):
-                    afegeix("perill", f"aemet:{k}:{a['nivel']}", text_aemet(a, ahora), a["nivel"],
-                            episodi=f"aemet:{k}", enllac=AEMET, fins=a.get("fin"), comenca=a.get("inicio"))
+                    # Amb les hores que no cobreix Meteocat; la clau, la de l'avís sencer.
+                    v = SMP.visible(a)
+                    afegeix("perill", f"aemet:{k}:{a['nivel']}", text_aemet(v, ahora), a["nivel"],
+                            episodi=f"aemet:{k}", enllac=AEMET, fins=v.get("fin"), comenca=v.get("inicio"))
         anterior_aemet = (of or {}).get("aemet") or {}
         nou_of["aemet"] = {k: (anterior_aemet.get(k) if a.get("cobert") else a["nivel"]) for k, a in aemet.items()}
         nou_of["aemet"] = {k: v for k, v in nou_of["aemet"].items() if v}

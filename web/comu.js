@@ -829,7 +829,9 @@ function blocRiscos(riscos) {
 // Meteocat no cobreix, la riera, els incendis i el Pla Alfa i el temps extrem
 // d'aquesta web. tests/test_perills.py comprova que no en falta cap.
 function avisosAemet(dades) {
-  return (dades.avisos || []).filter((a) => !a.cobert);
+  // Dels que Meteocat cobreix en part, només les hores que no cobreix (smp.visible).
+  return (dades.avisos || []).filter((a) => !a.cobert)
+    .map((a) => ({ ...a, inicio: a.inicio_visible || a.inicio, fin: a.fin_visible || a.fin }));
 }
 
 // «Avisos actius» de la portada: només les línies curtes; cadascuna porta a

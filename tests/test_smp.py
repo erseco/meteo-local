@@ -319,6 +319,41 @@ class Smp(unittest.TestCase):
         self.assertEqual([a["id"].split(":")[2] for a in nous], ["pluja"])
         self.assertEqual(perill({"avisos": [pluja, tempestes], "smp": None}, 18), [])
 
+    def test_l_aemet_surt_a_les_hores_que_meteocat_no_cobreix(self):
+        # 19-10-2026: el groc de pluja de l'AEMET del 20, de 4 a 6:59, no sortia a la
+        # franja de les 6 a les 7 perquè Meteocat avisava fins a les 6: n'hi havia prou
+        # amb una hora coberta per amagar-lo sencer. Ara surt a les que no cobreix.
+        aemet = {"zona": "Prelitoral de Barcelona", "tipo": "pluja", "nivel": "groc",
+                 "inicio": "2026-10-20T04:00:00+02:00", "fin": "2026-10-20T06:59:59+02:00"}
+        mc = {"meteor": "Acumulació de pluja", "tipus": "previsio", "llindar": None, "perill": 3,
+              "emissio": "2026-10-19T16:20Z", "dies": {"2026-10-20": [(0, 6)]}}
+        avisos = [dict(aemet)]
+        smp.marca_coberts(avisos, {"avisos": [mc]})
+        a = avisos[0]
+        self.assertNotIn("cobert", a)
+        self.assertEqual((a["inicio_visible"], a.get("fin_visible")), ("2026-10-20T06:00:00+02:00", None))
+        self.assertFalse(smp.cobreix([mc], aemet))
+        self.assertEqual(smp.visible(a)["inicio"], "2026-10-20T06:00:00+02:00")
+        # A la taula per hores (casa.avisos_del_tramo, el que es mostra): a les 6, sí; a les 5, no.
+        import casa
+        tram = lambda h: casa.avisos_del_tramo(dt.datetime.fromisoformat(f"2026-10-20T{h:02d}:00+02:00"),
+                                               dt.datetime.fromisoformat(f"2026-10-20T{h + 1:02d}:00+02:00"), avisos, tots=False)
+        self.assertEqual(tram(6), [{"nivell": "groc", "tipus": ["pluja"]}])
+        self.assertEqual(tram(5), [])
+        # Al resum del bot, també, amb l'hora de les 6.
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bot"))
+        import bot as B
+        ara = dt.datetime(2026, 10, 20, 3, 0, tzinfo=dt.timezone(dt.timedelta(hours=2)))
+        text = B.text_avisos_aemet({"avisos": avisos}, "ca", ara.date(), ara)
+        self.assertEqual(text, ["🟡 AEMET: avís groc per pluja al Vallès de 06:00 a 07:00."])
+        # Cobert del tot (Meteocat fins a les 7), no surt enlloc; sense lectura de Meteocat, sencer.
+        avisos = [dict(aemet)]
+        smp.marca_coberts(avisos, {"avisos": [dict(mc, dies={"2026-10-20": [(0, 7)]})]})
+        self.assertEqual(avisos[0].get("cobert"), "meteocat")
+        avisos = [dict(aemet)]
+        smp.marca_coberts(avisos, None)
+        self.assertEqual(smp.visible(avisos[0]), aemet)
+
     def test_la_fitxa_de_l_aemet_es_tanca_si_la_cobreix_meteocat(self):
         estat = {"aemet_coberts": ["aemet:pluja:x"]}
         h = AB.historial(estat, [{"id": "perill:aemet:pluja:x:groc", "tipus": "perill", "nivell": "groc",
