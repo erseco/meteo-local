@@ -48,6 +48,10 @@ class AjustNit(unittest.TestCase):
         self.assertEqual((nit["dif_alta"], nit["dif_alta_base"]), (1.7, 1.0))
         self.assertEqual(dia["dif_alta"], 1.0)
         self.assertNotIn("dif_alta_base", dia)
+        # Sense «-0.0» quan la correcció ho deixa a zero (19-10-2026).
+        tapat = {"hora": "2026-12-01T02:00", "fins": "2026-12-01T03:00", "nuvols": 100, "vent": 10, "temperatura": 13}
+        PA.a_les_hores([tapat], {h: 0.30 for h in range(24)}, self.ajust)
+        self.assertEqual(str(tapat["dif_alta"]), "0.0")
         # Sense ajust, com abans.
         f = {**nit}
         f.pop("dif_alta"), f.pop("dif_alta_base")

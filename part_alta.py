@@ -121,7 +121,8 @@ def a_les_hores(hores, taula, ajust=None):
         base = [x for x, _ in extrems if x is not None]
         corr = correccio_nit(f, ajust)
         vals = [x + (corr if ajust and h in ajust["hores"] else 0) for x, h in extrems if x is not None]
-        f["dif_alta"] = round(sum(vals) / len(vals), 1) if vals else None
+        # «+ 0.0»: sense el «-0.0» que deixa round amb una correcció negativa.
+        f["dif_alta"] = round(sum(vals) / len(vals), 1) + 0.0 if vals else None
         if ajust and any(h in ajust["hores"] for _, h in extrems):
             f["dif_alta_base"] = round(sum(base) / len(base), 1) if base else None
     return hores
