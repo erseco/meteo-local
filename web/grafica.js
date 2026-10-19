@@ -385,26 +385,23 @@ function dibuixaGrafica(fig) {
     prova.remove();
     return llarg;
   };
-  // Els avisos: una barra per avís, de les hores que dura, amb el seu nivell,
-  // el seu origen i el seu text enganxat (Juanjo, 17-10-2026: «por qué aemet
-  // tormentas sale repetido?», amb el groc de tempestes partit entre la franja
-  // del taronja de Meteocat i la de l'endemà). Les que coincideixen, en files;
-  // cada barra va a la primera fila on hi cap amb el seu text. El text,
-  // sencer (nivell, origen i fenomen), comença dins de la barra i, el que no hi
-  // cap, continua fora amb el color del text de la pàgina (Juanjo, 17-10-2026:
-  // «y si metes dentro el texto? el que no quepa sigue por fuera con el cambio
-  // de color necesario para verse bien»); vora la dreta de la gràfica, acaba
-  // on acaba la barra i el que no hi cap queda a l'esquerra. Sencer, també
-  // en tocar-la.
+  // Els avisos, una fila per font i fenomen (filesAvis): el nom, a l'esquerra
+  // de la barra si hi cap (Juanjo, 19-10-2026: «en el caso de que quepa se
+  // podría poner delante? así ahorramos una fila más»), i si no, a sobre.
   const filesA = filesAvis(files);
   const ambAvis = filesA.length > 0;
-  // Les files de la gràfica, de dalt a baix: cada fila d'avís, el seu nom
-  // (petit, a sobre) i la barra amb els trams.
   const yAvis = 0;
   const hNom = 13;
   const hBarra = 16;
-  const hFila = hNom + hBarra + 4;
-  const hAvis = ambAvis ? filesA.length * hFila - 4 : 0;
+  let yFila = yAvis;
+  for (const fila of filesA) {
+    fila.nom = `${NOM_FONT()[fila.font] || fila.font} · ${fila.noms.join(', ')}`;
+    fila.davant = x(fila.trams[0].ini) - 6 >= mesura(fila.nom);
+    fila.y = yFila;
+    fila.yBarra = fila.davant ? yFila : yFila + hNom;
+    yFila = fila.yBarra + hBarra + 4;
+  }
+  const hAvis = ambAvis ? yFila - 4 - yAvis : 0;
   const yDia = hAvis + (ambAvis ? 6 : 0);
   const yCel = yDia + 16;
   const hCel = 28;
@@ -473,14 +470,18 @@ function dibuixaGrafica(fig) {
     g.append(svg('text', { class: 'g-dia', x: x(i) + 4, y: yDia + 11 }, nomDia(files[i])));
   }
 
-  // Les files dels avisos: el nom a sobre i, a sota, els trams de cada
+  // Les files dels avisos: el nom (davant o a sobre) i els trams de cada
   // nivell, un darrere l'altre; el nivell dins del tram si hi cap, i sencer
   // en tocar-lo.
-  filesA.forEach((fila, k) => {
-    const y = yAvis + k * hFila;
-    const nom = `${NOM_FONT()[fila.font] || fila.font} · ${fila.noms.join(', ')}`;
-    g.append(svg('text', { class: 'g-avis-nom', x: x(fila.trams[0].ini) > W / 2 ? W - 2 : Math.max(2, x(fila.trams[0].ini)),
-      y: y + 10, 'text-anchor': x(fila.trams[0].ini) > W / 2 ? 'end' : 'start' }, nom));
+  filesA.forEach((fila) => {
+    const y = fila.yBarra - hNom;
+    const x0f = x(fila.trams[0].ini);
+    if (fila.davant) {
+      g.append(svg('text', { class: 'g-avis-nom', x: x0f - 5, y: fila.yBarra + 12, 'text-anchor': 'end' }, fila.nom));
+    } else {
+      g.append(svg('text', { class: 'g-avis-nom', x: x0f > W / 2 ? W - 2 : Math.max(2, x0f),
+        y: fila.y + 10, 'text-anchor': x0f > W / 2 ? 'end' : 'start' }, fila.nom));
+    }
     for (const t of fila.trams) {
       const x0 = x(t.ini) + (t.ini && fila.trams.some((u) => u.fi === t.ini) ? 0 : 1);
       const x1 = x(t.fi) - (fila.trams.some((u) => u.ini === t.fi) ? 0 : 1);

@@ -300,3 +300,10 @@ texto entero, al tocar el tramo. Dos fenómenos de la misma fuente con los
 mismos tramos comparten fila. Con los avisos del 19-10-2026, dos filas en vez
 de tres.
 
+Y en la 3.153.1, a propuesta de Juanjo («AEMET tempestes cabe a la izquierda.
+En el caso de que quepa ¿se podría poner delante? Así ahorramos una fila más»):
+si a la izquierda del primer tramo cabe el nombre, va en la misma línea que la
+barra; si no, encima. En el escritorio, con los avisos del 19-10-2026, la fila
+de AEMET ya no lleva línea de nombre; en un móvil de 412 px, ese día, no cabía
+(la barra empezaba a 74 px y el nombre ocupa unos 105).
+
