@@ -412,7 +412,10 @@ function dibuixaGrafica(fig) {
   // quedaría bien la temperatura bajo el cielo?»).
   const yXifra = yCel + hCel + 13;
   const yTemp = yXifra + 12;
-  const hTemp = opcions.gran ? Math.round(Math.min(260, Math.max(110, innerHeight * 0.32))) : 100;
+  // A la vista en gran, més alta; al mòbil, menys, perquè la gràfica i les
+  // seves opcions hi càpiguen sense desplaçar (Juanjo, 19-10-2026: «ocupa
+  // mucho espacio vertical, se puede optimizar?»).
+  const hTemp = opcions.gran ? Math.round(Math.min(260, Math.max(110, innerHeight * (innerWidth <= 600 ? 0.22 : 0.32)))) : 100;
   const yPluja = yTemp;
   const hPluja = hTemp;
   // El vent, a sota de la pluja, amb el mateix eix d'hores.

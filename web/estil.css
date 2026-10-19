@@ -1181,6 +1181,18 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .grafica .g-vent-xifra { fill: var(--suau); font-size: 11px; }
 @media (max-width: 600px) {
   .vista-grafica { width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); padding: .6rem .6rem .8rem; }
+  /* Al mòbil, tot més just perquè quepa sense desplaçar (19-10-2026): els
+     botons en una fila, la llegenda i els interruptors més petits. */
+  .vista-grafica .vg-opcions { gap: .4rem; margin: .5rem 0; flex-wrap: nowrap; }
+  .vista-grafica .vg-opcio { padding: .25rem .55rem; font-size: .85rem; }
+  .vista-grafica .vg-opcio svg { width: .9rem; height: .9rem; }
+  .vista-grafica .g-llegenda { gap: .1rem .7rem; font-size: .75rem; }
+  .vista-grafica .vg-fixes { gap: .3rem .9rem; margin-top: .5rem; padding-top: .4rem; font-size: .85rem; }
+  .vista-grafica .vg-fixes legend { font-size: .78rem; margin-bottom: .1rem; }
+  .vista-grafica .vg-fixa { gap: .3rem; }
+  .vista-grafica .vg-fixa .interruptor { width: 2.2rem; height: 1.3rem; }
+  .vista-grafica .vg-fixa .interruptor::before { width: 1rem; height: 1rem; }
+  .vista-grafica .vg-fixa .interruptor:checked::before { transform: translateX(.9rem); }
 }
 /* La càmera de la gràfica a «Consultes» (grafica.js, botoImatge): al final de la llegenda. */
 .g-llegenda .g-imatge { margin-left: auto; display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem;

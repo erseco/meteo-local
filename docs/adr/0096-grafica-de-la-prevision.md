@@ -307,3 +307,11 @@ barra; si no, encima. En el escritorio, con los avisos del 19-10-2026, la fila
 de AEMET ya no lleva línea de nombre; en un móvil de 412 px, ese día, no cabía
 (la barra empezaba a 74 px y el nombre ocupa unos 105).
 
+En la 3.153.2, la vista en grande en el móvil, más compacta (Juanjo: «en
+móvil la gráfica de la configuración ocupa mucho espacio vertical, ¿se puede
+optimizar?»): la zona de temperatura y lluvia, el 22 % de la altura de la
+pantalla en vez del 32 % (unos 200 px en vez de 290 en un móvil de 915), los
+botones de las horas y «Com encerta» en una fila, y la leyenda y los
+interruptores más pequeños. En un móvil de 412 px la ventana ocupa 576 px y
+no hace falta desplazar; en el ordenador no cambia.
+
