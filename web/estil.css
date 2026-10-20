@@ -114,14 +114,18 @@ a { color: var(--enllac); }
 .cap h1 { grid-column: 1; grid-row: 1; }
 .cap .ruta { grid-column: 1 / -1; grid-row: 2; }
 .cap-botons { grid-column: 2; grid-row: 1; }
-/* El menú ⋮ (comu.menuMes): només al mòbil. Allà, al costat del títol, la
-   campana i ⋮; la resta (compartir, l'ajuda, l'idioma i el tema), a dins.
+/* El menú ⋮ (comu.menuMes): només al mòbil. Allà, al costat del títol,
+   compartir, la campana i ⋮; la resta (l'ajuda, l'idioma i el tema), a dins.
    Abans la botonera anava en una fila a sobre del títol (20-10-2026). */
 .cap-botons .boto-mes { display: none; }
 .cap-botons { position: relative; }
 @media (max-width: 30rem) {
-  .cap-botons > .idiomes, .cap-botons > .boto-compartir, .cap-botons > a[href$="com-funciona.html"],
-  .cap-botons > #btn-fosc { display: none; }
+  .cap-botons > .idiomes, .cap-botons > a[href$="com-funciona.html"], .cap-botons > #btn-fosc { display: none; }
+  /* Un títol d'una sola paraula més llarga que el lloc («Notificaciones» a 360 px), partit. */
+  .cap h1 { min-width: 0; overflow-wrap: break-word; hyphens: auto; }
+  /* La targeta d'ara, una mica més justa, perquè la gràfica hi càpiga a sota. */
+  .targeta.ara:not(.avui-detall) { padding-top: .7rem; padding-bottom: .7rem; }
+  main .avisos-actius, main .targeta.ara:not(.avui-detall), main .previsio-grafica { margin-top: .6rem; }
   .cap-botons .boto-mes { display: grid; }
   /* El títol de la portada, només «Montflorit» (montflorit.py). */
   .titol-llarg { display: none; }
@@ -1012,6 +1016,11 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 /* «El temps» (ADR 0074): la humitat i la pressió, en una línia petita sota
    les dades d'ara; a sota, el resum del dia, el de «Consultes › Avui». */
 .ara-menys { margin: .2rem 0 0; font-size: .9rem; color: var(--suau); }
+/* La temperatura i, al costat, la part alta (casa.blocAra, 20-10-2026); si no
+   hi cap d'una tirada, l'etiqueta es parteix en dues línies. */
+.ara-temp { display: flex; align-items: center; gap: .6rem; }
+.ara-temp .veredicte { margin: 0; flex: none; }
+.ara-temp .alta { font-size: .92rem; white-space: normal; line-height: 1.25; text-align: left; padding: .2rem .55rem; }
 .targeta.resum-dia { border-left: 1px solid var(--vora); margin-top: .8rem; line-height: 1.5; overflow-wrap: anywhere; }
 .resum-dia p { margin: 0; }
 .resum-dia .resum-linia:first-child { margin-bottom: .2rem; }
@@ -1181,12 +1190,15 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .vg-opcions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: .6rem 0; }
 .vg-trams { display: inline-flex; border: 1px solid var(--vora); border-radius: 999px; overflow: hidden; }
 .vg-trams .vg-opcio { border: none; border-radius: 0; }
-/* El selector d'hores a sobre de la gràfica de la portada (graficaAmbSelector),
-   amb «Opcions» a la mateixa fila. */
+/* El selector d'hores sota la gràfica de la portada (graficaAmbSelector), amb
+   «Opcions» a la mateixa fila. */
 .fila-grafica { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: space-between;
-  gap: .4rem; margin: .1rem 0 .3rem; }
+  gap: .4rem; margin: -.4rem 0 .3rem; }
 /* «Opcions», de la mateixa alçada i lletra que els botons del selector. */
 .fila-grafica .boto-tot { height: 100%; font-size: .9rem; padding: .3rem .8rem; }
+/* «Opcions», amb el text també al mòbil: hi cap (Juanjo, 20-10-2026). */
+.fila-grafica .cap-previsio-botons .text-amplia { display: inline; }
+.fila-grafica .cap-previsio-botons .boto-tot:has(.text-amplia) { padding: .3rem .8rem; }
 .vg-trams .vg-opcio + .vg-opcio { border-left: 1px solid var(--vora); }
 .vg-opcio { display: inline-flex; align-items: center; gap: .3rem; padding: .3rem .8rem; border: 1px solid var(--vora);
   border-radius: 999px; background: var(--superficie); color: var(--text); font: inherit; font-size: .9rem; cursor: pointer; }

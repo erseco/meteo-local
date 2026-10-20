@@ -1713,10 +1713,11 @@ function mostraPerCopiar(tot) {
 for (const b of document.querySelectorAll('.boto-compartir')) b.addEventListener('click', () => comparteix());
 
 // Al mòbil, la botonera de dalt ocupava una fila sencera a sobre del títol:
-// ara hi queden la campana i ⋮, al costat del títol, i dins de ⋮ el que es
-// fa servir de tant en tant (compartir, l'ajuda, l'idioma i el tema). A
+// ara hi queden compartir, la campana i ⋮, al costat del títol, i dins de ⋮
+// el que es fa servir de tant en tant (l'ajuda, l'idioma i el tema). A
 // l'ordinador, tot a la vista, com abans (Juanjo, 20-10-2026: «se podría
-// poner en un menú de 3 puntos?», i la proposta mixta: «sí, la B»).
+// poner en un menú de 3 puntos?», i la proposta mixta: «sí, la B»; compartir,
+// a la vista: «ahora cabe junto a la campana»).
 function menuMes() {
   const botons = document.querySelector?.('.cap-botons');
   if (!botons) return;
@@ -1740,8 +1741,6 @@ function menuMes() {
     b.append(icona(icon), text);
     return b;
   };
-  const compartir = document.querySelector('.cap-botons .boto-compartir');
-  if (compartir) menu.append(fila('i-share-2', T('Comparteix aquesta pàgina'), () => compartir.click()));
   const ajuda = document.querySelector('.cap-botons a[href$="com-funciona.html"]');
   if (ajuda) menu.append(fila('i-circle-help', T('Com funciona'), { href: ajuda.href }));
   // Grups de botons units, el triat marcat, com el selector d'hores de la gràfica.

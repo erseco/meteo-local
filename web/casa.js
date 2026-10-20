@@ -12,7 +12,9 @@ const FITXER_DADES = document.documentElement.dataset.dades || 'casa.json';
 
 // Com canvia la pressió en tres hores, amb els llindars habituals: menys d'1
 // hPa és estable; 3,6 hPa o més, un canvi ràpid.
-function textPressio(casa) {
+// curt: sense la xifra de les 3 h, perquè la línia de la targeta d'ara càpiga
+// en una sola al mòbil (Juanjo, 20-10-2026).
+function textPressio(casa, curt = false) {
   const p = T`Pressió ${coma(casa.pressio, 0)} hPa`;
   const d = casa.pressio_3h;
   if (d == null) return p;
@@ -20,6 +22,7 @@ function textPressio(casa) {
   const sentit = d > 0 ? T('pujant') : T('baixant');
   const rapid = Math.abs(d) >= 3.6 ? T(' ràpid') : '';
   const signe = d > 0 ? '+' : '\u2212';
+  if (curt) return `${p}, ${sentit}${rapid}`;
   return T`${p}, ${sentit}${rapid} (${signe}${coma(Math.abs(d))} en 3 h)`;
 }
 
@@ -215,7 +218,9 @@ function textAltaTram(n) {
 function textAltaAra(n) {
   const r = arrodoneixAlta(n);
   if (!r) return null;
-  return r > 0 ? T`A la part alta, ${r} °C més` : T`A la part alta, ${-r} °C menys`;
+  // Curt, al costat de la temperatura (20-10-2026); què vol dir, en prémer-la.
+  // La xifra i els graus, junts: si no hi cap, es parteix després de «Part alta:».
+  return T`Part alta: ${r > 0 ? '+' : '\u2212'}${Math.abs(r)}\u00a0°C`;
 }
 
 // La capçalera del desplegable: el nom del tram, les hores i el resum.
@@ -274,21 +279,21 @@ function blocAra(casa, radarDades, vent, veines, hores, resum) {
   sec.setAttribute('aria-label', T`El temps avui a ${LLOC}`);
   // Sense l'hora de la mesura: la de «Actualitzat a les…», a dalt, ja la diu, i
   // dues hores juntes semblaven un error (Juanjo, 16-10-2026; ADR 0094).
-  const dia = new Date().toLocaleDateString(IDIOMA.codi === 'es' ? 'es-ES' : 'ca-ES', { weekday: 'long' });
-  sec.append(element('h2', 'data', T`Avui, ${dia}, a ${LLOC}`));
+  // Compacta, perquè la gràfica càpiga a la pantalla del mòbil sense
+  // desplaçar (Juanjo, 20-10-2026): sense «Avui, dimarts, a Montflorit» (el
+  // lloc ja és al títol i el dia, a la gràfica) i la part alta al costat de la
+  // temperatura, no a sota.
+  const fila = element('div', 'ara-temp');
   const temp = element('p', 'veredicte');
   const termometre = icona('i-thermometer');
   termometre.classList.add('vehicle');
   temp.append(termometre, `${coma(casa.temperatura)} °C`);
-  sec.append(temp);
+  fila.append(temp);
   // La part alta, en la seva etiqueta, si la diferència arriba a un grau; què
   // vol dir, en prémer-la (etiquetaAlta, a comu.js).
   const alta = textAltaAra(casa.dif_alta);
-  if (alta) {
-    const linia = element('p', 'ara-menys');
-    linia.append(etiquetaAlta(alta));
-    sec.append(linia);
-  }
+  if (alta) fila.append(etiquetaAlta(alta));
+  sec.append(fila);
   // Plou si ha plogut en els últims 15 minuts a la xarxa del barri: l'estació
   // de casa o alguna de les veïnes que compten (ADR 0060), amb la intensitat
   // mediana de les que en marquen (casa.consens), sense dir de quina estació
@@ -319,7 +324,7 @@ function blocAra(casa, radarDades, vent, veines, hores, resum) {
   // La humitat i la pressió, que es miren menys, juntes en una línia petita
   // (Juanjo, 12-10-2026; ADR 0074).
   const menys = [T`Humitat ${coma(casa.humitat, 0)} %`];
-  if (casa.pressio != null) menys.push(textPressio(casa));
+  if (casa.pressio != null) menys.push(textPressio(casa, true));
   sec.append(element('p', 'ara-menys', menys.join(' · ')));
   const radar = blocRadar(radarDades, plou, hores);
   // Si no plou i el radar no la veu arribar, quant falta segons la previsió.
@@ -1118,7 +1123,6 @@ function taula(hores, mesurada, riscos, sol) {
   // configuración… decide tú»), amb la icona d'ajustos de Lucide.
   if (graf) {
     const secG = element('section', 'previsio previsio-grafica');
-    const capG = element('div', 'cap-previsio');
     const amplia = element('button', 'boto-tot');
     amplia.type = 'button';
     amplia.title = T('Opcions de la gràfica');
@@ -1127,12 +1131,17 @@ function taula(hores, mesurada, riscos, sol) {
     amplia.addEventListener('click', vistaGrafica);
     const botonsG = element('div', 'cap-previsio-botons');
     botonsG.append(amplia);
-    capG.append(element('h2', 'perque', T('Previsió')));
-    // Quines hores, just a sobre: 24 h per defecte, i el que es triï es recorda
-    // (graficaAmbSelector); «Opcions», a la mateixa fila (Juanjo, 20-10-2026).
+    // Sense el rètol «Previsió»: el selector d'hores ja fa de capçalera, i la
+    // gràfica cap a la pantalla del mòbil (Juanjo, 20-10-2026). El nom, per
+    // als lectors de pantalla.
+    secG.setAttribute('aria-label', T('Previsió'));
+    // Quines hores: 24 h per defecte, i el que es triï es recorda
+    // (graficaAmbSelector); «Opcions», a la mateixa fila. A sota de la
+    // gràfica, perquè l'atenció vagi a la gràfica (Juanjo, 20-10-2026: «los
+    // prefiero debajo de la gráfica, así no se desvía la atención»).
     const filaG = element('div', 'fila-grafica');
     filaG.append(graficaAmbSelector(graf), botonsG);
-    secG.append(capG, filaG, graf);
+    secG.append(graf, filaG);
     sec._grafica = secG;
   }
   botons.append(boto);

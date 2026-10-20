@@ -285,3 +285,16 @@ del móvil pasa de 80 a 40 píxeles.
 Validación: Chromium y Firefox a 360, 412 y 1280 px, en catalán y castellano;
 el menú abre y cierra (fuera y con Esc), el tema y el idioma se guardan;
 axe-core sin fallos con el menú cerrado y abierto, claro y oscuro.
+
+Para que el gráfico quepa en la pantalla del móvil sin desplazar, que era el
+objetivo (Juanjo, 20-10-2026: «quería que el gráfico saliese en la pantalla
+del móvil sin tener que desplazarlo»), la tarjeta de ahora se compacta sin
+perder datos: sin «Avui, dimarts, a Montflorit» (el lugar ya está en el
+título y el día, en el gráfico), la parte alta al lado de la temperatura
+(«Part alta: +1 °C»), la presión sin la cifra de las 3 h («bajando») para que
+humedad y presión quepan en una línea, y algo menos de relleno y de margen
+entre bloques. Se quita el rótulo «Previsió» encima del gráfico, y compartir
+sale del menú ⋮ y queda a la vista junto a la campana («ahora cabe junto a la
+campana»). Medido a 360, 393 y 412 px con los avisos plegados, el gráfico y
+sus botones quedan por encima de la barra de pestañas (a 393 px, el gráfico
+acaba en 574 y la barra empieza en 655).

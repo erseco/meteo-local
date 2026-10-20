@@ -258,7 +258,7 @@ class Castella(unittest.TestCase):
 
     def test_el_catala_no_canvia_sense_diccionari(self):
         self.assertEqual(js("IDIOMA.codi"), "es")
-        self.assertEqual(js("T`Avui, ${'dilluns'}, a ${'Montflorit'}`"), "Hoy, dilluns, en Montflorit")
+        self.assertEqual(js("T`Vent ${'9'} km/h${''}`"), "Viento 9 km/h")
         self.assertEqual(js("T('Un text que no hi és')"), "Un text que no hi és")
         # En castellà, la fase sempre amb «de».
         self.assertEqual(js("deFase(TD('emergència'))"), "de emergencia")

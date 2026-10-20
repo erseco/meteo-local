@@ -244,7 +244,7 @@ class Web(unittest.TestCase):
         # A la nit, −1 a la riera i 0,5 a dalt: glaçada només vora la riera.
         self.assertEqual([f[0] for f in r[1]["fenomens"]], ["glaçada vora la riera"])
         self.assertEqual(self.avalua("2026-10-08T13:30:00+02:00", "[textAltaAra(2.4), textAltaAra(0.9), textAltaAra(0.4), textAltaAra(-1.2)]"),
-                         ["A la part alta, 2 °C més", "A la part alta, 1 °C més", None, "A la part alta, 1 °C menys"])
+                         ["Part alta: +2\u00a0°C", "Part alta: +1\u00a0°C", None, "Part alta: \u22121\u00a0°C"])
         # Al resum del dia, «(fins a 26 °C a la part alta)» queda a part, per a l'etiqueta.
         r = self.avalua("2026-10-08T13:30:00+02:00",
                         "ambMarques([{t: 'Temperatura: entre 16 °C i 24 °C (fins a 26 °C a la part alta), semblant a la d\\'ahir.'}])")

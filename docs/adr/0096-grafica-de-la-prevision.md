@@ -334,7 +334,9 @@ estar». El selector de horas tiene ahora «24 h» (las 24 horas desde la que
 está en curso), «Demà» y «Tot», y sale también justo encima del
 gráfico de la portada, no solo en «Opcions», y en la misma fila que el botón
 «Opcions», con la misma altura (Juanjo, 20-10-2026: «las opciones en la misma
-línea que los botones»). Por defecto, «24 h»; lo que se
+línea que los botones»). La fila va **debajo** del gráfico, no encima (Juanjo,
+el mismo día: «los prefiero debajo de la gráfica, así no se desvía la
+atención»), y «Opcions» lleva el texto también en el móvil, porque cabe. Por defecto, «24 h»; lo que se
 elige se recuerda en el dispositivo (`meteo.grafica.hores`) y vale para los
 dos sitios: cambiarlo en la ventana grande cambia también el de la portada.
 Antes la portada enseñaba siempre todas las horas y la ventana grande
