@@ -407,3 +407,14 @@ transtornarlo? sin texto en el movil, ganariamos un espacio»). Y en la vista en
 grande se quita el rótulo «Es recorda per a totes les gràfiques» de los
 interruptores, que ya se entiende («quita esto, ya se entiende»); el grupo lo
 conserva como nombre para los lectores de pantalla.
+
+**Las cifras del techo, siempre a la vista** (20-10-2026). Con la gráfica
+desplazándose, los milímetros del techo de la lluvia (a la derecha) y la
+temperatura máxima (a la izquierda) quedaban en los extremos del dibujo y
+solo se veían al principio o al final (Juanjo: «se puede hacer que estos dos
+valores estén siempre visibles?»). Cuando la gráfica se desplaza, las dos
+cifras van en una capa fija encima de la caja (`.g-fixes`), en los bordes de
+la parte visible, a la altura de la línea del techo, que sigue dentro del
+dibujo. En las imágenes (compactas, sin desplazamiento) van dentro de la
+gráfica, como antes. Validación: Chromium y Firefox a 390 px, con las dos
+cifras visibles al principio y al final del desplazamiento.

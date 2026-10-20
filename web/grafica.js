@@ -698,6 +698,25 @@ function dibuixaGrafica(fig) {
     else t.remove();
   });
 
+  // Les xifres del sostre (els mm, a la dreta, i la màxima, a l'esquerra),
+  // sempre a la vista: si la gràfica es desplaça de costat, van en una capa
+  // fixa damunt de la caixa, a les vores de la part que es veu (Juanjo,
+  // 20-10-2026: «se puede hacer que estos dos valores estén siempre
+  // visibles?»). A la imatge (compacta), dins de la gràfica, com abans.
+  fig.querySelector('.g-fixes')?.remove();
+  const sostreXifres = g.querySelectorAll('.g-sostre-xifra');
+  if (W > Wv + 1 && sostreXifres.length) {
+    const visible = caixa.clientWidth;
+    const fixes = svg('svg', { class: 'g-fixes', width: visible, height: H, viewBox: `0 0 ${visible} ${H}`, 'aria-hidden': 'true' });
+    for (const t of sostreXifres) {
+      if (t.getAttribute('text-anchor') === 'end') t.setAttribute('x', visible - 2);
+      fixes.append(t);
+    }
+    fixes.style.top = `${caixa.offsetTop}px`;
+    fixes.style.left = `${caixa.offsetLeft}px`;
+    fig.append(fixes);
+  }
+
   // L'eix, natural: només les hores en punt, al pas que hi cap (pasEix), sense
   // res diferent al principi (Juanjo, 20-10-2026: «quita el ara del gráfico»
   // i «el eje x normal, sin números de más o menos al principio»). Amb hores
