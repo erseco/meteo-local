@@ -1357,6 +1357,17 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .fb-apren h3 { margin: 0 0 .2rem; font-size: 1rem; }
 .fb-apren p { margin: .2rem 0; font-size: .95rem; }
 .fb-apren-ara { font-weight: 600; }
+/* Qui s'equivoca més i qui menys (barresError): nom, barra i xifra en una fila. */
+.fb-comp { margin: .45rem 0; }
+.fb-comp-titol { color: var(--suau); font-size: .85rem !important; margin: 0 0 .25rem !important; }
+.fb-comp-files { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: auto 1fr auto; gap: .3rem .5rem; align-items: center; }
+.fb-comp-files li { display: contents; font-size: .9rem; }
+.fb-comp-marca { color: var(--suau); font-size: .8rem; }
+.fb-comp-barra { display: block; height: .6rem; border-radius: .3rem; background: color-mix(in srgb, var(--vora) 60%, transparent); overflow: hidden; }
+.fb-comp-fet { display: block; height: 100%; border-radius: .3rem; background: color-mix(in srgb, var(--suau) 55%, transparent); }
+.fb-comp-files li.en-us .fb-comp-fet { background: var(--fb-web); }
+.fb-comp-files li.en-us .fb-comp-nom { font-weight: 600; }
+.fb-comp-xifra { font-variant-numeric: tabular-nums; text-align: right; }
 .fb-apren-progres { display: grid; gap: .25rem; color: var(--suau); font-size: .9rem !important; }
 .fb-barra { display: block; width: 100%; height: .5rem; border-radius: .25rem; background: var(--vora); overflow: hidden; }
 .fb-barra-fet { display: block; height: 100%; background: var(--fb-web); }

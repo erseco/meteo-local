@@ -412,12 +412,20 @@ def aprenentatge(dir_=None):
     radar = _json(os.path.join(dir_, "radar-font.json"))
     if radar and radar.get("preferida"):
         c = radar.get("comparacio") or {}
+        # L'error de cada radar i amb quants casos, per dibuixar-los a la
+        # pàgina (Juanjo, 20-10-2026: «por qué no pones los datos de quien
+        # acierta y se equivoca más?»).
         res["radar"] = {"preferida": radar["preferida"], "des_de": radar.get("des_de"), "dia": radar.get("dia"),
-                        "dies_pluja": c.get("dies_pluja"), "seguretat": c.get(f"seguretat_{radar['preferida']}")}
+                        "dies_pluja": c.get("dies_pluja"), "seguretat": c.get(f"seguretat_{radar['preferida']}"),
+                        "casos": c.get("parelles"), "amb_pluja": c.get("amb_pluja"),
+                        "error": {n: c[f"brier_{n}"] for n in ("meteocat", "rainviewer") if c.get(f"brier_{n}") is not None}}
     cel = _json(os.path.join(dir_, "nuvols-pesos.json"))
     if cel and cel.get("pesos"):
-        res["cel"] = {"pesos": cel["pesos"], "dia": cel.get("dia"),
-                      "dies": (cel.get("comparacio") or {}).get("dies")}
+        c = cel.get("comparacio") or {}
+        # I l'error de cada model i de la mitjana que fa servir, en punts de cel tapat.
+        res["cel"] = {"pesos": cel["pesos"], "dia": cel.get("dia"), "dies": c.get("dies"),
+                      "error": {m: c[f"error_{m}"] for m in cel["pesos"] if c.get(f"error_{m}") is not None},
+                      "error_actual": c.get("error_actual")}
     res["canvis"] = canvis(dies, dir_)
     return res
 

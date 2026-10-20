@@ -199,3 +199,17 @@ crèdits», donde se explica para qué se leen las previsiones oficiales (Juanjo
 «quita el enlace de fiabilidad del menu de 3 puntos, lo pondremos cuando haya
 más datos»). Para volver a ponerla: `MENU_FIABILITAT = true` y la línea de
 «Com funciona» con su traducción (está en el historial de este ADR).
+
+**Datos en lugar de frases fijas** (20-10-2026, 3.168.0). Las fichas del
+radar y de las nubes solo decían cuál se usa (Juanjo: «esto es solo
+información estática, por qué no pones los datos de quien acierta y se
+equivoca más? un diagrama de barras»). Ahora `historial.aprenentatge` exporta
+el error de cada radar (Brier de `radar_fonts.compara`, con los casos) y el de
+cada modelo del cielo y de la media que se usa (`nuvols.compara`, en puntos de
+cielo tapado), y cada ficha los dibuja en barras, con la que usa la web en
+color, y lo dice en una frase («RainViewer se equivoca un 29 % menos que
+Meteocat»). Si los datos no traen esas cifras, queda la frase de antes. Y las
+gráficas dicen qué es cada punto: «de cada semana» y «de cada día» en el
+título, y una nota bajo la semanal («Cada punto es una semana, con el día en
+que empieza»), porque las fechas del eje se leían como días (Juanjo: «y donde
+pone que es una semana? no lo dice en ningun lado»).

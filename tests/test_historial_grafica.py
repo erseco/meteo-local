@@ -210,12 +210,21 @@ class Historial(unittest.TestCase):
                         "error_temp,error_temp_model\n2026-10-18,arxiu,arxiu,10,12,0.08,0.04,13,0.96,0.94\n"
                         "2026-10-19,local,arxiu,10,31,0.03,0.04,14,1.11,1.07\n")
             with open(os.path.join(d, "radar-font.json"), "w") as f:
-                json.dump({"preferida": "rainviewer", "des_de": "2026-10-07", "comparacio": {"seguretat_rainviewer": 0.977}}, f)
+                json.dump({"preferida": "rainviewer", "des_de": "2026-10-07", "comparacio": {
+                    "seguretat_rainviewer": 0.977, "parelles": 900, "amb_pluja": 40, "brier_meteocat": 0.031,
+                    "brier_rainviewer": 0.022}}, f)
+            with open(os.path.join(d, "nuvols-pesos.json"), "w") as f:
+                json.dump({"pesos": {"arome": 0.5, "gfs": 0.5}, "comparacio": {
+                    "dies": 7, "error_actual": 20.5, "error_arome": 22.0, "error_gfs": 25.1}}, f)
             with open(os.path.join(d, "fi-pluja.json"), "w") as f:
                 json.dump({"llindar": 0.3, "des_de": "2026-10-19"}, f)
             a = H.aprenentatge(d)
         self.assertEqual(a["dies"][-1]["error_pluja_vigent"], 0.04)
         self.assertEqual(a["radar"]["seguretat"], 0.977)
+        # L'error de cada radar i de cada model del cel, per dibuixar-lo (Juanjo, 20-10-2026).
+        self.assertEqual((a["radar"]["error"], a["radar"]["casos"], a["radar"]["amb_pluja"]),
+                         ({"meteocat": 0.031, "rainviewer": 0.022}, 900, 40))
+        self.assertEqual((a["cel"]["error"], a["cel"]["error_actual"]), ({"arome": 22.0, "gfs": 25.1}, 20.5))
         self.assertEqual([(c["dia"], c["que"]) for c in a["canvis"]],
                          [("2026-10-19", "pluja"), ("2026-10-19", "fi_pluja"), ("2026-10-07", "radar")])
         self.assertEqual(a["minims"], {"hores_pluja": 30, "dies_temperatura": 14})

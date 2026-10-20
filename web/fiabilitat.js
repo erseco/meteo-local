@@ -285,7 +285,9 @@ function pintaSetmanes(e) {
     });
   }
   // Sense «Cada setmana comença en dilluns», que és una obvietat (Juanjo, 20-10-2026).
-  $('setmanes-nota').textContent = setmanes.some((s) => s.en_curs) ? T('* La setmana en curs.') : '';
+  // Que es vegi què és cada punt (Juanjo, 20-10-2026: «donde pone que es una semana?»).
+  $('setmanes-nota').textContent = setmanes.some((s) => s.en_curs)
+    ? T('Cada punt és una setmana, amb el dia que comença; * la setmana en curs.') : T('Cada punt és una setmana, amb el dia que comença.');
 }
 
 // --- Com aprèn ---
@@ -299,7 +301,7 @@ function barra(fet, cal) {
   return b;
 }
 
-function fitxaAprenentatge(titol, ara, progres, text) {
+function fitxaAprenentatge(titol, ara, progres, text, dades = null) {
   const f = element('div', 'fb-apren');
   f.append(element('h3', null, titol), element('p', 'fb-apren-ara', ara));
   if (progres) {
@@ -307,8 +309,39 @@ function fitxaAprenentatge(titol, ara, progres, text) {
     p.append(barra(progres.fet, progres.cal), element('span', null, progres.text));
     f.append(p);
   }
+  if (dades) f.append(dades);
   if (text) f.append(element('p', null, text));
   return f;
+}
+
+// Qui s'equivoca més i qui menys, en barres (Juanjo, 20-10-2026: «esto es solo
+// información estática, por qué no pones los datos de quien acierta y se
+// equivoca más? un diagrama de barras»): una fila per opció, la barra
+// proporcional a l'error, i la que fa servir la web, en color i rotulada.
+function barresError(titol, files, decimals) {
+  const max = Math.max(...files.map((f) => f.valor), 1e-9);
+  const taula = element('div', 'fb-comp');
+  const cap = element('p', 'fb-comp-titol', titol);
+  const llista = element('ul', 'fb-comp-files');
+  for (const f of files) {
+    const li = element('li', f.enUs ? 'en-us' : null);
+    const nom = element('span', 'fb-comp-nom', f.nom);
+    if (f.enUs) nom.append(element('span', 'fb-comp-marca', T(' (la que fa servir)')));
+    const b = element('span', 'fb-comp-barra');
+    const dins = element('span', 'fb-comp-fet');
+    dins.style.width = `${Math.max(2, Math.round((f.valor / max) * 100))}%`;
+    b.append(dins);
+    b.setAttribute('aria-hidden', 'true');
+    li.append(nom, b, element('span', 'fb-comp-xifra', coma(f.valor, decimals)));
+    llista.append(li);
+  }
+  taula.append(cap, llista);
+  return taula;
+}
+
+// Quant s'equivoca menys la millor que la segona, en paraules.
+function percentMenys(millor, altra) {
+  return Math.round((1 - millor / altra) * 100);
 }
 
 // La nova, en entrenament, contra l'actual: sense xifres soltes, que són a la taula.
@@ -343,17 +376,46 @@ function pintaAprenentatge() {
     darrer.temperatura === 'casa' ? null : { fet: Math.min(dt, calT), cal: calT, text: T`Per provar una correcció nova, calen ${calT} dies; en porta ${dt}.` },
     fraseNova(darrer.error_temp, darrer.error_temp_vigent)));
   if (a.radar) {
-    const nom = a.radar.preferida === 'meteocat' ? 'Meteocat' : 'RainViewer';
+    const NOMS_RADAR = { meteocat: 'Meteocat', rainviewer: 'RainViewer' };
+    const nom = NOMS_RADAR[a.radar.preferida] || a.radar.preferida;
     const ara = a.radar.des_de ? T`Ara fa servir el radar de ${nom}, des del ${nomData(a.radar.des_de)}.` : T`Ara fa servir el radar de ${nom}.`;
-    fitxes.push(fitxaAprenentatge(T('Radar (les dues primeres hores)'), ara, null,
-      T`Hi ha dos radars, el de Meteocat i el de RainViewer. Cada dia mira quin ha encertat més la pluja al barri l’últim mes: ara és el de ${nom}, i ${textSegur(a.radar.seguretat)}.`));
+    const err = a.radar.error || {};
+    const radars = Object.keys(NOMS_RADAR).filter((r) => err[r] != null);
+    let dades = null;
+    let text = T`Hi ha dos radars, el de Meteocat i el de RainViewer. Cada dia mira quin ha encertat més la pluja al barri l’últim mes: ara és el de ${nom}, i ${textSegur(a.radar.seguretat)}.`;
+    if (radars.length === 2) {
+      dades = barresError(T('Error de cada radar l’últim mes (0 vol dir que encerta sempre)'),
+        radars.map((r) => ({ nom: NOMS_RADAR[r], valor: err[r], enUs: r === a.radar.preferida })), 3);
+      const [millor, altra] = [...radars].sort((x, y) => err[x] - err[y]);
+      const menys = percentMenys(err[millor], err[altra]);
+      text = (menys > 0 ? T`${NOMS_RADAR[millor]} s’equivoca un ${menys}\u00a0% menys que ${NOMS_RADAR[altra]}`
+        : T('Els dos s’equivoquen igual'))
+        + (a.radar.casos ? T`, en ${a.radar.casos.toLocaleString('ca')} previsions de les dues hores següents, ${a.radar.amb_pluja || 0} amb pluja al barri, de ${a.radar.dies_pluja || 0} dies diferents.` : '.');
+      // La que fa servir canvia només si l'altra guanya i no és casualitat.
+      if (millor !== a.radar.preferida) text += T(' Encara no canvia: pot ser casualitat.');
+    }
+    fitxes.push(fitxaAprenentatge(T('Radar (les dues primeres hores)'), ara, null, text, dades));
   }
   if (a.cel) {
     const pesos = Object.values(a.cel.pesos);
     const iguals = pesos.every((p) => Math.abs(p - pesos[0]) < 0.01);
+    const NOMS_MODEL = { arome: 'AROME', icon_eu: 'ICON-EU', ecmwf: 'ECMWF', gfs: 'GFS' };
+    const err = a.cel.error || {};
+    const models = Object.keys(a.cel.pesos).filter((m) => err[m] != null);
+    let dades = null;
+    let text = T('Cada dia ho compara amb els núvols que es veuen a l’aeroport de Sabadell; només canvia els pesos si uns altres encerten més i no és casualitat.');
+    if (models.length && a.cel.error_actual != null) {
+      const files = [{ nom: T('La mitjana'), valor: a.cel.error_actual, enUs: true },
+        ...models.map((m) => ({ nom: NOMS_MODEL[m] || m, valor: err[m] }))];
+      dades = barresError(T('Error mitjà de cada un, en punts de cel tapat (de 0 a 100)'), files, 1);
+      const millor = files.reduce((x, y) => (y.valor < x.valor ? y : x));
+      text = (millor.enUs ? T('La mitjana s’equivoca menys que cada model per separat.')
+        : T`${millor.nom} sol s’equivoca una mica menys, però els pesos només canvien si la millora no és casualitat.`)
+        + ' ' + (a.cel.dies ? T`Comparat amb els núvols de l’aeroport de Sabadell, els darrers ${a.cel.dies} dies.`
+          : T('Comparat amb els núvols de l’aeroport de Sabadell.'));
+    }
     fitxes.push(fitxaAprenentatge(T('Núvols'), iguals ? T('Ara fa la mitjana de quatre models del temps, tots amb el mateix pes.')
-      : T('Ara fa la mitjana de quatre models del temps, amb més pes per als que més encerten.'), null,
-      T('Cada dia ho compara amb els núvols que es veuen a l’aeroport de Sabadell; només canvia els pesos si uns altres encerten més i no és casualitat.')));
+      : T('Ara fa la mitjana de quatre models del temps, amb més pes per als que més encerten.'), null, text, dades));
   }
   $('apren-cos').replaceChildren(...fitxes);
   pintaCanvis(a.canvis || []);
