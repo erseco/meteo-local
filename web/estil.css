@@ -1031,6 +1031,10 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 /* «Ara» i la resta del dia en una targeta (Juanjo, 17-10-2026): el resum
    d'avui, sense títol, separat del que es mesura per una línia fina. */
 .resta-dia { margin-top: .7rem; padding-top: .7rem; border-top: 1px solid var(--vora); line-height: 1.5; overflow-wrap: anywhere; }
+/* A la portada, la targeta del resum ja no porta el títol «Avui, dimarts, a
+   Montflorit» (3.164.0): sense la ratlla ni el marge que el separaven (Juanjo,
+   20-10-2026: «esa linea horizontal, parece que falta un titulo o que sobra»). */
+.avui-detall > .resta-dia:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 .resta-dia p { margin: 0; }
 .resta-dia .resum-linia:first-child { display: grid; }
 .resta-dia .resum-linia + .resum-linia { margin-top: .45rem; }

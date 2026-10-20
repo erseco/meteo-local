@@ -300,3 +300,8 @@ sale del menú ⋮ y queda a la vista junto a la campana («ahora cabe junto a l
 campana»). Medido a 360, 393 y 412 px con los avisos plegados, el gráfico y
 sus botones quedan por encima de la barra de pestañas (a 393 px, el gráfico
 acaba en 574 y la barra empieza en 655).
+
+3.166.1 (20-10-2026): sin el título, a la tarjeta del resumen del día le
+quedaba encima la raya que lo separaba, y parecía que faltaba algo (Juanjo:
+«esa linea horizontal, parece que falta un titulo o que sobra»); se quita en
+la portada (`.avui-detall > .resta-dia:first-child`).
