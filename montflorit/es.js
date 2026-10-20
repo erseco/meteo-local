@@ -300,6 +300,8 @@ var IDIOMA = {
     "Pot ploure mentre ets fora: porta paraigua.": "Puede llover mientras estás fuera: lleva paraguas.",
     "Pluja del tram": "Lluvia del tramo",
     "Ja no es preveu": "Ya no se prevé",
+    "Ja no consta": "Ya no consta",
+    "Meteocat ja no el mostra des de {0}. Si no torna en mitja hora, es dona per acabat.": "Meteocat ya no lo muestra desde {0}. Si no vuelve en media hora, se da por acabado.",
     "La previsió ja no ho veu des de {0}. Si no torna en 3 hores, es dona per acabat.": "La previsión ya no lo ve desde {0}. Si no vuelve en 3 horas, se da por acabado.",
     "A la capçalera, la probabilitat més alta de les seves hores i la pluja que s’espera: els mil·límetres de cada hora pesats per la seva probabilitat. No és la suma de la columna Pluja, que diu el que cauria si plou.": "En la cabecera, la probabilidad más alta de sus horas y la lluvia que se espera: los milímetros de cada hora ponderados por su probabilidad. No es la suma de la columna Lluvia, que dice lo que caería si llueve.",
     "Pluja probable mentre ets fora: porta paraigua.": "Lluvia probable mientras estás fuera: lleva paraguas.",

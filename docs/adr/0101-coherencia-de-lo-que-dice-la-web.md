@@ -438,3 +438,27 @@ Validación: `tests/test_bot.py` (`FitxesDelRevisor`,
 `tests/test_web.py` (lluvia entre medias en «Si surts»),
 `tests/test_estacio_casa.py` (`test_rosada_no_supera_la_temperatura`); las
 609 pruebas pasan.
+
+
+## Cambio del 20-10-2026 (3.162.1): los hallazgos del revisor de las 05:40
+
+- **Meteocat retirado, ficha «Actiu ara»**: Meteocat retiró el aviso de 5 a
+  6 h y la ficha seguía activa la media hora de relevo (`SMP_FI_MIN`, para no
+  avisar dos veces entre emisiones), cuando la portada ya no lo listaba.
+  Ahora, si Meteocat no muestra ningún fenómeno del episodio, el estado guarda
+  desde cuándo (`oficials.smp.pausa`) y la ficha queda en pausa: «Ja no
+  consta» y «Meteocat ja no el mostra des de les 05:45. Si no torna en mitja
+  hora, es dona per acabat.», como la ficha propia («Ja no es preveu»).
+- **AEMET «Previst · Comença a les 6 h» con Meteocat retirado**: la ficha
+  empezaba a las 6 porque hasta entonces lo cubría Meteocat. `aemet_vigents`
+  guarda ahora cuándo empieza la parte que no cubre Meteocat, y la ficha
+  abierta adelanta su comienzo si esa hora se adelanta.
+- **AEMET de 80 mm sin ficha**: era la del cambio 3.162.0 (dos avisos con la
+  misma clave); la ficha, cerrada por error, se reabrió a mano en el NAS y en
+  el `avisos.json` publicado, y la de tormentas del 19-10 se rotuló «inclòs
+  en un altre avís».
+
+Validación: `tests/test_historial.py` (`test_la_fitxa_de_meteocat_retirat_espera_en_pausa`,
+`test_l_aemet_avanca_l_inici_si_meteocat_ja_no_el_cobreix`), `tests/test_bot.py`
+(`test_meteocat_retirat_queda_en_pausa`); 612 pruebas; «Perill» en Chromium y
+Firefox, móvil y escritorio.

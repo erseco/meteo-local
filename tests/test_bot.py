@@ -1231,6 +1231,18 @@ class FitxesDelRevisor(unittest.TestCase):
                                                                                  "cobert": False}}}
         self.assertEqual(AB.historial(estat, [], ara)[0]["fi_ca"], AB.RETIRAT["ca"])
 
+    def test_meteocat_retirat_queda_en_pausa(self):
+        # Revisor, 20-10-2026: retirat l'avís de 5 a 6 h, la fitxa seguia «Actiu ara» la mitja hora de relleu.
+        a = {"meteor": "Intensitat de pluja en 30 minuts", "tipus": "previsio", "llindar": None, "perill": 3,
+             "emissio": "2026-10-19T16:35Z", "dies": {"2026-10-20": [(5, 6)]}}
+        t1 = dt.datetime.fromisoformat("2026-10-20T05:10:00+02:00")
+        estat = {}
+        AB.decideix(estat, {"smp": {"avisos": [a]}}, t1)
+        AB.decideix(estat, {"smp": {"avisos": [a]}}, t1 + dt.timedelta(minutes=5))
+        self.assertNotIn("pausa", estat["oficials"]["smp"])
+        AB.decideix(estat, {"smp": {"avisos": []}}, t1 + dt.timedelta(minutes=15))
+        self.assertEqual(estat["oficials"]["smp"]["pausa"], "2026-10-20T05:15+02:00")
+
     def test_dos_avisos_de_l_aemet_amb_la_mateixa_clau(self):
         # Revisor, 19-10-2026 19:58: pluja de 40 mm/1 h (19-23:59, la cobreix Meteocat) i de 80 mm/12 h
         # (19-8:59, visible de 6 a 9) amb la mateixa clau: guanyava el darrer i la fitxa es tancava
@@ -1247,7 +1259,8 @@ class FitxesDelRevisor(unittest.TestCase):
             estat = {"oficials": {"aemet": {}, "plans": {}}}
             AB.decideix(estat, {"avisos": avisos}, dt.datetime.fromisoformat("2026-10-19T19:57:00+02:00"))
             self.assertEqual(estat["aemet_coberts"], [])
-            self.assertEqual(estat["aemet_vigents"][k], {"fin": "2026-10-20T08:59:59+02:00", "cobert": False})
+            self.assertEqual(estat["aemet_vigents"][k], {"fin": "2026-10-20T08:59:59+02:00", "cobert": False,
+                                                        "comenca": "2026-10-20T06:00:00+02:00"})
 
 
 if __name__ == "__main__":

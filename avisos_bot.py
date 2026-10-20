@@ -820,7 +820,11 @@ def decideix(estat, salida, ahora):
         estat["aemet_coberts"] = [f"aemet:{k}" for k, a in aemet.items() if a.get("cobert")]
         # Els vigents ara, amb el final, per tancar les fitxes dels que l'AEMET
         # ja no publica i allargar les dels que allarga (historial).
-        estat["aemet_vigents"] = {f"aemet:{k}": {"fin": a["fin"], "cobert": bool(a.get("cobert"))}
+        # Amb quan comença la part que no cobreix Meteocat, que s'avança si
+        # Meteocat retira el seu (revisor, 20-10-2026: «Previst · Comença a les
+        # 6 h» a les 5:40 amb l'avís de Meteocat ja retirat).
+        estat["aemet_vigents"] = {f"aemet:{k}": {"fin": a["fin"], "cobert": bool(a.get("cobert")),
+                                                 "comenca": SMP.visible(a)["inicio"]}
                                   for k, a in aemet.items()}
     else:
         estat["aemet_vigents"] = None
@@ -834,6 +838,13 @@ def decideix(estat, salida, ahora):
         abans = (of or {}).get("smp")
         abans = abans if isinstance(abans, dict) and "fenomens" in abans else None
         e_smp, canvis, acabat = decideix_smp(abans, avisos_smp, ahora)
+        # Si Meteocat ja no en mostra cap, la fitxa espera SMP_FI_MIN minuts a
+        # tancar-se (el relleu entre emissions), però ja no és activa: «Perill»
+        # la donava per activa i la portada ja no la llistava (revisor, 20-10-2026).
+        vistos = [v["vist"] for v in e_smp["fenomens"].values()]
+        darrer = max(vistos, key=dt.datetime.fromisoformat, default=None)
+        if darrer and dt.datetime.fromisoformat(darrer) < ahora.replace(second=0, microsecond=0):
+            e_smp["pausa"] = darrer
         if of is not None and "smp" in of:
             if canvis:
                 canvi, f = canvis[0]
@@ -1012,6 +1023,9 @@ def tanca_aemet(h, vigents, ahora):
         if v:
             posa_fins(e, v["fin"])
             refa_franja(e)
+            if v.get("comenca") and e.get("comenca") and \
+                    dt.datetime.fromisoformat(v["comenca"]) < dt.datetime.fromisoformat(e["comenca"]):
+                e["comenca"] = v["comenca"]
             continue
         if e.get("fins") and dt.datetime.fromisoformat(e["fins"]) <= ahora:
             continue        # ja ha acabat a la seva hora
@@ -1085,6 +1099,10 @@ def historial(estat, nous, ahora, anterior=None):
         mc.update(ca=ara_smp["ca"], es=ara_smp["es"])
     if mc and ara_smp and not mc.get("fi") and ara_smp.get("comenca"):
         mc["comenca"] = ara_smp["comenca"]
+    if mc and not mc.get("fi") and smp_estat.get("pausa"):
+        mc.setdefault("en_pausa", smp_estat["pausa"])
+    elif mc:
+        mc.pop("en_pausa", None)
     # La fitxa oberta del temps extrem d'aquesta web, igual: els riscos d'ara,
     # cadascun amb d'on surt i quant s'hi pot confiar, que canvia d'una passada
     # a l'altra (riscos.font). Sense «darrer»: no és un avís nou (Juanjo,

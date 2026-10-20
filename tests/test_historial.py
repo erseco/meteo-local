@@ -48,6 +48,28 @@ class Historial(unittest.TestCase):
         estat.update(perill_text={"ca": "🟡 títol\nVent fort.", "es": "x"})
         self.assertNotIn("en_pausa", AB.historial(estat, [], ARA + dt.timedelta(minutes=60))[0])
 
+    def test_la_fitxa_de_meteocat_retirat_espera_en_pausa(self):
+        # Revisor, 20-10-2026: Meteocat va retirar l'avís de 5 a 6 h i «Perill» el donava per actiu
+        # durant la mitja hora de relleu, quan la portada ja no el llistava.
+        ep = "meteocat:2026-10-16T07:55+02:00"
+        estat = {"oficials": {"smp": {"episodi": ep, "fenomens": {}, "pausa": "2026-10-11T12:30+02:00"}}}
+        AB.historial(estat, [avis(0, ep, "groc", "🟡 Meteocat\nPluja.")], ARA)
+        h = AB.historial(estat, [], ARA + dt.timedelta(minutes=40))
+        self.assertEqual(h[0]["en_pausa"], "2026-10-11T12:30+02:00")
+        estat["oficials"]["smp"].pop("pausa")
+        self.assertNotIn("en_pausa", AB.historial(estat, [], ARA + dt.timedelta(minutes=45))[0])
+
+    def test_l_aemet_avanca_l_inici_si_meteocat_ja_no_el_cobreix(self):
+        # Revisor, 20-10-2026: «Previst · Comença a les 6 h» a les 5:40, amb Meteocat ja retirat.
+        k = "aemet:pluja:2026-10-20T00:00:00+02:00"
+        e = {"clau": k, "inici": "2026-10-19T19:27+02:00", "comenca": "2026-10-20T06:00:00+02:00",
+             "fins": "2026-10-20T08:59:59+02:00", "ca": "x", "es": "x"}
+        ara = dt.datetime.fromisoformat("2026-10-20T05:40:00+02:00")
+        AB.tanca_aemet([e], {k: {"fin": "2026-10-20T08:59:59+02:00", "cobert": False,
+                                 "comenca": "2026-10-20T00:00:00+02:00"}}, ara)
+        self.assertEqual(e["comenca"], "2026-10-20T00:00:00+02:00")
+        self.assertNotIn("fi", e)
+
     def test_el_comunicat_nou_posa_l_hora_del_missatge(self):
         # Revisor, 19-10-2026: «actualitzat avui 12:08» (el PDF) amb el missatge enviat a les 12:15.
         estat = {}
