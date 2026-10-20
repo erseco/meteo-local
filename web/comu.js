@@ -1482,6 +1482,13 @@ function marcaNovetats(ara = new Date()) {
       document.querySelectorAll('.novetat').forEach((p) => {
         p.classList.remove('novetat');
         p.querySelector('.nou')?.remove();
+        // Sense «Nou:», la frase comença amb majúscula: «Les situacions de
+        // perill…», no «les situacions…» (Juanjo, 20-10-2026).
+        const t = p.firstChild;
+        if (t && t.nodeType === Node.TEXT_NODE) {
+          const text = t.textContent.trimStart();
+          t.textContent = text.charAt(0).toUpperCase() + text.slice(1);
+        }
       });
     }
     for (const a of document.querySelectorAll(n.boto)) {
