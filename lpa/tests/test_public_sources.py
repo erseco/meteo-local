@@ -44,6 +44,16 @@ class PublicSources(unittest.TestCase):
         item['stationID']='ILASPA64';item['qcStatus']=-1
         with self.assertRaises(ValueError):W.parse(page({'observations':[item]}))
 
+    def test_wunderground_explicit_metric_and_si_units_and_current_records(self):
+        for unit_name,factor in [('metric',1),('metric_si',3.6)]:
+            item={'stationID':'ILASPA64','obsTimeUtc':NOW.isoformat(),'humidity':70,
+                  unit_name:{'temp':21.5,'windSpeed':10,'windGust':20}}
+            page='<script type="application/json" id="another-state-id">'+json.dumps({'observations':[item]})+'</script>'
+            row=W.parse(page)[0]
+            self.assertEqual(row['temperature_c'],21.5)
+            self.assertEqual(row['wind_kmh'],10*factor)
+            self.assertIsNone(row['measurement_period_minutes'])
+
     def test_ign_filters_canaries_without_inventing_timezones_or_no_activity(self):
         xml='''<rss xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#"><channel><title>GeoRSS Sismología IGN</title>
         <item><title>Info.terremoto: 20/10/2026 10:00:00</title><description>magnitud 2.1 en ATLÁNTICO-CANARIAS</description><link>http://www.ign.es/web/ign/test</link><geo:lat>28</geo:lat><geo:long>-16</geo:long></item>

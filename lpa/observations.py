@@ -237,6 +237,11 @@ def collect(now=None, reader=get_text, school_reader=school_payload, grafcan_rea
         except Exception as error:
             # Do not leak session query strings or tokens in public failures.
             public.update(status='unavailable', detail=type(error).__name__ + ': no se pudieron obtener medidas válidas')
+            if station['id'] == wunderground.STATION['id'] and type(error) is ValueError:
+                reasons = {'Weather Underground public page contract changed': 'La página no contiene datos JSON utilizables.',
+                           'No interval observations for the requested PWS': 'La página no contiene muestras fechadas de esta estación.'}
+                if str(error) in reasons:
+                    public['detail'] += ' · ' + reasons[str(error)]
             return public, [], None
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
         for last, checked, _ in pool.map(task, STATIONS + URBAN_STATIONS + SCHOOL_STATIONS):

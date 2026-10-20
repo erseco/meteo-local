@@ -12,6 +12,7 @@ instalada con datos actuales ni datos modelizados con mediciones de un sensor.
 | Gobierno / calidad del aire | Hay un visor oficial de medidas provisionales y un catálogo de datos validados. Las direcciones antiguas `www3.gobiernodecanarias.org/medioambiente/calidaddelaire/` devolvieron 404. | Localizar el acceso operativo actual y sus estaciones urbanas. Mantener CAMS como estimación, no como medida. |
 | Centros de la capital | CEIP El Zardo anuncia una estación en el huerto. IES Los Tarahales documentó Clima/GLOBE en 2013; CEIP Santa Catalina lo citó en 2017. | Consultar al CEP/centros si siguen operativas, modelo, frecuencia y URL o identificador de publicación. No hay un flujo automático actual confirmado. |
 | SEAIC | La consulta pública de la estación 28 devuelve datos históricos; último recuento recuperado: 01-09-2026. | Consultar periodicidad actual y reutilización; mostrar la fecha antigua mientras no haya medidas nuevas. |
+| Weather Underground | ILASPA64 entrega muestras verificadas localmente, pero la primera consulta desde Actions no obtuvo datos utilizables. Se admiten bloques métricos, SI e imperiales y se distingue cada muestra del resumen diario. | Comprobar disponibilidad desde el alojamiento; si WU no sirve muestras al recolector, solicitar acceso oficial de lectura autorizado o un suministro directo del propietario. No utilizar claves embebidas de la web. |
 
 Para cualquiera de las instituciones basta acceso de **lectura**: URL, catálogo,
 ubicación y altitud, unidades, zona horaria, frecuencia, indicadores de calidad y

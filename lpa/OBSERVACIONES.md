@@ -20,11 +20,17 @@ se convierten en ceros ni en ausencia de lluvia.
   `2199568870`, 30 m. Se consulta como invitado con el mismo control de unidades.
 - **Weather Underground, MONTAÑETA2:** estación particular `ILASPA64`, La
   Montañeta, 309 m. Se leen muestras agregadas de cinco minutos incluidas en el
-  JSON de la página pública. Se convierten °F a °C y mph a km/h, se descartan
+  JSON de la página pública, u observaciones actuales cuando están presentes.
+  Se comprueba el bloque de unidades (`metric`, `metric_si` o `imperial`),
+  convirtiendo °F a °C, mph a km/h o m/s a km/h cuando corresponde. Se descartan
   muestras con `qcStatus=-1` y se conservan los otros estados del proveedor.
   No se confunden extremos o medias del día con condiciones actuales. La presión
   y la lluvia se omiten porque el bloque consultado no permite asegurar las
   magnitudes adecuadas. No se extraen ni se utilizan las claves embebidas de WU.
+  Una página pública sin muestras utilizables puede variar según el servidor
+  desde el que se consulta: se marca como no disponible, sin sustituirla por un
+  resumen diario ni por otra estación. La primera ejecución en Actions no obtuvo
+  muestras de WU aunque sí se pudieron descargar desde el entorno local.
 - **GRAFCAN, La Isleta:** Geonica METEODATA-3016CP `3705`, identificador
   interno `thing=14`, a 6 m. Son dos identificadores de la misma estación.
   Se reutilizan seis consultas de lectura del panel público para temperatura,
