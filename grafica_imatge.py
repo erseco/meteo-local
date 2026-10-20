@@ -111,6 +111,8 @@ if (fig) {{
   fig._opcions = {{ gran: true, vent: true, alta }};
   // Sense la càmera de «Consultes»: en una imatge no serveix (Juanjo, 17-10-2026).
   fig._botoImatge = false;
+  // Compacta, a l'amplada de la imatge, sense desplaçament (dibuixaGrafica, COL_HORA).
+  fig._compacte = true;
   document.getElementById('lloc').append(fig);
   dibuixaGrafica(fig);
   document.getElementById('lloc').insertAdjacentHTML('beforeend', {json.dumps('<p class="credits">' + '<br>'.join(html_mod.escape(l) for l in credits(dades, idioma)) + '</p>')});

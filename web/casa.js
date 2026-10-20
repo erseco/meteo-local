@@ -1118,30 +1118,21 @@ function taula(hores, mesurada, riscos, sol) {
   const graf = grafica(hores);
   const botons = element('div', 'cap-previsio-botons');
   // La gràfica, en una secció pròpia que va just després d'«Ara» (pinta;
-  // 19-10-2026), amb «Opcions»: la gràfica en gran, amb les seves opcions
-  // (Juanjo, 17-10-2026: «no me gusta esa doble flecha… o un botón de
-  // configuración… decide tú»), amb la icona d'ajustos de Lucide.
+  // 19-10-2026), amb «Opcions» (la gràfica en gran, amb les seves opcions)
+  // al final de la llegenda, dins de la figura: sense una fila per a ell sol
+  // (Juanjo, 20-10-2026: «el botón opciones, se podría meter dentro del
+  // gráfico sin trastornarlo? sin texto en el movil, ganariamos un espacio»).
+  // Abans anava sota la gràfica (Juanjo, 20-10-2026: «los prefiero debajo de
+  // la gráfica, así no se desvía la atención»): ara també hi és, a la línia
+  // de la llegenda. Totes les hores, hora a hora, desplaçant de costat: sense
+  // el selector «24 h · Demà · Tot» (3.166.0).
   if (graf) {
     const secG = element('section', 'previsio previsio-grafica');
-    const amplia = element('button', 'boto-tot');
-    amplia.type = 'button';
-    amplia.title = T('Opcions de la gràfica');
-    amplia.setAttribute('aria-label', T('Opcions de la gràfica'));
-    amplia.append(icona('i-sliders-horizontal'), element('span', 'text-amplia', T('Opcions')));
-    amplia.addEventListener('click', vistaGrafica);
-    const botonsG = element('div', 'cap-previsio-botons');
-    botonsG.append(amplia);
-    // Sense el rètol «Previsió»: el selector d'hores ja fa de capçalera, i la
-    // gràfica cap a la pantalla del mòbil (Juanjo, 20-10-2026). El nom, per
-    // als lectors de pantalla.
+    graf._botoOpcions = true;
+    // Sense el rètol «Previsió», perquè la gràfica càpiga a la pantalla del
+    // mòbil (Juanjo, 20-10-2026). El nom, per als lectors de pantalla.
     secG.setAttribute('aria-label', T('Previsió'));
-    // Quines hores: 24 h per defecte, i el que es triï es recorda
-    // (graficaAmbSelector); «Opcions», a la mateixa fila. A sota de la
-    // gràfica, perquè l'atenció vagi a la gràfica (Juanjo, 20-10-2026: «los
-    // prefiero debajo de la gráfica, así no se desvía la atención»).
-    const filaG = element('div', 'fila-grafica');
-    filaG.append(graficaAmbSelector(graf), botonsG);
-    secG.append(graf, filaG);
+    secG.append(graf);
     sec._grafica = secG;
   }
   botons.append(boto);

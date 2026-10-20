@@ -323,8 +323,8 @@ function grafica(hores) {
   const files = (hores || []).filter((f) => new Date(f.fins) > ara && f.temperatura != null);
   if (files.length < 6) return null;
   HORES_GRAFICA = hores;
-  // Les hores, les del selector de sobre (graficaAmbSelector, 20-10-2026);
-  // la de «Consultes», les del dia de què parla (graficaDia).
+  // Totes les que queden (horesVista); la de «Consultes», les del dia de què
+  // parla (graficaDia).
   return figuraGrafica(files,
     T('Gràfica de la previsió: perill, cel, temperatura i probabilitat de pluja. Les mateixes dades són a les taules de sota.'));
 }
@@ -357,13 +357,24 @@ function graficaDia(hores, riscos, dia, ara = new Date()) {
   return fig;
 }
 
+// Hora a hora, sempre: cada hora té com a mínim COL_HORA píxels, amb el seu
+// cel i la seva temperatura, i si no hi caben totes la gràfica es desplaça
+// de costat, amb el dit al mòbil (Juanjo, 20-10-2026: «quiero que hagas
+// siempre tot pero con barra de desplazamiento horizontal… me interesa que
+// salga hora a hora, no cada 2 horas»). Les imatges (la càmera i la de
+// Telegram, grafica_imatge.py) es fan compactes, a l'amplada de la pàgina
+// (fig._compacte), perquè surti tot en una.
+const COL_HORA = 36;
+
 function dibuixaGrafica(fig) {
   const files = fig._files;
   // A la vista gran: més alçada i, si es tria, el vent (vistaGrafica).
   const opcions = fig._opcions || {};
-  const W = fig.clientWidth;
-  if (!W || !files.length) return;
+  const Wv = fig.clientWidth - (parseFloat(getComputedStyle(fig).paddingLeft) || 0)
+    - (parseFloat(getComputedStyle(fig).paddingRight) || 0);
+  if (!(Wv > 0) || !files.length) return;
   const n = files.length;
+  const W = fig._compacte ? Wv : Math.max(Wv, n * COL_HORA);
   const col = W / n;
   const x = (i) => i * col;
   // El cel, la temperatura i les hores de l'eix, cada hora si hi ha lloc
@@ -376,9 +387,28 @@ function dibuixaGrafica(fig) {
   const pasEix = col >= 18 ? 1 : col >= 9 ? 2 : 3;
   const hora = (f) => new Date(f.hora).getHours();
   // A la pàgina des del principi: el text dels avisos s'ha de poder mesurar.
+  // Dins d'una caixa que es desplaça de costat; en tornar a dibuixar, es
+  // queda on era.
   const g = svg('svg', { width: W, 'aria-hidden': 'true' });
-  fig.querySelector('svg')?.remove();
-  fig.prepend(g);
+  let caixa = fig.querySelector('.g-desplaca');
+  if (!caixa) {
+    caixa = element('div', 'g-desplaca');
+    // Amb el teclado, les fletxes la desplacen.
+    caixa.tabIndex = 0;
+    caixa.setAttribute('role', 'region');
+    caixa.setAttribute('aria-label', T('Gràfica hora a hora: es desplaça de costat'));
+    fig.prepend(caixa);
+    caixa.addEventListener('scroll', () => {
+      fig._amaga?.();
+      caixa.classList.toggle('al-final', caixa.scrollLeft + caixa.clientWidth >= caixa.scrollWidth - 2);
+    }, { passive: true });
+  }
+  const abans = caixa.scrollLeft;
+  caixa.querySelector('svg')?.remove();
+  caixa.append(g);
+  caixa.scrollLeft = abans;
+  caixa.classList.toggle('desplaca', W > Wv + 1);
+  caixa.classList.toggle('al-final', caixa.scrollLeft + caixa.clientWidth >= caixa.scrollWidth - 2);
   const mesura = (text) => {
     const prova = svg('g', { class: 'g-avis' });
     const t = svg('text', {}, text);
@@ -690,11 +720,21 @@ function dibuixaGrafica(fig) {
   // pone la lluvia del mayor?»; 17-10-2026: «no se podrían añadir el resto de
   // datos?»). La part alta, la neu i l'UV, només quan diuen alguna cosa. Es
   // treu tocant fora o la mateixa hora.
+  // La fitxa és fora de la caixa que es desplaça, damunt de la figura, perquè
+  // no quedi retallada; a la gràfica, només la columna marcada.
   const retol = svg('g', { class: 'g-retol' });
+  let fitxa = fig.querySelector('.g-fitxa');
+  if (!fitxa) {
+    fitxa = element('div', 'g-fitxa');
+    fitxa.setAttribute('aria-hidden', 'true');
+    fig.append(fitxa);
+  }
+  fitxa.hidden = true;
   let actiu = null;
   const amaga = () => {
     actiu = null;
     retol.replaceChildren();
+    fitxa.hidden = true;
   };
   const liniesFitxa = (f, i) => {
     // Una hora passada: el que es va mesurar i el que deia la previsió de les 7.
@@ -734,31 +774,24 @@ function dibuixaGrafica(fig) {
     actiu = i;
     retol.replaceChildren(svg('rect', { class: 'g-retol-columna', x: x(i), y: yCel - 2, width: col,
       height: baix - yCel + 2 }));
-    const fons = svg('rect', { class: 'g-retol-fons', rx: 6 });
-    retol.append(fons);
-    const interlinia = 16;
-    const textos = liniesFitxa(files[i], i).map((l, k) => {
-      const t = svg('text', { class: k ? 'g-retol-text' : 'g-retol-text titol' }, l);
-      retol.append(t);
-      return t;
-    });
-    const ample = Math.max(...textos.map((t) => t.getComputedTextLength())) + 16;
-    const alt = textos.length * interlinia + 8;
-    // Al costat de la columna, on hi hagi lloc, perquè no tapi l'hora triada.
-    // Si no hi cap per cap costat (al mòbil, les hores del mig), sota l'eix,
-    // damunt de la llegenda.
-    let fx = x(i) + col + 6;
-    let fy = yCel;
-    if (fx + ample > W) fx = x(i) - 6 - ample;
-    if (fx < 0) {
-      fx = Math.min(Math.max(x(i) + col / 2 - ample / 2, 0), W - ample);
-      fy = yEix + 8;
+    fitxa.replaceChildren(...liniesFitxa(files[i], i).map((l, k) => element('span', k ? null : 'titol', l)));
+    fitxa.hidden = false;
+    // Al costat de la columna, on hi hagi lloc dins del que es veu, perquè no
+    // tapi l'hora triada; si no hi cap per cap costat, sota l'eix, damunt de
+    // la llegenda.
+    const ample = fitxa.offsetWidth;
+    const esq = caixa.offsetLeft + x(i) - caixa.scrollLeft;
+    const dreta = esq + col;
+    const total = fig.clientWidth;
+    let fx = dreta + 6;
+    let fy = caixa.offsetTop + yCel;
+    if (fx + ample > total - 4) fx = esq - 6 - ample;
+    if (fx < 4) {
+      fx = Math.min(Math.max(esq + col / 2 - ample / 2, 4), total - ample - 4);
+      fy = caixa.offsetTop + yEix + 8;
     }
-    Object.entries({ x: fx, y: fy, width: ample, height: alt }).forEach(([k, v_]) => fons.setAttribute(k, v_));
-    textos.forEach((t, k) => {
-      t.setAttribute('x', fx + 8);
-      t.setAttribute('y', fy + 4 + interlinia * (k + 1) - 4);
-    });
+    fitxa.style.left = `${fx}px`;
+    fitxa.style.top = `${fy}px`;
   };
   files.forEach((f, i) => {
     const zona = svg('rect', { class: 'g-zona', x: x(i), y: yCel - 2, width: col, height: baix - yCel + 2 });
@@ -810,13 +843,14 @@ function dibuixaGrafica(fig) {
   if (hVent) ll.append(clau('m-vent', T('Vent')), clau('m-ratxa', T('Ratxes')));
   ll.append(clau('m-nit', T('Nit')));
   if (fig._botoImatge) ll.append(botoImatge(fig, 'g-imatge'));
+  if (fig._botoOpcions) ll.append(botoOpcions());
   // Els avisos de més enllà de la gràfica, a sobre (avisosMesEnlla).
   fig.querySelector('.g-mes-enlla')?.remove();
   const mesEnlla = files.length && new Date(files[n - 1].fins) > new Date() ? avisosMesEnlla(files[n - 1].fins) : [];
   if (mesEnlla.length) {
-    const caixa = element('div', 'g-mes-enlla');
-    caixa.append(...mesEnlla);
-    g.before(caixa);
+    const avisos = element('div', 'g-mes-enlla');
+    avisos.append(...mesEnlla);
+    caixa.before(avisos);
   }
   fig.append(ll);
 }
@@ -843,77 +877,12 @@ const ambVentTriat = () => llegeixOpcionsGrafica().vent === true;
 const altaTriada = () => llegeixOpcionsGrafica().alta === true;
 const baixaTriada = () => llegeixOpcionsGrafica().baixa !== false;
 
-function horesVista(tram) {
+// Totes les hores que queden, sempre (Juanjo, 20-10-2026: «quiero que hagas
+// siempre tot»). Fins a la 3.165.0 es triaven amb «24 h · Demà · Tot»; ara la
+// gràfica va hora a hora i es desplaça de costat (dibuixaGrafica, COL_HORA).
+function horesVista() {
   const ara = new Date();
-  const totes = (HORES_GRAFICA || []).filter((f) => new Date(f.fins) > ara && f.temperatura != null);
-  const dia = (f) => new Date(f.hora).toDateString();
-  const dema = new Date(ara.getFullYear(), ara.getMonth(), ara.getDate() + 1).toDateString();
-  // 24 h: les 24 hores des de la que està en curs.
-  if (tram === '24h') return totes.slice(0, 24);
-  if (tram === 'dema') return totes.filter((f) => dia(f) === dema);
-  return totes;
-}
-
-// Quines hores es veuen, a la gràfica de la portada i a la gran, amb el
-// mateix selector a tots dos llocs (Juanjo, 20-10-2026: «añade 24h y además lo
-// añadas también justo encima del gráfico … por defecto saldrá 24 horas pero
-// si el usuario lo cambia el cambio será persistente»; i «el tot también debe
-// estar»). Fins a la 3.163.0 la portada les mostrava sempre totes i la gran
-// començava cada cop per «Tot».
-const CLAU_HORES_GRAFICA = 'meteo.grafica.hores';
-// Sense «Avui»: començava a l'hora d'ara com «24 h» i n'era sempre un tros,
-// tallat a mitjanit; a les 12 de la nit eren iguals (Juanjo, 20-10-2026).
-const TRAMS_GRAFICA = () => [['24h', T('24 h')], ['dema', T('Demà')], ['tot', T('Tot')]];
-
-// Només els que tenen prou hores; «Tot», sempre.
-function tramsGrafica() {
-  return TRAMS_GRAFICA().filter(([clau]) => clau === 'tot' || horesVista(clau).length >= 3);
-}
-
-function tramGrafica() {
-  let t = null;
-  try { t = localStorage.getItem(CLAU_HORES_GRAFICA); } catch (_) {}
-  const hi = (c) => tramsGrafica().some(([clau]) => clau === c);
-  return hi(t) ? t : hi('24h') ? '24h' : 'tot';
-}
-
-// Es desa i es diu a l'altre selector (la portada o la gràfica gran).
-function triaTramGrafica(t) {
-  try { localStorage.setItem(CLAU_HORES_GRAFICA, t); } catch (_) {}
-  dispatchEvent(new CustomEvent('hores-grafica', { detail: t }));
-}
-
-// El selector: botons units, el triat marcat. canvia(t) en prémer-ne un.
-function selectorHores(canvia) {
-  const grup = element('div', 'vg-trams');
-  grup.setAttribute('role', 'group');
-  grup.setAttribute('aria-label', T('Quines hores'));
-  for (const [clau, text] of tramsGrafica()) {
-    const b = element('button', 'vg-opcio', text);
-    b.type = 'button';
-    b.dataset.tram = clau;
-    b.addEventListener('click', () => { triaTramGrafica(clau); canvia(clau); });
-    grup.append(b);
-  }
-  grup._marca = (t) => {
-    for (const b of grup.children) b.setAttribute('aria-pressed', String(b.dataset.tram === t));
-  };
-  return grup;
-}
-
-// La gràfica de la portada amb el selector a sobre.
-function graficaAmbSelector(fig) {
-  const redibuixa = (t) => {
-    fig._files = horesVista(t);
-    grup._marca(t);
-    dibuixaGrafica(fig);
-  };
-  const grup = selectorHores(redibuixa);
-  grup.classList.add('tria-hores');
-  fig._files = horesVista(tramGrafica());
-  grup._marca(tramGrafica());
-  addEventListener('hores-grafica', (e) => { if (fig.isConnected) redibuixa(e.detail); });
-  return grup;
+  return (HORES_GRAFICA || []).filter((f) => new Date(f.fins) > ara && f.temperatura != null);
 }
 
 function llegeixOpcionsGrafica() {
@@ -929,7 +898,7 @@ function vistaGrafica() {
   if (!HORES_GRAFICA || document.querySelector('dialog.vista-grafica')) return;
   // Les que es recorden (fixes) i les d'aquesta visita, que comencen sempre igual.
   const fixes = { vent: false, baixa: true, alta: false, ...llegeixOpcionsGrafica() };
-  const opcions = { tram: tramGrafica(), get vent() { return fixes.vent; },
+  const opcions = { get vent() { return fixes.vent; },
     get alta() { return fixes.alta; }, get baixa() { return fixes.baixa; } };
   const dlg = element('dialog', 'vista-grafica');
   dlg.setAttribute('aria-labelledby', 'vg-titol');
@@ -955,8 +924,7 @@ function vistaGrafica() {
   accions.append(botoImatge(fig, 'boto-icona'), comparteixBoto, tanca);
   cap.append(titol, accions);
 
-  // Les opcions: quines hores (només les que tenen prou hores) i el vent.
-  const tramsBotons = selectorHores((clau) => { opcions.tram = clau; dibuixa(); });
+  // Les opcions que es recorden: el vent i les parts baixa i alta.
   // Les que es recorden, amb interruptors, com a «Avisos».
   const interruptor = (clau, icon, text) => {
     const fila = element('label', 'vg-fixa');
@@ -978,23 +946,23 @@ function vistaGrafica() {
     try { localStorage.setItem(CLAU_GRAFICA, JSON.stringify(fixes)); } catch (_) {}
   };
   const dibuixa = () => {
-    tramsBotons._marca(opcions.tram);
     fig._amaga?.();
-    fig._files = horesVista(opcions.tram);
+    fig._files = horesVista();
     fig._opcions = { gran: true, vent: ambVent && opcions.vent, alta: ambDifAlta && Boolean(opcions.alta),
       baixa: opcions.baixa !== false };
     dibuixaGrafica(fig);
   };
-  const barra = element('div', 'vg-opcions');
-  barra.append(tramsBotons);
-  // Les que es recorden, a part i dites (Juanjo, 19-10-2026).
-  const fixesEl = element('fieldset', 'vg-fixes');
-  fixesEl.append(element('legend', null, T('Es recorda per a totes les gràfiques')));
+  // Les que es recorden, a part (Juanjo, 19-10-2026), sense el rètol «Es recorda
+  // per a totes les gràfiques», que ja s'entén (Juanjo, 20-10-2026: «quita
+  // esto, ya se entiende»); el nom, només per als lectors de pantalla.
+  const fixesEl = element('div', 'vg-fixes');
+  fixesEl.setAttribute('role', 'group');
+  fixesEl.setAttribute('aria-label', T('Es recorda per a totes les gràfiques'));
   if (ambVent) fixesEl.append(vent);
   fixesEl.append(baixa);
   if (ambDifAlta) fixesEl.append(alta);
 
-  dlg.append(cap, barra, fig, fixesEl);
+  dlg.append(cap, fig, fixesEl);
   // Un toc fora de la finestra la tanca, com Esc.
   dlg.addEventListener('click', (e) => {
     if (e.target !== dlg) return;
@@ -1098,11 +1066,26 @@ const ESTILS_SVG = ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-op
 const VARS_ICONES = ['--ic-sol', '--ic-sol-fons', '--ic-nuvol', '--ic-nuvol-fons', '--ic-aigua', '--ic-aigua-fons',
   '--ic-neu', '--ic-lluna', '--ic-lluna-fons'];
 
+// La imatge, compacta: tota la gràfica a l'amplada de la pàgina, com abans
+// del desplaçament (COL_HORA), i després es torna a dibuixar com era.
 function svgDeLaGrafica(fig) {
-  const orig = fig.querySelector('svg');
-  const caixa = fig.getBoundingClientRect();
+  const era = fig._compacte;
+  fig._compacte = true;
+  dibuixaGrafica(fig);
+  try {
+    return svgDeLaGraficaCompacta(fig);
+  } finally {
+    fig._compacte = era;
+    dibuixaGrafica(fig);
+  }
+}
+
+function svgDeLaGraficaCompacta(fig) {
+  const orig = fig.querySelector('.g-desplaca svg');
+  // La llegenda es col·loca respecte de la gràfica.
+  const caixa = orig.getBoundingClientRect();
   const marge = 16;
-  const W = caixa.width;
+  const W = parseFloat(orig.getAttribute('width')) || caixa.width;
   const estil = getComputedStyle(fig);
   const arrel = getComputedStyle(document.documentElement);
   const fons = arrel.getPropertyValue('--superficie').trim() || '#fff';
@@ -1271,6 +1254,22 @@ function mostraImatge(png) {
 
 // La càmera: a la vista en gran, al costat de compartir l'enllaç; a
 // «Consultes», al final de la llegenda.
+// «Opcions» de la gràfica de la portada, al final de la llegenda com la càmera
+// de «Consultes»: la icona d'ajustos de Lucide i, a l'ordinador, el text
+// (al mòbil no hi cap a la mateixa línia; Juanjo, 20-10-2026).
+function botoOpcions() {
+  const b = element('button', 'g-opcions');
+  b.type = 'button';
+  b.title = T('Opcions de la gràfica');
+  b.setAttribute('aria-label', T('Opcions de la gràfica'));
+  b.append(icona('i-sliders-horizontal'), element('span', 'text-amplia', T('Opcions')));
+  b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    vistaGrafica();
+  });
+  return b;
+}
+
 function botoImatge(fig, classe) {
   const b = element('button', classe);
   b.type = 'button';

@@ -1154,9 +1154,22 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .grafica .g-zona { fill: transparent; cursor: pointer; }
 .grafica .g-retol { pointer-events: none; }
 .grafica .g-retol-columna { fill: color-mix(in srgb, var(--text) 8%, transparent); }
-.grafica .g-retol-fons { fill: var(--text); }
-.grafica .g-retol-text { fill: var(--superficie); font-size: 12px; }
-.grafica .g-retol-text.titol { font-weight: 700; }
+/* Hora a hora, desplaçant de costat (dibuixaGrafica, COL_HORA): la caixa es
+   llisca amb el dit; a l'ordinador, amb la barra. Mentre en queda a la dreta,
+   la vora s'esvaeix, perquè es vegi que continua. */
+.grafica { position: relative; }
+.grafica .g-desplaca { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.grafica .g-desplaca > svg { width: auto; max-width: none; }
+.grafica .g-desplaca.desplaca { padding-bottom: 4px; }
+.grafica .g-desplaca:focus-visible { outline: 2px solid var(--enllac); outline-offset: 2px; border-radius: .3rem; }
+.grafica .g-desplaca.desplaca:not(.al-final) { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+/* La fitxa de l'hora, damunt de la figura i fora de la caixa que es desplaça. */
+.grafica .g-fitxa { position: absolute; z-index: 5; display: flex; flex-direction: column; padding: 4px 8px;
+  background: var(--text); color: var(--superficie); border-radius: 6px; font-size: 12px; line-height: 16px;
+  white-space: nowrap; pointer-events: none; }
+.grafica .g-fitxa[hidden] { display: none; }
+.grafica .g-fitxa .titol { font-weight: 700; }
 .grafica .g-pluja.possible { fill: color-mix(in srgb, var(--c-aigua) 50%, transparent); }
 .grafica .g-pluja.forta { fill: #fb923c; }
 .grafica .g-pluja.torrencial { fill: #ef4444; }
@@ -1194,15 +1207,6 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .vg-opcions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: .6rem 0; }
 .vg-trams { display: inline-flex; border: 1px solid var(--vora); border-radius: 999px; overflow: hidden; }
 .vg-trams .vg-opcio { border: none; border-radius: 0; }
-/* El selector d'hores sota la gràfica de la portada (graficaAmbSelector), amb
-   «Opcions» a la mateixa fila. */
-.fila-grafica { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: space-between;
-  gap: .4rem; margin: -.4rem 0 .3rem; }
-/* «Opcions», de la mateixa alçada i lletra que els botons del selector. */
-.fila-grafica .boto-tot { height: 100%; font-size: .9rem; padding: .3rem .8rem; }
-/* «Opcions», amb el text també al mòbil: hi cap (Juanjo, 20-10-2026). */
-.fila-grafica .cap-previsio-botons .text-amplia { display: inline; }
-.fila-grafica .cap-previsio-botons .boto-tot:has(.text-amplia) { padding: .3rem .8rem; }
 .vg-trams .vg-opcio + .vg-opcio { border-left: 1px solid var(--vora); }
 .vg-opcio { display: inline-flex; align-items: center; gap: .3rem; padding: .3rem .8rem; border: 1px solid var(--vora);
   border-radius: 999px; background: var(--superficie); color: var(--text); font: inherit; font-size: .9rem; cursor: pointer; }
@@ -1212,7 +1216,6 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .vg-fixes { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; margin: .8rem 0 0; padding: .6rem 0 0; border: 0;
   border-top: 1px solid var(--vora); }
 .vg-fixes[hidden] { display: none; }
-.vg-fixes legend { float: left; width: 100%; padding: 0; margin: 0 0 .2rem; color: var(--suau); font-size: .85rem; }
 .vg-fixa { display: inline-flex; align-items: center; gap: .45rem; cursor: pointer; }
 .vg-fixa svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .vista-grafica .grafica { margin: 0; padding: 0; border: none; }
@@ -1232,11 +1235,21 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
   .vista-grafica .vg-opcio svg { width: .9rem; height: .9rem; }
   .vista-grafica .g-llegenda { gap: .1rem .7rem; font-size: .75rem; }
   .vista-grafica .vg-fixes { gap: .3rem .9rem; margin-top: .5rem; padding-top: .4rem; font-size: .85rem; }
-  .vista-grafica .vg-fixes legend { font-size: .78rem; margin-bottom: .1rem; }
   .vista-grafica .vg-fixa { gap: .3rem; }
   .vista-grafica .vg-fixa .interruptor { width: 2.2rem; height: 1.3rem; }
   .vista-grafica .vg-fixa .interruptor::before { width: 1rem; height: 1rem; }
   .vista-grafica .vg-fixa .interruptor:checked::before { transform: translateX(.9rem); }
+}
+/* «Opcions» de la gràfica de la portada (grafica.js, botoOpcions), al final de
+   la llegenda com la càmera de «Consultes»: al mòbil, només la icona. */
+.g-llegenda { align-items: center; }
+.g-llegenda .g-opcions { margin-left: auto; display: inline-flex; align-items: center; gap: .35rem; height: 2.25rem;
+  padding: 0 .7rem; border: 1px solid var(--vora); border-radius: .5rem; background: var(--superficie); color: var(--text);
+  font: inherit; font-size: .9rem; cursor: pointer; }
+.g-llegenda .g-opcions svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 30rem) {
+  .g-llegenda .g-opcions { width: 2.25rem; padding: 0; justify-content: center; }
+  .g-llegenda .g-opcions .text-amplia { display: none; }
 }
 /* La càmera de la gràfica a «Consultes» (grafica.js, botoImatge): al final de la llegenda. */
 .g-llegenda .g-imatge { margin-left: auto; display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem;

@@ -372,3 +372,38 @@ La vista en grande ya no lleva el botón «Com encerta», las flechas de los
 días pasados ni la antelación: están en su propia página, «Fiabilitat», a la
 que se llega desde el menú ⋮ (ADR 0110). Lo que este ADR dice de «Com
 encerta» en la vista en grande ya no vale.
+
+## Cambio del 20-10-2026 (3.166.0): hora a hora, desplazando de lado
+
+La gráfica enseña siempre todas las horas que quedan, hasta mañana a las 21 h,
+**hora a hora**: cada hora tiene como mínimo 36 píxeles (`COL_HORA`), con su
+icono del cielo y su temperatura, y si no caben todas la gráfica se desplaza
+de lado, con el dedo en el móvil y con la barra en el ordenador; mientras
+queda gráfica a la derecha, el borde se difumina para que se vea que sigue.
+Sin el selector «24 h · Demà · Tot» de la portada ni de la vista en grande
+(Juanjo, 20-10-2026: «quiero que hagas siempre tot pero con barra de
+desplazamiento horizontal… me interesa que salga hora a hora, no cada 2
+horas»). Antes, para caber en la pantalla, el cielo salía cada 2 o 3 horas.
+Vale para todas las gráficas: la portada, la vista en grande, «Consultes» y
+el día a día de «Fiabilitat». La ficha de cada hora pasa a ser un recuadro
+encima de la figura, fuera de la caja que se desplaza, para que no quede
+recortada, y se cierra al desplazar. Las imágenes (la cámara y la que el NAS
+manda a Telegram, `grafica_imatge.py`) se dibujan compactas, al ancho de la
+página, como antes (`fig._compacte`), para que salga todo en una. La caja
+se puede recorrer con el teclado (foco y flechas) y tiene nombre para los
+lectores de pantalla.
+
+Validación: Chromium, Firefox y WebKit en escritorio, móvil y tableta, claro y
+oscuro, sin errores ni desbordamiento de la página; desplazar y tocar una hora
+en móvil y ordenador (la ficha queda dentro de la pantalla); la imagen de la
+cámara, de 388 px en un móvil de 393, y la de Telegram, entera; axe-core sin
+fallos en la portada, «Consultes» y «Fiabilitat».
+
+En la misma versión, **«Opcions» pasa al final de la leyenda**, dentro de la
+figura, como la cámara de «Consultes»; en el móvil, solo con el icono. Así
+desaparece la fila de debajo de la gráfica, que solo llevaba ese botón (Juanjo,
+20-10-2026: «el botón opciones, se podría meter dentro del gráfico sin
+transtornarlo? sin texto en el movil, ganariamos un espacio»). Y en la vista en
+grande se quita el rótulo «Es recorda per a totes les gràfiques» de los
+interruptores, que ya se entiende («quita esto, ya se entiende»); el grupo lo
+conserva como nombre para los lectores de pantalla.
