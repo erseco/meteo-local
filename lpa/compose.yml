@@ -1,0 +1,17 @@
+services:
+  meteo-lpa:
+    build:
+      context: ..
+      dockerfile: lpa/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      TZ: Atlantic/Canary
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true

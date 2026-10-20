@@ -1,3 +1,5 @@
+> **Versión de Las Palmas de Gran Canaria:** [instalación, fuentes y actualización desde el original](lpa/README.md). La adaptación está en la rama `lpa`; `main` conserva el original.
+
 # meteo-local
 
 **Objetivo**: dar a los vecinos de Montflorit predicciones fiables, en la

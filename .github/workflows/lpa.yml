@@ -1,0 +1,48 @@
+name: Las Palmas
+on:
+  push:
+    branches: [lpa]
+  pull_request:
+    branches: [lpa]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  adaptation:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Atlantic/Canary
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - run: pip install numpy pillow
+      - run: python3 -m unittest discover -s tests -b
+        env:
+          TZ: Europe/Madrid
+      - run: python3 -m unittest discover -s lpa/tests -v
+      - run: python3 -m lpa.build /tmp/meteo-lpa
+      - run: for file in /tmp/meteo-lpa/*.js; do node --check "$file"; done
+      - name: Browser and accessibility dependencies
+        run: |
+          npm install --prefix /tmp/lpa-browser --no-save --package-lock=false playwright@1.62.1 axe-core@4.14.0
+          /tmp/lpa-browser/node_modules/.bin/playwright install --with-deps chromium firefox webkit
+      - name: Browser and accessibility checks
+        env:
+          NODE_PATH: /tmp/lpa-browser/node_modules
+        run: |
+          python3 -m lpa.tests.fixture /tmp/meteo-lpa/montflorit.json
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory /tmp/meteo-lpa >/tmp/lpa-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          node lpa/tests/browser.cjs
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: lpa-browser-screenshots
+          path: /tmp/lpa-screenshots
+          if-no-files-found: ignore
