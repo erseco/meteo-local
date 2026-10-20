@@ -47,3 +47,16 @@ Versión 3.74.0.
   (12-10-2026): sin elegir, `/` en catalán y `/es/sortir.html` en castellano;
   tras pulsar «ES», `/` lleva a `/es/` y `/consultes.html?q=trens#x` a
   `/es/consultes.html?q=trens#x`; tras pulsar «CA», `/es/` lleva a `/`.
+
+
+## Cambio del 20-10-2026 (3.164.0): por defecto, el idioma del sistema
+
+Juanjo (20-10-2026): «el idioma por defecto será el del sistema, luego el
+usuario lo podrá cambiar por el que quiera». Sin un idioma elegido, el
+`<head>` de cada página pública (`IDIOMA_RECORDAT` de `montflorit.py`) toma
+el primero de `navigator.languages` que sea catalán o castellano y lleva a la
+página en ese idioma; si no hay ninguno de los dos, cada página sale en el
+suyo y el inicio, en catalán, como antes. Lo elegido con el selector, o con
+el del menú ⋮ del móvil, sigue mandando y se recuerda. Validación: en
+Chromium y Firefox con el navegador en es-ES (abre `/es/`), ca-ES y en-US
+(abren `/`), y la elección guardada al cambiar desde el menú.

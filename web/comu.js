@@ -1712,6 +1712,97 @@ function mostraPerCopiar(tot) {
 
 for (const b of document.querySelectorAll('.boto-compartir')) b.addEventListener('click', () => comparteix());
 
+// Al mòbil, la botonera de dalt ocupava una fila sencera a sobre del títol:
+// ara hi queden la campana i ⋮, al costat del títol, i dins de ⋮ el que es
+// fa servir de tant en tant (compartir, l'ajuda, l'idioma i el tema). A
+// l'ordinador, tot a la vista, com abans (Juanjo, 20-10-2026: «se podría
+// poner en un menú de 3 puntos?», i la proposta mixta: «sí, la B»).
+function menuMes() {
+  const botons = document.querySelector?.('.cap-botons');
+  if (!botons) return;
+  const boto = element('button', 'boto-icona boto-mes');
+  boto.type = 'button';
+  boto.title = T('Més opcions');
+  boto.setAttribute('aria-label', T('Més opcions'));
+  boto.setAttribute('aria-expanded', 'false');
+  boto.setAttribute('aria-controls', 'menu-mes');
+  // L'icona «ellipsis-vertical» de Lucide.
+  boto.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1"/>'
+    + '<circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
+  const menu = element('div', 'menu-mes');
+  menu.id = 'menu-mes';
+  menu.hidden = true;
+  const tanca = () => { menu.hidden = true; boto.setAttribute('aria-expanded', 'false'); };
+  const fila = (icon, text, accio) => {
+    const b = element(accio.href ? 'a' : 'button', 'menu-mes-opcio');
+    if (accio.href) b.href = accio.href;
+    else { b.type = 'button'; b.addEventListener('click', () => { tanca(); accio(); }); }
+    b.append(icona(icon), text);
+    return b;
+  };
+  const compartir = document.querySelector('.cap-botons .boto-compartir');
+  if (compartir) menu.append(fila('i-share-2', T('Comparteix aquesta pàgina'), () => compartir.click()));
+  const ajuda = document.querySelector('.cap-botons a[href$="com-funciona.html"]');
+  if (ajuda) menu.append(fila('i-circle-help', T('Com funciona'), { href: ajuda.href }));
+  // Grups de botons units, el triat marcat, com el selector d'hores de la gràfica.
+  const grup = (nom, opcions) => {
+    const g = element('div', 'menu-mes-grup');
+    const id = `menu-mes-${nom.toLowerCase().replace(/[^a-z]/g, '')}`;
+    const etiqueta = element('span', 'menu-mes-nom', nom);
+    etiqueta.id = id;
+    const trams = element('div', 'vg-trams');
+    trams.setAttribute('role', 'group');
+    trams.setAttribute('aria-labelledby', id);
+    trams.append(...opcions);
+    g.append(etiqueta, trams);
+    return g;
+  };
+  // L'idioma: les dues llengües, amb el nom sencer; el clic el desa (CLAU_IDIOMA).
+  const idiomes = document.querySelector('.cap-botons .idiomes');
+  if (idiomes) {
+    menu.append(grup(T('Idioma'), [...idiomes.children].map((x) => {
+      const o = element(x.tagName === 'A' ? 'a' : 'span', 'vg-opcio', x.title);
+      if (x.tagName === 'A') { o.href = x.href; o.hreflang = x.hreflang; o.lang = x.lang; o.className += ' idioma-mes'; }
+      else { o.lang = x.lang; o.setAttribute('aria-current', 'true'); }
+      return o;
+    })));
+  }
+  // El tema: automàtic (el del dispositiu), clar o fosc.
+  const temes = [['auto', T('Automàtic')], ['clar', T('Clar')], ['fosc', T('Fosc')]].map(([clau, text]) => {
+    const b = element('button', 'vg-opcio', text);
+    b.type = 'button';
+    b.dataset.tema = clau;
+    b.addEventListener('click', () => { triaTema(clau); marcaTema(); });
+    return b;
+  });
+  const marcaTema = () => {
+    const actual = segueixSistema() ? 'auto' : document.documentElement.dataset.theme === 'dark' ? 'fosc' : 'clar';
+    for (const b of temes) b.setAttribute('aria-pressed', String(b.dataset.tema === actual));
+  };
+  if ($('btn-fosc')) menu.append(grup(T('Tema'), temes));
+  boto.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!menu.hidden) { tanca(); return; }
+    marcaTema();
+    menu.hidden = false;
+    boto.setAttribute('aria-expanded', 'true');
+  });
+  document.addEventListener('click', (e) => { if (!menu.hidden && !menu.contains(e.target)) tanca(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { tanca(); boto.focus(); } });
+  botons.append(boto, menu);
+}
+
+// Tria el tema des del menú: «auto» torna a seguir el del dispositiu.
+function triaTema(clau) {
+  try {
+    if (clau === 'auto') localStorage.removeItem('meteo.fosc');
+    else localStorage.setItem('meteo.fosc', clau === 'fosc' ? '1' : '0');
+  } catch (_) {}
+  aplicaFosc(clau === 'auto' ? sistemaFosc.matches : clau === 'fosc', false);
+}
+
+menuMes();
+
 // «Enrere», com en una aplicació (Juanjo, 12-10-2026: «al ir hacia atrás
 // fuese a la pagina principal y si pulso otra vez, entonces se sale de la
 // app»; ADR 0074 i 0076). Entre les pestanyes, la nova substitueix l'anterior;
@@ -1778,12 +1869,13 @@ function segueixDesti() {
 segueixDesti();
 addEventListener('pageshow', (e) => { if (e.persisted) segueixDesti(); });
 
-// L'idioma triat amb el selector es recorda en aquest aparell (ADR 0083): la
-// web i l'app s'obren en català fins que algú en tria un altre, i després en
-// el triat. Qui hi porta és el <head> de cada pàgina pública (montflorit.py).
+// L'idioma triat amb el selector (o al menú ⋮) es recorda en aquest aparell
+// (ADR 0083): la web i l'app s'obren en el del sistema (català o castellà;
+// si no és cap dels dos, en català) fins que algú en tria un altre, i després
+// en el triat. Qui hi porta és el <head> de cada pàgina pública (montflorit.py).
 const CLAU_IDIOMA = 'meteo.idioma';
 document.addEventListener('click', (e) => {
-  const a = e.target.closest('.idiomes a[hreflang]');
+  const a = e.target.closest('.idiomes a[hreflang], .idioma-mes');
   if (a) try { localStorage.setItem(CLAU_IDIOMA, a.hreflang); } catch (_) {}
 });
 

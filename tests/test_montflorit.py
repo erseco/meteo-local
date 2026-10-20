@@ -117,9 +117,9 @@ class Web(unittest.TestCase):
 
     def test_no_parla_del_trajecte_ni_de_casa(self):
         index = self.llegeix("index.html")
-        self.assertIn("<h1>Temps a Montflorit</h1>", index)
+        self.assertIn("<h1><span class=\"titol-llarg\">Temps a </span>Montflorit</h1>", index)
         # El menú público: el tiempo ahora y «Si surts», sin el trayecto (ADR 0029).
-        self.assertIn('<a href="./" aria-current="page"><svg aria-hidden="true"><use href="#i-cloud-sun"></use></svg>El temps</a>', index)
+        self.assertIn('<a href="./" aria-current="page"><svg aria-hidden="true"><use href="#i-cloud-sun"></use></svg>Temps</a>', index)
         self.assertNotIn("Trajecte", index)
         self.assertIn('data-dades="montflorit.json"', index)
         for nom in ("index.html", "manifest.webmanifest"):
@@ -185,7 +185,7 @@ class Web(unittest.TestCase):
         for html in (index, fonts):
             self.assertIn('<html lang="es"', html)
             self.assertIn('href="../estil.css"', html)
-        self.assertIn("<h1>El tiempo en Montflorit</h1>", index)
+        self.assertIn("<h1><span class=\"titol-llarg\">El tiempo en </span>Montflorit</h1>", index)
         self.assertIn('data-arrel="../"', index)
         # El diccionario, antes que el programa de la página.
         self.assertLess(index.index('src="../es.js"'), index.index('src="../comu.js"'))

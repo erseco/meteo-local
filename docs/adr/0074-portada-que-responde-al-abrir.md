@@ -265,3 +265,23 @@ los medios por veredicto, también se descartó: «eso solo hace que haya dos
 cosas para leer». Cada tarjeta ya lleva arriba el medio y su veredicto en
 color, así que la respuesta sigue a la vista sin repetirla. «Si surts» queda
 con las horas, «Tria els mitjans» y las tarjetas.
+
+
+## Cambio del 20-10-2026 (3.164.0): la botonera de arriba, en ⋮ en el móvil
+
+En el móvil, la botonera de la cabecera (idioma, compartir, ayuda, campana y
+tema) ocupaba una fila entera encima del título. Juanjo preguntó por un menú
+de tres puntos; se propuso un reparto mixto y lo aprobó («sí, la B»): junto
+al título quedan la campana, que interesa que se vea, y ⋮, y dentro de ⋮
+(`comu.menuMes`) lo que se usa de vez en cuando: compartir, «Com funciona», el
+idioma (Català · Castellano) y el tema (Automàtic · Clar · Fosc), con lo
+elegido marcado. En el ordenador, todo sigue a la vista y no hay ⋮. Para que
+el título quepa en la misma fila, en el móvil la portada se titula solo
+«Montflorit» («Temps» ya lo dice la pestaña; la pestaña del navegador y lo
+que se comparte siguen con «Temps a Montflorit»), y la pestaña «El temps»
+pasa a «Temps» («Tiempo»), que en el móvil ocupaba dos líneas. La cabecera
+del móvil pasa de 80 a 40 píxeles.
+
+Validación: Chromium y Firefox a 360, 412 y 1280 px, en catalán y castellano;
+el menú abre y cierra (fuera y con Esc), el tema y el idioma se guardan;
+axe-core sin fallos con el menú cerrado y abierto, claro y oscuro.

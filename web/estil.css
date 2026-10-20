@@ -114,13 +114,32 @@ a { color: var(--enllac); }
 .cap h1 { grid-column: 1; grid-row: 1; }
 .cap .ruta { grid-column: 1 / -1; grid-row: 2; }
 .cap-botons { grid-column: 2; grid-row: 1; }
-/* Al mòbil la botonera no deixa lloc al títol: va en una fila a sobre. */
+/* El menú ⋮ (comu.menuMes): només al mòbil. Allà, al costat del títol, la
+   campana i ⋮; la resta (compartir, l'ajuda, l'idioma i el tema), a dins.
+   Abans la botonera anava en una fila a sobre del títol (20-10-2026). */
+.cap-botons .boto-mes { display: none; }
+.cap-botons { position: relative; }
 @media (max-width: 30rem) {
-  .cap { grid-template-columns: 1fr; row-gap: .6rem; }
-  .cap-botons { grid-column: 1; justify-self: end; }
-  .cap h1 { grid-row: 2; }
-  .cap .ruta { grid-row: 3; }
+  .cap-botons > .idiomes, .cap-botons > .boto-compartir, .cap-botons > a[href$="com-funciona.html"],
+  .cap-botons > #btn-fosc { display: none; }
+  .cap-botons .boto-mes { display: grid; }
+  /* El títol de la portada, només «Montflorit» (montflorit.py). */
+  .titol-llarg { display: none; }
 }
+.menu-mes { position: absolute; right: 0; top: calc(100% + .4rem); z-index: 60; min-width: 17.5rem;
+  display: grid; gap: .2rem; padding: .4rem; background: var(--superficie); border: 1px solid var(--vora);
+  border-radius: .6rem; box-shadow: 0 6px 20px rgb(0 0 0 / .18); }
+.menu-mes[hidden] { display: none; }
+.menu-mes-opcio { display: flex; align-items: center; gap: .6rem; padding: .55rem .6rem; border: 0; border-radius: .4rem;
+  background: none; color: var(--text); font: inherit; text-decoration: none; text-align: left; cursor: pointer; }
+.menu-mes-opcio:hover, .menu-mes-opcio:focus-visible { background: var(--fons); }
+.menu-mes-opcio svg { width: 1.2rem; height: 1.2rem; flex: none; fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; }
+.menu-mes-grup { display: grid; gap: .3rem; padding: .5rem .6rem .4rem; border-top: 1px solid var(--vora); }
+.menu-mes-nom { color: var(--suau); font-size: .85rem; }
+.menu-mes .vg-trams { display: flex; }
+.menu-mes .vg-trams .vg-opcio { flex: 1; justify-content: center; text-decoration: none; }
+.menu-mes .vg-opcio[aria-current] { background: var(--enllac); color: var(--fons); }
 
 h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .ruta { margin: .2rem 0 0; color: var(--suau); }

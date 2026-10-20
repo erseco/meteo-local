@@ -58,7 +58,7 @@ NAV = re.compile(r'\n( *)<nav class="pagines".*?</nav>', re.S)   # amb el sagnat
 # Desde el 11-10-2026, «Perill», entre «El temps» y «Si surts»: las situaciones de peligro (ADR 0071);
 # desde el 20-10-2026 se llama «Avisos», y la página de la campana, «Notificacions».
 # Desde el 19-10-2026, «Riera», tras «Perill»: la riera ahora, la previsión y los episodios (ADR 0107).
-PAGINES_PUBLIQUES = [("./", "El temps", "i-cloud-sun"), ("perill.html", "Avisos", "i-triangle-alert"),
+PAGINES_PUBLIQUES = [("./", "Temps", "i-cloud-sun"), ("perill.html", "Avisos", "i-triangle-alert"),
                      ("riera.html", "Riera", "i-waves"), ("sortir.html", "Si surts", "i-door-open"),
                      ("consultes.html", "Consultes", "i-message-square-text")]
 
@@ -102,7 +102,9 @@ CANVIS_INDEX = [
     ("<title>Temps a casa</title>", "<title>Temps a Montflorit</title>"),
     # Sota el títol, què hi ha a la web (Juanjo, 09-10-2026).
     ('<h1>Temps a casa</h1>\n      <p class="ruta">Montflorit, Cerdanyola del Vallès</p>',
-     f'<h1>Temps a Montflorit</h1>\n      <p class="ruta">{DESCRIPCIO}</p>'),
+     # Al mòbil, només «Montflorit»: «Temps» ja el diu la pestanya, i el títol
+     # cap al costat de la campana i ⋮ (Juanjo, 20-10-2026).
+     f'<h1><span class="titol-llarg">Temps a </span>Montflorit</h1>\n      <p class="ruta">{DESCRIPCIO}</p>'),
 ]
 
 CANVIS_FONTS = [
@@ -251,7 +253,7 @@ CANVIS_ES_COM_FUNCIONA = [
     ('href="img/montflorit-limits.svg"', 'href="../img/montflorit-limits.svg"'),
     ('src="img/montflorit-limits.svg"', 'src="../img/montflorit-limits.svg"'),
 ]
-CANVIS_ES_NAV = [(">El temps</a>", ">El tiempo</a>"), (">Si surts</a>", ">Si sales</a>"),
+CANVIS_ES_NAV = [(">Temps</a>", ">Tiempo</a>"), (">Si surts</a>", ">Si sales</a>"),
                  (">Consultes</a>", ">Consultas</a>")]
 # La traducción es automática: se dice en los créditos.
 CREDIT_TRADUCCIO = ('</a>, licencia ISC.</li>',
@@ -355,12 +357,16 @@ def alternes(html, nom):
 
 
 # L'idioma triat amb el selector (comu.js el desa): si no és el de la pàgina,
-# la mateixa pàgina en l'altre, abans de pintar-la (ADR 0083). Sense triar,
-# cada pàgina surt en el seu idioma, i l'inici (també el de l'app), en català.
+# la mateixa pàgina en l'altre, abans de pintar-la (ADR 0083). Sense triar, el
+# del sistema, si és el català o el castellà (el primer dels dos que hi
+# surti); si no n'hi ha cap, cada pàgina en el seu, i l'inici, en català
+# (Juanjo, 20-10-2026: «el idioma por defecto será el del sistema, luego el
+# usuario lo podrá cambiar por el que quiera»).
 IDIOMA_RECORDAT = """
   <script>
     try {
-      const triat = localStorage.getItem('meteo.idioma');
+      const triat = localStorage.getItem('meteo.idioma') || (navigator.languages || [navigator.language])
+        .map((l) => String(l || '').slice(0, 2).toLowerCase()).find((l) => l === 'ca' || l === 'es');
       const altre = triat && triat !== document.documentElement.lang
         && document.querySelector(`link[rel="alternate"][hreflang="${triat}"]`);
       if (altre) location.replace(new URL(altre.href).pathname + location.search + location.hash);
