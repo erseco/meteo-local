@@ -28,6 +28,16 @@ def create(destination):
             'values':[{'taxon':'Gramíneas','value':0,'unit':'granos/m³'},{'taxon':'Alternaria (hongo)','value':2,'unit':'esporas/m³'}]},
             'detail':'Recuento observado, no pronóstico.'},
         'earthquakes': {'status':'ok','events':[], 'detail':'Eventos de Canarias incluidos en el GeoRSS consultado.'}}
+    import base64
+    import io
+    from PIL import Image
+    image=Image.new('RGB',(1000,580),'#e5f1f7'); output=io.BytesIO();image.save(output,format='PNG')
+    picture='data:image/png;base64,'+base64.b64encode(output.getvalue()).decode()
+    data['lpa']['radar']={'status':'ok','observed_at':now.isoformat(),'max_age_minutes':45,
+        'frames':[{'observed_at':(now-dt.timedelta(minutes=10)).isoformat(),'image':picture},
+                  {'observed_at':now.isoformat(),'image':picture}],
+        'legend':[{'color':'#0000fc','label':'12–18 dBZ'}],
+        'detail':'Reflectividad en dBZ. No equivale a lluvia medida en el suelo.'}
     write_json(destination, data)
 
 

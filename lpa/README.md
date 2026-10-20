@@ -97,7 +97,9 @@ licencia antes de un despliegue comercial.
 | Avisos oficiales | AEMET vía Meteoalarm, zona **Norte de Gran Canaria** |
 | Si sales | Interfaz y reglas meteorológicas del original; umbrales provisionales, sin validación local |
 | Estaciones locales y contraste con lo medido | AEMET Plaza de la Feria y Tafira, aeropuerto GCLP, Arenales, La Montañeta (WU), La Isleta (GRAFCAN) y catálogo de 14 estaciones escolares; historial y comprobación prospectiva |
-| Radar y llegada/final de lluvia | No disponible hasta validar cobertura y proveedor local |
+| Radar | Secuencia de reflectividad AEMET de Canarias; sin llegada/final de lluvia calculados |
+| Mar y puerto | Widgets oficiales de PORTUS: nivel del mar, viento, presión y oleaje previsto; carga bajo demanda |
+| Guaguas | Consultas oficiales, rutas, incidencias y códigos de referencia; llegadas dentro de la web pendientes |
 | Protección Civil, incendios y restricciones | No disponible; no se usa Meteocat, INUNCAT ni Pla Alfa |
 | Crecidas de barrancos | No disponible; no se traslada el modelo de Sant Cugat |
 | Polen y esporas | Recuentos de SEAIC para Las Palmas, con fecha real y aviso si son antiguos; sin sustituirlos por polen peninsular |
@@ -112,6 +114,12 @@ su navegación, y cada servicio sin equivalente local aparece como no disponible
 Una fuente que falla conserva `null` y un error; no equivale a «sin avisos» ni a
 «sin incidencias». No se usa ningún historial ni calibración de Montflorit.
 La capa conserva observaciones y previsiones en `lpa-data` (Actions) o en disco/volumen (servidor local y Docker). Véase [OBSERVACIONES.md](OBSERVACIONES.md) para fuentes, contratos, límites y método.
+
+Radar, PORTUS y accesos de transporte: [RADAR-MAR-MOVILIDAD.md](RADAR-MAR-MOVILIDAD.md).
+La portada incluye radar y `es/radar.html` reúne radar y gráficos marinos. Los
+gráficos oficiales de PORTUS se consultan directamente al cargarlos y no se
+archivan en la rama de datos. Las llegadas de Guaguas no están integradas: las
+consultas verificadas no proporcionaron muestras utilizables.
 Los accesos institucionales pendientes y las gestiones necesarias se detallan en [FUENTES-PENDIENTES.md](FUENTES-PENDIENTES.md).
 
 Las Palmas tiene microclimas: el punto urbano elegido no representa por igual

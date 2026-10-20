@@ -75,9 +75,9 @@ def build(destination):
         text = re.sub(r'https://github.com/meteo-montflorit/meteo-local/releases[^"<]*', P.REPOSITORY + '/tree/lpa', text)
         notice = ('<section id="lpa-status" class="targeta" aria-label="Estado de las fuentes">'
                   '<h2>Datos para Las Palmas</h2><p>Hora canaria. Previsión de Open-Meteo; los ajustes locales se indican cuando están validados. '
-                  'Las observaciones se identifican por estación y antigüedad. El radar no está integrado. '
+                  'Las observaciones y las imágenes del radar se identifican por su antigüedad. '
                   'Los consejos de salida son orientativos; sus umbrales no están validados aquí.</p>'
-                  '<p><a href="observaciones.html">Estaciones e historial</a> · <a href="fuentes.html">Fuentes y funciones disponibles</a> · '
+                  '<p><a href="observaciones.html">Estaciones e historial</a> · <a href="radar.html">Radar y mar</a> · <a href="fuentes.html">Fuentes y funciones disponibles</a> · '
                   f'<a href="{P.AEMET_ALERTS}">Avisos oficiales de AEMET</a></p></section>')
         text, count = re.subn(r'(<main\b[^>]*>)', lambda m: m[1] + notice, text)
         if count != 1:
@@ -88,6 +88,13 @@ def build(destination):
                           '', text, flags=re.S)
         text = text.replace('<script src="../comu.js">', '<script src="../lpa-time.js"></script>\n<script src="../comu.js">')
         text = replace_once(text, '</body>', '<script src="../lpa-ui.js"></script>\n</body>')
+        if source.name in ('index.html','sortir.html'):
+            extra = ('<section id="lpa-radar" class="targeta"><h2>Radar de Canarias</h2><p>Cargando radar…</p></section>'
+                     if source.name == 'index.html' else
+                     '<section id="lpa-mobility" class="targeta"><h2>Guaguas Municipales</h2></section>')
+            text = replace_once(text,'</main>',extra+'</main>')
+            text = replace_once(text,'</head>','<link rel="stylesheet" href="../lpa-style.css"></head>')
+            text = replace_once(text,'</body>','<script src="../lpa-extras.js"></script></body>')
         if source.name == 'perill.html':
             text, count = re.subn(r'<main\b[^>]*>.*?</main>', '<main>' + notice + '<p>Avisos oficiales de AEMET para Norte de Gran Canaria, recibidos a través de Meteoalarm.</p><p id="avis-dades" hidden></p><section id="perill" aria-live="polite"><p>Cargando avisos…</p></section></main>', text, flags=re.S)
             if count != 1:
@@ -110,6 +117,14 @@ def build(destination):
     station_page = station_page.replace('</body>', '<script src="../lpa-time.js"></script><script src="../lpa-station-page.js"></script><script src="../lpa-ui.js"></script></body>')
     for name in ('observaciones.html', 'fiabilitat.html'):
         (dest / 'es' / name).write_text(station_page)
+    radar_page = static_page(template,'Radar y mar',
+        '<p>Imágenes observadas de AEMET y gráficos de Puertos del Estado. Consulte la fecha y el tipo de dato.</p>'
+        '<section id="lpa-radar"><h2>Radar de Canarias</h2><p>Cargando radar…</p></section>'
+        '<section id="lpa-marine"><h2>Mar y puerto</h2></section>')
+    radar_page = re.sub(r'<h1>.*?</h1>','<h1>Radar y mar</h1>',radar_page,flags=re.S)
+    radar_page = radar_page.replace('</head>','<link rel="stylesheet" href="../lpa-style.css"></head>')
+    radar_page = radar_page.replace('</body>','<script src="../lpa-time.js"></script><script src="../lpa-station-page.js"></script><script src="../lpa-ui.js"></script><script src="../lpa-extras.js"></script></body>')
+    (dest / 'es/radar.html').write_text(radar_page)
     for page in (dest / 'es').glob('*.html'):
         text = page.read_text()
         # Replace the unavailable upstream river tab; keep the mobile bar at five items.
@@ -124,6 +139,7 @@ def build(destination):
     shutil.copyfile(HERE / 'style.css', dest / 'lpa-style.css')
     # Redirect every root HTML entry point to its Spanish counterpart, retaining deep links.
     (dest / 'observaciones.html').touch()
+    (dest / 'radar.html').touch()
     for path in dest.glob('*.html'):
         path.write_text('<!doctype html><html lang="es"><meta charset="utf-8"><title>Tiempo en Las Palmas</title>'
                         f'<meta http-equiv="refresh" content="0;url=es/{path.name}"><a href="es/{path.name}">Abrir</a>'
@@ -172,7 +188,7 @@ def build(destination):
         # Local calendar operations use the site timezone, including for mainland visitors.
         text = text.replace('new Date(', 'new LpaDate(')
         path.write_text(rebrand(text))
-    for source, name in (('time.js', 'lpa-time.js'), ('ui.js', 'lpa-ui.js'), ('alerts.js', 'lpa-alerts.js'), ('station-page.js', 'lpa-station-page.js')):
+    for source, name in (('time.js', 'lpa-time.js'), ('ui.js', 'lpa-ui.js'), ('alerts.js', 'lpa-alerts.js'), ('station-page.js', 'lpa-station-page.js'), ('extras.js','lpa-extras.js')):
         shutil.copyfile(HERE / source, dest / name)
     # Never cache weather/alerts or register upstream push handlers.
     (dest / 'sw.js').write_text("// LPA: no offline weather cache or push backend.\n")
@@ -196,10 +212,13 @@ def sources_html():
             'Avisos de AEMET a través de Meteoalarm, zona Norte de Gran Canaria. '
             'Observaciones de AEMET, METAR de NOAA, GRAFCAN y estaciones escolares y particulares en Weathercloud y Weather Underground. '
             'Polen y esporas: recuentos fechados de SEAIC; sismicidad: GeoRSS del IGN. '
+            'Radar y cartografía: AEMET, reflectividad sin extrapolación de lluvia. '
+            'Mar: widgets oficiales de Puertos del Estado, cargados bajo demanda. Guaguas: enlaces a consultas oficiales; llegadas no integradas. '
             'La disponibilidad y antigüedad de cada lectura se muestran en Estaciones. Los ajustes de temperatura requieren validación temporal; los consejos de salida no tienen validación local.</p>'
             f'<p>Ubicación aproximada: {P.COORDINATES}; zona horaria {P.TIMEZONE}. '
             'Los datos no representan todos los microclimas del municipio.</p>'
-            '<p>La página consulta solo los JSON de su propio alojamiento. Preferencias de interfaz en '
+            '<p>La previsión, las estaciones y el radar se leen desde el propio alojamiento. Los gráficos de PORTUS '
+            'establecen una conexión externa solo al pulsar Cargar gráfico. Preferencias de interfaz en '
             'el almacenamiento del navegador. Sin suscripciones, Telegram ni servicio push propio. '
             'Los enlaces externos aplican sus propias condiciones.</p><ul>' + items + '</ul>'
             f'<p><a href="{P.REPOSITORY}/tree/lpa">Código AGPL-3.0-or-later</a>; contenidos CC BY-SA 4.0; '
