@@ -6,34 +6,94 @@ const fs = require('node:fs');
 const path = require('node:path');
 const axe = require('axe-core');
 const root = process.env.LPA_TEST_URL || 'http://127.0.0.1:8765';
-co…1691 tokens truncated…rams):
-        if url == FORECAST:
-            return json.dumps(forecast(now))
-        if url == AIR:
-            h = {key: [10] * 24 for key in aire.CONTAMINANTS}
-            h['time'] = forecast(now)['hourly']['time'][:24]
-            return json.dumps({'hourly': h})
-        return feed(updated=now.isoformat())
-    data = collect(now, reader, include_observations=False)
-    from lpa.observations import STATIONS, URBAN_STATIONS, SCHOOL_STATIONS, validate
-    data['lpa']['observations'] = {'stations': [validate({'observed_at':now.isoformat(),'temperature_c':22.5,'relative_humidity_pct':65,'wind_kmh':10}, station, now) for station in STATIONS + URBAN_STATIONS + SCHOOL_STATIONS[:1]], 'providers': []}
-    data['lpa']['history'] = {'observations':3,'matched_samples':0,'retention_days':90,'method':'Temperatura a 2–6 horas; validación temporal y remuestreo por días.','stations':{s['id']:{'status':'learning','samples':0,'days':0} for s in STATIONS},'forecast_error':None}
-    data['lpa']['environment'] = {
-        'pollen': {'status':'stale', 'last_count':{'date':str(now.date()-dt.timedelta(days=40)),
-            'values':[{'taxon':'Gramíneas','value':0,'unit':'granos/m³'},{'taxon':'Alternaria (hongo)','value':2,'unit':'esporas/m³'}]},
-            'detail':'Recuento observado, no pronóstico.'},
-        'earthquakes': {'status':'ok','events':[], 'detail':'Eventos de Canarias incluidos en el GeoRSS consultado.'}}
-    import base64
-    import io
-    from PIL import Image
-    image=Image.new('RGB',(1000,580),'#e5f1f7'); output=io.BytesIO();image.save(output,format='PNG')
-    picture='data:image/png;base64,'+base64.b64encode(output.getvalue()).decode()
-    data['lpa']['radar']={'status':'ok','observed_at':now.isoformat(),'max_age_minutes':45,
-        'frames':[{'observed_at':(now-dt.timedelta(minutes=10)).isoformat(),'image':picture},
-                  {'observed_at':now.isoformat(),'image':picture}],
-        'legend':[{'color':'#0000fc','label':'12–18 dBZ'}],
-        'detail':'Reflectividad en dBZ. No equivale a lluvia medida en el suelo.'}
-    write_json(destination, data)
+const screenshots = process.env.LPA_SCREENSHOTS || '/tmp/lpa-screenshots';
+const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox', 'webkit'];
 
-
-if __name__ == '__main__': create(sys.argv[1])
+(async () => {
+  fs.mkdirSync(screenshots, {recursive: true});
+  for (const [name, type] of Object.entries({chromium, firefox, webkit})) {
+    if (!selected.includes(name)) continue;
+    const browser = await type.launch({headless: true});
+    try {
+      for (const mobile of [false, true]) for (const dark of [false, true]) {
+        const context = await browser.newContext({
+          viewport: mobile ? {width: 390, height: 844} : {width: 1440, height: 1000},
+          colorScheme: dark ? 'dark' : 'light', timezoneId: 'America/New_York',
+        });
+        const page = await context.newPage();
+        let errors = [], external = [];
+        page.on('pageerror', error => errors.push(error.message));
+        page.on('request', request => {
+          if (!request.url().startsWith(root + '/')) external.push(request.url());
+        });
+        for (const file of ['index.html', 'sortir.html', 'consultes.html', 'perill.html',
+                            'riera.html', 'fonts.html', 'avisos.html', 'fuentes.html', 'observaciones.html', 'fiabilitat.html', 'radar.html']) {
+          errors = []; external = [];
+          await page.goto(`${root}/es/${file}`);
+          if (file === 'index.html') await page.locator('#casa .previsio').first().waitFor();
+          if (file === 'sortir.html') await page.getByText('No hay datos de servicio de Guaguas Municipales ni Global.').waitFor();
+          if (file === 'observaciones.html' || file === 'fiabilitat.html') await page.getByText('Plaza de la Feria: Recogiendo datos', {exact:false}).waitFor();
+          if (file === 'observaciones.html') {
+            await page.getByRole('heading', {name:'La Isleta · Geonica 3705',exact:true}).waitFor();
+            await page.getByText('Dato antiguo: no representa el polen actual.',{exact:true}).waitFor();
+            await page.getByText('No aparecen eventos de Canarias en el feed consultado.',{exact:false}).waitFor();
+            await page.getByText('Red de estaciones de centros educativos',{exact:true}).click();
+            await page.getByRole('heading',{name:'IES Santiago Santana',exact:true}).waitFor();
+          }
+          if (file === 'perill.html') await page.getByText('No hay avisos de AEMET en el feed consultado', {exact: false}).waitFor();
+          if (file === 'radar.html') {
+            await page.locator('.lpa-radar-image').waitFor();
+            const slider=page.getByLabel('Imagen de la secuencia',{exact:true});
+            await slider.fill('0');
+            await page.getByText('imagen 1 de 2',{exact:false}).waitFor();
+            assert.equal(await page.locator('iframe').count(),0,'PORTUS must not load before a click');
+          }
+          if (file === 'sortir.html') {
+            await page.getByRole('link',{name:'Consultar Próxima Guagua',exact:true}).waitFor();
+          }
+          await page.addScriptTag({content: axe.source});
+          const violations = await page.evaluate(async () => (await axe.run()).violations.map(v => ({id:v.id, nodes:v.nodes.length})));
+          assert.deepEqual(violations, [], `${name}/${file}: accessibility violations`);
+          assert.deepEqual(errors, [], `${name}/${file}: JavaScript errors`);
+          assert.deepEqual(external, [], `${name}/${file}: external requests`);
+          assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${name}/${file}: overflow`);
+          await page.screenshot({path: path.join(screenshots, `${name}-${mobile?'mobile':'desktop'}-${dark?'dark':'light'}-${file}.png`), fullPage:true});
+        }
+        // Official embeds are opt-in and use the reviewed station URL, without a proxy.
+        await page.goto(`${root}/es/radar.html`);
+        await page.route('https://portus.puertos.es/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>PORTUS fixture</title><p>Official graph fixture</p>'}));
+        await page.getByRole('button',{name:'Cargar gráfico de PORTUS',exact:true}).first().click();
+        assert.equal(await page.locator('iframe').count(),1);
+        assert.equal(await page.locator('iframe').getAttribute('src'),'https://portus.puertos.es/PortusData/rtChart?station=3450&params=SeaLevel&locale=es');
+        await page.unroute('https://portus.puertos.es/**');
+        // Exercise air, unavailable providers, source failure and stale-data handling.
+        await page.goto(`${root}/es/consultes.html`);
+        await page.getByRole('radio', {name:'Aire',exact:true}).check();
+        await page.locator('#consulta').getByText('Calidad del aire', {exact:false}).waitFor();
+        await page.getByRole('radio', {name:'Polen',exact:true}).check();
+        await page.getByText('Polen local no disponible', {exact:false}).waitFor();
+        await page.route('**/montflorit.json?*', async route => {
+          const response = await route.fetch();
+          const data = await response.json();
+          data.avisos = null;
+          await route.fulfill({json:data});
+        });
+        await page.goto(`${root}/es/perill.html`);
+        await page.getByText('Avisos no disponibles o datos caducados.', {exact:false}).waitFor();
+        await page.unroute('**/montflorit.json?*');
+        await page.route('**/montflorit.json?*', async route => {
+          const response = await route.fetch();
+          const data = await response.json();
+          data.generat = '2000-01-01T00:00:00+00:00';
+          await route.fulfill({json:data});
+        });
+        await page.goto(`${root}/es/index.html`);
+        await page.getByText('Datos caducados.', {exact:false}).waitFor();
+        await page.getByText('Radar antiguo:',{exact:false}).waitFor();
+        assert.equal(await page.locator('#casa .previsio').count(),0);
+        await context.close();
+        console.log(`${name}: ${mobile?'mobile':'desktop'}, ${dark?'dark':'light'} passed`);
+      }
+    } finally { await browser.close(); }
+  }
+})().catch(error => {console.error(error);process.exitCode=1;});
