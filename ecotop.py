@@ -79,7 +79,12 @@ def cal(casa, ara):
         return True
     fins = ara + dt.timedelta(hours=HORES_PREVISIO)
     for h in casa.get("hores") or []:
+        # Les hores de casa.json són locals i sense zona («2026-10-20T17:00»):
+        # comparades amb ara, amb zona, fallava cada vegada que no plovia
+        # (20-10-2026).
         t = dt.datetime.fromisoformat(h["hora"])
+        if t.tzinfo is None:
+            t = t.replace(tzinfo=ZONA)
         if ara - dt.timedelta(hours=1) < t <= fins and (h.get("probabilitat") or 0) >= PROB_MIN:
             return True
     return False

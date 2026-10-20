@@ -49,6 +49,9 @@ class Ecotop(unittest.TestCase):
         self.assertTrue(E.cal({**sec, "radar": {"propera": {"km": 40}}}, ARA))
         self.assertTrue(E.cal({**sec, "pluja_ara": {"estat": "plou"}}, ARA))
         self.assertTrue(E.cal({**sec, "hores": [{"hora": "2026-10-19T21:00:00+02:00", "probabilitat": 0.3}]}, ARA))
+        # Les hores de casa.json, sense zona (com les escriu casa.py).
+        self.assertFalse(E.cal({**sec, "hores": [{"hora": "2026-10-19T18:00", "probabilitat": 0.05}]}, ARA))
+        self.assertTrue(E.cal({**sec, "hores": [{"hora": "2026-10-19T21:00", "probabilitat": 0.3}]}, ARA))
         # Més enllà de 6 hores, no.
         self.assertFalse(E.cal({**sec, "hores": [{"hora": "2026-10-20T03:00:00+02:00", "probabilitat": 0.9}]}, ARA))
 
