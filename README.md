@@ -118,7 +118,7 @@ mira cada minuto si hay código nuevo, publica. Solo publica el NAS.
 
 En cada pasada, la estación particular se sube también a la red de
 estaciones personales de Weather Underground (`wunderground.py`, ADR 0059),
-y con la clave de lectura de esa red se leen tres estaciones vecinas del
+y con la clave de lectura de esa red se leen cuatro estaciones vecinas del
 barrio (ADR 0060).
 A las 16:00 el NAS rellena las horas que falten de la estación particular y la
 previsión aprende de sus aciertos (`aprenentatge.py`). En `main` no hay commits
@@ -128,7 +128,7 @@ Fuentes de la previsión:
 
 1. **Estaciones**: la particular del barrio (Ecowitt), al minuto, cuya lluvia
    solo cuenta cuando marca (ADR 0017) y cuya presión se reduce al nivel del
-   mar (ADR 0037); tres vecinas de la red de Weather Underground, cada cinco
+   mar (ADR 0037); cuatro vecinas de la red de Weather Underground, cada cinco
    minutos, que también hacen que «plou ara» cuente si alguna marca, y la
    más fiable confirma las horas secas (ADR 0060); y las de Meteocat en
    Sabadell y Sant Cugat, que también confirman las horas secas para
@@ -285,5 +285,5 @@ Iconos de [Lucide](https://lucide.dev/) (ISC). Los datos de terceros se
 consultan automáticamente: el autor no se hace responsable de su exactitud.
 
 Código bajo AGPL-3.0-or-later ([LICENSE](LICENSE)); contenidos bajo CC BY-SA
-4.0 ([LICENSE-CONTINGUTS.md](LICENSE-CONTINGUTS.md)). Hecho con IA:
-[nivel 4 del MIAE](https://jjdeharo.github.io/miae/?nivel=4).
+4.0 ([LICENSE-CONTINGUTS.md](LICENSE-CONTINGUTS.md)). Hecho con IA (Claude Code): qué hace la IA y qué revisa el autor, en
+[«Com s'ha fet»](https://meteo-montflorit.github.io/fonts.html#com-sha-fet).

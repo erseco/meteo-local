@@ -38,5 +38,5 @@ per què es va fer cada canvi i quan.
 © 2026 Juan José de Haro. Codi sota [AGPL v3](LICENSE); continguts sota
 [CC BY-SA 4.0](LICENSE-CONTINGUTS.md). Les dades són de les fonts citades.
 
-Fet amb IA (Claude Code, octubre de 2026),
-[nivell 4 del MIAE](https://jjdeharo.github.io/miae/?nivel=4).
+Fet amb IA (Claude Code, octubre de 2026): què fa la IA i què revisa l'autor, a
+[«Com s'ha fet»](https://meteo-montflorit.github.io/fonts.html#com-sha-fet).

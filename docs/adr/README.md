@@ -112,5 +112,6 @@
 | [0108](0108-ecotop-de-aemet-en-registro.md) | El ecotop del radar de AEMET, en registro dos semanas | en curso |
 | [0109](0109-api-de-meteocat-de-reserva.md) | La API de Meteocat, de reserva de la página de avisos | aceptado |
 | [0110](0110-pagina-fiabilitat-y-comparacion-con-meteocat-y-aemet.md) | Página «Fiabilitat» y comparación con Meteocat y AEMET | aceptado |
+| [0111](0111-uso-de-ia-y-condiciones-de-las-fuentes.md) | El uso de IA explicado en «Fonts i crèdits» y las condiciones de las fuentes | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

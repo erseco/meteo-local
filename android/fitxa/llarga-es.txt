@@ -46,4 +46,4 @@ Montflorit al dia no es una app oficial ni está vinculada a ninguno de estos or
 
 Es una previsión calculada automáticamente, no una previsión oficial. Gratuita, sin anuncios, cookies ni estadísticas: solo se guarda lo mínimo para enviarte los avisos que activas. Software libre (AGPL v3).
 
-Hecho con IA (Claude Code), nivel 4 del MIAE: https://jjdeharo.github.io/miae/?nivel=4
+Hecho con IA (Claude Code).
