@@ -141,8 +141,10 @@ def collect(now=None, reader=fetch, include_observations=True):
                        "avis_min": 15, "mode_avis": [], "desfase_min": 0},
             "lpa": {"nom": P.NAME, "timezone": P.TIMEZONE, "unavailable": P.UNAVAILABLE,
                     "current_model": None, "sources": {}}, "consultes": {"es": {}}}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
         obs_future = pool.submit(observations.collect, now) if include_observations else None
+        from . import nature
+        nature_future = pool.submit(nature.collect, now) if include_observations else None
         futures = {pool.submit(reader, url, values): name for name, (url, values) in requests.items()}
         for future in concurrent.futures.as_completed(futures):
             name = futures[future]
@@ -181,6 +183,8 @@ def collect(now=None, reader=fetch, include_observations=True):
             except Exception:
                 data["lpa"]["observations"] = {"stations": [], "providers": observations.institutional_sources()}
                 data["errors"].append("observaciones: no se pudo completar la recogida")
+        if nature_future is not None:
+            data['lpa']['environment'] = nature_future.result()
     for row in data["hores"] or []:
         row["avisos"] = [a for a in data["avisos"] or []
                          if dt.datetime.fromisoformat(a["inicio"]) < dt.datetime.fromisoformat(row["fins"])
@@ -195,6 +199,11 @@ def collect(now=None, reader=fetch, include_observations=True):
                 "Estimación de Open-Meteo, sin calibración local.")
     for key in ("pollen", "trens", "transit", "llum"):
         data["consultes"]["es"][key] = P.UNAVAILABLE[key]
+    counts = data.get('lpa', {}).get('environment', {}).get('pollen', {})
+    if counts.get('last_count'):
+        day = counts['last_count']['date']
+        state = 'Dato antiguo; no describe el polen actual.' if counts['status'] == 'stale' else 'Último recuento observado; no es un pronóstico.'
+        data['consultes']['es']['pollen'] = f'Polen de Las Palmas · SEAIC. Último recuento: {day}. {state} Detalle en Estaciones e historial.'
     return data
 
 
@@ -219,6 +228,7 @@ def finalize(data, state_dir=None):
         update(data, state_dir)
     else:
         (data.get("lpa", {}).get("observations") or {}).pop("_archive", None)
+        data.get('lpa', {}).get('environment', {}).get('pollen', {}).pop('_archive', None)
     return data
 
 

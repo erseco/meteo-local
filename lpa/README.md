@@ -51,7 +51,7 @@ Desde la raíz del repositorio:
 
 ```sh
 git switch lpa
-python3 -m pip install numpy pillow
+python3 -m pip install -r lpa/requirements.txt
 python3 -m lpa.serve
 ```
 
@@ -96,11 +96,13 @@ licencia antes de un despliegue comercial.
 | Aire | CAMS global; índice calculado con las funciones del original, sin correcciones catalanas |
 | Avisos oficiales | AEMET vía Meteoalarm, zona **Norte de Gran Canaria** |
 | Si sales | Interfaz y reglas meteorológicas del original; umbrales provisionales, sin validación local |
-| Estaciones locales y contraste con lo medido | AEMET Plaza de la Feria y Tafira, aeropuerto GCLP y catálogo de 14 estaciones escolares; historial y comprobación prospectiva |
+| Estaciones locales y contraste con lo medido | AEMET Plaza de la Feria y Tafira, aeropuerto GCLP, Arenales, La Montañeta (WU), La Isleta (GRAFCAN) y catálogo de 14 estaciones escolares; historial y comprobación prospectiva |
 | Radar y llegada/final de lluvia | No disponible hasta validar cobertura y proveedor local |
 | Protección Civil, incendios y restricciones | No disponible; no se usa Meteocat, INUNCAT ni Pla Alfa |
 | Crecidas de barrancos | No disponible; no se traslada el modelo de Sant Cugat |
-| Guaguas, tráfico, luz y polen | No disponible; no se presentan datos de Cataluña |
+| Polen y esporas | Recuentos de SEAIC para Las Palmas, con fecha real y aviso si son antiguos; sin sustituirlos por polen peninsular |
+| Sismicidad | GeoRSS del IGN filtrado para Canarias, separado de la meteorología y sin inventar la zona horaria de sus textos |
+| Guaguas, tráfico y luz | No disponible; no se presentan datos de Cataluña |
 | Aprendizaje, correcciones y fiabilidad | Historial persistente y validación temporal de temperatura; corrección solo tras superar los requisitos de muestra y mejora |
 | Notificaciones y Telegram | Requieren backend y credenciales propios; desactivados |
 | Aplicación Android del original | No se anuncia ni se usa su asociación de dominio |
@@ -110,6 +112,7 @@ su navegación, y cada servicio sin equivalente local aparece como no disponible
 Una fuente que falla conserva `null` y un error; no equivale a «sin avisos» ni a
 «sin incidencias». No se usa ningún historial ni calibración de Montflorit.
 La capa conserva observaciones y previsiones en `lpa-data` (Actions) o en disco/volumen (servidor local y Docker). Véase [OBSERVACIONES.md](OBSERVACIONES.md) para fuentes, contratos, límites y método.
+Los accesos institucionales pendientes y las gestiones necesarias se detallan en [FUENTES-PENDIENTES.md](FUENTES-PENDIENTES.md).
 
 Las Palmas tiene microclimas: el punto urbano elegido no representa por igual
 Las Canteras, Ciudad Alta, Tafira y el resto del municipio. Para otra ubicación,

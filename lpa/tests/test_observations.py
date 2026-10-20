@@ -52,10 +52,10 @@ class Observations(unittest.TestCase):
             if url.endswith('C659M'):return XML
             raise TimeoutError()
         def school(station):raise TimeoutError()
-        result=O.collect(NOW,reader,school)
+        result=O.collect(NOW,reader,school,grafcan_reader=school)
         self.assertEqual(result['stations'][0]['status'],'ok')
         self.assertTrue(all(s['status']=='unavailable' for s in result['stations'][1:]))
-        self.assertEqual(len(result['stations']),17)
+        self.assertEqual(len(result['stations']),20)
 
 
 class History(unittest.TestCase):

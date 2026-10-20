@@ -112,7 +112,14 @@ def build(destination):
         (dest / 'es' / name).write_text(station_page)
     for page in (dest / 'es').glob('*.html'):
         text = page.read_text()
-        text = re.sub(r'(<nav class="pagines"[^>]*>)(.*?)(</nav>)', lambda m: m[1] + m[2] + '<a href="observaciones.html">Estaciones</a>' + m[3], text, flags=re.S)
+        # Replace the unavailable upstream river tab; keep the mobile bar at five items.
+        def station_nav(match):
+            nav, count = re.subn(r'<a\b[^>]*href="riera.html"[^>]*>.*?</a>',
+                '<a href="observaciones.html"><svg aria-hidden="true"><use href="#i-waves"></use></svg>Estaciones</a>', match[0], flags=re.S)
+            if count != 1:
+                raise ValueError('Upstream river navigation anchor changed')
+            return nav
+        text = re.sub(r'<nav class="pagines"[^>]*>.*?</nav>', station_nav, text, flags=re.S)
         page.write_text(text)
     shutil.copyfile(HERE / 'style.css', dest / 'lpa-style.css')
     # Redirect every root HTML entry point to its Spanish counterpart, retaining deep links.
@@ -187,7 +194,9 @@ def sources_html():
             '<p>Previsión: <a href="https://open-meteo.com/">Open-Meteo</a>, selección automática best_match, '
             'CC BY 4.0. Aire: CAMS global a través de Open-Meteo, sin corrección local. '
             'Avisos de AEMET a través de Meteoalarm, zona Norte de Gran Canaria. '
-            'Observaciones de AEMET, METAR de NOAA y estaciones escolares en Weathercloud. La disponibilidad de cada lectura se muestra en Estaciones. Los ajustes de temperatura requieren validación temporal; los consejos de salida no tienen validación local.</p>'
+            'Observaciones de AEMET, METAR de NOAA, GRAFCAN y estaciones escolares y particulares en Weathercloud y Weather Underground. '
+            'Polen y esporas: recuentos fechados de SEAIC; sismicidad: GeoRSS del IGN. '
+            'La disponibilidad y antigüedad de cada lectura se muestran en Estaciones. Los ajustes de temperatura requieren validación temporal; los consejos de salida no tienen validación local.</p>'
             f'<p>Ubicación aproximada: {P.COORDINATES}; zona horaria {P.TIMEZONE}. '
             'Los datos no representan todos los microclimas del municipio.</p>'
             '<p>La página consulta solo los JSON de su propio alojamiento. Preferencias de interfaz en '

@@ -28,7 +28,7 @@ function lpaStationCard(station) {
     card.append(lpaText('p', `Viento: ${lpaFormat(station.wind_kmh)} km/h · Racha: ${lpaFormat(station.gust_kmh)} km/h`));
     if (station.rain_mm != null) card.append(lpaText('p', `Lluvia acumulada en ${station.rain_period_minutes || '?'} min: ${lpaFormat(station.rain_mm)} mm`));
     if (station.rain_rate_mmh != null) card.append(lpaText('p', `Intensidad de lluvia: ${lpaFormat(station.rain_rate_mmh)} mm/h`));
-    if (station.pressure_hpa != null) card.append(lpaText('p', `Presión: ${lpaFormat(station.pressure_hpa)} hPa (${station.pressure_kind === 'sea_level' ? 'reducida al nivel del mar' : 'en la estación'})`));
+    if (station.pressure_hpa != null) card.append(lpaText('p', `Presión: ${lpaFormat(station.pressure_hpa)} hPa (${station.pressure_kind === 'sea_level' ? 'reducida al nivel del mar' : station.pressure_kind === 'station' ? 'en la estación' : 'referencia no especificada'})`));
   }
   if (station.raw_report) {
     const report = document.createElement('details');
@@ -60,6 +60,36 @@ function lpaShowHistory(box, history) {
   box.append(lpaText('p', 'Se exigen al menos 14 días y una prueba temporal independiente. El aeropuerto y Tafira no corrigen automáticamente la costa urbana. No se calibra la lluvia con METAR.', 'nota'));
   if (history.forecast_error) box.append(lpaText('p', history.forecast_error, 'avis'));
 }
+function lpaShowEnvironment(box, environment) {
+  if (!environment) return;
+  box.append(lpaText('h2', 'Polen y esporas · Las Palmas'));
+  const pollen = environment.pollen;
+  if (pollen?.last_count) {
+    const count = pollen.last_count;
+    box.append(lpaText('p', `SEAIC · Fecha del último recuento: ${count.date}.`));
+    if (pollen.status === 'stale') box.append(lpaText('p', 'Dato antiguo: no representa el polen actual.', 'avis'));
+    box.append(lpaText('p', pollen.detail));
+    const details = document.createElement('details');
+    details.append(lpaText('summary', 'Ver los recuentos por especie'));
+    const list = document.createElement('ul');
+    for (const value of count.values) list.append(lpaText('li', `${value.taxon}: ${lpaFormat(value.value)} ${value.unit}`));
+    details.append(list); box.append(details);
+  } else box.append(lpaText('p', 'No se pudieron obtener recuentos de SEAIC. No equivale a un nivel cero.', 'nota'));
+  const pollenLink = lpaText('a', 'Consultar Polenes.com');
+  pollenLink.href = 'https://www.polenes.com/'; box.append(pollenLink);
+  box.append(lpaText('h2', 'Actividad sísmica · IGN'));
+  const seismic = environment.earthquakes;
+  if (seismic?.status === 'ok') {
+    box.append(lpaText('p', seismic.detail));
+    if (!seismic.events.length) box.append(lpaText('p', 'No aparecen eventos de Canarias en el feed consultado. El feed no es un catálogo completo de la actividad sísmica.'));
+    for (const event of seismic.events) {
+      const p = lpaText('p', event.description + ' ');
+      const link = lpaText('a', 'Detalle en IGN');
+      if (event.url.startsWith('https://www.ign.es/')) link.href = event.url;
+      p.append(link); box.append(p);
+    }
+  } else box.append(lpaText('p', 'No se pudo consultar el feed del IGN.', 'nota'));
+}
 llegeixDades('montflorit.json').then(data => {
   const box = document.getElementById('lpa-status');
   const current = data.lpa?.current_model;
@@ -81,10 +111,14 @@ llegeixDades('montflorit.json').then(data => {
     if (['C659M','C658X','GCLP'].includes(station.id)) grid.append(lpaStationCard(station));
   }
   target.append(grid);
+  target.append(lpaText('h2', 'Otras estaciones del municipio'));
+  const urbanGrid = lpaText('div', '', 'lpa-station-grid');
+  for (const station of observations?.stations || []) if (station.category === 'urban') urbanGrid.append(lpaStationCard(station));
+  target.append(urbanGrid);
   const schools = document.createElement('details');
   schools.append(lpaText('summary', 'Red de estaciones de centros educativos'));
   const schoolGrid = lpaText('div', '', 'lpa-station-grid');
-  for (const station of observations?.stations || []) if (!['C659M','C658X','GCLP'].includes(station.id)) schoolGrid.append(lpaStationCard(station));
+  for (const station of observations?.stations || []) if (station.category === 'school') schoolGrid.append(lpaStationCard(station));
   schools.append(lpaText('p', 'Contexto regional: no se mezclan las medidas de colegios de otros municipios con la temperatura de Las Palmas.'),schoolGrid);
   target.append(schools,lpaText('h2','Otras redes institucionales'));
   for (const provider of observations?.providers || []) {
@@ -94,6 +128,7 @@ llegeixDades('montflorit.json').then(data => {
     p.append(link); target.append(p);
   }
   lpaShowHistory(target, data.lpa?.history);
+  lpaShowEnvironment(target, data.lpa?.environment);
 }).catch(() => {
   const target = document.getElementById('lpa-observations');
   if (target) target.replaceChildren(lpaText('p','No se pudieron cargar las observaciones. Consulte las fuentes oficiales.','avis'));

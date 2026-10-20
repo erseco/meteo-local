@@ -20,9 +20,14 @@ def create(destination):
             return json.dumps({'hourly': h})
         return feed(updated=now.isoformat())
     data = collect(now, reader, include_observations=False)
-    from lpa.observations import STATIONS, validate
-    data['lpa']['observations'] = {'stations': [validate({'observed_at':now.isoformat(),'temperature_c':22.5,'relative_humidity_pct':65,'wind_kmh':10}, station, now) for station in STATIONS], 'providers': []}
+    from lpa.observations import STATIONS, URBAN_STATIONS, SCHOOL_STATIONS, validate
+    data['lpa']['observations'] = {'stations': [validate({'observed_at':now.isoformat(),'temperature_c':22.5,'relative_humidity_pct':65,'wind_kmh':10}, station, now) for station in STATIONS + URBAN_STATIONS + SCHOOL_STATIONS[:1]], 'providers': []}
     data['lpa']['history'] = {'observations':3,'matched_samples':0,'retention_days':90,'method':'Temperatura a 2–6 horas; validación temporal y remuestreo por días.','stations':{s['id']:{'status':'learning','samples':0,'days':0} for s in STATIONS},'forecast_error':None}
+    data['lpa']['environment'] = {
+        'pollen': {'status':'stale', 'last_count':{'date':str(now.date()-dt.timedelta(days=40)),
+            'values':[{'taxon':'Gramíneas','value':0,'unit':'granos/m³'},{'taxon':'Alternaria (hongo)','value':2,'unit':'esporas/m³'}]},
+            'detail':'Recuento observado, no pronóstico.'},
+        'earthquakes': {'status':'ok','events':[], 'detail':'Eventos de Canarias incluidos en el GeoRSS consultado.'}}
     write_json(destination, data)
 
 

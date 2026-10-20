@@ -1,0 +1,36 @@
+{
+  "source": "https://metrics.grafcan.es/api/dashboards/uid/Ss-8yBhGz",
+  "datasource_uid": "000000012",
+  "queries": {
+    "temperature_c": {
+      "panel_id": 10,
+      "source_title": "Last air temperature (avg.)",
+      "rawSql": "SELECT\n    $__timeGroup(o.result_time, $__interval, NULL),\n    CASE \n        WHEN MAX(o.result) - MIN(o.result) >= 2 OR AVG(o.result) < 0 THEN NULL\n        ELSE AVG(CASE WHEN d.name = 'Air temperature (avg.)' THEN \n            CASE \n            WHEN validity_id = 2 AND $thing_location != 57 THEN NULL\n            \n            ELSE round(o.result::numeric, 3) END \n        END)\n    END AS avg_temp\nFROM\n    sensorthings_observation o\nINNER JOIN\n    sensorthings_datastream d ON o.datastream_id = d.id\nWHERE\n    $__timeFilter(o.result_time)\n    AND d.thing_id = $thing_location\n    AND NOT $thing_location IN (99)\n\n    AND d.name = 'Air temperature (avg.)'\nGROUP BY\n    1\nORDER BY\n    1;"
+    },
+    "relative_humidity_pct": {
+      "panel_id": 33,
+      "source_title": "Last relative humidity (avg.)",
+      "rawSql": "SELECT\n    o.result_time AS time, \n    d.name AS metric,\n    AVG(CASE \n            WHEN validity_id = 2 THEN null \n            ELSE o.result \n        END) AS result\nFROM\n    sensorthings_observation o \nINNER JOIN\n    sensorthings_datastream d ON o.datastream_id = d.id\nWHERE\n    $__timeFilter(o.result_time)\n    AND d.thing_id = $thing_location\n    \n    AND d.name = 'Relative humidity (avg.)'\nGROUP BY\n    1, 2\nORDER BY\n    1;"
+    },
+    "gust_kmh": {
+      "panel_id": 39,
+      "source_title": "Last wind speed (max.)",
+      "rawSql": "select o.result_time as time, \nd.name as metric,\n3.6*max(case when validity_id = 2 then null else o.result end) as result\nfrom sensorthings_observation o \ninner join sensorthings_datastream d on o.datastream_id = d.id\nwhere $__timeFilter(o.result_time)\nand d.thing_id = $thing_location\nand d.name = 'Wind speed (max.)'\ngroup by 1,2\norder by 1"
+    },
+    "wind_kmh": {
+      "panel_id": 4,
+      "source_title": "Wind speed (max.,avg.)",
+      "rawSql": "select $__timeGroup(o.result_time, $__interval, NULL), \nd.name as metric,\n3.6*avg(case when validity_id = 2\nTHEN null\nelse o.result end) as result\nfrom sensorthings_observation o \ninner join sensorthings_datastream d on o.datastream_id = d.id\nwhere $__timeFilter(o.result_time)\nand d.thing_id = $thing_location\nand d.name = 'Wind speed (avg.)'\ngroup by 1, 2\norder by 1"
+    },
+    "pressure_hpa": {
+      "panel_id": 8,
+      "source_title": "Last atmosferic pressure (avg.)",
+      "rawSql": "select o.result_time as time, \nd.name as metric,\navg(case when validity_id = 2 then null  \n         when $thing_location = 39 AND o.result_time BETWEEN '2022-02-23T17:10:00.000Z' AND '2022-07-19T10:00.000Z' then null \n         else round(o.result::numeric, 1) end) as result\nfrom sensorthings_observation o \ninner join sensorthings_datastream d on o.datastream_id = d.id\nwhere $__timeFilter(o.result_time)\nand d.thing_id = $thing_location and d.thing_id not in (99)\nand d.name = 'Atmosferic pressure (avg.)'\n\ngroup by 1,2\norder by 1"
+    },
+    "wind_direction": {
+      "panel_id": 12,
+      "source_title": "Last wind direction avg. (from)",
+      "rawSql": "select o.result_time as time, \nd.name as metric,\navg(case when validity_id = 2 then null else o.result end) as result\nfrom sensorthings_observation o \ninner join sensorthings_datastream d on o.datastream_id = d.id\nwhere $__timeFilter(o.result_time)\nand d.thing_id = $thing_location\nand d.name = 'Wind direction (avg.)'\ngroup by 1,2\norder by 1"
+    }
+  }
+}

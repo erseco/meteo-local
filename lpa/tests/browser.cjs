@@ -33,6 +33,13 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
           if (file === 'index.html') await page.locator('#casa .previsio').first().waitFor();
           if (file === 'sortir.html') await page.getByText('No hay datos de servicio de Guaguas Municipales ni Global.').waitFor();
           if (file === 'observaciones.html' || file === 'fiabilitat.html') await page.getByText('Plaza de la Feria: Recogiendo datos', {exact:false}).waitFor();
+          if (file === 'observaciones.html') {
+            await page.getByRole('heading', {name:'La Isleta · Geonica 3705',exact:true}).waitFor();
+            await page.getByText('Dato antiguo: no representa el polen actual.',{exact:true}).waitFor();
+            await page.getByText('No aparecen eventos de Canarias en el feed consultado.',{exact:false}).waitFor();
+            await page.getByText('Red de estaciones de centros educativos',{exact:true}).click();
+            await page.getByRole('heading',{name:'IES Santiago Santana',exact:true}).waitFor();
+          }
           if (file === 'perill.html') await page.getByText('No hay avisos de AEMET en el feed consultado', {exact: false}).waitFor();
           await page.addScriptTag({content: axe.source});
           const violations = await page.evaluate(async () => (await axe.run()).violations.map(v => ({id:v.id, nodes:v.nodes.length})));

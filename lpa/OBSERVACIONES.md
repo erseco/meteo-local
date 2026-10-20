@@ -16,6 +16,23 @@ se convierten en ceros ni en ausencia de lluvia.
   enlazadas a Weathercloud. Se intentan consultar sus datos públicos como invitado.
   Un centro incluido en el mapa no equivale a una estación activa: los registros
   que llevan meses o años sin renovarse se señalan como antiguos.
+- **Weathercloud, Las Palmas GC Arenales:** estación particular urbana, ID
+  `2199568870`, 30 m. Se consulta como invitado con el mismo control de unidades.
+- **Weather Underground, MONTAÑETA2:** estación particular `ILASPA64`, La
+  Montañeta, 309 m. Se leen muestras agregadas de cinco minutos incluidas en el
+  JSON de la página pública. Se convierten °F a °C y mph a km/h, se descartan
+  muestras con `qcStatus=-1` y se conservan los otros estados del proveedor.
+  No se confunden extremos o medias del día con condiciones actuales. La presión
+  y la lluvia se omiten porque el bloque consultado no permite asegurar las
+  magnitudes adecuadas. No se extraen ni se utilizan las claves embebidas de WU.
+- **GRAFCAN, La Isleta:** Geonica METEODATA-3016CP `3705`, identificador
+  interno `thing=14`, a 6 m. Son dos identificadores de la misma estación.
+  Se reutilizan seis consultas de lectura del panel público para temperatura,
+  humedad, viento medio, viento máximo, dirección y presión. Los filtros de
+  calidad del panel se conservan. La presión no se etiqueta como reducida al
+  nivel del mar sin metadatos que lo confirmen. La lluvia queda pendiente de
+  contrastar con la API: el panel transforma ciertos datos inválidos o ausentes
+  en ceros y no queremos presentar esos ceros como medidas.
 
 La comprobación inicial del 20 de octubre de 2026 obtuvo lecturas recientes en
 las dos estaciones de AEMET, el aeropuerto, **IES Villa de Firgas** y **CEIP Agaete
@@ -42,15 +59,44 @@ AEMET no se mezcla con la presión reducida al nivel del mar. Las acumulaciones
 horarias de lluvia no se mezclan con intensidades en mm/h. No se deduce que esté
 lloviendo ahora porque haya llovido durante la última hora.
 
+Weather Underground y el panel Grafana de GRAFCAN son accesos públicos de mejor
+esfuerzo, no contratos de API garantizados. Sus lecturas se identifican y no
+entrenan los ajustes automáticos de la costa. Las consultas revisadas de GRAFCAN
+están en `grafcan-queries.json`; se envían desde el recolector, nunca desde el
+navegador de los visitantes. No hay consultas SQL suministradas por usuarios.
+
+## Polen e información sísmica
+
+**SEAIC / Polenes.com:** se utiliza la publicación anónima de lectura
+`graphPollenData`, la misma que usan sus gráficos, para la estación `28`, Las
+Palmas de Gran Canaria. La consulta abarca 90 días. Se guarda la fecha de la
+muestra, sin inventar una hora. Los valores ausentes no pasan a cero. Alternaria
+se identifica como hongo y se expresa en esporas/m³; el polen, en granos/m³.
+Más de tres días se marca como dato antiguo. La prueba del 20-10-2026 recuperó
+registros cuya última fecha era el 01-09-2026: no es una lectura del día ni una
+previsión. Los recuentos se deduplican y persisten en `pollen/` de `lpa-data`,
+sin mezclarse con el entrenamiento meteorológico. El acceso no es una API
+documentada y queda explícitamente no disponible si cambia o falla.
+
+**IGN:** se descarga el GeoRSS oficial de sismología y se filtran las coordenadas
+de la región canaria (26–30,5 N, 19–12 O). No se convierte un feed vacío en una
+afirmación de ausencia de actividad sísmica. El texto horario del RSS no declara
+zona horaria: se conserva como texto del IGN, sin adjudicarle hora canaria o UTC.
+Los enlaces de detalle solo apuntan al dominio oficial. No se emiten alertas ni
+pronósticos sísmicos.
+
 ## Redes institucionales pendientes
 
-- GRAFCAN / Gobierno de Canarias: el servicio público se verificó, pero sus
-  consultas de observaciones y descarga devolvieron HTTP 500. No hay un contrato
-  de observaciones operativo validado para incluirlo en los cálculos.
-- Cabildo de Gran Canaria: se localizó el portal institucional, pero no un acceso
-  público de observaciones actuales verificable.
+- GRAFCAN / Gobierno de Canarias: la documentación es pública, pero una petición
+  de observaciones ejecutada en Swagger devuelve HTTP 403 sin credenciales.
+  Se ha solicitado una clave gratuita; seguimiento en
+  [issue #1](https://github.com/erseco/meteo-local/issues/1). Mientras tanto,
+  La Isleta se consulta mediante el panel público, con datos provisionales.
+- Cabildo de Gran Canaria: se localizó HD Meteo, pero el acceso comprobado
+  devolvió HTTP 503. Falta validar un acceso a las observaciones originales,
+  separadas de las estimaciones espaciales de la plataforma.
 - Ayuntamiento de Las Palmas: hay estaciones de riego documentadas, pero no se
-  ha localizado un acceso público verificable a sus medidas.
+  ha validado el acceso a sus medidas ni a las tres estaciones de Smart Beach.
 
 La página muestra estos límites y enlaces a las instituciones. No hay endpoints,
 credenciales ni datos inventados para simular su integración. Para activarlos se
@@ -112,3 +158,8 @@ no existe una mejora demostrada hasta acumular y evaluar las observaciones.
 - <https://opendata.sitcan.es/dataset/sistema-de-observacion-meteorologica-de-canarias>
 - <https://datosabiertos.laspalmasgc.es/>
 - <https://opendata.idegrancanaria.es/>
+- <https://metrics.grafcan.es/d/Ss-8yBhGz/single-weather-station?orgId=1&var-thing_location=14>
+- <https://app.weathercloud.net/d2199568870>
+- <https://www.wunderground.com/dashboard/pws/ILASPA64>
+- <https://www.polenes.com/>
+- <https://www.ign.es/ign/RssTools/sismologia.xml>

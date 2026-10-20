@@ -15,6 +15,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from . import profile as P
+from . import grafcan, wunderground
 
 UTC = dt.timezone.utc
 AEMET_BASE = 'https://www.aemet.es/es/api-eltiempo/udat/tablas-graficas/horario/9/'
@@ -46,8 +47,14 @@ SCHOOLS = [
     ('0371428440', 'IES Teror', 'Teror', 28.060, -15.544),
 ]
 SCHOOL_STATIONS = [dict(id=code, name=name, provider='Weathercloud · red escolar', region=town,
-                        latitude=lat, longitude=lon, elevation_m=None, max_age_minutes=35)
+                        category='school', latitude=lat, longitude=lon, elevation_m=None, max_age_minutes=35)
                    for code, name, town, lat, lon in SCHOOLS]
+URBAN_STATIONS = [
+    {'id': '2199568870', 'name': 'Las Palmas GC Arenales', 'provider': 'Weathercloud · particular',
+     'category': 'urban', 'region': 'Arenales', 'latitude': 28.116, 'longitude': -15.423,
+     'elevation_m': 30, 'max_age_minutes': 35},
+    wunderground.STATION, grafcan.STATION,
+]
 LIMITS = {'temperature_c': (-25, 60), 'relative_humidity_pct': (0, 100),
           'wind_kmh': (0, 250), 'gust_kmh': (0, 350), 'pressure_hpa': (700, 1100),
           'rain_mm': (0, 500), 'rain_rate_mmh': (0, 500), 'dewpoint_c': (-50, 50)}
@@ -192,25 +199,29 @@ def school(payload):
 def institutional_sources():
     return [
         {'name': 'GRAFCAN / Gobierno de Canarias', 'url': 'https://sensores.grafcan.es/',
-         'status': 'unavailable', 'detail': 'Acceso de observaciones aún no validado; no aporta medidas a esta publicación.'},
-        {'name': 'Cabildo de Gran Canaria', 'url': 'https://opendata.idegrancanaria.es/',
-         'status': 'not_configured', 'detail': 'No se ha localizado un acceso público de observaciones actuales verificable.'},
+         'status': 'partial', 'detail': 'La Isleta se consulta mediante el panel público, con estado propio de cada lectura. Clave gratuita de la API solicitada; seguimiento en GitHub #1.'},
+        {'name': 'Cabildo de Gran Canaria / HD Meteo', 'url': 'https://gc.hdmeteo.com/',
+         'status': 'not_configured', 'detail': 'Plataforma localizada; acceso de observaciones originales pendiente de validar, separado de sus estimaciones espaciales.'},
         {'name': 'Ayuntamiento de Las Palmas de Gran Canaria', 'url': 'https://datosabiertos.laspalmasgc.es/',
-         'status': 'not_configured', 'detail': 'Estaciones de riego documentadas; falta acceso público verificable a sus medidas.'},
+         'status': 'not_configured', 'detail': 'Estaciones de Smart Beach en Las Canteras y de riego documentadas; acceso a sus medidas pendiente de validar.'},
     ]
 
 
-def collect(now=None, reader=get_text, school_reader=school_payload):
+def collect(now=None, reader=get_text, school_reader=school_payload, grafcan_reader=grafcan.collect):
     now = (now or dt.datetime.now(UTC)).astimezone(UTC)
     latest, archive, providers = [], [], []
     def task(station):
         public = dict(station)
-        public['url'] = ('https://www.aemet.es/es/eltiempo/observacion/ultimosdatos?l=' + station['id']
+        public.setdefault('url', ('https://www.aemet.es/es/eltiempo/observacion/ultimosdatos?l=' + station['id']
                          if station['provider'] == 'AEMET' else
                          'https://aviationweather.gov/data/metar/?ids=GCLP' if station['id'] == 'GCLP' else
-                         'https://app.weathercloud.net/d' + station['id'])
+                         'https://app.weathercloud.net/d' + station['id']))
         try:
-            if station['provider'] == 'AEMET':
+            if station['id'] == grafcan.STATION['id']:
+                rows = grafcan_reader(now)
+            elif station['id'] == wunderground.STATION['id']:
+                rows = wunderground.parse(reader(public['url']))
+            elif station['provider'] == 'AEMET':
                 rows = aemet(reader(AEMET_BASE + station['id']), station)
             elif station['id'] == 'GCLP':
                 rows = metar(reader(METAR))
@@ -228,9 +239,9 @@ def collect(now=None, reader=get_text, school_reader=school_payload):
             public.update(status='unavailable', detail=type(error).__name__ + ': no se pudieron obtener medidas válidas')
             return public, [], None
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
-        for last, checked, _ in pool.map(task, STATIONS + SCHOOL_STATIONS):
+        for last, checked, _ in pool.map(task, STATIONS + URBAN_STATIONS + SCHOOL_STATIONS):
             latest.append(last)
             archive.extend(r for r in checked if r['status'] != 'invalid')
     # Institutional availability is distinct from a station outage.
     return {'stations': latest, 'providers': institutional_sources(), '_archive': archive,
-            'generated_at': now.isoformat(), 'attribution': 'AEMET; NOAA Aviation Weather Center; centros participantes / Weathercloud'}
+            'generated_at': now.isoformat(), 'attribution': 'AEMET; NOAA Aviation Weather Center; GRAFCAN; Weather Underground; centros y particulares / Weathercloud'}

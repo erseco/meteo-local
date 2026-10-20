@@ -31,7 +31,7 @@ def append(directory, kind, rows, key):
     """Use stable identities so a frozen/repeated report does not inflate evidence."""
     grouped = {}
     for row in rows:
-        date = (row.get('observed_at') or row['issued_at'])[:10]
+        date = (row.get('date') or row.get('observed_at') or row['issued_at'])[:10]
         grouped.setdefault(date, []).append(row)
     for date, values in grouped.items():
         path = Path(directory) / kind / (date + '.jsonl')
@@ -140,6 +140,9 @@ def update(data, directory, reader=O.get_text, wait=time.sleep):
     directory = Path(directory)
     observed = (data.get('lpa', {}).get('observations') or {}).pop('_archive', [])
     append(directory, 'observations', observed, lambda r: (r['id'], r['observed_at']))
+    pollen = data.get('lpa', {}).get('environment', {}).get('pollen', {}).pop('_archive', [])
+    append(directory, 'pollen', pollen,
+           lambda r: (r['station'], r['date']))
     forecasts = load(directory, 'forecasts')
     hour = now.strftime('%Y-%m-%dT%H')
     forecast_error = None
@@ -160,13 +163,14 @@ def update(data, directory, reader=O.get_text, wait=time.sleep):
                     break
                 wait(2 ** attempt)
     cutoff = (now - dt.timedelta(days=RETENTION_DAYS)).date().isoformat()
-    for kind in ('observations', 'forecasts'):
+    for kind in ('observations', 'forecasts', 'pollen'):
         for path in (directory / kind).glob('*.jsonl'):
             if path.stem < cutoff:
                 path.unlink()
     all_observations = load(directory, 'observations')
     matched = pairs(all_observations, load(directory, 'forecasts'))
     summary = {'retention_days': RETENTION_DAYS, 'observations': len(all_observations),
+               'pollen_counts': len(load(directory, 'pollen')),
                'matched_samples': len(matched), 'stations': {}, 'forecast_error': forecast_error,
                'method': 'Temperatura a 2–6 horas; validación temporal y remuestreo por días.'}
     for station in O.STATIONS:
