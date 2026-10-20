@@ -102,6 +102,14 @@ diseño con el aviso posterior, solo informativo.
   límites (archivos prohibidos, pruebas quitadas o saltadas, comprobaciones
   que siguen fallando), el commit vacío cuando en el NAS pasa todo y que no
   se insiste, y que no hace nada si main ha cambiado.
-- En el NAS, el 20-10-2026: el agente de verdad sobre un fallo provocado en
-  una copia (sin subir nada), para comprobar el modelo, los permisos, las
-  herramientas y el tiempo.
+- En el NAS, el 20-10-2026, el agente de verdad sobre un fallo provocado en
+  una copia, sin subir nada (se quitó la traducción de una frase de
+  «Riera»). Las comprobaciones tardaron 7,5 minutos; el agente, 7,8 minutos
+  y 0,23 USD de cuota de la suscripción. Devolvió la traducción y encontró
+  otro fallo que solo se daba en el NAS: una prueba de la API de Meteocat
+  «sin clave» encontraba la clave de verdad en `~/.config/meteo-local/` y no
+  fallaba como esperaba. Cambió la prueba para que no dependa de la máquina
+  (aplicado en el repositorio el mismo día). El programa no encontró ningún
+  incumplimiento y las tres comprobaciones pasaron después. Sin ese arreglo,
+  el reparador no habría podido distinguir nunca un fallo de GitHub de uno
+  del código.

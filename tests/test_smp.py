@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 ARREL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ARREL)
@@ -495,7 +496,9 @@ class Smp(unittest.TestCase):
             # Una resposta que no és la llista no es desa.
             with self.assertRaises(ValueError):
                 smp.episodis_api(MATI + dt.timedelta(hours=2), "k", lambda url, clau: '{"message": "x"}', cache)
-            with self.assertRaises(ValueError):
+            # Sense clau: ni la de l'entorn ni la de ~/.config de la màquina on es prova
+            # (al NAS hi és i la prova fallava; ho va trobar el reparador, ADR 0113).
+            with mock.patch.object(smp, "clau_api", return_value=None), self.assertRaises(ValueError):
                 smp.episodis_api(MATI + dt.timedelta(hours=2), "", baixa, os.path.join(dir, "buida.json"))
 
     def test_marca_amb_l_api(self):
