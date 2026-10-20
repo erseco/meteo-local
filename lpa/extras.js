@@ -5,17 +5,6 @@ function lpaLink(text, href) {
   const link = lpaText('a', text); link.href = href; return link;
 }
 function lpaRadar(box, radar, expired) {
-  if(box.dataset.compact==='true') {
-    box.replaceChildren(lpaText('h2','Radar de Canarias'));
-    const frame=radar?.frames?.at(-1);
-    if(frame&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(frame.image)&&radar.status!=='unavailable') {
-      const fresh=!expired&&lpaStationStatus(radar)==='ok';
-      box.append(lpaText('p',`${fresh?'Última imagen':'Imagen antigua'} · ${new LpaDate(frame.observed_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})} · AEMET`,fresh?'lpa-muted':'avis'));
-      const link=lpaLink('','radar.html'),image=document.createElement('img');image.className='lpa-radar-image';image.src=frame.image;image.width=1000;image.height=580;image.alt='Abrir el radar de Canarias con su fecha y escala';link.append(image);box.append(link);
-      box.append(lpaText('p','Ecos en altura · no confirma lluvia en el suelo','lpa-muted'));
-    } else box.append(lpaText('p','Radar no disponible.','nota'));
-    box.append(lpaLink('Ver secuencia, escala y mar →','radar.html'));return;
-  }
   box.replaceChildren(lpaText('h2','Radar de Canarias · AEMET'));
   box.append(lpaText('p','Reflectividad en dBZ: ecos detectados en altura, no lluvia medida en una estación. No se calcula una hora de llegada.'));
   const frames = radar?.frames || [];
@@ -58,7 +47,7 @@ function lpaRadar(box, radar, expired) {
 }
 function lpaMarine(box) {
   box.replaceChildren(lpaText('h2','Mar y puerto · PORTUS'));
-  box.append(lpaText('p','Datos y previsiones de Puertos del Estado.','lpa-muted'));
+  box.append(lpaText('p','Gráficos oficiales de Puertos del Estado. Se consultan directamente al cargarlos; no dependen del despliegue de esta web.'));
   const items = [
     ['Nivel del mar · mareógrafo de Las Palmas 2','https://portus.puertos.es/PortusData/rtChart?station=3450&params=SeaLevel&locale=es',
      'Medición en el puerto. Su referencia vertical es la del gráfico; no se interpreta como altura de las olas ni como predicción de pleamar.'],
@@ -72,8 +61,7 @@ function lpaMarine(box) {
   for (const [name,url,detail] of items) {
     const card=lpaText('article','','lpa-station');
     const button=lpaText('button','Cargar gráfico de PORTUS');button.type='button';
-    const info=document.createElement('details');info.append(lpaText('summary','Qué muestra'),lpaText('p',detail));
-    card.append(lpaText('h3',name),button,document.createTextNode(' '),lpaLink('Abrir en PORTUS',url),info);
+    card.append(lpaText('h3',name),lpaText('p',detail),button,document.createTextNode(' '),lpaLink('Abrir en PORTUS',url));
     button.addEventListener('click',()=>{
       const frame=document.createElement('iframe');frame.title=name;frame.src=url;
       frame.className='lpa-portus-frame';frame.referrerPolicy='no-referrer';frame.loading='lazy';
@@ -82,9 +70,8 @@ function lpaMarine(box) {
     },{once:true});
     box.append(card);
   }
-  const more=document.createElement('details');more.append(lpaText('summary','Boyas y privacidad'),
-    lpaText('p','Las boyas de Las Palmas Este (1414) y Gran Canaria (2442) figuraban con «Sin trasmisión» y «En tierra» el 20/10/2026. Consulte PORTUS para su estado actual.'),
-    lpaText('p','Al cargar un gráfico se conecta con Puertos del Estado, que aplica sus condiciones de uso y privacidad.'));box.append(more);
+  box.append(lpaText('p','Las boyas de Las Palmas Este (1414) y Gran Canaria (2442) figuraban con «Sin trasmisión» y «En tierra» en la comprobación del 20/10/2026. Consulte PORTUS para su estado actual.','nota'));
+  box.append(lpaText('p','Al cargar un gráfico se establece una conexión con Puertos del Estado, que aplica sus condiciones de uso y privacidad.'));
 }
 function lpaMobility(box) {
   box.replaceChildren(lpaText('h2','Guaguas Municipales'));

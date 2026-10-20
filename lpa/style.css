@@ -15,50 +15,11 @@
 #lpa-marine .lpa-station { margin-block:1rem; }
 .lpa-portus-frame { display:block; width:100%; height:480px; margin-top:1rem; border:1px solid var(--linia,#94a3b8); background:white; }
 #lpa-mobility details { margin-top:1rem; }
-.lpa-sourcebar { display:flex; flex-wrap:wrap; gap:.5rem 1rem; align-items:center; margin:.5rem 0 1.2rem; font-size:.85rem; color:var(--suau); }
-.lpa-sourcebar span { margin-right:auto; }
-.lpa-muted { color:var(--suau); font-size:.85rem; }
-.lpa-badge { display:inline-block; font-size:.8rem; padding:.25rem .5rem; border-radius:1rem; background:var(--assenyalat-fons); color:var(--text); }
-.lpa-alert-summary { margin-bottom:.75rem; }
-.lpa-alert-summary.avis a { color:inherit; }
-.lpa-hero { display:grid; grid-template-columns:1fr 1.2fr; gap:1.5rem; padding:1.5rem; margin-bottom:1rem; background:var(--superficie); border:1px solid var(--vora); border-radius:1rem; align-items:center; }
-.lpa-hero h2,.lpa-hero p { margin:.3rem 0; }
-.lpa-temperature { font-size:5rem; font-weight:750; line-height:1.15; letter-spacing:-.06em; color:var(--enllac); }
-.lpa-hero-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; }
-.lpa-hero-metrics small { grid-column:1/-1; }
-.lpa-metric { display:flex; flex-direction:column; gap:.5rem; }
-.lpa-metric span { font-size:.85rem; color:var(--suau); }
-.lpa-metric strong { font-size:1.2rem; }
-.lpa-section-heading { display:flex; justify-content:space-between; align-items:center; gap:.75rem; flex-wrap:wrap; margin-bottom:.75rem; }
-.lpa-section-heading h2 { margin:0; }
-.lpa-week,.lpa-hourly { min-width:0; margin-bottom:1rem; }
-.lpa-days,.lpa-hours { display:flex; gap:.65rem; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; padding:.35rem .1rem .8rem; cursor:grab; user-select:none; -webkit-user-select:none; }
-.lpa-days.is-dragging,.lpa-hours.is-dragging { cursor:grabbing; scroll-snap-type:none; }
-.lpa-days:focus-visible,.lpa-hours:focus-visible { outline:3px solid var(--enllac); outline-offset:2px; }
-.lpa-day { flex:0 0 116px; display:flex; align-items:center; flex-direction:column; gap:.5rem; padding:.85rem .5rem; border:1px solid var(--vora); border-radius:.8rem; background:var(--superficie); color:var(--text); font:inherit; cursor:pointer; scroll-snap-align:start; }
-.lpa-day[aria-pressed="true"] { border:2px solid var(--enllac); background:var(--assenyalat-fons); padding:calc(.85rem - 1px) calc(.5rem - 1px); }
-.lpa-day svg { width:36px; height:36px; }
-.lpa-day strong { font-size:1.65rem; }
-.lpa-hour-rain { color:var(--c-aigua-text); font-size:.8rem; }
-.lpa-hour-controls { display:flex; gap:.5rem; }
-.lpa-hour-controls button { width:44px; height:44px; font:inherit; font-size:1.25rem; border:1px solid var(--vora); border-radius:.5rem; color:var(--text); background:var(--superficie); cursor:pointer; }
-.lpa-hour-controls button:disabled { opacity:.5; cursor:default; }
-.lpa-hour { flex:0 0 88px; display:flex; flex-direction:column; align-items:center; gap:.75rem; padding:.8rem .35rem; border-right:1px solid var(--vora); scroll-snap-align:start; }
-.lpa-hour h3 { font-size:.85rem; margin:0; }
-.lpa-hour svg { width:28px; height:28px; }
-.lpa-hour strong { font-size:1.5rem; }
-.lpa-scroll-hint { margin:.3rem 0 0; }
-.lpa-explanation { margin:1rem 0 1.5rem; }
-.lpa-explanation summary,.peu summary { cursor:pointer; padding:.65rem 0; }
-.lpa-station-temperature { font-size:2.25rem; font-weight:700; }
+
+/* Keep the original graph while adding mouse dragging and explicit provenance. */
+.g-desplaca { cursor:grab; }
+.g-desplaca.is-dragging { cursor:grabbing; user-select:none; }
+.lpa-forecast-source { font-size:.9rem; }
 .lpa-data-table { overflow-x:auto; }
 .lpa-data-table table { width:100%; border-collapse:collapse; }
 .lpa-data-table th,.lpa-data-table td { padding:.65rem; text-align:left; border-bottom:1px solid var(--vora); white-space:nowrap; }
-@media(max-width:600px) {
-  .lpa-hero { grid-template-columns:1fr; gap:1.2rem; padding:1.1rem; }
-  .lpa-temperature { font-size:4.5rem; }
-  .lpa-hero-metrics { gap:.65rem; }
-  .lpa-metric strong { font-size:1.05rem; }
-  .lpa-sourcebar { gap:.35rem .75rem; font-size:.8rem; }
-  .lpa-sourcebar span { flex-basis:100%; }
-}

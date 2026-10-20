@@ -74,9 +74,12 @@ def build(destination):
         text = re.sub(r'<p id="app-android".*?</p>', '', text, flags=re.S)
         text = text.replace('https://www.meteo.cat/observacions/radar', P.AEMET_ALERTS).replace('Radar de Meteocat', 'Avisos de AEMET')
         text = re.sub(r'https://github.com/meteo-montflorit/meteo-local/releases[^"<]*', P.REPOSITORY + '/tree/lpa', text)
-        notice = ('<div id="lpa-status" class="lpa-sourcebar" aria-label="Actualización y fuentes">'
-                  '<span id="lpa-updated">Hora canaria</span><a href="radar.html">Radar y mar</a>'
-                  '<a href="fuentes.html">Fuentes</a></div>')
+        notice = ('<section id="lpa-status" class="targeta" aria-label="Estado de las fuentes">'
+                  '<h2>Datos para Las Palmas</h2><p>Hora canaria. Previsión de Open-Meteo; los ajustes locales se indican cuando están validados. '
+                  'Las observaciones y las imágenes del radar se identifican por su antigüedad. '
+                  'Los consejos de salida son orientativos; sus umbrales no están validados aquí.</p>'
+                  '<p><a href="observaciones.html">Estaciones e historial</a> · <a href="radar.html">Radar y mar</a> · <a href="fuentes.html">Fuentes y funciones disponibles</a> · '
+                  f'<a href="{P.AEMET_ALERTS}">Avisos oficiales de AEMET</a></p></section>')
         text, count = re.subn(r'(<main\b[^>]*>)', lambda m: m[1] + notice, text)
         if count != 1:
             raise ValueError(f'Expected one main in {source.name}')
@@ -94,14 +97,7 @@ def build(destination):
             text = replace_once(text,'</head>','<link rel="stylesheet" href="../lpa-style.css"></head>')
             text = replace_once(text,'</body>','<script src="../lpa-extras.js"></script></body>')
         if source.name == 'index.html':
-            text,count=re.subn(r'<main\b[^>]*>.*?</main>',
-                '<main>'+notice+'<div id="casa"><p>Cargando el tiempo…</p></div>'
-                '<noscript><p><a href="datos.html">Consultar los datos sin JavaScript</a></p></noscript>'
-                '<section id="lpa-radar" class="targeta" data-compact="true"><h2>Radar de Canarias</h2></section>'
-                '</main>',text,flags=re.S)
-            if count!=1:raise ValueError('Homepage integration anchor changed')
-            text=text.replace('<script src="../casa.js"></script>','').replace('<script src="../grafica.js"></script>','')
-            text=replace_once(text,'</body>','<script src="../lpa-dashboard.js"></script></body>')
+            text = replace_once(text, '</body>', '<script src="../lpa-forecast-scroll.js"></script></body>')
         if source.name == 'perill.html':
             text, count = re.subn(r'<main\b[^>]*>.*?</main>', '<main>' + notice + '<p>Avisos oficiales de AEMET para Norte de Gran Canaria, recibidos a través de Meteoalarm.</p><p id="avis-dades" hidden></p><section id="perill" aria-live="polite"><p>Cargando avisos…</p></section></main>', text, flags=re.S)
             if count != 1:
@@ -149,9 +145,7 @@ def build(destination):
                 raise ValueError('Upstream river navigation anchor changed')
             return nav
         text = re.sub(r'<nav class="pagines"[^>]*>.*?</nav>', station_nav, text, flags=re.S)
-        text=re.sub(r'<p class="ruta">.*?</p>','',text,flags=re.S)
-        text=re.sub(r'<a\b[^>]*class="[^"]*boto-avisos[^>]*>.*?</a>','',text,flags=re.S)
-        # Shared short source strip; detail remains one click away.
+        # Keep public metadata alongside the original interface.
         text=re.sub(r'<meta name="description"[^>]*>','<meta name="description" content="'+html.escape(DESCRIPTION,quote=True)+'">',text)
         text=re.sub(r'<meta name="robots"[^>]*>','',text)
         text=re.sub(r'<link rel="canonical"[^>]*>','',text)
@@ -174,11 +168,6 @@ def build(destination):
                 'name':'Tiempo en Las Palmas','url':SITE+'es/','inLanguage':'es',
                 'description':DESCRIPTION,'hasPart':{'@type':'Dataset','@id':SITE+'es/datos.html#dataset','url':SITE+'es/datos.html'}},ensure_ascii=False)+'</script>'
         text=text.replace('</head>',meta+('' if '../lpa-style.css' in text else '<link rel="stylesheet" href="../lpa-style.css">')+'</head>')
-        # Preserve attribution and licenses, without repeating their full text in every view.
-        text=re.sub(r'<footer class="peu">(.*?)</footer>',lambda m:
-            '<footer class="peu"><p>Web independiente · <a href="fuentes.html">Fuentes</a> · '
-            '<a href="datos.html">Datos abiertos</a> · <a href="privacitat.html">Privacidad</a></p>'
-            '<details><summary>Créditos y licencias</summary>'+m[1]+'</details></footer>',text,flags=re.S)
         page.write_text(text)
     shutil.copyfile(HERE / 'style.css', dest / 'lpa-style.css')
     # Redirect every root HTML entry point to its Spanish counterpart, retaining deep links.
@@ -214,9 +203,14 @@ def build(destination):
         if path.name == 'casa.js':
             text = replace_once(text, 's + probHora(f) * (f.pluja_mm || 0)', 's + (f.pluja_mm || 0)')
             text = replace_once(text, 'function nivellRatxa(ratxa) {', 'function nivellRatxa(ratxa) { return null;')
+            text = replace_once(text, "nom: (esDema ? NOM_TRAM_DEMA : NOM_TRAM)[g.nom](),",
+                "nom: (g.dia.toDateString() !== ara.toDateString() && !esDema ? g.dia.toLocaleDateString('es', {weekday:'long', day:'numeric', month:'short'}) + ' · ' : '') + (esDema ? NOM_TRAM_DEMA : NOM_TRAM)[g.nom](),")
             text = text.replace('ratxa: 72, calor: 36.8', 'ratxa: Infinity, calor: Infinity')
             text = re.sub(r' A l’hora en curs, el cel és el que s’observa a l’aeroport de Sabadell, si hi veu núvols\.', ' El cielo procede del modelo, sin observación local.', text)
             text = replace_once(text, 'async function calOfertaAvisos() {', 'async function calOfertaAvisos() { return false;')
+        if path.name == 'grafica.js':
+            text = replace_once(text, "if (dies < -1) return d.toLocaleDateString(IDIOMA.codi === 'es' ? 'es' : 'ca', { weekday: 'long' });",
+                "if (dies < -1 || dies > 1) return d.toLocaleDateString(IDIOMA.codi === 'es' ? 'es' : 'ca', { weekday: 'long', day: 'numeric', month: 'short' });")
         if path.name == 'sortir.js':
             text = text.replace('Ara no hi ha dades dels trens.', 'No hay datos de servicio de Guaguas Municipales ni Global.')
             text = replace_once(text, 'const LLINDARS_PLUJA_INICI = { curt: { pluja: 0.4, risc: 0.1 }, llarg: { pluja: 0.6, risc: 0.1 } };', 'const LLINDARS_PLUJA_INICI = { curt: { pluja: 0.5, risc: 0.2 }, llarg: { pluja: 0.5, risc: 0.2 } };')
@@ -233,7 +227,7 @@ def build(destination):
         # Local calendar operations use the site timezone, including for mainland visitors.
         text = text.replace('new Date(', 'new LpaDate(')
         path.write_text(rebrand(text))
-    for source, name in (('time.js', 'lpa-time.js'), ('ui.js', 'lpa-ui.js'), ('alerts.js', 'lpa-alerts.js'), ('station-page.js', 'lpa-station-page.js'), ('extras.js','lpa-extras.js'), ('dashboard.js','lpa-dashboard.js')):
+    for source, name in (('time.js', 'lpa-time.js'), ('ui.js', 'lpa-ui.js'), ('alerts.js', 'lpa-alerts.js'), ('station-page.js', 'lpa-station-page.js'), ('extras.js','lpa-extras.js'), ('forecast-scroll.js','lpa-forecast-scroll.js')):
         shutil.copyfile(HERE / source, dest / name)
     # Never cache weather/alerts or register upstream push handlers.
     (dest / 'sw.js').write_text("// LPA: no offline weather cache or push backend.\n")

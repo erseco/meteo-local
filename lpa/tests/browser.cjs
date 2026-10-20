@@ -31,23 +31,25 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
           errors = []; external = [];
           await page.goto(`${root}/es/${file}`);
           if (file === 'index.html') {
-            await page.locator('.lpa-day').first().waitFor();
-            assert.equal(await page.locator('.lpa-day').count(),7);
-            const days=page.locator('.lpa-days');
-            await days.focus();await page.keyboard.press('End');
-            await page.locator('.lpa-day').last().click();
-            assert.equal(await page.locator('.lpa-day').last().getAttribute('aria-pressed'),'true');
-            await page.locator('.lpa-day').first().click();
-            // Mouse drag must actually change horizontal scroll, not just show a grab cursor.
+            const graph=page.locator('#casa .g-desplaca').first();
+            await graph.waitFor();
+            await page.getByText('Previsión · Open-Meteo · 7 días.',{exact:false}).waitFor();
+            assert.ok(await page.locator('.g-dia').count()>=6,'graph must cover the forecast week');
+            const labels=await page.locator('.g-dia').allTextContents();
+            const lastDate=await page.evaluate(async()=>{
+              const data=await (await fetch('../montflorit.json')).json();
+              return new Intl.DateTimeFormat('es',{timeZone:'Atlantic/Canary',weekday:'long',day:'numeric',month:'short'}).format(new Date(data.hores.at(-1).hora));
+            });
+            assert.ok(labels.includes(lastDate),'last forecast date must be visible');
+            await graph.focus();await page.keyboard.press('End');
+            assert.ok(await graph.evaluate(el=>el.scrollLeft)>100,'keyboard must scroll the forecast');
+            await page.keyboard.press('Home');
             if(!mobile) {
-              await page.locator('.lpa-day').nth(1).click();
-              assert.equal(await page.locator('.lpa-hour').first().getByRole('img').getAttribute('aria-label'),'Despejado de noche');
-              const hours=page.locator('.lpa-hours');
-              const rect=await hours.boundingBox();
-              const before=await hours.evaluate(el=>el.scrollLeft);
+              const rect=await graph.boundingBox();
+              const before=await graph.evaluate(el=>el.scrollLeft);
               await page.mouse.move(rect.x+rect.width*.7,rect.y+60);
               await page.mouse.down();await page.mouse.move(rect.x+rect.width*.2,rect.y+60,{steps:12});await page.mouse.up();
-              assert.ok(await hours.evaluate(el=>el.scrollLeft)>before+40,'hourly forecast must support mouse dragging');
+              assert.ok(await graph.evaluate(el=>el.scrollLeft)>before+40,'forecast must support mouse dragging');
             }
           }
           if (file === 'sortir.html') await page.getByText('No hay datos de servicio de Guaguas Municipales ni Global.').waitFor();
@@ -113,8 +115,8 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
         });
         await page.goto(`${root}/es/index.html`);
         await page.getByText('Datos caducados.', {exact:false}).waitFor();
-        await page.getByText('Imagen antigua',{exact:false}).waitFor();
-        assert.equal(await page.locator('.lpa-day').count(),0);
+        await page.getByText('Radar antiguo:',{exact:false}).waitFor();
+        assert.equal(await page.locator('#casa .previsio').count(),0);
         await context.close();
         console.log(`${name}: ${mobile?'mobile':'desktop'}, ${dark?'dark':'light'} passed`);
       }

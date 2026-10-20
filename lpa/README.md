@@ -4,24 +4,20 @@ Adaptación del fork `erseco/meteo-local` sobre la versión 3.169.0 de
 [jjdeharo/meteo-local](https://github.com/jjdeharo/meteo-local), commit
 `3405f28689b8a52f8da7c7c2d9db83df07d5c9cc`.
 
-Se reutilizan el generador, la navegación en castellano, el selector de salida y
-las consultas del original. La portada compacta de siete días y los adaptadores
-están en `lpa/`; los archivos del original se conservan para facilitar actualizaciones.
+Se conserva la interfaz original: gráfica, tabla de previsión, navegación y consultas.
+Los adaptadores y las mejoras para Las Palmas están en `lpa/`, separados del original
+para facilitar las actualizaciones.
 
 ## Interfaz y consulta de datos
 
-La portada muestra una lectura reciente de Plaza de la Feria cuando está
-disponible; en su ausencia, la estimación actual del modelo, etiquetada como tal.
-El viento y la humedad proceden de esa misma fuente; la probabilidad de lluvia
-es siempre previsión del modelo. Los avisos no comprobados y los datos antiguos
-siguen visibles. Método, historial y detalles de estaciones quedan desplegables.
+Se solicitan **siete días naturales** de Open-Meteo. La gráfica y la tabla muestran
+las horas futuras disponibles. La gráfica se desplaza con el dedo, arrastrando con
+el ratón o con el teclado (flechas, Inicio y Fin). Las fechas identifican cada día;
+a partir del cuarto aumenta la incertidumbre.
 
-Se solicitan **siete días naturales** de Open-Meteo. El resumen de cada día cubre
-el día completo; el porcentaje es el máximo de sus probabilidades horarias,
-no la probabilidad agregada de todo el día. Las horas muestran los intervalos
-futuros disponibles y se desplazan con el dedo, arrastrando con el ratón, con
-las flechas de la interfaz o con el teclado. A partir del cuarto día se advierte
-mayor incertidumbre; no se presenta todo el horizonte con la misma fiabilidad.
+La fuente de la previsión se muestra junto a la gráfica. Las observaciones conservan
+su estación, proveedor y antigüedad visibles, y los avisos o datos caducados siguen
+identificados. El diseño anterior se mantiene sin las tarjetas del rediseño.
 
 La recogida genera también:
 

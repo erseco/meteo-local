@@ -57,8 +57,9 @@ class PublicData(unittest.TestCase):
             self.assertNotIn('noindex',index)
             self.assertIn('rel="canonical"',index)
             self.assertIn('weather.json',index)
-            self.assertNotIn('src="../casa.js"',index)
-            self.assertIn('lpa-dashboard.js',index)
+            self.assertIn('src="../casa.js"',index)
+            self.assertIn('lpa-forecast-scroll.js',index)
+            self.assertNotIn('lpa-dashboard.js',index)
             self.assertTrue((Path(temp)/'sitemap.xml').exists())
             # Repeated publication replaces the snapshot rather than appending copies.
             C.publish(Path(temp)/'montflorit.json',data)
