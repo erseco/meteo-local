@@ -1036,17 +1036,8 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
   .avis-breu { bottom: calc(5.2rem + env(safe-area-inset-bottom)); }
 }
 
-/* «Si surts» (ADR 0074): la resposta a dalt, una línia pels mitjans que van bé
-   i una per cada un dels altres, amb la franja del seu color; els mitjans per
-   triar, plegats. */
-.resum-sortida { list-style: none; margin: .8rem 0 0; padding: .6rem .9rem; display: grid; gap: .35rem;
-  background: var(--superficie); border: 1px solid var(--vora); border-radius: .6rem; }
-.resum-sortida li { --color: var(--verd); padding-left: .6rem; border-left: .3rem solid var(--color); }
-.resum-sortida li.compte { --color: var(--compte); }
-.resum-sortida li.no { --color: var(--vermell); }
-.resum-sortida li.neutre { --color: var(--suau); }
-.resum-sortida strong { color: var(--text); }
-#resum-sortida[hidden], .plec-triats[hidden] { display: none; }
+/* «Si surts»: els mitjans per triar, plegats. */
+.plec-triats[hidden] { display: none; }
 .plec-triats { margin: .6rem 0 0; }
 .plec-triats > summary { cursor: pointer; color: var(--enllac); }
 .plec-triats .triats { margin-top: .5rem; }

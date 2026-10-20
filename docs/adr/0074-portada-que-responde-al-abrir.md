@@ -253,3 +253,15 @@ portada (Juanjo: «para ahorrar espacio quita los trenes de esta pantalla
 principal, el que quiera los consulta en su sitio»): siguen en «Si surts» y
 «Consultes». Medido en un móvil de 412 px con los avisos plegados: sin el
 recuadro del radar, la gráfica cabe entera; con él, se ve el principio.
+
+
+## Cambio del 20-10-2026 (3.163.0): se retira el resumen de «Si surts»
+
+El resumen de arriba («Bé: transport públic. A peu: compte. Avís oficial…»)
+repetía palabra por palabra el veredicto y el motivo de cada tarjeta, que
+salen justo debajo. Juanjo (20-10-2026): «me parece redundante con lo que hay
+abajo, añade extensión y dificultad de lectura». Una versión corta, solo con
+los medios por veredicto, también se descartó: «eso solo hace que haya dos
+cosas para leer». Cada tarjeta ya lleva arriba el medio y su veredicto en
+color, así que la respuesta sigue a la vista sin repetirla. «Si surts» queda
+con las horas, «Tria els mitjans» y las tarjetas.

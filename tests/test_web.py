@@ -1028,18 +1028,6 @@ class Web(unittest.TestCase):
         self.assertEqual(self.avalua("2026-10-12T05:30:00+02:00", f"textTall({json.dumps(tall)})"),
                          ["Tall de llum al límit del barri", "treballs programats. 1 client sense llum des del 11/10 a les 09:00."])
 
-    def test_resum_de_si_surts(self):
-        # ADR 0074: una línia pels mitjans que van bé i una per cada un dels altres, amb el motiu.
-        be = {"nivell": "be", "motius": ["Sense pluja ni vent fort."]}
-        public = {"nivell": "compte", "etiqueta": "Amb incidències", "motius": ["Trens: R4 amb incidències."]}
-        v = [["A peu", be], ["Moto", be], ["Transport públic", public]]
-        self.assertEqual(self.avalua("2026-10-12T05:30:00+02:00", f"liniesResum({json.dumps(v)})", "sortir.js"),
-                         [["be", "Bé:", " a peu i moto."],
-                          ["compte", "Transport públic: amb incidències.", " Trens: R4 amb incidències."]])
-        tots = [[n, be] for n in ["A peu", "Bici o patinet", "Moto", "Cotxe", "Transport públic"]]
-        self.assertEqual(self.avalua("2026-10-12T05:30:00+02:00", f"liniesResum({json.dumps(tots)})", "sortir.js"),
-                         [["be", "Bé en tots els mitjans.", ""]])
-
     def test_enrere_porta_a_la_portada_i_despres_fora(self):
         # ADR 0074 i 0076: de la portada a una pestanya s'apunta; entre pestanyes se substitueix; d'una
         # pestanya a una explicació s'apunta (enrere torna a l'avís); tornar a la portada és fer enrere

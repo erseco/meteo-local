@@ -373,8 +373,6 @@ var IDIOMA = {
     "Estat de cada línia": "Estado de cada línea",
     "Tria a dalt els mitjans que vols veure.": "Elige arriba los medios que quieres ver.",
     "Tria els mitjans ({0} de {1})": "Elige los medios ({0} de {1})",
-    "Bé en tots els mitjans.": "Bien en todos los medios.",
-    "Bé:": "Bien:",
     "Toca un mitjà per deixar de veure\u2019l; torna-hi a tocar per recuperar-lo. Es recorda en aquest dispositiu.": "Toca un medio para dejar de verlo; vuelve a tocarlo para recuperarlo. Se recuerda en este dispositivo.",
     "A aquesta hora no circulen trens.": "A esta hora no circulan trenes.",
     "Ara no hi ha dades dels trens.": "Ahora no hay datos de los trenes.",
