@@ -42,8 +42,9 @@ services:
       PATH: /home/jjdeharo/.local/bin:/usr/local/bin:/usr/bin:/bin
     cpus: 0.5
     # El token de Claude (claude setup-token), para todo el contenedor: lo
-    # usan el actualizador semanal y la comprobación diaria de sesiones del
-    # vigía; meteo-local ya no usa IA (ADR 0030). No está en el repositorio.
+    # usan el revisor de coherencia (ADR 0101), el reparador (ADR 0113), el
+    # actualizador semanal y la comprobación diaria de sesiones del vigía.
+    # No está en el repositorio.
     # Y las claves de la estación de casa (Ecowitt, ADR 0017).
     env_file:
       - path: ./home/.config/meteo-local/claude.env

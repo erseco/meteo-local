@@ -53,7 +53,10 @@ Al cambiar algo:
   y `npx eslint web montflorit eslint.config.mjs`, con ESLint instalado en la
   carpeta: `npm install --no-save --no-package-lock eslint@9.39.1
   globals@16.5.0`; GitHub las pasa también y
-  el NAS no publica si fallan, ADR 0112) y `probar-web` antes de publicar; sube `VERSION` en
+  el NAS no publica si fallan, ADR 0112; pasada media hora, el reparador del
+  NAS lanza un agente que lo arregla, ADR 0113: si una sesión lo deja a
+  medias, mira antes `docker exec meteo-local python3 /proyecto/reparador.py
+  estat`) y `probar-web` antes de publicar; sube `VERSION` en
   `config.py` y etiqueta la versión (la release de GitHub, adonde lleva el
   «versió» del pie, la crea sola `.github/workflows/release.yml`; ADR 0095).
   Pasa también axe-core si cambia el HTML,

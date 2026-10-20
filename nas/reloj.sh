@@ -28,6 +28,9 @@
 # anterior, y si GitHub no responde se despliega como antes. Y en cada vuelta
 # reintenta los avisos privados a Juanjo que Telegram no aceptó
 # (avis_privat.py, ADR 0038).
+# Si un commit de main no pasa las comprobaciones, el reparador (reparador.py,
+# ADR 0113) lanza, pasada media hora, un agente con IA que lo arregla en una
+# copia aparte; va aparte, cada minuto, para no frenar el reloj.
 # Una vez al día, a HORA_COPIA, copia el registro y el aprendizaje en un
 # repositorio privado de GitHub (nas/copia-registre.sh, ADR 0044).
 # La página del trayecto, su registro de aciertos y el agente diario con IA se
@@ -102,6 +105,12 @@ revisor() {
   [ -f "$REPO/revisor.py" ] && [ -f "$ESTAT_DIR/avisos.json" ] || return 0
   ( cd "$REPO" && python3 revisor.py revisa "$ESTAT_DIR/casa.json" "$ESTAT_DIR/avisos.json" 2>&1 \
       | while IFS= read -r linia; do registro "revisor: $linia"; done ) &
+}
+
+reparador() {
+  [ -f "$REPO/reparador.py" ] || return 0
+  ( cd "$REPO" && ESTAT_DIR="$ESTAT_DIR" python3 reparador.py comprova 2>&1 \
+      | while IFS= read -r linia; do registro "reparador: $linia"; done ) &
 }
 
 respostes_revisor() {
@@ -198,6 +207,7 @@ while true; do
   fi
   [ -d "$REPO/.git" ] && reintenta_avisos
   [ -d "$REPO/.git" ] && respostes_revisor
+  [ -d "$REPO/.git" ] && reparador
   # La copia del registro, una vez al día a partir de HORA_COPIA.
   if [ -f "$REPO/nas/copia-registre.sh" ] && [[ "$ahora" > "$HORA_COPIA" || "$ahora" = "$HORA_COPIA" ]] \
       && [ "$(cat "$ESTAT_DIR/copia-feta" 2>/dev/null)" != "$(date +%F)" ]; then

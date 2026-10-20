@@ -2,7 +2,7 @@
 """Datos fijos de «Temps a Montflorit»: lugares, horario, fuentes y umbrales.
 Se cambian aquí, no en los programas."""
 
-VERSION = "3.169.2"
+VERSION = "3.170.0"
 
 # Coordenadas con tres decimales (unos 100 m), no las exactas: para el tiempo
 # da igual una calle u otra, y el repositorio es público.
@@ -124,6 +124,9 @@ SMP_FI_MIN = 30
 # y del de mañana (21); y los minutos que espera entre dos revisiones por un
 # cambio de lo que concluye la web (un aviso enviado no espera).
 REVISOR_MODEL = "claude-sonnet-5-5"
+# El agente que arregla un commit que no pasa las comprobaciones de GitHub
+# (reparador.py, ADR 0113): el modelo más capaz, porque trabaja solo.
+REPARADOR_MODEL = "claude-opus-5-5"
 REVISOR_HORES = ("05:50", "20:50")
 REVISOR_MIN_MIN = 30
 # Si la descripción del plan nombra solo otras zonas, no afecta al barrio.

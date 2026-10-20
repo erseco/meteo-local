@@ -114,5 +114,6 @@
 | [0110](0110-pagina-fiabilitat-y-comparacion-con-meteocat-y-aemet.md) | Página «Fiabilitat» y comparación con Meteocat y AEMET | aceptado |
 | [0111](0111-uso-de-ia-y-condiciones-de-las-fuentes.md) | El uso de IA explicado en «Fonts i crèdits» y las condiciones de las fuentes | aceptado |
 | [0112](0112-revision-del-codigo-y-cobertura.md) | Revisión del código (Ruff y ESLint) y cobertura de las pruebas | aceptado |
+| [0113](0113-reparador-de-commits-que-no-pasan-las-comprobaciones.md) | Un agente con IA arregla los commits que no pasan las comprobaciones | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.
