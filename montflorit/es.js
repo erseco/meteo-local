@@ -71,6 +71,8 @@ var IDIOMA = {
     "Substituït per ": "Sustituido por ", "l’avís de Meteocat": "el aviso de Meteocat",
     "Actiu ara": "Activo ahora",
     "Previst": "Previsto",
+    "Per {0}": "Por {0}",
+    "{0} avisos": "{0} avisos",
     "Comença {0}": "Empieza {0}",
     "Més informació": "Más información",
     "Detalls": "Detalles",

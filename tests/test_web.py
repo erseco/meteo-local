@@ -973,6 +973,30 @@ class Web(unittest.TestCase):
                 f"ordreActius({json.dumps(actius)}, new Date('{ara}')).map((e) => e.clau)")
         self.assertEqual(self.avalua(ara, expr, pagina="perill.js"), ["smp:pluja", "smp:nou", "smp:vist"])
 
+    def test_perill_agrupa_els_de_l_aemet_que_coincideixen(self):
+        # Juanjo, 20-10-2026: la portada deia 2 avisos i «Perill» 5, amb tres de l'AEMET (tempestes de
+        # 19 a 9 h i pluja de 20 mm i de 80 mm de 6 a 9 h) que la portada fa en una sola línia.
+        def aemet(tipus, inici, comenca, nivell="groc"):
+            return {"clau": f"aemet:{tipus}:{inici}", "inici": "2026-10-19T19:27+02:00", "nivell": nivell,
+                    "comenca": comenca, "fins": "2026-10-20T08:59:59+02:00"}
+        actius = [{"clau": "pla:INUNCAT", "inici": "2026-10-15T19:09+02:00"},
+                  aemet("pluja", "2026-10-20T00:00", "2026-10-20T06:00:00+02:00"),
+                  aemet("tempestes", "2026-10-19T19:00", "2026-10-19T19:00:00+02:00"),
+                  aemet("pluja", "2026-10-19T19:00", "2026-10-20T06:00:00+02:00"),
+                  dict(aemet("vent", "2026-10-20T00:00", "2026-10-20T06:00:00+02:00"), nivell="taronja"),
+                  dict(aemet("neu", "2026-10-21T00:00", "2026-10-21T10:00:00+02:00"), fins="2026-10-21T12:00:00+02:00")]
+        def grups(actius, ara):
+            expr = (f"grupsAemet({json.dumps(actius)}, new Date('{ara}'))"
+                    ".map((g) => g.map((e) => e.clau.split(':')[1] || e.clau))")
+            return self.avalua(ara, expr, pagina="perill.js")
+        # A les 06:10, les tres van de «ara» a les 9: una sola línia a la portada i una sola fitxa.
+        self.assertEqual(grups(actius, "2026-10-20T06:10:00+02:00"),
+                         [["INUNCAT"], ["pluja", "tempestes", "pluja"], ["vent"], ["neu"]])
+        # A les 05:50, la pluja encara comença a les 6 i les tempestes ja són actives: la portada en fa
+        # dues línies («tempestes, fins a les 9» i «pluja, de 6 a 9»), i «Perill», dues fitxes.
+        self.assertEqual(grups(actius, "2026-10-20T05:50:00+02:00"),
+                         [["INUNCAT"], ["pluja", "pluja"], ["tempestes"], ["vent"], ["neu"]])
+
     def test_grafica_pluja_forta_i_torrencial(self):
         # ADR 0096: les barres de la gràfica, amb les intensitats de Meteocat (les de la columna «Cel»).
         ara = "2026-10-12T10:00:00+02:00"

@@ -107,7 +107,7 @@ function ordreActius(actius, ara) {
   return [...nous, ...actius.filter((e) => !nous.includes(e))];
 }
 
-function fitxa(e, ara) {
+function fitxa(e, ara, sub = false) {
   const text = e[idiomaText()] || e.ca;
   const [primera, ...resta] = trossos(text);
   const cercle = [...((primera[0] || {}).t || '')][0];
@@ -115,11 +115,14 @@ function fitxa(e, ara) {
   const meteocat = e.clau.startsWith('meteocat:');
   // Les acabades, en gris: el color del nivell, només per al que passa ara
   // (Juanjo, 12-10-2026; ADR 0074).
-  const art = element('article', `avis-item episodi ${CLASSE_CERCLE[cercle] || 'compte'}${fi ? ' acabat' : ''}`);
+  const art = element('article', `avis-item episodi ${CLASSE_CERCLE[cercle] || 'compte'}${fi ? ' acabat' : ''}${sub ? ' subfitxa' : ''}`);
   art.id = idFitxa(e);
   const titol = element('p', 'episodi-titol');
   if (!fi && esNou(e, ara)) titol.append(element('span', 'avis-nou', T('Nou')));
-  titol.append(...nodesLinia(primera));
+  // Dins d'un grup de l'AEMET (grupsAemet), el títol ja és el del grup: aquí,
+  // només el fenomen.
+  if (sub) titol.append(T`Per ${TD(e.clau.split(':')[1])}`);
+  else titol.append(...nodesLinia(primera));
   const cap = element('div', 'episodi-cap');
   const textFi = fi && (e[`fi_${idiomaText()}`] || e.fi_ca);
   // El text diu el final amb què es va publicar; si l'AEMET l'ha allargat,
@@ -130,7 +133,9 @@ function fitxa(e, ara) {
   // dt. 20/10, 08:59» (revisor, 19-10-2026).
   const allargat = e.allargat_de && e.fins && new Date(e.fins) > new Date(e.allargat_de);
   const nota = e.franja_fins === e.fins ? T('L’AEMET l’ha allargat.') : T`L’AEMET l’ha allargat fins a ${moment(e.fins)}.`;
-  const linies = allargat ? [...resta.slice(0, 1), ...trossos(nota), ...resta.slice(1)] : resta;
+  const totes = allargat ? [...resta.slice(0, 1), ...trossos(nota), ...resta.slice(1)] : resta;
+  // Dins d'un grup, «És un avís oficial…» i «Més informació» només un cop, al peu del grup.
+  const linies = sub ? totes.filter((l) => !esAvisOficial(l)) : totes;
   const compartit = textCompartit([primera, ...linies, ...(textFi ? trossos(textFi) : [])]);
   cap.append(titol, botoCompartir(art.id, primera.map((t) => t.t).join('').trim(), compartit));
   const estat = element('p', 'episodi-quan');
@@ -178,8 +183,8 @@ function fitxa(e, ara) {
   }
   // El comunicat més recent d'un pla de Protecció Civil (ADR 0091) o, si no,
   // Més informació, si el text no porta ja un enllaç (ADR 0071).
-  const comunicat = !explicacio && e.comunicat;
-  const enllac = comunicat || (!explicacio && e.enllac && (e.enllac[idiomaText()] || e.enllac.ca));
+  const comunicat = !explicacio && !sub && e.comunicat;
+  const enllac = comunicat || (!explicacio && !sub && e.enllac && (e.enllac[idiomaText()] || e.enllac.ca));
   if (enllac && (comunicat || !/<a href=/.test(text))) {
     const p = element('p');
     const a = element('a', null, comunicat ? T('Comunicat de Protecció Civil (PDF)') : T('Més informació'));
@@ -282,6 +287,71 @@ function nomMes(iso) {
   return `${MESOS[idiomaText()][t.getMonth()]} de ${t.getFullYear()}`;
 }
 
+// Els avisos actius de l'AEMET, agrupats com les línies d'«Avisos actius» de
+// la portada (comu.frasesAvisos, la mateixa funció): una fitxa per línia, amb
+// cada avís a dins (Juanjo, 20-10-2026: la portada en deia 2 i «Perill» 5, amb
+// tres de l'AEMET que la portada fa en una sola línia). Cada avís conserva la
+// seva fitxa, amb el seu enllaç, dins del grup.
+const esAvisOficial = (l) => /^(És|Es) un av[ií]s/.test(l.map((t) => t.t).join('').trim());
+
+function grupsAemet(actius, ara = new Date()) {
+  const aemet = actius.filter((e) => e.clau.startsWith('aemet:'));
+  const tipus = (e) => e.clau.split(':')[1];
+  const frases = frasesAvisos(aemet.map((e) => ({ nivel: e.nivell, tipo: tipus(e), inicio: e.comenca || e.inici,
+    fin: e.fins || '2999-12-31T23:59:59Z' })), ara);
+  const fraseDe = (e) => {
+    const a = Math.max(new Date(e.comenca || e.inici).getTime(), ara.getTime());
+    const b = e.fins ? new Date(e.fins).getTime() + 1000 : Infinity;
+    return frases.findIndex((f) => f.nivell === e.nivell && f.tipus.has(tipus(e))
+      && f.franges.some(([c, d]) => a < d && c < b));
+  };
+  const grups = [];
+  const perFrase = new Map();
+  for (const e of actius) {
+    const n = e.clau.startsWith('aemet:') ? fraseDe(e) : -1;
+    if (n < 0) { grups.push([e]); continue; }
+    if (!perFrase.has(n)) grups.push(perFrase.set(n, []).get(n));
+    perFrase.get(n).push(e);
+  }
+  return grups;
+}
+
+function fitxaGrup(grup, ara) {
+  if (grup.length === 1) return fitxa(grup[0], ara);
+  grup.sort((x, y) => new Date(x.comenca || x.inici) - new Date(y.comenca || y.inici));
+  const e0 = grup[0];
+  const cercle = [...(((trossos(e0[idiomaText()] || e0.ca)[0] || [])[0] || {}).t || '')][0];
+  const art = element('article', `avis-item episodi grup-aemet ${CLASSE_CERCLE[cercle] || 'compte'}`);
+  const titol = element('p', 'episodi-titol');
+  if (grup.some((e) => esNou(e, ara))) titol.append(element('span', 'avis-nou', T('Nou')));
+  const tipus = [...new Set(grup.map((e) => e.clau.split(':')[1]))].sort();
+  titol.append(`${cercle ? `${cercle} ` : ''}`, element('strong', null,
+    T`AEMET: avís ${TD(e0.nivell)} per ${tipus.map((x) => TD(x)).join(T(' i '))} al Vallès`));
+  const estat = element('p', 'episodi-quan');
+  const comenca = (e) => new Date(e.comenca || e.inici);
+  if (grup.some((e) => comenca(e) <= ara)) estat.append(element('span', 'episodi-actiu', T('Actiu ara')));
+  else {
+    const primer = new Date(Math.min(...grup.map((e) => comenca(e).getTime()))).toISOString();
+    estat.append(element('span', 'episodi-previst', T('Previst')), ' · ', T`Comença ${moment(primer)}`);
+  }
+  estat.append(' · ', T`${grup.length} avisos`);
+  art.append(titol, estat, ...grup.map((e) => fitxa(e, ara, true)));
+  const peu = element('div', 'grup-peu');
+  peu.append(...nodesText(trossos(e0[idiomaText()] || e0.ca).filter(esAvisOficial)));
+  const enllac = e0.enllac && (e0.enllac[idiomaText()] || e0.enllac.ca);
+  if (enllac) {
+    const p = element('p');
+    const a = element('a', null, T('Més informació'));
+    a.href = enllac;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    p.append(a);
+    peu.append(p);
+  }
+  art.append(peu);
+  return art;
+}
+
 function pinta(dades, ara = new Date()) {
   const historial = [...(dades.historial || [])].sort((a, b) => new Date(b.inici) - new Date(a.inici));
   const actius = ordreActius(historial.filter((e) => !finalDe(e, ara)), ara);
@@ -291,7 +361,7 @@ function pinta(dades, ara = new Date()) {
   const antics = acabats.filter((e) => new Date(e.inici) < limit);
   const peces = [element('h2', 'seccio', T('Ara'))];
   const alfa = fitxaAlfa(dades.pla_alfa);
-  if (actius.length) peces.push(...actius.map((e) => fitxa(e, ara)));
+  if (actius.length) peces.push(...grupsAemet(actius, ara).map((g) => fitxaGrup(g, ara)));
   if (alfa) peces.push(alfa);
   const prealerta = (dades.plans_prealerta || []).map(fitxaPla);
   peces.push(...prealerta);

@@ -462,3 +462,31 @@ Validación: `tests/test_historial.py` (`test_la_fitxa_de_meteocat_retirat_esper
 `test_l_aemet_avanca_l_inici_si_meteocat_ja_no_el_cobreix`), `tests/test_bot.py`
 (`test_meteocat_retirat_queda_en_pausa`); 612 pruebas; «Perill» en Chromium y
 Firefox, móvil y escritorio.
+
+
+## Cambio del 20-10-2026 (3.163.0): «Perill» agrupa los avisos de AEMET que coinciden
+
+La portada decía «Avisos actius (2)» y «Perill» enseñaba cinco fichas: tres
+eran avisos amarillos de AEMET (tormentas de 19 a 9 h y lluvia de 20 mm en
+una hora y de 80 mm en 12 horas, de 6 a 9 h) que la portada resume en una
+línea, «AEMET: avís groc per pluja i tempestes, avui fins a les 09:00», y la
+quinta, la de Meteocat retirada y en la media hora de relevo. Juanjo aprobó
+agrupar también en «Perill» (20-10-2026: «sí, hazlo así»): los avisos activos
+de AEMET van agrupados como las líneas de la portada, con la misma función
+(`comu.frasesAvisos`, que ahora devuelve también sus franjas): mismo nivel y,
+para juntar fenómenos distintos, las mismas horas desde ahora. Así no se
+separan nunca: una primera versión juntaba los que solo se tocaban
+(tormentas de 19 a 9 h con lluvia de 6 a 9 h a las 5:50, que la portada da en
+dos líneas). Cada grupo es una sola tarjeta (`perill.grupsAemet`), con el
+título de la línea, «Actiu ara» o «Previst» y el
+número de avisos; dentro, cada aviso con su estado, sus horas, su texto y su
+botón de compartir, con el mismo identificador de antes, de modo que los
+enlaces de los mensajes enviados siguen llevando a su aviso. «És un avís
+oficial…» y «Més informació», una sola vez al pie. Es solo cómo se pinta la
+página: los mensajes y el historial no cambian, y las acabadas siguen una a
+una.
+
+Validación: `tests/test_web.py`
+(`test_perill_agrupa_els_de_l_aemet_que_coincideixen`); «Perill» con los
+datos de las 06:00 en Chromium y Firefox, móvil y escritorio, claro y oscuro,
+en catalán y castellano; axe-core sin fallos.

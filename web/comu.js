@@ -493,7 +493,8 @@ function frasesAvisos(avisos, ara = new Date()) {
         }
       }
       const quan = dies.map((d) => d.parts.join(T(' i '))).join('; ');
-      return { nivell, tipus: tipusDe[clau], titol: T`AEMET: avís ${TD(nivell)} per ${tipus} al Vallès`, quan };
+      // Les franges, també per a «Perill», que agrupa les fitxes com aquestes frases (perill.grupsAemet).
+      return { nivell, tipus: tipusDe[clau], titol: T`AEMET: avís ${TD(nivell)} per ${tipus} al Vallès`, quan, franges };
     });
 }
 
