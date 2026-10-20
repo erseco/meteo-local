@@ -71,6 +71,11 @@ fi
 # como mucho y solo con lluvia a la vista. Después de casa.json.
 [ -z "$ESTAT_DIR" ] || timeout 180 python3 ecotop.py apunta "$ESTAT_DIR/casa.json" >/dev/null \
   || echo "$(date '+%F %T')  ha fallat el registre de l'ecotop" >&2
+# Las previsiones de Meteocat y AEMET para Cerdanyola, para compararlas con la
+# de la web en «Com encerta» (previsio_oficial.py, ADR 0110): Meteocat cada 3
+# horas, AEMET cada hora. Antes del historial, que las lee.
+[ -z "$ESTAT_DIR" ] || timeout 120 python3 previsio_oficial.py apunta >/dev/null \
+  || echo "$(date '+%F %T')  ha fallat el registre de les previsions oficials" >&2
 # Y, como en el barrio nada mide la visibilidad, la pregunta a Juanjo si casa
 # está saturada, y sus respuestas (ADR 0100). Después de casa.json.
 if [ -n "$ESTAT_DIR" ]; then
