@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Pruebas del radar llevado hacia delante (sin red)."""
 import datetime as dt
-import math
 import os
 import sys
 import unittest

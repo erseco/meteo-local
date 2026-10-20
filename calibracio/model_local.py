@@ -5,7 +5,7 @@
 import sys, os, json, csv, datetime as dt
 sys.path.insert(0, os.path.expanduser("~/Documentos/github/meteo-local"))
 import numpy as np
-import aprenentatge as A, config as C
+import aprenentatge as A
 from calibracio import regla_moto as R
 S = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "dades"); U = 0.2
 D = os.path.expanduser("~/Documentos/github/meteo-local/calibracio/dades")
@@ -21,7 +21,7 @@ vh = {dt.datetime.fromisoformat(h["fins"]): h for h in json.load(open(os.path.jo
 VE = ["ICERDA6", "ICERDA18", "ICERDA28"]
 ms = R.muestras()
 per = {}
-for (t, horas, est, x, mm, y) in ms:
+for (t, horas, est, x, _mm, y) in ms:
     per.setdefault((t, horas), {"x": x, "obs": {}})["obs"][est] = y
 X, Yxs, Yloc, T = [], [], [], []
 for (t, horas), v in per.items():

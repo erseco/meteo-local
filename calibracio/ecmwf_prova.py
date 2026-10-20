@@ -150,7 +150,7 @@ def compara(ms, nom):
         pb, pe = creuada(x[s], y[s], grup[s]), creuada(xe[s], y[s], grup[s])
         ys, ds = y[s], des[s]
 
-        def brier(p, sel):
+        def brier(p, sel, ys=ys):
             return float(np.mean((p[sel] - ys[sel]) ** 2))
         tot = np.ones(len(ys), bool)
         fila = {"des_de": t[s].min().astimezone(LOCAL).date().isoformat(),

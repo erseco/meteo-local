@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Pruebas de la vigilancia del pluviómetro de casa (sin red ni Telegram)."""
 import datetime as dt
-import json
 import os
 import sys
 import tempfile

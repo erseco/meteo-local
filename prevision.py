@@ -407,7 +407,7 @@ def avisos():
     s = get("https://feeds.meteoalarm.org/feeds/meteoalarm-legacy-atom-spain")
     res = []
     for ent in re.findall(r"<entry>.*?</entry>", s, re.S):
-        def campo(c):
+        def campo(c, ent=ent):
             m = re.search(rf"<cap:{c}>(.*?)<", ent)
             return m.group(1) if m else ""
         zona, evento = campo("areaDesc"), campo("event")

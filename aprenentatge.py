@@ -969,7 +969,7 @@ def resum_sortir():
             for termini in TERMINIS_SORTIR:
                 hs = [_hora_sortir(r) for r in files if r["termini"] == termini]
                 hs = [h for h in hs if mesurat(h)]
-                nivell = (lambda h, regla=regla: nivells_sortir(mitja, h, llindars)[regla] or "be")
+                nivell = (lambda h, regla=regla, mitja=mitja: nivells_sortir(mitja, h, llindars)[regla] or "be")
                 m[regla][termini] = {n: [sum(1 for h in hs if nivell(h) == n), sum(1 for h in hs if nivell(h) == n and passa(h))]
                                      for n in ORDRE_NIVELLS}
                 if mitja == "moto" and regla == "pluja":
@@ -1123,7 +1123,7 @@ def aprén_sortir(avui, avisa=True):
     if canvis:
         guarda(PROPOSTA_SORTIR, {"dia": avui, "llindars": {**{b: ara[b] for b in ara}, **canvis}, "dades": dades})
         noms = {"curt": "per sortir d'aquí a 3 hores o menys", "llarg": "per a més tard"}
-        linies = [f"Si surts, llindars de pluja: canvi proposat, s'aplicarà demà (per aturar-ho, demana-ho a Claude)."]
+        linies = ["Si surts, llindars de pluja: canvi proposat, s'aplicarà demà (per aturar-ho, demana-ho a Claude)."]
         for b, v in canvis.items():
             a = ara[b]
             linies.append(f"{noms[b].capitalize()}: «millor no» des del {round(a['pluja'] * 100)} % al "

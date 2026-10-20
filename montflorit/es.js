@@ -247,7 +247,6 @@ var IDIOMA = {
     "Plou ara": "Llueve ahora",
     // «Com es llegeix la previsió» (ADR 0077 i 0087).
     "La probabilitat que plogui en aquella hora. Per sota del 10\u00a0%, no s’espera pluja; del 10 al 20\u00a0%, és poc probable, però pot caure algun ruixat; del 20 al 50\u00a0%, pot ploure: si surts, porta paraigua; del 50\u00a0% amunt, el més probable és que plogui. Per exemple, un 40\u00a0% vol dir que, de cada 10 vegades que la previsió dona un 40\u00a0% per a una hora, en 4 acaba plovent.": "La probabilidad de que llueva en esa hora. Por debajo del 10\u00a0%, no se espera lluvia; del 10 al 20\u00a0%, es poco probable, pero puede caer algún chubasco; del 20 al 50\u00a0%, puede llover: si sales, lleva paraguas; del 50\u00a0% hacia arriba, lo más probable es que llueva. Por ejemplo, un 40\u00a0% quiere decir que, de cada 10 veces que la previsión da un 40\u00a0% para una hora, en 4 acaba lloviendo.",
-    "Pluja": "Lluvia",
     "Els mil·límetres que caurien si plou.": "Los milímetros que caerían si llueve.",
     "Quina part del cel tapen els núvols: serè, menys del 20\u00a0%; poc ennuvolat, fins al 45\u00a0%; mig ennuvolat, fins al 70\u00a0%; molt ennuvolat, fins al 85\u00a0%, i cobert, més. Si la probabilitat de pluja arriba al 20\u00a0%, hi surt «possible pluja», i del 50\u00a0% amunt, la pluja. A l’hora en curs, el cel és el que s’observa a l’aeroport de Sabadell, si hi veu núvols.": "Qué parte del cielo tapan las nubes: despejado, menos del 20\u00a0%; poco nuboso, hasta el 45\u00a0%; nuboso, hasta el 70\u00a0%; muy nuboso, hasta el 85\u00a0%, y cubierto, más. Si la probabilidad de lluvia llega al 20\u00a0%, sale «posible lluvia», y del 50\u00a0% para arriba, la lluvia. En la hora en curso, el cielo es el que se observa en el aeropuerto de Sabadell, si ve nubes.",
     "Xifra que ve de la pluja de l\u2019última hora al barri, encara que ja hagi parat: els models en donaven menys.": "Cifra que sale de la lluvia de la última hora en el barrio, aunque ya haya parado: los modelos daban menos.",
@@ -263,7 +262,7 @@ var IDIOMA = {
     // El perill de cada tram i hora (ADR 0076).
     "Temps a Montflorit: avís {0} per {1} (no oficial)": "Temps a Montflorit: aviso {0} por {1} (no oficial)",
     "Meteocat: perill {0} per {1}": "Meteocat: peligro {0} por {1}",
-    "Perill {0}": "Peligro {0}", "Perill": "Peligro", "Avís {0}": "Aviso {0}",
+    "Perill {0}": "Peligro {0}", "Perill": "Peligro",
     "AEMET: avís {0} per tempestes": "AEMET: aviso {0} por tormentas",
     "Meteocat: perill {0} per tempestes": "Meteocat: peligro {0} por tormentas",
     "Els models preveuen tempesta": "Los modelos prevén tormenta",
@@ -331,7 +330,6 @@ var IDIOMA = {
     "Pla Alfa de Cerdanyola: nivell {0} {1}": "Plan Alfa de Cerdanyola: nivel {0} {1}",
     ": accés restringit als espais forestals.": ": acceso restringido a los espacios forestales.",
     "Agents Rurals: tancat {0}": "Agents Rurals: cerrado {0}",
-    "avui": "hoy", "demà": "mañana",
     "Com es llegeix la previsió": "Cómo se lee la previsión",
     "Matí": "Mañana", "Tarda": "Tarde", "Nit": "Noche",
     "Demà matí": "Mañana por la mañana", "Demà tarda": "Mañana por la tarde", "Demà nit": "Mañana por la noche",
@@ -698,7 +696,6 @@ var IDIOMA = {
     "Trànsit ara: cap incidència a menys de 5\u00a0km.": "Tráfico ahora: ninguna incidencia a menos de 5\u00a0km.",
     "Obres: {0}": "Obras: {0}",
     "km {0}": "km {0}",
-    "a {0}": "a {0}",
     "Dades del Servei Català de Trànsit de les {0}, consultades automàticament: l\u2019autor no es fa responsable de la seva exactitud.": "Datos del Servei Català de Trànsit de las {0}, consultados automáticamente: el autor no se hace responsable de su exactitud.",
     "Estat del trànsit: ": "Estado del tráfico: ",
   },

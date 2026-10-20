@@ -2,10 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # ADR 0070. Dades: calibracio/dades/veines (history/all de Weather Underground, 27-07 a 09-10-2026).
 """Regles de veritat i les veïnes com a senyal (sobre hores_veines.json)."""
-import sys, os, json, datetime as dt, collections
+import sys, os, json, collections
 sys.path.insert(0, os.path.expanduser("~/Documentos/github/meteo-local"))
-import numpy as np
-import aprenentatge as A
 S = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "dades"); U = 0.2
 PLOU = sys.argv[2].split(",") if len(sys.argv) > 2 else ["ICERDA6", "ICERDA18", "ICERDA28"]
 SEC = sys.argv[3].split(",") if len(sys.argv) > 3 else ["ICERDA6", "ICERDA18", "ICERDA28"]

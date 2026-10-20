@@ -9,7 +9,6 @@ from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import casa  # noqa: E402
-import config as C  # noqa: E402
 import ecowitt as E  # noqa: E402
 import registre as R  # noqa: E402
 

@@ -8,7 +8,6 @@ from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import avisos_bot as AB  # noqa: E402
-import config as C  # noqa: E402
 import entorn as EN  # noqa: E402
 
 ARA = dt.datetime(2026, 10, 8, 13, 0).astimezone()

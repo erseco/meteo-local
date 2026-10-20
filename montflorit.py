@@ -530,9 +530,9 @@ def construeix(desti, web=None):
                "privacitat.html": privacitat(llegeix("privacitat.html"))}
     pagines = {nom: app_android(alternes(idioma(html, nom), nom), nom) for nom, html in pagines.items()}
     os.makedirs(os.path.join(desti, "es"), exist_ok=True)
-    for nom, html in pagines.items():
-        escriu(nom, html)
-        escriu("es/" + nom, castella(html, nom))
+    for nom, pagina in pagines.items():
+        escriu(nom, pagina)
+        escriu("es/" + nom, castella(pagina, nom))
     escriu("sw.js", service_worker(llegeix("sw.js")))
     for nom in ("estil.css", "comu.js", "grafica.js", "casa.js", "sortir.js", "perill.js", "riera.js", "consultes.js",
                 "avisos.js", "fiabilitat.js"):

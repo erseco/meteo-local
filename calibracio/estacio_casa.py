@@ -19,7 +19,6 @@ Uso: python3 calibracio/estacio_casa.py [--descarrega]
 """
 import datetime as dt
 import json
-import math
 import os
 import sys
 import urllib.parse

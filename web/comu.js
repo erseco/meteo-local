@@ -1628,6 +1628,7 @@ if (!/(^|\/)perill\.html$/.test(location.pathname) && document.querySelectorAll(
     senyalaPerill(d.historial);
     PREVISIO_RIERA = d.riera_previsio || null;
     if (!/(^|\/)riera\.html$/.test(location.pathname)) senyalaRiera(PREVISIO_RIERA, d.historial);
+    // eslint-disable-next-line no-undef -- la defineix la pàgina, si en té (casa.js, sortir.js, consultes.js).
     if (typeof repintaAvisos === 'function') repintaAvisos();
   }, () => {});
   miraPerill();

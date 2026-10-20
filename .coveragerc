@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Quina part del programa recorren les proves (ADR 0112). Fora queden les
+# proves mateixes i les anàlisis puntuals (calibracio/, eines/).
+[run]
+source = .
+omit =
+    tests/*
+    calibracio/*
+    eines/*
+
+[report]
+sort = cover
+skip_covered = false

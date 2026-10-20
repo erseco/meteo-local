@@ -159,7 +159,7 @@ def _consulta(ruta, params, lector=None):
         if ex.code == 204:
             return []
         if ex.code in (401, 403):
-            raise RuntimeError(f"la clau de lectura no val (HTTP {ex.code}): caduca el {C.WU_CLAU_CADUCA}")
+            raise RuntimeError(f"la clau de lectura no val (HTTP {ex.code}): caduca el {C.WU_CLAU_CADUCA}") from ex
         raise
     if not text.strip():
         return []

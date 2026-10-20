@@ -204,7 +204,6 @@ function avalua(mitja, tram, trens, futur, transit, entorn) {
   const temps = viatge.map((f) => f.temperatura).filter((t) => t != null);
   const tMin = temps.length ? Math.min(...temps) : null;
 
-  const nomesAvis = (cond) => viatge.filter(cond).every(senseDades);
   // Només si se surt ara (futur fals): la pluja que cau en aquest moment.
   const araPlou = !futur && entorn ? fontPlujaAra(entorn.pluja_ara, entorn.radar) : null;
   if (mitja === 'bici' || mitja === 'moto') {

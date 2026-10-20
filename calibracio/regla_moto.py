@@ -85,7 +85,6 @@ def main():
     ms = muestras()
     t = np.array([m[0] for m in ms])
     horas = np.array([m[1] for m in ms])
-    est = np.array([m[2] for m in ms])
     x = np.array([m[3] for m in ms])
     mm = np.array([m[4] for m in ms])
     y = np.array([m[5] for m in ms])

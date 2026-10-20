@@ -208,7 +208,8 @@ def reparteix(estat, moment, envia=envia_push):
             # La pàgina de l'avís (la fitxa de «Perill», «Llum»…), si en porta (ADR 0072).
             dades = notificacio(text, a.get("url") or url(a.get("pagina") or URL.get(a["tipus"], "./"), idioma), clau,
                                 expira.isoformat(timespec="seconds"))
-            r = prova(e, lambda: envia(sub, dades, ttl, a["tipus"] in ("riera", "perill", "pluja")))
+            # prova() la crida al moment, dins de la volta.
+            r = prova(e, lambda: envia(sub, dades, ttl, a["tipus"] in ("riera", "perill", "pluja")))  # noqa: B023
             if r is not True:
                 queden.append(e)
                 motius.append(r)
@@ -240,7 +241,7 @@ def reparteix(estat, moment, envia=envia_push):
             imatge = B.imatge_resum(idioma, moment)
             if imatge:
                 n["image"] = imatge
-            r = prova(e, lambda: envia(sub, n, TTL_RESUM_S))
+            r = prova(e, lambda: envia(sub, n, TTL_RESUM_S))  # noqa: B023
             if r is True:
                 resums[e] = {**fets, hora: avui}
             else:
@@ -254,7 +255,7 @@ def reparteix(estat, moment, envia=envia_push):
         if (moment - dt.datetime.fromisoformat(demanada)).total_seconds() <= PROVA_MIN * 60:
             idioma = sub.get("idioma", "ca")
             titol, cos = PROVA[idioma]
-            r = prova(e, lambda: envia(sub, {"title": titol, "body": cos, "url": url("avisos.html", idioma),
+            r = prova(e, lambda: envia(sub, {"title": titol, "body": cos, "url": url("avisos.html", idioma),  # noqa: B023
                                              "tag": "prova"},
                                        TTL_PROVA_S, True))
             if r is not True:

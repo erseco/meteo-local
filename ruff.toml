@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# La revisió del Python (ADR 0112): només les regles que busquen errors
+# (pyflakes: noms sense definir, importacions i variables que sobren;
+# bugbear: paranys habituals; E9: errors de sintaxi), no les d'estil.
+target-version = "py311"
+
+[lint]
+select = ["F", "B", "E9"]
+# zip() sense strict: el codi junta sovint llistes de mida diferent a propòsit.
+ignore = ["B905"]

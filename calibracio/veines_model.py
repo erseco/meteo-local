@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # ADR 0070. Dades: calibracio/dades/veines (history/all de Weather Underground, 27-07 a 09-10-2026).
 """Les veïnes com a senyal de la probabilitat a curt termini, amb l'arxiu."""
-import sys, os, json, datetime as dt, math
+import sys, os, json, datetime as dt
 sys.path.insert(0, os.path.expanduser("~/Documentos/github/meteo-local"))
 import numpy as np
-import aprenentatge as A, config as C
+import aprenentatge as A
 from calibracio import regla_moto as R
 from calibracio.pluja_casa import creuada
 S = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "dades")
@@ -17,14 +17,14 @@ def mediana(h):
     if not v: return None
     n = len(v); return v[n // 2] if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2
 xs = {}
-for (t, horas, est, x, mm, y) in R.muestras():
+for (t, horas, _est, x, _mm, _y) in R.muestras():
     if horas == 0: xs.setdefault(t, x)
 rows = []
 for t, x in xs.items():
     tl = t.astimezone()
     h, a = hores.get(tl), hores.get(tl - dt.timedelta(hours=1))
     if not h or not a: continue
-    y = local(h)
+    y = local(h)  # noqa: F821 (local ve de veines_regles.py, amb exec)
     if y is None or a["casa"] is None: continue
     v = mediana(a)
     if v is None: continue

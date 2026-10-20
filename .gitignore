@@ -3,3 +3,5 @@ web/dades.json
 calibracio/dades/
 web/casa.json
 web/comentari.json
+node_modules
+.coverage

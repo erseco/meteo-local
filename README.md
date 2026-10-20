@@ -245,6 +245,10 @@ leer los datos de IONOS y usa la copia de su carpeta).
 ## Comprobaciones tras cada cambio
 
 - Pasan las pruebas.
+- La revisión del código no da avisos: `ruff check .` (Python) y `npx eslint
+  web montflorit eslint.config.mjs` (JavaScript; antes, una vez, `npm install
+  --no-save --no-package-lock eslint@9.39.1 globals@16.5.0`). GitHub las pasa en cada
+  cambio, con la cobertura de las pruebas en el resumen (ADR 0112).
 - La web carga en Firefox, Chromium y WebKit, en móvil y escritorio, en tema
   claro y oscuro, sin desbordamiento horizontal (`probar-web`).
 - Si cambia el HTML, el CSS o el JavaScript que crea o modifica elementos de

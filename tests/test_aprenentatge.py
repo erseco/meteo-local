@@ -539,7 +539,7 @@ class Diari(unittest.TestCase):
         # ADR 0069: «millor no», que plogui almenys 2 de cada 3 vegades; «bé», com a molt 1 de cada 100.
         rnd = random.Random(3)
         mostres = []
-        for k in range(20000):
+        for _ in range(20000):
             p = rnd.choice([0.003] * 40 + [0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9])
             mostres.append((p, rnd.random() < p))      # probabilitat ben calibrada
         ll = A.apren_llindars(mostres)
