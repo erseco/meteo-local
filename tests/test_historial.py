@@ -85,6 +85,8 @@ class Historial(unittest.TestCase):
         h = AB.historial(estat, [], ARA + dt.timedelta(minutes=15))
         self.assertIn("Origen: Météo-France.", h[0]["ca"])
         self.assertNotIn("darrer", h[0])
+        # Però sí quan es va escriure el text, per al dia d'«avui» quan es rellegeix (20-10-2026).
+        self.assertEqual(h[0]["escrit"], (ARA + dt.timedelta(minutes=15)).isoformat(timespec="minutes"))
         # Sense riscos ara (falta la previsió), es queda com estava.
         estat["perill_text"] = None
         self.assertIn("Origen: Météo-France.", AB.historial(estat, [], ARA + dt.timedelta(minutes=30))[0]["ca"])

@@ -975,6 +975,25 @@ class Web(unittest.TestCase):
                 f"ordreActius({json.dumps(actius)}, new Date('{ara}')).map((e) => e.clau)")
         self.assertEqual(self.avalua(ara, expr, pagina="perill.js"), ["smp:pluja", "smp:nou", "smp:vist"])
 
+    def test_perill_avui_i_dema_d_un_altre_dia(self):
+        # Revisor, 20-10-2026: la fitxa acabada del vent del dilluns deia «avui de 17 a 18 h» el dimarts.
+        propi = {"clau": "propi", "inici": "2026-10-19T13:09+02:00", "escrit": "2026-10-19T15:00+02:00",
+                 "ca": "títol\nVent fort previst: ratxes de fins a 89 km/h, avui de 17 a 18 h.",
+                 "es": "título\nViento fuerte previsto: rachas de hasta 89 km/h, hoy de 17 a 18 h."}
+        aemet = {"clau": "aemet:pluja:2026-10-17T12:00", "inici": "2026-10-16T00:09+02:00",
+                 "ca": "títol\nDes de demà a les 12 h fins a mitjanit.", "es": "título\nDesde mañana a las 12 h hasta medianoche."}
+        def text(e, ara, idioma="ca"):
+            return self.avalua(ara, f"IDIOMA.codi = '{idioma}'; textFitxa({json.dumps(e)}, new Date('{ara}')).split('\\n')[1]",
+                               pagina="perill.js")
+        self.assertEqual(text(propi, "2026-10-20T17:31:00+02:00"), "Vent fort previst: ratxes de fins a 89 km/h, dilluns 19 de 17 a 18 h.")
+        self.assertEqual(text(propi, "2026-10-20T17:31:00+02:00", "es"), "Viento fuerte previsto: rachas de hasta 89 km/h, lunes 19 de 17 a 18 h.")
+        self.assertEqual(text(propi, "2026-10-20T17:31:00+02:00", "gl"), "Vent fort previst: ratxes de fins a 89 km/h, dilluns 19 de 17 a 18 h.")
+        # El mateix dia, com es va escriure.
+        self.assertEqual(text(propi, "2026-10-19T20:00:00+02:00"), "Vent fort previst: ratxes de fins a 89 km/h, avui de 17 a 18 h.")
+        # Les d'abans, sense `escrit`: el començament; «demà», el dia següent.
+        self.assertEqual(text(aemet, "2026-10-20T17:31:00+02:00"), "Des del dissabte 17 a les 12 h fins a mitjanit.")
+        self.assertEqual(text(aemet, "2026-10-20T17:31:00+02:00", "es"), "Desde el sábado 17 a las 12 h hasta medianoche.")
+
     def test_grafica_sempre_totes_les_hores(self):
         # Juanjo, 20-10-2026: «quiero que hagas siempre tot pero con barra de desplazamiento
         # horizontal… hora a hora». Sense el selector «24 h · Demà · Tot»; cada hora, COL_HORA px.

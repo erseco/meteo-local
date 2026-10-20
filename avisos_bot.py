@@ -1070,13 +1070,13 @@ def historial(estat, nous, ahora, anterior=None):
             # Sube de nivel o cambia: se queda el texto nuevo y el peor nivel.
             if rang(a.get("nivell")) >= rang(obert.get("nivell")):
                 obert["nivell"] = a.get("nivell")
-            obert.update(ca=a["ca"], es=a["es"], darrer=a["hora"],
+            obert.update(ca=a["ca"], es=a["es"], darrer=a["hora"], escrit=a["hora"],
                          **{k: a[k] for k in ("enllac", "comenca") if a.get(k)})
             obert.pop("franja_fins", None)      # el text nou diu el seu final
             posa_fins(obert, a.get("fins"))
         else:
             h.append({"clau": ep, "tipus": a["tipus"], "inici": a["hora"], "nivell": a.get("nivell"),
-                      "ca": a["ca"], "es": a["es"], **{k: a[k] for k in ("enllac", "fins", "comenca") if a.get(k)}})
+                      "ca": a["ca"], "es": a["es"], "escrit": a["hora"], **{k: a[k] for k in ("enllac", "fins", "comenca") if a.get(k)}})
     # Un aviso de AEMET que ahora cubre Meteocat ya no se muestra en ningún
     # sitio (ADR 0093): su ficha se cierra diciéndolo, con la de Meteocat que
     # la sustituye, para que «Perill» no la dé por acabada (Juanjo, 16-10-2026:
@@ -1096,7 +1096,7 @@ def historial(estat, nous, ahora, anterior=None):
     # línies són les mateixes, es queda el text de l'últim avís.
     ara_smp = smp_estat.get("text")
     if mc and ara_smp and not mc.get("fi") and set(cos_avis(mc["ca"])) != set(cos_avis(ara_smp["ca"])):
-        mc.update(ca=ara_smp["ca"], es=ara_smp["es"])
+        mc.update(ca=ara_smp["ca"], es=ara_smp["es"], escrit=ahora.isoformat(timespec="minutes"))
     if mc and ara_smp and not mc.get("fi") and ara_smp.get("comenca"):
         mc["comenca"] = ara_smp["comenca"]
     if mc and not mc.get("fi") and smp_estat.get("pausa"):
@@ -1111,7 +1111,7 @@ def historial(estat, nous, ahora, anterior=None):
     propi = next((x for x in reversed(h) if x["clau"] == "propi" and not x.get("fi")), None)
     ara_propi = estat.get("perill_text")
     if propi and ara_propi and cos_avis(propi["ca"]) != cos_avis(ara_propi["ca"]):
-        propi.update(ca=ara_propi["ca"], es=ara_propi["es"])
+        propi.update(ca=ara_propi["ca"], es=ara_propi["es"], escrit=ahora.isoformat(timespec="minutes"))
     # Si la previsió ja no veu cap risc, la fitxa no es tanca fins passades
     # RISC_FI_H hores (que el vaivé dels models no repeteixi missatges), però
     # mentrestant diu «Ja no es preveu» i no compta com a activa: «Perill» la

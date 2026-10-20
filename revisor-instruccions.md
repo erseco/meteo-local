@@ -78,8 +78,7 @@ inclúyelas si son reales, explicando por qué.
 - Los textos oficiales (nombres de meteoros, umbrales, avisos de Renfe y FGC)
   van en su idioma original y no se traducen: eso no es un error.
 - Una ficha de «Perill» con `fins` ya pasado sale como acabada en la página
-  aunque `fi` esté vacío: no es un error. Las fichas creadas antes del
-  18-10-2026 pueden decir «avui» o «demà» referidos a su día: tampoco.
+  aunque `fi` esté vacío: no es un error.
 - En la tabla por horas, un aviso que dura varias horas se rotula una sola vez,
   con una barra vertical a lo largo de sus horas y el texto que quepa (en una
   franja corta, solo «Perill» o «Avís»): no es que falte en las demás horas.

@@ -490,3 +490,27 @@ Validación: `tests/test_web.py`
 (`test_perill_agrupa_els_de_l_aemet_que_coincideixen`); «Perill» con los
 datos de las 06:00 en Chromium y Firefox, móvil y escritorio, claro y oscuro,
 en catalán y castellano; axe-core sin fallos.
+
+## Cambio del 20-10-2026 (3.170.4): «avui» y «demà» en las fichas de otro día
+
+El revisor (20-10-2026, 17:31) vio en el historial de «Avisos» la ficha
+acabada del viento del lunes, que el martes seguía diciendo «ratxes de fins a
+89 km/h, avui de 17 a 18 h». El texto de la ficha es el del aviso enviado, que
+dice «avui» o «demà» respecto al momento en que se escribió. Juanjo aprobó el
+mismo día que pasen a ser el día: «dilluns 19 de 17 a 18 h».
+
+- Cada ficha guarda cuándo se escribió su texto (`escrit`, en
+  `avisos_bot.historial`: al abrirse, con un aviso nuevo y cuando se rehace
+  el texto de Meteocat o del aviso propio). Las de antes de la 3.170.4 usan el
+  último aviso o el comienzo.
+- La página, al pintar la ficha (`textFitxa` en `perill.js`), cambia «avui»,
+  «demà», «hoy» y «mañana» seguidos de «de 17…» o «a les 12 h» por el día de
+  la semana y del mes, como `nom_dia` (con «Des del…», «Desde el…»), solo si
+  se lee otro día. El mismo día, el texto queda como se envió. Los mensajes de
+  Telegram y del móvil no cambian.
+- Se quita de `revisor-instruccions.md` la excepción de las fichas anteriores
+  al 18-10-2026: ya salen con el día.
+
+Validación: `tests/test_web.py` (`test_perill_avui_i_dema_d_un_altre_dia`:
+catalán, castellano y gallego, el mismo día y otro, con y sin `escrit`) y
+`tests/test_historial.py` (`escrit` al rehacer el texto propio).

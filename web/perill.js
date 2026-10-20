@@ -19,6 +19,32 @@ const idiomaText = () => (IDIOMA.codi === 'es' ? 'es' : 'ca');
 const EXPLICACIONS = { riera: 'com-funciona.html#riera', propi: 'com-funciona.html#temps-extrem' };
 const locale = () => (IDIOMA.codi === 'es' ? 'es-ES' : 'ca-ES');
 
+// «Avui de 17 a 18 h» o «Des de demà a les 12 h» volen dir el dia en què es
+// va escriure el text (`escrit`; en les fitxes d’abans de la 3.170.4, el
+// darrer avís o el començament). Llegit un altre dia, el dia de la setmana i
+// del mes, com nom_dia d'avisos_bot.py: «dilluns 19 de 17 a 18 h» (revisor,
+// 20-10-2026: la fitxa acabada del vent del dilluns deia «avui» el dimarts;
+// Juanjo ho va aprovar el mateix dia).
+const RELATIUS = {
+  ca: { re: /(des de )?(avui|demà)(?= (?:de \d|a les ))/gi, dema: /^dem/i, article: 'des del ' },
+  es: { re: /(desde )?(hoy|mañana)(?= (?:de \d|a las ))/gi, dema: /^ma/i, article: 'desde el ' },
+};
+
+function textFitxa(e, ara) {
+  const idioma = idiomaText();
+  const text = e[idioma] || e.ca;
+  const escrit = new Date(e.escrit || e.darrer || e.inici);
+  if (!text || escrit.toDateString() === ara.toDateString()) return text;
+  const r = RELATIUS[e[idioma] ? idioma : 'ca'];
+  const loc = e[idioma] ? locale() : 'ca-ES';
+  return text.replace(r.re, (tot, des, paraula) => {
+    const d = new Date(escrit.getFullYear(), escrit.getMonth(), escrit.getDate() + (r.dema.test(paraula) ? 1 : 0));
+    let nou = (des ? r.article : '') + `${d.toLocaleDateString(loc, { weekday: 'long' })} ${d.getDate()}`;
+    if (tot[0] !== tot[0].toLowerCase()) nou = nou[0].toUpperCase() + nou.slice(1);
+    return nou;
+  });
+}
+
 // Quan ha acabat: el missatge de final o, en els avisos de l'AEMET, que no en
 // tenen, l'hora fins a la qual valien.
 function finalDe(e, ara) {
@@ -108,7 +134,7 @@ function ordreActius(actius, ara) {
 }
 
 function fitxa(e, ara, sub = false) {
-  const text = e[idiomaText()] || e.ca;
+  const text = textFitxa(e, ara);
   const [primera, ...resta] = trossos(text);
   const cercle = [...((primera[0] || {}).t || '')][0];
   const fi = finalDe(e, ara);
@@ -320,7 +346,7 @@ function fitxaGrup(grup, ara) {
   if (grup.length === 1) return fitxa(grup[0], ara);
   grup.sort((x, y) => new Date(x.comenca || x.inici) - new Date(y.comenca || y.inici));
   const e0 = grup[0];
-  const cercle = [...(((trossos(e0[idiomaText()] || e0.ca)[0] || [])[0] || {}).t || '')][0];
+  const cercle = [...(((trossos(textFitxa(e0, ara))[0] || [])[0] || {}).t || '')][0];
   const art = element('article', `avis-item episodi grup-aemet ${CLASSE_CERCLE[cercle] || 'compte'}`);
   const titol = element('p', 'episodi-titol');
   if (grup.some((e) => esNou(e, ara))) titol.append(element('span', 'avis-nou', T('Nou')));
@@ -337,7 +363,7 @@ function fitxaGrup(grup, ara) {
   estat.append(' · ', T`${grup.length} avisos`);
   art.append(titol, estat, ...grup.map((e) => fitxa(e, ara, true)));
   const peu = element('div', 'grup-peu');
-  peu.append(...nodesText(trossos(e0[idiomaText()] || e0.ca).filter(esAvisOficial)));
+  peu.append(...nodesText(trossos(textFitxa(e0, ara)).filter(esAvisOficial)));
   const enllac = e0.enllac && (e0.enllac[idiomaText()] || e0.enllac.ca);
   if (enllac) {
     const p = element('p');
