@@ -751,8 +751,11 @@ def text_alta(tram, idioma):
     if not files:
         return ""
     alta = max(f["temperatura"] + (f.get("dif_alta") or 0) for f in files)
-    d = alta - max(f["temperatura"] for f in files)
-    if math.floor(abs(d) + 0.5) < 1:
+    maxima = max(f["temperatura"] for f in files)
+    d = alta - maxima
+    # Si les dues xifres arrodonides coincideixen, «entre 11 °C i 16 °C (fins a
+    # 16 °C…)» repetiria la xifra (Juanjo, 20-10-2026: «el 2º 16 sobra»).
+    if math.floor(abs(d) + 0.5) < 1 or graus(alta) == graus(maxima):
         return ""
     return f" (hasta {graus(alta)} en la parte alta)" if idioma == "es" else f" (fins a {graus(alta)} a la part alta)"
 

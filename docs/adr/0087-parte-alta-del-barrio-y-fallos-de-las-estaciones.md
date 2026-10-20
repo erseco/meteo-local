@@ -64,7 +64,10 @@ Versión 3.78.0.
   Juanjo: «en el temps avui también hay que ponerlo»).
 - **Un grau, arrodonit**: la diferencia sale desde 0,5 °C, que se redondea a
   1 (Juanjo, 13-10-2026: «0.9 yo lo consideraría como 1»); hasta la 3.78.1
-  hacía falta 1 °C justo.
+  hacía falta 1 °C justo. En el resumen del día, además, la cifra de arriba
+  tiene que ser distinta, ya redondeada, de la máxima de la riera: con 15,6 y
+  16,4 °C salía «entre 11 °C y 16 °C (hasta 16 °C en la parte alta)» (3.170.1;
+  Juanjo, 20-10-2026: «el 2º 16 sobra»).
 - **Si falla la estación de casa**, «Ara» sale de las vecinas
   (`casa.ara_sense_casa`): la temperatura, la de ICERDA6, para que siga
   siendo la de la riera; sin ella, la de la parte alta menos su diferencia
