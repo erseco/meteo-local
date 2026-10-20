@@ -12,11 +12,12 @@ function lpaSky(code) {
   if([71,73,75,77,85,86].includes(code))return ['Nieve','rain'];
   return ['Lluvia','rain'];
 }
-function lpaSkyIcon(code) {
-  const [name,kind]=lpaSky(code),ns='http://www.w3.org/2000/svg';
+function lpaSkyIcon(code,night=false) {
+  const [name,sky]=lpaSky(code),kind=night&&sky==='sun'?'moon':night&&sky==='mixed'?'cloud':sky,ns='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(ns,'svg');
-  for(const [key,value] of Object.entries({viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':'1.7','stroke-linecap':'round','stroke-linejoin':'round',role:'img','aria-label':name}))svg.setAttribute(key,value);
-  const paths=kind==='sun'?['M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4','M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0']:
+  for(const [key,value] of Object.entries({viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':'1.7','stroke-linecap':'round','stroke-linejoin':'round',role:'img','aria-label':name+(night?' de noche':'')}))svg.setAttribute(key,value);
+  const paths=kind==='moon'?['M20 15A8 8 0 0 1 9 4a8 8 0 1 0 11 11']:
+    kind==='sun'?['M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4','M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0']:
     [...(kind==='mixed'?['M18 2v2m4 3h-2m-6-4 1 1m5 6a3 3 0 1 0-5-4']:[]),
      'M5 16a5 5 0 1 1 9-5 3.6 3.6 0 1 1 4 5',...(['cloud','mixed'].includes(kind)?[]:kind==='storm'?['m13 15-3 4h4l-3 4']:['M8 18v3m5-3v3m5-3v3'])];
   for(const d of paths){const p=document.createElementNS(ns,'path');p.setAttribute('d',d);svg.append(p);}return svg;
@@ -115,7 +116,9 @@ function lpaDashboard(data) {
     hourHeading.textContent=day.date===today?'Hoy por horas':new LpaDate(day.date+'T12:00:00').toLocaleDateString('es',{weekday:'long',day:'numeric',month:'short'});
     for(const row of rows) {
       const card=lpaText('article','','lpa-hour');
-      card.append(lpaText('h3',lpaTime(row.hora)),lpaSkyIcon(row.codi),
+      const sun=data.sol?.find(s=>s.dia===day.date),time=Date.parse(row.hora);
+      const night=Boolean(sun)&&(time<Date.parse(sun.sortida)||time>=Date.parse(sun.posta));
+      card.append(lpaText('h3',lpaTime(row.hora)),lpaSkyIcon(row.codi,night),
         lpaText('strong',lpaFormat(row.temperatura)+'°'),
         lpaText('span',(row.probabilitat==null?'—':lpaFormat(row.probabilitat*100)+' %')+' lluvia','lpa-hour-rain'),
         lpaText('span',lpaFormat(row.vent)+' km/h','lpa-muted'));

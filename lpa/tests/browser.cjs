@@ -41,6 +41,7 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
             // Mouse drag must actually change horizontal scroll, not just show a grab cursor.
             if(!mobile) {
               await page.locator('.lpa-day').nth(1).click();
+              assert.equal(await page.locator('.lpa-hour').first().getByRole('img').getAttribute('aria-label'),'Despejado de noche');
               const hours=page.locator('.lpa-hours');
               const rect=await hours.boundingBox();
               const before=await hours.evaluate(el=>el.scrollLeft);

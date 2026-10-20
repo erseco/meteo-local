@@ -19,7 +19,7 @@ def forecast(now=NOW):
     start = int(now.replace(hour=0).timestamp())
     times = [start + n * 3600 for n in range(168)]
     h = {key: [20.0] * 168 for key in C.HOURLY}
-    h.update(time=times, precipitation=[0.4] * 168, precipitation_probability=[35] * 168)
+    h.update(time=times, precipitation=[0.4] * 168, precipitation_probability=[35] * 168,weather_code=[0]*168)
     return {'hourly': h, 'current': {'time': int(now.timestamp()), 'temperature_2m': 22},
             'daily': {'time': times[::24], 'sunrise': times[7::24], 'sunset': times[19::24], 'uv_index_max': [5]*7,
                       'temperature_2m_max':[24]*7,'temperature_2m_min':[19]*7,
