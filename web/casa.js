@@ -1127,8 +1127,12 @@ function taula(hores, mesurada, riscos, sol) {
     amplia.addEventListener('click', vistaGrafica);
     const botonsG = element('div', 'cap-previsio-botons');
     botonsG.append(amplia);
-    capG.append(element('h2', 'perque', T('Previsió')), botonsG);
-    secG.append(capG, graf);
+    capG.append(element('h2', 'perque', T('Previsió')));
+    // Quines hores, just a sobre: 24 h per defecte, i el que es triï es recorda
+    // (graficaAmbSelector); «Opcions», a la mateixa fila (Juanjo, 20-10-2026).
+    const filaG = element('div', 'fila-grafica');
+    filaG.append(graficaAmbSelector(graf), botonsG);
+    secG.append(capG, filaG, graf);
     sec._grafica = secG;
   }
   botons.append(boto);

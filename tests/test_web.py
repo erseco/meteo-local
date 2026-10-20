@@ -973,6 +973,24 @@ class Web(unittest.TestCase):
                 f"ordreActius({json.dumps(actius)}, new Date('{ara}')).map((e) => e.clau)")
         self.assertEqual(self.avalua(ara, expr, pagina="perill.js"), ["smp:pluja", "smp:nou", "smp:vist"])
 
+    def test_grafica_24_hores_per_defecte_i_es_recorda(self):
+        # Juanjo, 20-10-2026: «24 h» al selector, per defecte; el que es triï es recorda; «Tot» també hi és.
+        hores = [{"hora": f"2026-10-{20 + (6 + h) // 24}T{(6 + h) % 24:02d}:00",
+                  "fins": f"2026-10-{20 + (7 + h) // 24}T{(7 + h) % 24:02d}:00", "temperatura": 15} for h in range(40)]
+        base = ("desats = {}; localStorage.getItem = (k) => desats[k] ?? null; "
+                "localStorage.setItem = (k, v) => { desats[k] = v; }; "
+                "CustomEvent = class { constructor(t, o) { this.detail = o.detail; } }; dispatchEvent = () => true; "
+                f"HORES_GRAFICA = {json.dumps(hores)};")
+        ara = "2026-10-20T06:10:00+02:00"
+        r = self.avalua(ara, base + "[tramGrafica(), horesVista('24h').length, horesVista('tot').length, "
+                        "tramsGrafica().map(([c]) => c)]")
+        self.assertEqual(r, ["24h", 24, 40, ["24h", "dema", "tot"]])
+        r = self.avalua(ara, base + "triaTramGrafica('dema'); [tramGrafica(), desats['meteo.grafica.hores']]")
+        self.assertEqual(r, ["dema", "dema"])
+        # Un de desat que ja no hi és («Avui», retirat el mateix dia): 24 h.
+        r = self.avalua(ara, base + "desats['meteo.grafica.hores'] = 'avui'; tramGrafica()")
+        self.assertEqual(r, "24h")
+
     def test_perill_agrupa_els_de_l_aemet_que_coincideixen(self):
         # Juanjo, 20-10-2026: la portada deia 2 avisos i «Perill» 5, amb tres de l'AEMET (tempestes de
         # 19 a 9 h i pluja de 20 mm i de 80 mm de 6 a 9 h) que la portada fa en una sola línia.

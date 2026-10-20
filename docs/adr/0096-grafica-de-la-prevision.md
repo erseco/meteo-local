@@ -322,3 +322,44 @@ en ningún lado, encima. Sin flecha: en la misma línea y pegado a la barra ya
 se lee que es suyo. Con los avisos del 19-10-2026, en un móvil de 412 px los
 dos nombres van a la derecha y las barras ocupan dos líneas en vez de cuatro.
 
+
+
+## Cambio del 20-10-2026 (3.164.0): «24 h» y el selector encima del gráfico
+
+Juanjo (20-10-2026): «al selector del gráfico hoy y mañana añádele 24h y
+además añádelo también justo encima del gráfico para que el usuario
+rápidamente pueda consultar lo que quiera. Por defecto saldrá 24 horas pero
+si el usuario lo cambia el cambio será persistente», y «el tot también debe
+estar». El selector de horas tiene ahora «24 h» (las 24 horas desde la que
+está en curso), «Demà» y «Tot», y sale también justo encima del
+gráfico de la portada, no solo en «Opcions», y en la misma fila que el botón
+«Opcions», con la misma altura (Juanjo, 20-10-2026: «las opciones en la misma
+línea que los botones»). Por defecto, «24 h»; lo que se
+elige se recuerda en el dispositivo (`meteo.grafica.hores`) y vale para los
+dos sitios: cambiarlo en la ventana grande cambia también el de la portada.
+Antes la portada enseñaba siempre todas las horas y la ventana grande
+empezaba cada vez por «Tot». Si lo guardado ya no tiene horas suficientes,
+sale «24 h». «Avui» se quitó el mismo día: empezaba en la hora actual como
+«24 h» y era siempre un trozo suyo, cortado a medianoche; a las 12 de la noche
+eran iguales (Juanjo, 20-10-2026: «si uno pone avui a las 12 de la noche es
+como poner 24h»; «sí, quítalo»). Lo guardado como «Avui» pasa a «24 h». El
+gráfico de «Consultes» sigue con el día del que habla el resumen.
+
+Validación: `tests/test_web.py` (`test_grafica_24_hores_per_defecte_i_es_recorda`);
+en Chromium y Firefox, el selector, la persistencia al recargar y el cambio
+desde la ventana grande; capturas en móvil y escritorio; axe-core sin fallos
+en la portada, claro y oscuro, catalán y castellano.
+
+Las horas del eje van ahora con su propio paso, aparte de los iconos del
+cielo (Juanjo, 20-10-2026: «en 24h y en avui, ¿no caben todas las h en el eje
+x?»). Medido en el móvil, un número de hora ocupa unos 12,6 px; con «Avui»
+hay de 19 a 22 px por hora y con «24 h», de 13,6 a 15,8. El eje pone todas
+las horas con 18 px o más por hora, y si no, de dos en dos (antes seguía el
+paso de los iconos, que necesitan unos 30: cada 2 o cada 3 h). En el móvil,
+«Avui» lleva todas las horas y «24 h», de dos en dos.
+
+El eje, natural: solo las horas en punto, a intervalos regulares, sin «Ara»
+ni ningún número distinto al principio (Juanjo, 20-10-2026: «quita el ara del
+gráfico» y, tras probar con la hora en curso a la izquierda, «el eje x normal,
+sin números de más o menos al principio, eje x natural»). Con «Com encerta»
+queda la raya donde empieza la previsión, sin rótulo.

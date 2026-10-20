@@ -72,6 +72,7 @@ var IDIOMA = {
     "Actiu ara": "Activo ahora",
     "Previst": "Previsto",
     "Per {0}": "Por {0}",
+    "24 h": "24 h",
     "{0} avisos": "{0} avisos",
     "Comença {0}": "Empieza {0}",
     "Més informació": "Más información",
