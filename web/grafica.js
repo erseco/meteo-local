@@ -712,8 +712,9 @@ function dibuixaGrafica(fig) {
       if (t.getAttribute('text-anchor') === 'end') t.setAttribute('x', visible - 2);
       fixes.append(t);
     }
-    fixes.style.top = `${caixa.offsetTop}px`;
-    fixes.style.left = `${caixa.offsetLeft}px`;
+    // La mida, la del dibuix: la regla general de les gràfiques l'estiraria.
+    Object.assign(fixes.style, { top: `${caixa.offsetTop}px`, left: `${caixa.offsetLeft}px`,
+      width: `${visible}px`, height: `${H}px` });
     fig.append(fixes);
   }
 
