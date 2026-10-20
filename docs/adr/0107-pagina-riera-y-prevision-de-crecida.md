@@ -28,7 +28,10 @@ partes («hazlo así»).
   lo que necesita el vecino y nada más (Juanjo, tras la primera versión:
   «demasiada información para el vecino del barrio… si quieres pon aparte
   todos estos datos de ahora»; «demasiados desplegables, deja solo uno
-  donde esté todo»): **Avís**, si hay uno activo (la misma franja que en
+  donde esté todo»): bajo la entrada, la misma invitación que en «Perill» a
+  activar las notificaciones, con el enlace a «Notificacions» (desde la
+  3.169.0; Juanjo, 20-10-2026: «en la riera añade un enlace para activar las
+  notificaciones, como en la sección de avisos»); **Avís**, si hay uno activo (la misma franja que en
   «Perill», con el enlace), **Ara** (una línea con el nivel y la lluvia
   medida: «Sense risc de crescuda ara…», en verde), **Properes hores** (la
   previsión, con el recuadro «És una previsió en fase de proves…» que dice
