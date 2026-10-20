@@ -190,3 +190,12 @@ hay dia a dia».
   dos lenguas, con el desplegable abierto); con previsiones oficiales
   simuladas para ver la comparación y el aprendizaje real del NAS. axe-core
   sin fallos en la página y en el menú ⋮ abierto.
+
+**Fuera del menú mientras haya pocos datos** (20-10-2026, 3.167.2). Con tres
+semanas de la web y un solo día de Meteocat y AEMET, la página dice todavía
+poco. Se quita del menú ⋮ (`MENU_FIABILITAT` en `web/comu.js`) y de la lista
+de «Com funciona»; la página sigue en su dirección, enlazada desde «Fonts i
+crèdits», donde se explica para qué se leen las previsiones oficiales (Juanjo:
+«quita el enlace de fiabilidad del menu de 3 puntos, lo pondremos cuando haya
+más datos»). Para volver a ponerla: `MENU_FIABILITAT = true` y la línea de
+«Com funciona» con su traducción (está en el historial de este ADR).

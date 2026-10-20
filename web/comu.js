@@ -1755,6 +1755,7 @@ for (const b of document.querySelectorAll('.boto-compartir')) b.addEventListener
 // campana»). A l'ordinador, igual des de la 3.165.0 (Juanjo, 20-10-2026:
 // «pon los tres puntos»); a la 3.164.0 s'hi havia deixat tot a la vista, cosa
 // que ell no havia demanat.
+const MENU_FIABILITAT = false;
 function menuMes() {
   const botons = document.querySelector?.('.cap-botons');
   if (!botons) return;
@@ -1781,7 +1782,10 @@ function menuMes() {
   const ajuda = document.querySelector('.cap-botons a[href^="com-funciona.html"]');
   if (ajuda) menu.append(fila('i-circle-help', T('Com funciona'), { href: ajuda.href }));
   // «Fiabilitat» (ADR 0110): quant encerta la previsió, comparada amb Meteocat i AEMET, i com aprèn.
-  menu.append(fila('i-target', T('Fiabilitat'), { href: 'fiabilitat.html' }));
+  // Fora del menú fins que hi hagi més dades (Juanjo, 20-10-2026: «quita el
+  // enlace de fiabilidad del menu de 3 puntos, lo pondremos cuando haya más
+  // datos»); la pàgina segueix a la seva adreça.
+  if (MENU_FIABILITAT) menu.append(fila('i-target', T('Fiabilitat'), { href: 'fiabilitat.html' }));
   // Grups de botons units, el triat marcat, com el selector d'hores de la gràfica.
   const grup = (nom, opcions) => {
     const g = element('div', 'menu-mes-grup');
