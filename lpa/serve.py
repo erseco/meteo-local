@@ -7,7 +7,7 @@ from pathlib import Path
 import threading
 
 from .build import build
-from .collect import collect, write_json, finalize
+from .collect import collect, publish, finalize
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -21,7 +21,7 @@ def refresh(destination, stop, state_dir):
     while not stop.is_set():
         try:
             data = finalize(collect(), state_dir)
-            write_json(destination, data)
+            publish(destination, data)
             print('LPA update:', data['generat'], data['errors'], flush=True)
         except Exception as error:
             print('LPA update failed:', error, flush=True)

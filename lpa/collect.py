@@ -26,6 +26,8 @@ ALERTS = "https://feeds.meteoalarm.org/feeds/meteoalarm-legacy-atom-spain"
 HOURLY = ("temperature_2m", "precipitation", "precipitation_probability", "weather_code",
           "cloud_cover", "wind_speed_10m", "wind_gusts_10m", "snowfall", "uv_index")
 CURRENT = ("temperature_2m", "relative_humidity_2m", "precipitation", "wind_speed_10m", "wind_gusts_10m")
+DAILY = ('temperature_2m_max','temperature_2m_min','precipitation_sum',
+         'precipitation_probability_max','weather_code','wind_speed_10m_max')
 
 
 def fetch(url, params=None):
@@ -39,7 +41,7 @@ def fetch(url, params=None):
 
 def parameters():
     return {"latitude": P.COORDINATES[0], "longitude": P.COORDINATES[1],
-            "timezone": P.TIMEZONE, "timeformat": "unixtime", "forecast_days": 3}
+            "timezone": P.TIMEZONE, "timeformat": "unixtime", "forecast_days": 7}
 
 
 def local(timestamp):
@@ -73,8 +75,6 @@ def forecast_rows(data, now):
                      "neu": value("snowfall"), "uv": value("uv_index"),
                      "plou_ara": None, "segons_estacio": False, "segons_radar": False,
                      "radar": None, "avisos": [], "ratxes_models": {}})
-        if len(rows) >= 24 and end.date() > now.date() and end.hour == 21:
-            break
     if len(rows) < 24:
         raise ValueError("Less than 24 hours of fresh forecast")
     return rows
@@ -124,7 +124,7 @@ def collect(now=None, reader=fetch, include_observations=True):
     params = parameters()
     requests = {
         "previsió": (FORECAST, {**params, "hourly": ",".join(HOURLY), "current": ",".join(CURRENT),
-                                "daily": "sunrise,sunset,uv_index_max", "models": "best_match"}),
+                                "daily": ",".join(('sunrise','sunset','uv_index_max')+DAILY), "models": "best_match"}),
         "aire": (AIR, {**params, "forecast_days": 1, "domains": "cams_global",
                        "hourly": ",".join(aire.CONTAMINANTS)}),
         "avisos": (ALERTS, None),
@@ -161,6 +161,10 @@ def collect(now=None, reader=fetch, include_observations=True):
                     if current and abs(now.timestamp() - current["time"]) <= 7200:
                         data["lpa"]["current_model"] = current
                     daily = forecast["daily"]
+                    data['lpa']['daily_forecast'] = [
+                        {'date':local(t).date().isoformat(),
+                         **{key:daily.get(key,[None]*len(daily['time']))[i] for key in DAILY}}
+                        for i,t in enumerate(daily['time'])]
                     data["sol"] = [{"dia": local(t).date().isoformat(),
                                     "sortida": local(s).isoformat(timespec="minutes"),
                                     "posta": local(p).isoformat(timespec="minutes"), "uv_max": u}
@@ -236,13 +240,20 @@ def finalize(data, state_dir=None):
     return data
 
 
+def publish(destination, data):
+    """Publish the application payload and its documented public data companions."""
+    write_json(destination, data)
+    from .public_data import export
+    export(Path(destination).parent, data)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("destination")
     parser.add_argument("--state-dir", default=os.environ.get("LPA_STATE_DIR"))
     args = parser.parse_args()
     data = finalize(collect(), args.state_dir)
-    write_json(args.destination, data)
+    publish(args.destination, data)
     for message in data["errors"]:
         print(message)
     return 0 if data["hores"] else 1

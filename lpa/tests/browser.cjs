@@ -27,12 +27,30 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
           if (!request.url().startsWith(root + '/')) external.push(request.url());
         });
         for (const file of ['index.html', 'sortir.html', 'consultes.html', 'perill.html',
-                            'riera.html', 'fonts.html', 'avisos.html', 'fuentes.html', 'observaciones.html', 'fiabilitat.html', 'radar.html']) {
+                            'riera.html', 'fonts.html', 'avisos.html', 'fuentes.html', 'observaciones.html', 'fiabilitat.html', 'radar.html', 'datos.html']) {
           errors = []; external = [];
           await page.goto(`${root}/es/${file}`);
-          if (file === 'index.html') await page.locator('#casa .previsio').first().waitFor();
+          if (file === 'index.html') {
+            await page.locator('.lpa-day').first().waitFor();
+            assert.equal(await page.locator('.lpa-day').count(),7);
+            const days=page.locator('.lpa-days');
+            await days.focus();await page.keyboard.press('End');
+            await page.locator('.lpa-day').last().click();
+            assert.equal(await page.locator('.lpa-day').last().getAttribute('aria-pressed'),'true');
+            await page.locator('.lpa-day').first().click();
+            // Mouse drag must actually change horizontal scroll, not just show a grab cursor.
+            if(!mobile) {
+              await page.locator('.lpa-day').nth(1).click();
+              const hours=page.locator('.lpa-hours');
+              const rect=await hours.boundingBox();
+              const before=await hours.evaluate(el=>el.scrollLeft);
+              await page.mouse.move(rect.x+rect.width*.7,rect.y+60);
+              await page.mouse.down();await page.mouse.move(rect.x+rect.width*.2,rect.y+60,{steps:12});await page.mouse.up();
+              assert.ok(await hours.evaluate(el=>el.scrollLeft)>before+40,'hourly forecast must support mouse dragging');
+            }
+          }
           if (file === 'sortir.html') await page.getByText('No hay datos de servicio de Guaguas Municipales ni Global.').waitFor();
-          if (file === 'observaciones.html' || file === 'fiabilitat.html') await page.getByText('Plaza de la Feria: Recogiendo datos', {exact:false}).waitFor();
+          if (file === 'observaciones.html' || file === 'fiabilitat.html') await page.getByRole('heading',{name:'Plaza de la Feria',exact:true}).waitFor();
           if (file === 'observaciones.html') {
             await page.getByRole('heading', {name:'La Isleta · Geonica 3705',exact:true}).waitFor();
             await page.getByText('Dato antiguo: no representa el polen actual.',{exact:true}).waitFor();
@@ -51,8 +69,13 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
           if (file === 'sortir.html') {
             await page.getByRole('link',{name:'Consultar Próxima Guagua',exact:true}).waitFor();
           }
+          if(file==='datos.html') {
+            await page.getByRole('heading',{name:'Observaciones por estación',exact:true}).waitFor();
+            const metadata=JSON.parse(await page.locator('#lpa-dataset').textContent());
+            assert.equal(metadata['@type'],'Dataset');
+          }
           await page.addScriptTag({content: axe.source});
-          const violations = await page.evaluate(async () => (await axe.run()).violations.map(v => ({id:v.id, nodes:v.nodes.length})));
+          const violations = await page.evaluate(async () => (await axe.run()).violations.map(v => ({id:v.id, nodes:v.nodes.map(n=>({target:n.target,reason:n.failureSummary}))})));
           assert.deepEqual(violations, [], `${name}/${file}: accessibility violations`);
           assert.deepEqual(errors, [], `${name}/${file}: JavaScript errors`);
           assert.deepEqual(external, [], `${name}/${file}: external requests`);
@@ -89,8 +112,8 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
         });
         await page.goto(`${root}/es/index.html`);
         await page.getByText('Datos caducados.', {exact:false}).waitFor();
-        await page.getByText('Radar antiguo:',{exact:false}).waitFor();
-        assert.equal(await page.locator('#casa .previsio').count(),0);
+        await page.getByText('Imagen antigua',{exact:false}).waitFor();
+        assert.equal(await page.locator('.lpa-day').count(),0);
         await context.close();
         console.log(`${name}: ${mobile?'mobile':'desktop'}, ${dark?'dark':'light'} passed`);
       }

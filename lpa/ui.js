@@ -17,29 +17,32 @@ const LPA_STATES = {ok:'Lectura reciente', stale:'Lectura antigua', invalid:'Lec
 function lpaStationCard(station) {
   const status = lpaStationStatus(station);
   const card = lpaText('article', '', 'lpa-station');
-  card.append(lpaText('h3', station.name), lpaText('p', `${station.region} · ${station.provider}`),
+  card.append(lpaText('h3', station.name), lpaText('p', station.provider,'lpa-badge'),
     lpaText('p', LPA_STATES[status], status === 'ok' ? 'lpa-fresh' : 'nota'));
   if (station.observed_at) {
     const time = new LpaDate(station.observed_at);
     card.append(lpaText('p', `${time.toLocaleString('es', {dateStyle:'short',timeStyle:'short'})} · hora canaria`));
   }
   if (status !== 'invalid' && status !== 'unavailable') {
-    card.append(lpaText('p', `Temperatura: ${lpaFormat(station.temperature_c)} °C · Humedad: ${lpaFormat(station.relative_humidity_pct)} %`));
-    card.append(lpaText('p', `Viento: ${lpaFormat(station.wind_kmh)} km/h · Racha: ${lpaFormat(station.gust_kmh)} km/h`));
-    if (station.rain_mm != null) card.append(lpaText('p', `Lluvia acumulada en ${station.rain_period_minutes || '?'} min: ${lpaFormat(station.rain_mm)} mm`));
-    if (station.rain_rate_mmh != null) card.append(lpaText('p', `Intensidad de lluvia: ${lpaFormat(station.rain_rate_mmh)} mm/h`));
-    if (station.pressure_hpa != null) card.append(lpaText('p', `Presión: ${lpaFormat(station.pressure_hpa)} hPa (${station.pressure_kind === 'sea_level' ? 'reducida al nivel del mar' : station.pressure_kind === 'station' ? 'en la estación' : 'referencia no especificada'})`));
+    card.append(lpaText('p', `${lpaFormat(station.temperature_c)}°`,'lpa-station-temperature'));
+    card.append(lpaText('p', `${lpaFormat(station.wind_kmh)} km/h viento · ${lpaFormat(station.relative_humidity_pct)} % humedad`));
   }
+  const details=document.createElement('details');details.append(lpaText('summary','Detalles y fuente'));
+  details.append(lpaText('p',station.region));
+  if(station.gust_kmh!=null)details.append(lpaText('p',`Racha: ${lpaFormat(station.gust_kmh)} km/h`));
+  if (station.rain_mm != null) details.append(lpaText('p', `Lluvia acumulada en ${station.rain_period_minutes || '?'} min: ${lpaFormat(station.rain_mm)} mm`));
+  if (station.rain_rate_mmh != null) details.append(lpaText('p', `Intensidad de lluvia: ${lpaFormat(station.rain_rate_mmh)} mm/h`));
+  if (station.pressure_hpa != null) details.append(lpaText('p', `Presión: ${lpaFormat(station.pressure_hpa)} hPa (${station.pressure_kind === 'sea_level' ? 'reducida al nivel del mar' : station.pressure_kind === 'station' ? 'en la estación' : 'referencia no especificada'})`));
   if (station.raw_report) {
     const report = document.createElement('details');
     report.append(lpaText('summary','Parte METAR original'), lpaText('p',station.raw_report));
-    card.append(report);
+    details.append(report);
   }
-  if (station.detail) card.append(lpaText('p', station.detail, 'nota'));
+  if (station.detail) details.append(lpaText('p', station.detail, 'nota'));
   const link = lpaText('a', 'Consultar la fuente');
   // Only links from the trusted station registry are emitted by the collector.
   if (station.url?.startsWith('https://')) link.href = station.url;
-  card.append(link);
+  details.append(link);card.append(details);
   return card;
 }
 function lpaShowHistory(box, history) {
@@ -94,13 +97,8 @@ llegeixDades('montflorit.json').then(data => {
   const box = document.getElementById('lpa-status');
   const current = data.lpa?.current_model;
   const observations = data.lpa?.observations;
-  if (box && current && !dadesVelles(data)) {
-    box.append(lpaText('p', `Estimación actual del modelo: ${lpaFormat(current.temperature_2m)} °C; humedad ${lpaFormat(current.relative_humidity_2m)} %; viento ${lpaFormat(current.wind_speed_10m)} km/h. No es una medición de una estación.`));
-    const coast = observations?.stations.find(s => s.id === 'C659M');
-    if (coast && lpaStationStatus(coast) === 'ok') box.append(lpaText('p', `Medido en Plaza de la Feria a las ${new LpaDate(coast.observed_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}: ${lpaFormat(coast.temperature_c)} °C y ${lpaFormat(coast.relative_humidity_pct)} % de humedad. Referencia de costa urbana; no de todo el municipio.`));
-    if (data.lpa.temperature_adjustment) box.append(lpaText('p', `La temperatura prevista de la costa urbana a 2–6 horas incorpora un ajuste validado de ${lpaFormat(data.lpa.temperature_adjustment.bias_c)} °C.`, 'nota'));
-  }
-  if (box && data.avisos === null) box.append(lpaText('p', 'No se pudieron comprobar los avisos oficiales. Consulte AEMET.', 'avis'));
+  const updated=document.getElementById('lpa-updated');
+  if(updated&&data.generat)updated.textContent=`${dadesVelles(data)?'Publicación antigua':'Actualizado'} ${new LpaDate(data.generat).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})} · hora canaria`;
   const target = document.getElementById('lpa-observations');
   if (!target) return;
   target.replaceChildren();
@@ -120,14 +118,17 @@ llegeixDades('montflorit.json').then(data => {
   const schoolGrid = lpaText('div', '', 'lpa-station-grid');
   for (const station of observations?.stations || []) if (station.category === 'school') schoolGrid.append(lpaStationCard(station));
   schools.append(lpaText('p', 'Contexto regional: no se mezclan las medidas de colegios de otros municipios con la temperatura de Las Palmas.'),schoolGrid);
-  target.append(schools,lpaText('h2','Otras redes institucionales'));
+  target.append(schools);
+  const providers=document.createElement('details');providers.append(lpaText('summary','Otras redes y accesos pendientes'));
   for (const provider of observations?.providers || []) {
     const p = lpaText('p', `${provider.name}: ${provider.detail} `);
     const link = lpaText('a','Fuente institucional');
     if (provider.url?.startsWith('https://')) link.href = provider.url;
-    p.append(link); target.append(p);
+    p.append(link); providers.append(p);
   }
-  lpaShowHistory(target, data.lpa?.history);
+  target.append(providers);
+  const history=document.createElement('details');history.append(lpaText('summary','Historial y fiabilidad'));
+  lpaShowHistory(history, data.lpa?.history);target.append(history);
   lpaShowEnvironment(target, data.lpa?.environment);
 }).catch(() => {
   const target = document.getElementById('lpa-observations');

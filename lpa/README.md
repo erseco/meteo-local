@@ -4,9 +4,41 @@ Adaptación del fork `erseco/meteo-local` sobre la versión 3.169.0 de
 [jjdeharo/meteo-local](https://github.com/jjdeharo/meteo-local), commit
 `3405f28689b8a52f8da7c7c2d9db83df07d5c9cc`.
 
-Se reutilizan el generador, la interfaz en castellano, los gráficos, las tablas,
-el selector de salida y las consultas del original. Los adaptadores de Las Palmas
-están en `lpa/`; no se reescribe ni sustituye la aplicación original.
+Se reutilizan el generador, la navegación en castellano, el selector de salida y
+las consultas del original. La portada compacta de siete días y los adaptadores
+están en `lpa/`; los archivos del original se conservan para facilitar actualizaciones.
+
+## Interfaz y consulta de datos
+
+La portada muestra una lectura reciente de Plaza de la Feria cuando está
+disponible; en su ausencia, la estimación actual del modelo, etiquetada como tal.
+El viento y la humedad proceden de esa misma fuente; la probabilidad de lluvia
+es siempre previsión del modelo. Los avisos no comprobados y los datos antiguos
+siguen visibles. Método, historial y detalles de estaciones quedan desplegables.
+
+Se solicitan **siete días naturales** de Open-Meteo. El resumen de cada día cubre
+el día completo; el porcentaje es el máximo de sus probabilidades horarias,
+no la probabilidad agregada de todo el día. Las horas muestran los intervalos
+futuros disponibles y se desplazan con el dedo, arrastrando con el ratón, con
+las flechas de la interfaz o con el teclado. A partir del cuarto día se advierte
+mayor incertidumbre; no se presenta todo el horizonte con la misma fiabilidad.
+
+La recogida genera también:
+
+- `weather.json`: contrato público `schema_version=1.0`, unidades, fechas ISO,
+  caducidad, previsión diaria/horaria, observaciones por estación, avisos,
+  metadatos del radar y ambiente. No incluye imágenes, credenciales ni archivos internos.
+- `es/datos.html`: resumen **renderizado al publicar**, legible sin JavaScript,
+  con la misma fecha que el JSON y metadatos `Dataset` / `DataDownload` de Schema.org.
+- Canonical, descripción, Open Graph y descubrimiento del JSON en el HTML;
+  `WebSite` en portada y `sitemap.xml` con las páginas principales.
+- `llms.txt`: guía orientativa de acceso y semántica. No es un estándar universal
+  ni garantiza que una IA indexe o cite la web.
+
+Los metadatos no convierten el proyecto en fuente oficial. Cada proveedor
+conserva sus condiciones; AGPL es la licencia del código, no una licencia general
+de los datos recopilados. `robots.txt` solo sería efectivo en la raíz del dominio:
+este proyecto en un subdirectorio de GitHub Pages no modifica el de `erseco.github.io`.
 
 ## Ramas
 

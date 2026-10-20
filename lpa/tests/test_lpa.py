@@ -17,11 +17,14 @@ NOW = dt.datetime(2026, 10, 20, 15, tzinfo=dt.timezone.utc)
 
 def forecast(now=NOW):
     start = int(now.replace(hour=0).timestamp())
-    times = [start + n * 3600 for n in range(72)]
-    h = {key: [20.0] * 72 for key in C.HOURLY}
-    h.update(time=times, precipitation=[0.4] * 72, precipitation_probability=[35] * 72)
+    times = [start + n * 3600 for n in range(168)]
+    h = {key: [20.0] * 168 for key in C.HOURLY}
+    h.update(time=times, precipitation=[0.4] * 168, precipitation_probability=[35] * 168)
     return {'hourly': h, 'current': {'time': int(now.timestamp()), 'temperature_2m': 22},
-            'daily': {'time': times[::24], 'sunrise': times[7::24], 'sunset': times[19::24], 'uv_index_max': [5]*3}}
+            'daily': {'time': times[::24], 'sunrise': times[7::24], 'sunset': times[19::24], 'uv_index_max': [5]*7,
+                      'temperature_2m_max':[24]*7,'temperature_2m_min':[19]*7,
+                      'precipitation_sum':[1]*7,'precipitation_probability_max':[35]*7,
+                      'weather_code':[2]*7,'wind_speed_10m_max':[15]*7}}
 
 
 def feed(entry='', updated=None):

@@ -14,6 +14,7 @@ import tempfile
 
 import montflorit
 from . import profile as P
+from .public_data import SITE, DESCRIPTION, dataset
 
 HERE = Path(__file__).parent
 
@@ -73,12 +74,9 @@ def build(destination):
         text = re.sub(r'<p id="app-android".*?</p>', '', text, flags=re.S)
         text = text.replace('https://www.meteo.cat/observacions/radar', P.AEMET_ALERTS).replace('Radar de Meteocat', 'Avisos de AEMET')
         text = re.sub(r'https://github.com/meteo-montflorit/meteo-local/releases[^"<]*', P.REPOSITORY + '/tree/lpa', text)
-        notice = ('<section id="lpa-status" class="targeta" aria-label="Estado de las fuentes">'
-                  '<h2>Datos para Las Palmas</h2><p>Hora canaria. Previsión de Open-Meteo; los ajustes locales se indican cuando están validados. '
-                  'Las observaciones y las imágenes del radar se identifican por su antigüedad. '
-                  'Los consejos de salida son orientativos; sus umbrales no están validados aquí.</p>'
-                  '<p><a href="observaciones.html">Estaciones e historial</a> · <a href="radar.html">Radar y mar</a> · <a href="fuentes.html">Fuentes y funciones disponibles</a> · '
-                  f'<a href="{P.AEMET_ALERTS}">Avisos oficiales de AEMET</a></p></section>')
+        notice = ('<div id="lpa-status" class="lpa-sourcebar" aria-label="Actualización y fuentes">'
+                  '<span id="lpa-updated">Hora canaria</span><a href="radar.html">Radar y mar</a>'
+                  '<a href="fuentes.html">Fuentes</a></div>')
         text, count = re.subn(r'(<main\b[^>]*>)', lambda m: m[1] + notice, text)
         if count != 1:
             raise ValueError(f'Expected one main in {source.name}')
@@ -95,6 +93,15 @@ def build(destination):
             text = replace_once(text,'</main>',extra+'</main>')
             text = replace_once(text,'</head>','<link rel="stylesheet" href="../lpa-style.css"></head>')
             text = replace_once(text,'</body>','<script src="../lpa-extras.js"></script></body>')
+        if source.name == 'index.html':
+            text,count=re.subn(r'<main\b[^>]*>.*?</main>',
+                '<main>'+notice+'<div id="casa"><p>Cargando el tiempo…</p></div>'
+                '<noscript><p><a href="datos.html">Consultar los datos sin JavaScript</a></p></noscript>'
+                '<section id="lpa-radar" class="targeta" data-compact="true"><h2>Radar de Canarias</h2></section>'
+                '</main>',text,flags=re.S)
+            if count!=1:raise ValueError('Homepage integration anchor changed')
+            text=text.replace('<script src="../casa.js"></script>','').replace('<script src="../grafica.js"></script>','')
+            text=replace_once(text,'</body>','<script src="../lpa-dashboard.js"></script></body>')
         if source.name == 'perill.html':
             text, count = re.subn(r'<main\b[^>]*>.*?</main>', '<main>' + notice + '<p>Avisos oficiales de AEMET para Norte de Gran Canaria, recibidos a través de Meteoalarm.</p><p id="avis-dades" hidden></p><section id="perill" aria-live="polite"><p>Cargando avisos…</p></section></main>', text, flags=re.S)
             if count != 1:
@@ -125,6 +132,13 @@ def build(destination):
     radar_page = radar_page.replace('</head>','<link rel="stylesheet" href="../lpa-style.css"></head>')
     radar_page = radar_page.replace('</body>','<script src="../lpa-time.js"></script><script src="../lpa-station-page.js"></script><script src="../lpa-ui.js"></script><script src="../lpa-extras.js"></script></body>')
     (dest / 'es/radar.html').write_text(radar_page)
+    data_page=static_page(template,'Datos abiertos',
+        '<p>Previsión y observaciones con fecha, unidades y fuente.</p>'
+        '<p><a href="../weather.json">Descargar JSON</a> · <a href="../llms.txt">Guía de consulta para asistentes</a></p>'
+        '<div id="lpa-public-snapshot"><p>La próxima recogida publicará aquí los datos.</p></div><!-- snapshot-end -->')
+    data_page=re.sub(r'<h1>.*?</h1>','<h1>Datos del tiempo</h1>',data_page,flags=re.S)
+    data_page=data_page.replace('</head>','<script id="lpa-dataset" type="application/ld+json">'+json.dumps(dataset(),ensure_ascii=False)+'</script></head>')
+    (dest/'es/datos.html').write_text(data_page)
     for page in (dest / 'es').glob('*.html'):
         text = page.read_text()
         # Replace the unavailable upstream river tab; keep the mobile bar at five items.
@@ -135,11 +149,42 @@ def build(destination):
                 raise ValueError('Upstream river navigation anchor changed')
             return nav
         text = re.sub(r'<nav class="pagines"[^>]*>.*?</nav>', station_nav, text, flags=re.S)
+        text=re.sub(r'<p class="ruta">.*?</p>','',text,flags=re.S)
+        text=re.sub(r'<a\b[^>]*class="[^"]*boto-avisos[^>]*>.*?</a>','',text,flags=re.S)
+        # Shared short source strip; detail remains one click away.
+        text=re.sub(r'<meta name="description"[^>]*>','<meta name="description" content="'+html.escape(DESCRIPTION,quote=True)+'">',text)
+        text=re.sub(r'<meta name="robots"[^>]*>','',text)
+        text=re.sub(r'<link rel="canonical"[^>]*>','',text)
+        canonical=SITE+'es/'+('' if page.name=='index.html' else page.name)
+        title={'index.html':'Tiempo en Las Palmas · 7 días','radar.html':'Radar y mar · Las Palmas',
+            'observaciones.html':'Estaciones meteorológicas · Las Palmas','datos.html':'Datos del tiempo · Las Palmas',
+            'perill.html':'Avisos meteorológicos · Las Palmas','sortir.html':'Si sales · Las Palmas',
+            'fiabilitat.html':'Historial y fiabilidad · Las Palmas','consultes.html':'Consultar el tiempo · Las Palmas'}.get(page.name,'Fuentes y funcionamiento · Las Palmas')
+        text=re.sub(r'<title>.*?</title>','<title>'+title+'</title>',text,flags=re.S)
+        robots='index,follow' if page.name in ('index.html','radar.html','observaciones.html','datos.html','perill.html','fuentes.html') else 'noindex,follow'
+        meta=('<meta name="robots" content="'+robots+'">'
+              '<link rel="canonical" href="'+canonical+'">'
+              '<link rel="alternate" type="application/json" title="Datos meteorológicos" href="../weather.json">'
+              '<meta property="og:type" content="website"><meta property="og:locale" content="es_ES">'
+              '<meta property="og:url" content="'+canonical+'">'
+              '<meta property="og:title" content="'+title+'">'
+              '<meta property="og:description" content="'+html.escape(DESCRIPTION,quote=True)+'">')
+        if page.name=='index.html':
+            meta+='<script type="application/ld+json">'+json.dumps({'@context':'https://schema.org','@type':'WebSite',
+                'name':'Tiempo en Las Palmas','url':SITE+'es/','inLanguage':'es',
+                'description':DESCRIPTION,'hasPart':{'@type':'Dataset','@id':SITE+'es/datos.html#dataset','url':SITE+'es/datos.html'}},ensure_ascii=False)+'</script>'
+        text=text.replace('</head>',meta+('' if '../lpa-style.css' in text else '<link rel="stylesheet" href="../lpa-style.css">')+'</head>')
+        # Preserve attribution and licenses, without repeating their full text in every view.
+        text=re.sub(r'<footer class="peu">(.*?)</footer>',lambda m:
+            '<footer class="peu"><p>Web independiente · <a href="fuentes.html">Fuentes</a> · '
+            '<a href="datos.html">Datos abiertos</a> · <a href="privacitat.html">Privacidad</a></p>'
+            '<details><summary>Créditos y licencias</summary>'+m[1]+'</details></footer>',text,flags=re.S)
         page.write_text(text)
     shutil.copyfile(HERE / 'style.css', dest / 'lpa-style.css')
     # Redirect every root HTML entry point to its Spanish counterpart, retaining deep links.
     (dest / 'observaciones.html').touch()
     (dest / 'radar.html').touch()
+    (dest / 'datos.html').touch()
     for path in dest.glob('*.html'):
         path.write_text('<!doctype html><html lang="es"><meta charset="utf-8"><title>Tiempo en Las Palmas</title>'
                         f'<meta http-equiv="refresh" content="0;url=es/{path.name}"><a href="es/{path.name}">Abrir</a>'
@@ -188,7 +233,7 @@ def build(destination):
         # Local calendar operations use the site timezone, including for mainland visitors.
         text = text.replace('new Date(', 'new LpaDate(')
         path.write_text(rebrand(text))
-    for source, name in (('time.js', 'lpa-time.js'), ('ui.js', 'lpa-ui.js'), ('alerts.js', 'lpa-alerts.js'), ('station-page.js', 'lpa-station-page.js'), ('extras.js','lpa-extras.js')):
+    for source, name in (('time.js', 'lpa-time.js'), ('ui.js', 'lpa-ui.js'), ('alerts.js', 'lpa-alerts.js'), ('station-page.js', 'lpa-station-page.js'), ('extras.js','lpa-extras.js'), ('dashboard.js','lpa-dashboard.js')):
         shutil.copyfile(HERE / source, dest / name)
     # Never cache weather/alerts or register upstream push handlers.
     (dest / 'sw.js').write_text("// LPA: no offline weather cache or push backend.\n")
@@ -200,6 +245,24 @@ def build(destination):
                     description='Previsión para Las Palmas de Gran Canaria, en hora canaria.')
     (dest / 'manifest.webmanifest').write_text(json.dumps(manifest, ensure_ascii=False, indent=2))
     (dest / 'README.md').write_text(f'# Tiempo en Las Palmas\n\nSource: {P.REPOSITORY}/tree/lpa\n\nUpstream: https://github.com/jjdeharo/meteo-local\n')
+    (dest/'llms.txt').write_text('# Tiempo en Las Palmas de Gran Canaria\n\n'
+        '> Proyecto independiente. Previsión de modelos y observaciones de estaciones; no es un servicio oficial.\n\n'
+        '## Recursos públicos\n\n'
+        f'- [JSON documentado]({SITE}weather.json): schema_version, generated_at, expires_at, unidades en los nombres de los campos.\n'
+        f'- [Datos legibles sin JavaScript]({SITE}es/datos.html): resumen actualizado y metadatos Dataset.\n'
+        f'- [Fuentes y condiciones]({SITE}es/fuentes.html).\n'
+        f'- [Interfaz]({SITE}es/): previsión de siete días en hora canaria.\n\n'
+        '## Semántica\n\n'
+        'Zona horaria Atlantic/Canary; fechas ISO 8601 con desplazamiento. Comprobar generated_at/expires_at y la antigüedad de cada estación. '
+        'forecast es una estimación; observations contiene mediciones. null o unavailable no significa cero. '
+        'La precipitación horaria es la acumulación del intervalo start/end, sin multiplicar de nuevo por la probabilidad. '
+        'Los resúmenes diarios corresponden al día local completo. Más allá de tres días aumenta la incertidumbre. '
+        'El radar muestra reflectividad, no confirma lluvia en superficie. Cada fuente conserva sus condiciones de uso.\n\n'
+        'Este archivo es una guía de acceso; no garantiza indexación ni citas por parte de buscadores o asistentes.\n')
+    (dest/'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+''.join(
+            '<url><loc>'+SITE+'es/'+name+'</loc></url>' for name in
+            ('','observaciones.html','radar.html','perill.html','fuentes.html','datos.html'))+'</urlset>')
     return dest
 
 

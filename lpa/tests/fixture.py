@@ -4,7 +4,7 @@ import datetime as dt
 import json
 import sys
 
-from lpa.collect import collect, write_json, FORECAST, AIR
+from lpa.collect import collect, publish, FORECAST, AIR
 from lpa.tests.test_lpa import forecast, feed
 import aire
 
@@ -38,7 +38,7 @@ def create(destination):
                   {'observed_at':now.isoformat(),'image':picture}],
         'legend':[{'color':'#0000fc','label':'12–18 dBZ'}],
         'detail':'Reflectividad en dBZ. No equivale a lluvia medida en el suelo.'}
-    write_json(destination, data)
+    publish(destination, data)
 
 
 if __name__ == '__main__': create(sys.argv[1])

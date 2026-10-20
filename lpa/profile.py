@@ -2,7 +2,7 @@
 """Public city-centre coordinates; no private station or home location."""
 from zoneinfo import ZoneInfo
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 NAME = "Las Palmas de Gran Canaria"
 COORDINATES = (28.124, -15.436)
 TIMEZONE = "Atlantic/Canary"
