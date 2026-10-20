@@ -11,6 +11,8 @@ import json
 from pathlib import Path
 import random
 import statistics
+import time
+import urllib.error
 import urllib.parse
 from . import observations as O
 
@@ -133,7 +135,7 @@ def calibrate(rows):
     return result
 
 
-def update(data, directory, reader=O.get_text):
+def update(data, directory, reader=O.get_text, wait=time.sleep):
     now = O.timestamp(data['generat'])
     directory = Path(directory)
     observed = (data.get('lpa', {}).get('observations') or {}).pop('_archive', [])
@@ -142,10 +144,21 @@ def update(data, directory, reader=O.get_text):
     hour = now.strftime('%Y-%m-%dT%H')
     forecast_error = None
     if not any(r['issued_at'][:13] == hour for r in forecasts):
-        try:
-            append(directory, 'forecasts', station_forecasts(now, reader), lambda r: (r['station'], r['issued_at'][:13]))
-        except Exception:
-            forecast_error = 'No se pudieron registrar las previsiones en los puntos de las estaciones.'
+        for attempt in range(3):
+            try:
+                rows = station_forecasts(now, reader)
+                append(directory, 'forecasts', rows, lambda r: (r['station'], r['issued_at'][:13]))
+                forecast_error = None
+                break
+            except Exception as error:
+                reason = f'HTTP {error.code}' if isinstance(error, urllib.error.HTTPError) else type(error).__name__
+                forecast_error = f'No se pudieron registrar las previsiones en los puntos de las estaciones ({reason}).'
+                transient = isinstance(error, (TimeoutError, urllib.error.URLError))
+                if isinstance(error, urllib.error.HTTPError):
+                    transient = error.code == 429 or error.code >= 500
+                if not transient or attempt == 2:
+                    break
+                wait(2 ** attempt)
     cutoff = (now - dt.timedelta(days=RETENTION_DAYS)).date().isoformat()
     for kind in ('observations', 'forecasts'):
         for path in (directory / kind).glob('*.jsonl'):

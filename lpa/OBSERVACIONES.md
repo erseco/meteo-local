@@ -71,6 +71,10 @@ Se mantienen 90 días en los archivos activos; las versiones anteriores de Git
 siguen existiendo en el historial de la rama. Solo contiene datos meteorológicos
 públicos, no claves ni datos personales de suscriptores.
 
+La descarga de previsiones para las estaciones reintenta hasta tres veces los
+fallos transitorios. Si sigue fallando, conserva las observaciones e indica el
+tipo de error; no inventa previsiones ni comparaciones para rellenar el historial.
+
 El servidor local guarda por defecto en
 `~/.local/share/meteo-local/lpa`; se puede cambiar con `--state-dir`.
 Docker usa el volumen persistente `lpa-history`, montado en `/state`.

@@ -93,11 +93,24 @@ class History(unittest.TestCase):
             observed=O.validate({'observed_at':NOW.isoformat(),'temperature_c':22},O.STATIONS[0],NOW)
             data={'generat':NOW.isoformat(),'hores':[],'lpa':{'observations':{'_archive':[observed]}}}
             def reader(url):raise TimeoutError()
-            summary=H.update(data,root,reader)
+            summary=H.update(data,root,reader,wait=lambda _:None)
             self.assertEqual(summary['observations'],1)
             self.assertEqual(summary['matched_samples'],0)
             self.assertTrue(summary['forecast_error'])
             self.assertNotIn('_archive',data['lpa']['observations'])
+
+    def test_transient_station_forecast_failure_is_retried(self):
+        with tempfile.TemporaryDirectory() as root:
+            calls=[]
+            def reader(url):
+                calls.append(url)
+                if len(calls)==1:raise TimeoutError()
+                return json.dumps([{'hourly':{'time':[int((NOW+dt.timedelta(hours=3)).timestamp())],'temperature_2m':[22]}} for _ in O.STATIONS])
+            data={'generat':NOW.isoformat(),'hores':[],'lpa':{'observations':{'_archive':[]}}}
+            summary=H.update(data,root,reader,wait=lambda _:None)
+            self.assertIsNone(summary['forecast_error'])
+            self.assertEqual(len(calls),2)
+            self.assertEqual(len(H.load(root,'forecasts')),3)
 
     def test_station_forecast_has_own_coordinates_and_real_issue_time(self):
         def reader(url):
