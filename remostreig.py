@@ -10,7 +10,9 @@ hora a hora faria creure que hi ha més dades de les que hi ha. La fan servir
 la probabilitat de pluja i la temperatura (aprenentatge.py), el radar
 (radar_fonts.py), el final de la pluja (fi_pluja.py), l'aire (aire.py), el
 cel (nuvols.py) i la variant de l'arxiu amb avisos
-(calibracio/pluja_casa_avisos.py). Juanjo, 14-10-2026: «para ser coherentes y
+(calibracio/pluja_casa_avisos.py); i «Com encerta» (historial.py, ADR 0110),
+per comparar la web amb la climatologia, amb Meteocat i AEMET i amb ella
+mateixa setmanes enrere (seguretat_periodes). Juanjo, 14-10-2026: «para ser coherentes y
 evitar problemas en el futuro no habría que hacerlo todo…?».
 """
 import numpy as np
@@ -34,6 +36,25 @@ def seguretat(errors_nou, errors_actual, blocs, llavor=0):
     per_bloc_actual = np.bincount(idx, e_actual, len(unics))
     tria = np.random.default_rng(llavor).integers(0, len(unics), (REMOSTREJOS, len(unics)))
     return round(float(np.mean(per_bloc_nou[tria].sum(axis=1) < per_bloc_actual[tria].sum(axis=1))), 3)
+
+
+def seguretat_periodes(sumes_abans, casos_abans, sumes_ara, casos_ara, llavor=0):
+    """Si un mètode s'equivoca menys ara que abans (ADR 0110): proporció de
+    remostrejos per blocs, cada període pel seu compte perquè no tenen els
+    mateixos casos, en què l'error mitjà per cas del període recent és menor
+    que el de l'anterior. sumes_* i casos_*: la suma d'errors i els casos de
+    cada bloc (dia). None amb menys de dos blocs amb casos en algun dels dos."""
+    def mitjanes(sumes, casos, rng):
+        s, n = np.asarray(sumes, dtype=float), np.asarray(casos, dtype=float)
+        tria = rng.integers(0, len(s), (REMOSTREJOS, len(s)))
+        total = n[tria].sum(axis=1)
+        return np.where(total > 0, s[tria].sum(axis=1) / np.maximum(total, 1), np.nan)
+    if min(sum(1 for n in casos_abans if n), sum(1 for n in casos_ara if n)) < 2:
+        return None
+    rng = np.random.default_rng(llavor)
+    abans, ara = mitjanes(sumes_abans, casos_abans, rng), mitjanes(sumes_ara, casos_ara, rng)
+    valids = ~(np.isnan(abans) | np.isnan(ara))
+    return round(float(np.mean(ara[valids] < abans[valids])), 3) if valids.any() else None
 
 
 def guanya(s):

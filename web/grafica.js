@@ -582,7 +582,7 @@ function dibuixaGrafica(fig) {
   // mateixos llindars que el cel de la taula. Per sota, cap barra.
   g.append(svg('line', { class: 'g-base', x1: 0, x2: W, y1: base, y2: base }));
   // Dalt de tot queda lloc per a la xifra dels mm.
-  // La pluja prevista de les hores passades (Com encerta) també cap a l'escala.
+  // La pluja prevista de les hores passades («Fiabilitat») també cap a l'escala.
   const plujaPrevista = (f) => (f.mesura && f.prev && f.prev.mm > 0 ? f.prev.mm : 0);
   const ambPrevMm = files.some((f) => plujaPrevista(f) > 0);
   const sostre = sostrePluja([...files, ...files.filter(plujaPrevista).map((f) => ({ pluja_mm: plujaPrevista(f), probabilitat: 1 }))]);
@@ -598,7 +598,7 @@ function dibuixaGrafica(fig) {
     g.append(svg('rect', { class: `g-pluja ${pluja === 'pluja' ? 'segura' : pluja}${intensa ? ' ' + intensa : ''}`,
       x: x(i) + col * 0.15, y, width: col * 0.7, height: base - y }));
   });
-  // Els mm que deia la previsió de les hores passades, amb «Com encerta»: una
+  // Els mm que deia la previsió de les hores passades, a «Fiabilitat»: una
   // vora puntejada a la seva alçada, damunt de la barra del que va ploure
   // (Juanjo, 18-10-2026: «quiero incluir los mm de lluvia predichos»).
   files.forEach((f, i) => {
@@ -830,9 +830,11 @@ function dibuixaGrafica(fig) {
 // configuración, mi propuesta es hacer lo permanente con selectores»): les que
 // es recorden en aquest dispositiu i valen per a totes les gràfiques de la web
 // (el vent, la part baixa i la part alta), amb interruptors; i les d'aquesta
-// visita (quines hores, «Com encerta», l'antelació), amb botons, que tornen a
-// ser les de sempre en tancar. El vent, per defecte, no (Juanjo, 19-10-2026:
-// «por defecto no debería mostrar el viento»; fins a la 3.150.2 sortia).
+// visita (quines hores), amb botons, que tornen a ser les de sempre en tancar.
+// «Com encerta» i l'historial de cada dia eren aquí fins a la 3.164.0: ara
+// són a la pàgina «Fiabilitat», fiabilitat.html (ADR 0110). El vent, per
+// defecte, no (Juanjo, 19-10-2026: «por defecto no debería mostrar el
+// viento»; fins a la 3.150.2 sortia).
 // Clau nova: la 2 desava «vent: true» per a tothom en canviar qualsevol cosa,
 // sense que ningú ho hagués triat; d'allà es conserven la part baixa i l'alta.
 const CLAU_GRAFICA = 'meteo.grafica.3';
@@ -927,7 +929,7 @@ function vistaGrafica() {
   if (!HORES_GRAFICA || document.querySelector('dialog.vista-grafica')) return;
   // Les que es recorden (fixes) i les d'aquesta visita, que comencen sempre igual.
   const fixes = { vent: false, baixa: true, alta: false, ...llegeixOpcionsGrafica() };
-  const opcions = { tram: tramGrafica(), passat: false, antelacio: 1, get vent() { return fixes.vent; },
+  const opcions = { tram: tramGrafica(), get vent() { return fixes.vent; },
     get alta() { return fixes.alta; }, get baixa() { return fixes.baixa; } };
   const dlg = element('dialog', 'vista-grafica');
   dlg.setAttribute('aria-labelledby', 'vg-titol');
@@ -953,62 +955,6 @@ function vistaGrafica() {
   accions.append(botoImatge(fig, 'boto-icona'), comparteixBoto, tanca);
   cap.append(titol, accions);
 
-  // L'historial (historial.py): ‹ i › per anar dia a dia enrere, fins al
-  // primer que hi ha, i «Avui» per tornar (Juanjo, 17-10-2026: «que se pueda
-  // ir hacia atrás sin límite»). Avui, les hores passades també hi són.
-  let dia = null;
-  let index = null;
-  const dies = new Map();
-  const navega = element('div', 'vg-dia');
-  const enrere = element('button', 'boto-icona');
-  enrere.type = 'button';
-  enrere.title = T('Dia anterior');
-  enrere.setAttribute('aria-label', T('Dia anterior'));
-  enrere.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
-  const endavant = element('button', 'boto-icona');
-  endavant.type = 'button';
-  endavant.title = T('Dia següent');
-  endavant.setAttribute('aria-label', T('Dia següent'));
-  endavant.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
-  const nomDia = element('span', 'vg-nom-dia', T('Avui'));
-  const tornaAvui = element('button', 'vg-opcio', T('Avui'));
-  tornaAvui.type = 'button';
-  navega.append(enrere, nomDia, endavant, tornaAvui);
-  const encertEl = element('div', 'vg-encert');
-  // L'antelació de la previsió que es compara, d'1 a 23 h (Juanjo,
-  // 17-10-2026: «si elijo 1h, me salga la gráfica con lo que se predijo 1h
-  // antes de cada hora y con el error, lo mismo con 2h, etc»); amb «Com encerta».
-  const ANTELACIO_MAX = 23;
-  const antelacio = element('div', 'vg-antelacio');
-  const menys = element('button', 'boto-icona');
-  menys.type = 'button';
-  menys.title = T('Menys antelació');
-  menys.setAttribute('aria-label', T('Menys antelació'));
-  menys.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
-  const mes = element('button', 'boto-icona');
-  mes.type = 'button';
-  mes.title = T('Més antelació');
-  mes.setAttribute('aria-label', T('Més antelació'));
-  mes.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
-  const nomAntelacio = element('span', 'vg-nom-antelacio');
-  antelacio.append(element('span', null, T('Antelació')), menys, nomAntelacio, mes);
-  // Les hores passades, amb la previsió de l'antelació triada.
-  const ambAntelacio = (files, a) => files.map((f) => {
-    const v = f.prev && f.prev[String(a)];
-    const { prev, ...resta } = f;
-    // Els mm, des de la 3.137.0 (els dies d'abans no en porten).
-    return v ? { ...resta, prev: { temperatura: v[0], probabilitat: v[1], mm: v[2] ?? null } } : resta;
-  });
-  const avuiIso = () => {
-    const a = new Date();
-    return `${a.getFullYear()}-${String(a.getMonth() + 1).padStart(2, '0')}-${String(a.getDate()).padStart(2, '0')}`;
-  };
-  const passats = () => ((index && index.dies) || []).filter((d) => d < avuiIso());
-  const llegeixDia = (d) => {
-    if (!dies.has(d)) dies.set(d, llegeixHistorial(`historial-${d}.json`).catch(() => null));
-    return dies.get(d);
-  };
-
   // Les opcions: quines hores (només les que tenen prou hores) i el vent.
   const tramsBotons = selectorHores((clau) => { opcions.tram = clau; dibuixa(); });
   // Les que es recorden, amb interruptors, com a «Avisos».
@@ -1026,93 +972,21 @@ function vistaGrafica() {
   const ambVent = HORES_GRAFICA.some((f) => f.vent != null);
   const baixa = interruptor('baixa', 'i-waves', T('Part baixa'));
   const alta = interruptor('alta', 'i-mountain', T('Part alta'));
-  // El passat (les hores d'avui ja passades, la previsió de les 7 i l'encert),
-  // només amb aquest botó: per defecte, la previsió sola, sense barrejar-la
-  // (Juanjo, 17-10-2026: «debe salir como antes, la estimación pasada hazla
-  // a través de un botón que la active»).
-  const encerta = element('button', 'vg-opcio');
-  encerta.type = 'button';
-  encerta.append(icona('i-target'), T('Com encerta'));
   const ambDifAlta = HORES_GRAFICA.some((f) => f.dif_alta != null);
   // Només es desen les que es recorden.
   const desa = () => {
     try { localStorage.setItem(CLAU_GRAFICA, JSON.stringify(fixes)); } catch (_) {}
   };
-  const dibuixa = async () => {
+  const dibuixa = () => {
     tramsBotons._marca(opcions.tram);
-    encerta.setAttribute('aria-pressed', String(Boolean(opcions.passat)));
-    const a = Math.min(ANTELACIO_MAX, Math.max(1, opcions.antelacio || 1));
-    antelacio.hidden = !opcions.passat;
-    menys.disabled = a <= 1;
-    mes.disabled = a >= ANTELACIO_MAX;
-    nomAntelacio.textContent = `${a}\u00a0h`;
-    const llista = passats();
-    const pos = dia ? llista.indexOf(dia) : llista.length;
-    enrere.disabled = pos <= 0;
-    endavant.disabled = !dia;
-    tornaAvui.hidden = !dia;
-    // Els dies passats, només amb «Com encerta».
-    navega.hidden = !llista.length || !opcions.passat;
-    titol.textContent = dia ? T('Historial') : T('Previsió');
-    // Als dies passats, només el botó del passat.
-    for (const b of barra.children) b.hidden = Boolean(dia) && b !== encerta;
-    fixesEl.hidden = Boolean(dia);
     fig._amaga?.();
-    if (dia) {
-      // Un dia passat: el que es va mesurar, sencer.
-      const d = new Date(`${dia}T12:00`);
-      const codi = IDIOMA.codi === 'es' ? 'es' : 'ca';
-      nomDia.textContent = d.toLocaleDateString(codi, { weekday: 'long', day: 'numeric', month: 'long' });
-      const dades = await llegeixDia(dia);
-      // Sense «Com encerta», només el que es va mesurar.
-      fig._files = dades ? (opcions.passat ? ambAntelacio(dades.hores, a) : dades.hores.map(({ prev, ...f }) => f)) : [];
-      fig._opcions = { gran: true, baixa: true, antelacio: a };
-      encertEl.replaceChildren(...(opcions.passat ? textEncertDia(dades, a) : []));
-    } else {
-      nomDia.textContent = T('Avui');
-      let files = horesVista(opcions.tram);
-      // Avui (o tot), amb «Com encerta»: davant, les hores que ja han passat
-      // avui, mesurades, amb la previsió de les 7.
-      if (opcions.passat && opcions.tram !== 'dema' && files.length) {
-        const avui = index && index.dies.includes(avuiIso()) ? await llegeixDia(avuiIso()) : null;
-        const ini = new Date(files[0].hora);
-        const passades = ambAntelacio(((avui && avui.hores) || []).filter((f) => new Date(f.fins) <= ini), a);
-        files = [...passades, ...files];
-      }
-      fig._files = files;
-      fig._opcions = { gran: true, vent: ambVent && opcions.vent, alta: ambDifAlta && Boolean(opcions.alta),
-        baixa: opcions.baixa !== false, antelacio: a };
-      encertEl.replaceChildren(...(opcions.passat ? textEncert(index, a) : []));
-    }
+    fig._files = horesVista(opcions.tram);
+    fig._opcions = { gran: true, vent: ambVent && opcions.vent, alta: ambDifAlta && Boolean(opcions.alta),
+      baixa: opcions.baixa !== false };
     dibuixaGrafica(fig);
   };
-  enrere.addEventListener('click', () => {
-    const llista = passats();
-    dia = llista[(dia ? llista.indexOf(dia) : llista.length) - 1] || dia;
-    dibuixa();
-  });
-  endavant.addEventListener('click', () => {
-    const llista = passats();
-    dia = llista[llista.indexOf(dia) + 1] || null;
-    dibuixa();
-  });
-  tornaAvui.addEventListener('click', () => { dia = null; dibuixa(); });
-  // Sense «Com encerta», de nou avui i la previsió de sempre (Juanjo,
-  // 17-10-2026: «si se desmarca el botón com encerta … debe volver al día de
-  // hoy y mostrar la predicción estándar»).
-  encerta.addEventListener('click', () => {
-    opcions.passat = !opcions.passat;
-    if (!opcions.passat) dia = null;
-    dibuixa();
-  });
-  const canviaAntelacio = (d) => {
-    opcions.antelacio = Math.min(ANTELACIO_MAX, Math.max(1, (opcions.antelacio || 1) + d));
-    dibuixa();
-  };
-  menys.addEventListener('click', () => canviaAntelacio(-1));
-  mes.addEventListener('click', () => canviaAntelacio(1));
   const barra = element('div', 'vg-opcions');
-  barra.append(tramsBotons, encerta);
+  barra.append(tramsBotons);
   // Les que es recorden, a part i dites (Juanjo, 19-10-2026).
   const fixesEl = element('fieldset', 'vg-fixes');
   fixesEl.append(element('legend', null, T('Es recorda per a totes les gràfiques')));
@@ -1120,12 +994,7 @@ function vistaGrafica() {
   fixesEl.append(baixa);
   if (ambDifAlta) fixesEl.append(alta);
 
-  // Dalt, què es veu; a sota, la navegació en el temps junta, el dia i
-  // l'antelació, en una fila si hi caben (Juanjo, 17-10-2026: «así la
-  // navegación temporal queda junta»).
-  const temps = element('div', 'vg-temps');
-  temps.append(navega, antelacio);
-  dlg.append(cap, barra, temps, fig, encertEl, fixesEl);
+  dlg.append(cap, barra, fig, fixesEl);
   // Un toc fora de la finestra la tanca, com Esc.
   dlg.addEventListener('click', (e) => {
     if (e.target !== dlg) return;
@@ -1141,161 +1010,8 @@ function vistaGrafica() {
   document.body.append(dlg);
   dlg.showModal();
   if (location.hash !== '#grafica') history.replaceState(null, '', '#grafica');
-  navega.hidden = true;
   dibuixa();
   tanca.focus();
-  // L'índex de l'historial arriba després: llavors, les fletxes i l'encert.
-  llegeixHistorial('historial.json').then((d) => { index = d; dibuixa(); }, () => {});
-}
-
-// L'historial és a IONOS, al costat de les dades; en local, al costat de la pàgina.
-function llegeixHistorial(nom) {
-  return baixa(DADES_URL + nom).catch(() => baixa(nom));
-}
-
-// --- Com encerta la previsió (Juanjo, 17-10-2026: «algún índice o indicador
-// de lo buena que es la predicción»): la de les 7 de cada dia contra el que
-// es mesura (historial.py). Dit com a conclusió, amb els casos, i només si n'hi
-// ha prou; si no, que encara n'hi ha pocs. ---
-function textTemperaturaEncert(t, minim) {
-  if (!t || t.error == null || t.hores < minim) {
-    const hores = t ? t.hores : 0;
-    return T`Temperatura: encara poques dades (${hores} hores).`;
-  }
-  return T`Temperatura: s’equivoca de mitjana ${coma(t.error)}\u00a0°C.`;
-}
-
-// La pluja, en recompte i igual al resum i al dia: de les hores en què deia
-// que plouria (50 % o més), quantes van ploure; de les que deia que no (menys
-// del 20 %), quantes van ploure. Abans el dia sumava els encerts de les dues
-// i semblava bo encara que fallés tota la pluja (Juanjo, 18-10-2026).
-function partPluja(n, plogudes, plou) {
-  const passa = plogudes ? (n === 1 ? T('va ploure') : T`en va ploure ${plogudes}`)
-    : (n === 1 ? T('no va ploure') : T('no en va ploure cap'));
-  if (plou) {
-    return n === 1 ? T`de l’hora en què deia que plouria (50\u00a0% o més), ${passa}`
-      : T`de les ${n} hores en què deia que plouria (50\u00a0% o més), ${passa}`;
-  }
-  return n === 1 ? T`de l’hora en què deia que no (menys del 20\u00a0%), ${passa}`
-    : T`de les ${n} en què deia que no (menys del 20\u00a0%), ${passa}`;
-}
-
-function textPlujaEncert(p, minim = 0) {
-  const [plouSi, plou] = p.plou;
-  const [secSi, sec] = p.sec;
-  const parts = [];
-  if (plou) parts.push(partPluja(plou, plouSi, true));
-  if (sec) parts.push(partPluja(sec, sec - secSi, false));
-  if (!parts.length) return null;
-  const text = T`Pluja: ${parts.join('; ')}.`;
-  return plou < minim ? `${text} ${T('Encara són poques hores per treure’n conclusions.')}` : text;
-}
-
-// La pluja per franges de probabilitat anunciada (historial.py, 3.141.0;
-// auditoria del 18-10-2026: l'indicador només comptava el 50 % o més i el
-// menys del 20 %, i no deia si la probabilitat es complia): per a cada
-// franja, quantes hores, què deia de mitjana i en quantes va ploure. Si la
-// probabilitat és bona, el «va ploure» s'acosta al que deia. Una taula, que
-// es llegeix d'un cop d'ull; el text d'abans queda per als dies guardats
-// sense franges.
-const FRANGES_PLUJA = [0, 20, 50, 70];
-function nomFranja(de, a) {
-  if (de === 0) return T`menys del ${a}\u00a0%`;
-  if (a == null) return T`${de}\u00a0% o més`;
-  return T`del ${de} al ${a}\u00a0%`;
-}
-
-function taulaPlujaEncert(franges, minim = 0) {
-  const limits = (franges && franges.limits) || FRANGES_PLUJA;
-  const files = limits.map((de, i) => [de, limits[i + 1], franges[String(de)] || [0, 0, 0]])
-    .filter(([, , [hores]]) => hores > 0);
-  if (!files.length) return null;
-  const taula = element('table', 'vg-encert-taula');
-  const cap = element('tr');
-  for (const [t, num] of [[T('Quan deia'), false], [T('De mitjana'), true], [T('Hores'), true], [T('Va ploure'), true]]) {
-    const th = element('th', num ? 'num' : null, t);
-    th.scope = 'col';
-    cap.append(th);
-  }
-  taula.append(element('thead'), element('tbody'));
-  taula.firstChild.append(cap);
-  let ambPluja = 0;
-  for (const [de, a, [hores, plogudes, suma]] of files) {
-    const fila = element('tr');
-    const th = element('th', null, nomFranja(de, a));
-    th.scope = 'row';
-    fila.append(th, element('td', 'num', `${Math.round((suma / hores) * 100)}\u00a0%`),
-      element('td', 'num', String(hores)),
-      element('td', 'num', `${plogudes} (${Math.round((plogudes / hores) * 100)}\u00a0%)`));
-    taula.lastChild.append(fila);
-    if (de >= 50) ambPluja += hores;
-  }
-  const res = [element('p', null, T('Pluja: quan deia cada probabilitat, en quantes hores va ploure.')), taula,
-    element('p', null, T('Si la probabilitat és bona, el «va ploure» s’acosta al que deia.'))];
-  if (ambPluja < minim) res.push(element('p', null, T('Encara són poques hores per treure’n conclusions.')));
-  return res;
-}
-
-function elementsPlujaEncert(p, minim = 0) {
-  if (p.franges) return taulaPlujaEncert(p.franges, minim) || [];
-  const text = textPlujaEncert(p, minim);
-  return text ? [element('p', null, text)] : [];
-}
-
-// Els mm esperats (probabilitat per mil·límetres de cada hora, ADR 0103) i
-// els mesurats, sumats a les hores que tenen les dues coses (historial.py;
-// Juanjo, 18-10-2026).
-function textMmEncert(m) {
-  return T`Pluja esperada (probabilitat per quantitat de cada hora): en preveia ${coma(m.previst)}\u00a0mm i en van caure ${coma(m.mesurat)}.`;
-}
-
-// El període que es compta, amb les dates: «darrers 30 dies» només quan n'hi ha 30.
-function textPeriode(periode) {
-  if (!periode || periode.dies >= 30) return T('Els darrers 30 dies.');
-  const codi = IDIOMA.codi === 'es' ? 'es' : 'ca';
-  const data = new Date(`${periode.des_de}T12:00`).toLocaleDateString(codi, { day: 'numeric', month: 'long' });
-  return T`Des del ${data} fins ara (${periode.dies} dies).`;
-}
-
-function textEncert(index, a) {
-  if (!index || !index.encert || !index.encert[String(a)]) return [];
-  const { darrers, anteriors, mesos } = index.encert[String(a)];
-  const m = index.minims || {};
-  const res = [element('p', 'vg-encert-titol', T`Com encerta la previsió feta ${a}\u00a0h abans`),
-    element('p', null, textPeriode(index.periode))];
-  let temp = textTemperaturaEncert(darrers.temperatura, m.temperatura_hores || 48);
-  if (anteriors.temperatura.error != null && anteriors.temperatura.hores >= (m.temperatura_hores || 48)
-      && darrers.temperatura.hores >= (m.temperatura_hores || 48)) {
-    temp += ' ' + T`Els 30 dies anteriors, ${coma(anteriors.temperatura.error)}\u00a0°C.`;
-  }
-  res.push(element('p', null, temp));
-  if (darrers.pluja.franges && index.franges) darrers.pluja.franges.limits = index.franges;
-  res.push(...elementsPlujaEncert(darrers.pluja, m.pluja_casos || 20));
-  if (darrers.mm && darrers.mm.hores) res.push(element('p', null, textMmEncert(darrers.mm)));
-  // Per mesos, quan n'hi ha més d'un: si millora amb el temps.
-  const llista = Object.entries(mesos || {}).filter(([, e]) => e.temperatura.error != null);
-  if (llista.length > 1) {
-    const codi = IDIOMA.codi === 'es' ? 'es' : 'ca';
-    const nom = (k) => new Date(`${k}-15T12:00`).toLocaleDateString(codi, { month: 'long', year: 'numeric' });
-    const text = llista.map(([k, e]) => `${nom(k)}, ${coma(e.temperatura.error)}\u00a0°C`).join('; ');
-    res.push(element('p', null, T`Temperatura per mesos: ${text}.`));
-  }
-  return res;
-}
-
-function textEncertDia(dades, a) {
-  if (!dades) return [element('p', null, T('Aquest dia no es pot llegir.'))];
-  const e = dades.encert && dades.encert[String(a)];
-  if (!e || (!e.temperatura.hores && !(e.pluja.plou[1] + e.pluja.sec[1]))) {
-    return [element('p', null, T('D’aquest dia no hi ha previsions per comparar.'))];
-  }
-  const res = [element('p', 'vg-encert-titol', T`Com va encertar la previsió feta ${a}\u00a0h abans`)];
-  if (e.temperatura.error != null) {
-    res.push(element('p', null, T`Temperatura: s’equivoca de mitjana ${coma(e.temperatura.error)}\u00a0°C.`));
-  }
-  res.push(...elementsPlujaEncert(e.pluja));
-  if (e.mm && e.mm.hores) res.push(element('p', null, textMmEncert(e.mm)));
-  return res;
 }
 
 // Si s'ha obert l'enllaç de la gràfica (#grafica), en gran, la primera vegada.

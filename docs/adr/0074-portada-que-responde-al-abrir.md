@@ -275,7 +275,9 @@ de tres puntos; se propuso un reparto mixto y lo aprobó («sí, la B»): junto
 al título quedan la campana, que interesa que se vea, y ⋮, y dentro de ⋮
 (`comu.menuMes`) lo que se usa de vez en cuando: compartir, «Com funciona», el
 idioma (Català · Castellano) y el tema (Automàtic · Clar · Fosc), con lo
-elegido marcado. En el ordenador, todo sigue a la vista y no hay ⋮. Para que
+elegido marcado. En el ordenador se dejó todo a la vista y sin ⋮, algo que
+Juanjo no había pedido; desde la 3.165.0 el ⋮ está también en el ordenador
+(«pon los tres puntos», 20-10-2026; ADR 0110). Para que
 el título quepa en la misma fila, en el móvil la portada se titula solo
 «Montflorit» («Temps» ya lo dice la pestaña; la pestaña del navegador y lo
 que se comparte siguen con «Temps a Montflorit»), y la pestaña «El temps»

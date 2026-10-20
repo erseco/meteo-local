@@ -70,5 +70,21 @@ class Seguretat(unittest.TestCase):
         self.assertIsNone(R.seguretat([1.0], [2.0, 3.0], ["a", "b"]))
 
 
+    def test_periodes_amb_casos_diferents(self):
+        # ADR 0110: ara (1 °C de mitjana per hora) contra abans (2 °C), amb
+        # dies de casos diferents; amb soroll, el que es compara és la mitjana per cas.
+        rng = np.random.default_rng(3)
+        abans_n = rng.integers(10, 24, 28)
+        ara_n = rng.integers(10, 24, 28)
+        abans = abans_n * (2.0 + rng.normal(0, 0.3, 28))
+        ara = ara_n * (1.0 + rng.normal(0, 0.3, 28))
+        self.assertGreaterEqual(R.seguretat_periodes(abans, abans_n, ara, ara_n), 0.95)
+        self.assertLessEqual(R.seguretat_periodes(ara, ara_n, abans, abans_n), 0.05)
+        # Iguals, a l'atzar: ni una cosa ni l'altra.
+        s = R.seguretat_periodes(abans, abans_n, abans[::-1], abans_n[::-1])
+        self.assertTrue(0.05 < s < 0.95)
+        self.assertIsNone(R.seguretat_periodes([1.0], [3], [1.0, 2.0], [3, 3]))
+
+
 if __name__ == "__main__":
     unittest.main()

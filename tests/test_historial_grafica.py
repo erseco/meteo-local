@@ -70,7 +70,8 @@ class Historial(unittest.TestCase):
         # Amb 1 h: el tram de 6 a 7 (mitjana 21,5 °C) amb la de les 6:03 (27 °C: 5,5
         # d'error) i el de 7 a 8 (22,5) amb la de les 7:03 (24: 1,5). Cada publicació
         # dona una hora per antelació.
-        self.assertEqual(e["1"]["temperatura"], {"error": 3.5, "hores": 2})
+        # El biaix (3.165.0, ADR 0110): +5,5 i +1,5, de mitjana +3,5 (diu més calor de la que fa).
+        self.assertEqual(e["1"]["temperatura"], {"error": 3.5, "hores": 2, "biaix": 3.5})
         # Els mm esperats (probabilitat 0,05 per 1 mm, dues hores; ADR 0103) i els
         # mesurats, a les mateixes hores (18-10-2026).
         self.assertEqual(e["1"]["mm"], {"previst": 0.1, "mesurat": 0.0, "hores": 2})
@@ -140,3 +141,81 @@ class Historial(unittest.TestCase):
         i = H.index(self.dies, dt.date(2026, 10, 17))
         self.assertEqual(i["franges"], [0, 20, 50, 70])
 
+    def test_brier_i_climatologia(self):
+        # 3.165.0, ADR 0110: el Brier sumat i, de la climatologia c, Σ(c − o)².
+        def fila(p, mm):
+            return {"temperatura": None, "pluja_mm": mm, "prev": {"1": [None, p, None]}}
+        e = H.encert([fila(0.9, 1.0), fila(0.1, 0), fila(0.5, 0), fila(0.0, 0)], 1)
+        self.assertEqual(e["pluja"]["brier"], [4, 1, 0.27])
+        r = H.resum_pluja(e["pluja"]["brier"], 0.25)
+        # Dir sempre 25 %: 0,5625 + 3 × 0,0625 = 0,75, 0,1875 per hora.
+        self.assertEqual((r["brier"], r["clima"]), (0.0675, 0.1875))
+        self.assertEqual(r["millora_clima"], 0.64)
+        self.assertIsNone(H.resum_pluja([0, 0, 0.0], 0.1)["brier"])
+
+    def test_index_amb_setmanes_i_sense_prou_per_dir_si_millora(self):
+        i = H.index(self.dies, dt.date(2026, 10, 17))
+        e = i["encert"]["1"]
+        self.assertEqual([s["des_de"] for s in e["setmanes"]], ["2026-10-12"])
+        self.assertTrue(e["setmanes"][0]["en_curs"])
+        self.assertEqual(e["millora"], {"setmanes": 0, "cal": 2 * H.SETMANES_COMPARA})
+        self.assertEqual(e["oficial"], {})
+
+    def test_millora_compara_les_ultimes_setmanes_amb_les_anteriors(self):
+        # Vuit setmanes completes: abans s'equivoca 2 °C cada hora; ara, entre 1 i 1,2 °C.
+        ini = dt.date(2026, 8, 24)
+        dies = []
+        for k in range(56):
+            d = ini + dt.timedelta(days=k)
+            err = 2.0 if k < 28 else 1.0 + 0.1 * (k % 3)
+            dies.append((d.isoformat(), {"temperatura": {"error": err, "hores": 20},
+                                         "pluja": {"brier": [20, 2, 1.0]}}))
+        m = H.millora(dies, dt.date(2026, 10, 19))
+        self.assertEqual(m["setmanes"], 8)
+        self.assertEqual(m["temperatura"]["abans"], 2.0)
+        self.assertGreaterEqual(m["temperatura"]["seguretat"], 0.95)
+        self.assertEqual(m["pluja"]["seguretat"], 0.0)       # igual: mai és menor
+
+    def test_comparacio_amb_la_previsio_oficial_del_mateix_moment(self):
+        # Una previsió oficial llegida a les 7:20: es compara amb la de la web de
+        # les 7:03 (a menys de 35 minuts). De 9 a 10, 2 h d'antelació; l'oficial
+        # diu 18 i 20 °C a les 9 i a les 10 (19 de mitjana) i la mesura és 19,5.
+        oficial = {"t": {f"2026-10-16T{h:02d}:00": (18.0 if h == 9 else 20.0) for h in range(8, 24)},
+                   "mm": {f"2026-10-16T{h:02d}:00": 0.0 for h in range(8, 24)}}
+        s = dt.datetime(2026, 10, 16, 7, 20, tzinfo=H.P.ZONA)
+        emes = H.emissions(self.dir.name)
+        comp = H.comparacio(self.dies, emes, {"aemet": [(s, oficial)]})
+        dia = comp["aemet"][2]["2026-10-16"]
+        self.assertEqual(dia[0], 1)                  # de 9 a 10, l'única hora amb 2 h
+        self.assertEqual(round(dia[2], 2), 0.5)      # |19 − 19,5|
+        self.assertEqual(round(dia[1], 2), 3.5)      # la de les 7:03: 16 − 19,5
+        # La pluja, amb 12 h: de 19 a 20 plou (1 mm a les 20); l'oficial diu que no.
+        d12 = comp["aemet"][12]["2026-10-16"]
+        self.assertEqual((d12[5], d12[6]), (1, 1))
+        self.assertEqual(round(d12[8], 2), 1.0)
+        self.assertEqual(round(d12[7], 2), 0.04)     # la web deia 80 %
+        # Sense cap publicació a prop (llegida a les 4:00), res.
+        self.assertEqual(H.comparacio(self.dies, emes, {"aemet": [(s - dt.timedelta(hours=3, minutes=20), oficial)]}),
+                         {"meteocat": {}, "aemet": {}})
+        r = H.resum_comparacio(comp["aemet"][2])
+        self.assertEqual((r["temperatura"]["web"], r["temperatura"]["oficial"]), (3.5, 0.5))
+        self.assertIsNone(r["temperatura"]["seguretat"])   # un sol dia: no hi ha seguretat
+
+    def test_aprenentatge_i_canvis_amb_data(self):
+        # ADR 0110: el que la pàgina explica de l'aprenentatge i els canvis que la
+        # web ha fet sola, amb la data (Juanjo, 20-10-2026: «las mejoras que hay dia a dia»).
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "historial.csv"), "w", encoding="utf-8") as f:
+                f.write("dia,pluja,temperatura,mostres_pluja,hores_pluja,error_pluja,error_pluja_arxiu,dies_temperatura,"
+                        "error_temp,error_temp_model\n2026-10-18,arxiu,arxiu,10,12,0.08,0.04,13,0.96,0.94\n"
+                        "2026-10-19,local,arxiu,10,31,0.03,0.04,14,1.11,1.07\n")
+            with open(os.path.join(d, "radar-font.json"), "w") as f:
+                json.dump({"preferida": "rainviewer", "des_de": "2026-10-07", "comparacio": {"seguretat_rainviewer": 0.977}}, f)
+            with open(os.path.join(d, "fi-pluja.json"), "w") as f:
+                json.dump({"llindar": 0.3, "des_de": "2026-10-19"}, f)
+            a = H.aprenentatge(d)
+        self.assertEqual(a["dies"][-1]["error_pluja_vigent"], 0.04)
+        self.assertEqual(a["radar"]["seguretat"], 0.977)
+        self.assertEqual([(c["dia"], c["que"]) for c in a["canvis"]],
+                         [("2026-10-19", "pluja"), ("2026-10-19", "fi_pluja"), ("2026-10-07", "radar")])
+        self.assertEqual(a["minims"], {"hores_pluja": 30, "dies_temperatura": 14})

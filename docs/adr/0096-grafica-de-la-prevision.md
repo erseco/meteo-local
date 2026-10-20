@@ -365,3 +365,10 @@ ni ningún número distinto al principio (Juanjo, 20-10-2026: «quita el ara del
 gráfico» y, tras probar con la hora en curso a la izquierda, «el eje x normal,
 sin números de más o menos al principio, eje x natural»). Con «Com encerta»
 queda la raya donde empieza la previsión, sin rótulo.
+
+## Cambio del 20-10-2026 (3.165.0): sin «Com encerta»
+
+La vista en grande ya no lleva el botón «Com encerta», las flechas de los
+días pasados ni la antelación: están en su propia página, «Fiabilitat», a la
+que se llega desde el menú ⋮ (ADR 0110). Lo que este ADR dice de «Com
+encerta» en la vista en grande ya no vale.

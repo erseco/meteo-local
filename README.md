@@ -193,6 +193,8 @@ Umbrales y lugares, en `config.py`. El porqué, en los ADR.
 | `bot/` | Lo que vive en IONOS para repartir avisos: el bot de Telegram, `bot.py` (menú, suscripciones, reparto y resumen, ADR 0034); los avisos en el navegador, `push.py` (envío) y `subscripcio.php` (altas y bajas, ADR 0048); e `instalar.sh` |
 | `reserva/` | Servidor de reserva en IONOS: `reserva.py` (vigila, calcula y avisa si el NAS no publica), `avisar-juanjo`, `rep-dades.sh` (recibe los datos que sube el NAS: la orden fija de su clave, ADR 0038) e `instalar.sh` (ADR 0032) |
 | `que_toca.py` | Si toca actualizar en este minuto, según el horario publicado |
+| `historial.py` | El historial de cada día y el acierto de la previsión para la página «Fiabilitat»: error y sesgo de la temperatura, Brier de la lluvia frente a la climatología, semana a semana, frente a Meteocat y AEMET y cómo aprende (ADR 0099 y 0110) |
+| `previsio_oficial.py` | Apunta en el NAS las previsiones por horas de Meteocat (cada 3 horas) y AEMET (cada hora) para Cerdanyola, para compararlas con la de la web (ADR 0110) |
 | `nas/` | Contenedor del NAS: `compose.yml`, `Dockerfile` y `reloj.sh`; `copia-registre.sh`, la copia diaria del registro en el repositorio privado `meteo-local-registre`, (ADR 0044) |
 | `RESTAURAR.md` | Cómo volver a montarlo todo en otro NAS o en otro hosting, con las claves y el registro de la copia privada (ADR 0044 y 0045) |
 | `sol_estacio.py` | Detecta el sol directo sobre el termómetro de la estación de casa y estima la temperatura y la humedad con las vecinas (ADR 0081) |

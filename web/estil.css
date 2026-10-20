@@ -114,19 +114,18 @@ a { color: var(--enllac); }
 .cap h1 { grid-column: 1; grid-row: 1; }
 .cap .ruta { grid-column: 1 / -1; grid-row: 2; }
 .cap-botons { grid-column: 2; grid-row: 1; }
-/* El menú ⋮ (comu.menuMes): només al mòbil. Allà, al costat del títol,
-   compartir, la campana i ⋮; la resta (l'ajuda, l'idioma i el tema), a dins.
-   Abans la botonera anava en una fila a sobre del títol (20-10-2026). */
-.cap-botons .boto-mes { display: none; }
+/* El menú ⋮ (comu.menuMes), al mòbil i a l'ordinador (des de la 3.165.0): al
+   costat del títol, compartir, la campana i ⋮; la resta (l'ajuda,
+   «Fiabilitat», l'idioma i el tema), a dins. Abans la botonera anava en una fila
+   a sobre del títol (20-10-2026). */
 .cap-botons { position: relative; }
+.cap-botons > .idiomes, .cap-botons > a[href^="com-funciona.html"], .cap-botons > #btn-fosc { display: none; }
 @media (max-width: 30rem) {
-  .cap-botons > .idiomes, .cap-botons > a[href$="com-funciona.html"], .cap-botons > #btn-fosc { display: none; }
   /* Un títol d'una sola paraula més llarga que el lloc («Notificaciones» a 360 px), partit. */
   .cap h1 { min-width: 0; overflow-wrap: break-word; hyphens: auto; }
   /* La targeta d'ara, una mica més justa, perquè la gràfica hi càpiga a sota. */
   .targeta.ara:not(.avui-detall) { padding-top: .7rem; padding-bottom: .7rem; }
   main .avisos-actius, main .targeta.ara:not(.avui-detall), main .previsio-grafica { margin-top: .6rem; }
-  .cap-botons .boto-mes { display: grid; }
   /* El títol de la portada, només «Montflorit» (montflorit.py). */
   .titol-llarg { display: none; }
 }
@@ -1247,22 +1246,20 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 /* La part alta a la gràfica: una segona corba, discontínua, del color de la part alta (ADR 0087). */
 .grafica .g-alta { fill: none; stroke: var(--alta-text); stroke-width: 2; stroke-dasharray: 6 4; stroke-linecap: round; }
 .g-clau .m-alta { width: 1rem; height: 0; border-top: 2px dashed var(--alta-text); }
-/* L'historial i l'encert de la vista en gran (grafica.js, ADR 0099). */
+/* El dia i l'antelació de «Fiabilitat» (fiabilitat.js, ADR 0110; fins a la
+   3.164.0, a la vista en gran de la gràfica, ADR 0099). */
 .vg-dia { display: flex; align-items: center; gap: .5rem; }
 .vg-dia[hidden], .vg-dia [hidden] { display: none; }
 .vg-dia .boto-icona { width: 2.25rem; height: 2.25rem; }
 .vg-dia .boto-icona:disabled { opacity: .35; cursor: default; }
 .vg-nom-dia { font-weight: 600; min-width: 9rem; text-align: center; }
 .vg-opcions[hidden] { display: none; }
-.vg-encert { margin: .6rem 0 0; color: var(--suau); font-size: .9rem; line-height: 1.45; }
-.vg-encert p { margin: .15rem 0; }
-.vg-encert .vg-encert-titol { color: var(--text); font-weight: 600; }
 .vg-encert-taula { border-collapse: collapse; margin: .25rem 0; font-variant-numeric: tabular-nums; }
 .vg-encert-taula th, .vg-encert-taula td { padding: .15rem .5rem .15rem 0; text-align: left; border-bottom: 1px solid var(--vora); font-weight: 400; white-space: nowrap; }
 .vg-encert-taula thead th { font-size: .8rem; vertical-align: bottom; }
 .vg-encert-taula tbody th { color: var(--text); }
 .vg-encert-taula .num { text-align: right; }
-/* La pluja prevista de les hores passades (Com encerta): només la vora. */
+/* La pluja prevista de les hores passades («Fiabilitat»): només la vora. */
 .grafica .g-pluja-prev { fill: none; stroke: var(--c-aigua-text); stroke-width: 1.5; stroke-dasharray: 3 2; }
 .g-clau .m-pluja-prev { width: .55rem; height: .8rem; border: 1.5px dashed var(--c-aigua-text); box-sizing: border-box; }
 .grafica .g-prev { fill: none; stroke: var(--c-maxima); stroke-opacity: .45; stroke-width: 2; stroke-dasharray: 2 3; }
@@ -1271,12 +1268,91 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .vg-opcions [hidden], .vg-trams[hidden] { display: none; }
 .vg-antelacio { display: flex; align-items: center; gap: .5rem; font-size: .9rem; color: var(--suau); }
 .vg-antelacio[hidden] { display: none; }
-/* El dia i l'antelació, junts: en una fila si hi caben (grafica.js, vistaGrafica). */
-.vg-temps { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.4rem; }
-.vg-temps:has(> :not([hidden])) { margin: 0 0 .6rem; }
 .vg-antelacio .boto-icona { width: 2rem; height: 2rem; }
 .vg-antelacio .boto-icona:disabled { opacity: .35; cursor: default; }
 .vg-nom-antelacio { font-weight: 600; color: var(--text); min-width: 2.5rem; text-align: center; }
+/* «Fiabilitat» (fiabilitat.html, ADR 0110). A dalt, el que condiciona la resta
+   (què es compara i l'antelació); després xifres grans, gràfiques i poc text. */
+.fiabilitat section { margin-top: 1.3rem; }
+.fiabilitat h3 { margin: 1rem 0 .4rem; font-size: 1rem; }
+.fiabilitat .nota { margin: .2rem 0 .5rem; }
+/* La temperatura i la pluja, una al costat de l'altra si hi caben. */
+.fb-parell { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: .4rem 1rem; }
+.fb-parell h3 { margin: .5rem 0 .3rem; font-size: .95rem; }
+/* El lliscador de l'antelació: les barres de l'error a sota i el control a sobre.
+   --polze: l'amplada del polze, perquè barres i etiquetes quedin sota el seu valor. */
+.fb-antelacio { --polze: 1.4rem; margin: .3rem 0 .6rem; max-width: 40rem; }
+.fb-antelacio-rotol { margin: 0 0 .3rem; font-size: 1rem; }
+.fb-antelacio-rotol strong { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.fb-lliscador { position: relative; height: 3rem; }
+.fb-barres { position: absolute; inset: 0 calc(var(--polze) / 2) .9rem; display: flex; align-items: flex-end; gap: 2px; }
+.fb-barres span { flex: 1; border-radius: 2px 2px 0 0; background: color-mix(in srgb, var(--fb-web) 28%, transparent); }
+.fb-barres span.triada { background: var(--fb-web); }
+.fb-lliscador input[type="range"] { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 1.4rem; margin: 0;
+  background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; }
+.fb-lliscador input[type="range"]::-webkit-slider-runnable-track { height: .3rem; border-radius: .15rem;
+  background: linear-gradient(to right, var(--fb-web) var(--fet, 0%), var(--vora) var(--fet, 0%)); }
+.fb-lliscador input[type="range"]::-moz-range-track { height: .3rem; border-radius: .15rem; background: var(--vora); }
+.fb-lliscador input[type="range"]::-moz-range-progress { height: .3rem; border-radius: .15rem; background: var(--fb-web); }
+.fb-lliscador input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: var(--polze); height: var(--polze); margin-top: -.55rem;
+  border-radius: 50%; background: var(--superficie); border: 3px solid var(--fb-web); box-shadow: 0 1px 4px rgb(0 0 0 / .25); }
+.fb-lliscador input[type="range"]::-moz-range-thumb { width: calc(var(--polze) - 6px); height: calc(var(--polze) - 6px);
+  border-radius: 50%; background: var(--superficie); border: 3px solid var(--fb-web); box-shadow: 0 1px 4px rgb(0 0 0 / .25); }
+.fb-lliscador input[type="range"]:focus-visible { outline: 2px solid var(--enllac); outline-offset: 4px; border-radius: .3rem; }
+.fb-lliscador-eix { position: relative; height: 1.2rem; font-size: .8rem; color: var(--suau); font-variant-numeric: tabular-nums; }
+.fb-lliscador-eix span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.fb-antelacio .nota { margin-top: .2rem; }
+.fb-dia { margin: .2rem 0 .4rem; }
+.fb-xifres { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin: .5rem 0; }
+@media (max-width: 40rem) { .fb-xifres { grid-template-columns: repeat(2, 1fr); } }
+.fb-xifra { background: var(--superficie); border: 1px solid var(--vora); border-radius: .6rem; padding: .6rem .75rem; }
+.fb-xifra p { margin: 0; }
+.fb-xifra-titol { color: var(--suau); font-size: .9rem; }
+.fb-xifra-valor { font-size: 1.6rem; font-weight: 700; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.fb-xifra-peu { font-size: .9rem; line-height: 1.35; }
+.fb-xifra-nota { color: var(--suau); font-size: .85rem; margin-top: .25rem !important; }
+/* Les sèries: cadascuna amb el seu color i el seu traç (validat amb el
+   comprovador de paletes, també per a daltonisme). */
+:root { --fb-web: #2a78d6; --fb-meteocat: #eb6834; --fb-aemet: #1baf7a; --fb-candidata: #e87ba4; }
+:root[data-theme="dark"] { --fb-web: #3987e5; --fb-meteocat: #d95926; --fb-aemet: #199e70; --fb-candidata: #d55181; }
+.fb-grafica { position: relative; background: var(--superficie); border: 1px solid var(--vora); border-radius: .6rem; padding: .4rem .2rem 0; }
+.fb-grafica svg { display: block; max-width: 100%; height: auto; touch-action: pan-y; }
+.fb-reixa { stroke: var(--vora); stroke-width: 1; }
+.fb-eix { fill: var(--suau); font-size: 12px; font-variant-numeric: tabular-nums; }
+.fb-marca { stroke: var(--text); stroke-opacity: .25; stroke-width: 6; }
+.fb-guia { stroke: var(--suau); stroke-width: 1; stroke-dasharray: 3 3; }
+.fb-linia { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.fb-punt { stroke: var(--superficie); stroke-width: 2; }
+.fb-linia.fb-web, .fb-linia.fb-vigent { stroke: var(--fb-web); }
+.fb-linia.fb-meteocat { stroke: var(--fb-meteocat); stroke-dasharray: 7 4; }
+.fb-linia.fb-aemet { stroke: var(--fb-aemet); stroke-dasharray: 2 3; }
+.fb-linia.fb-candidata { stroke: var(--fb-candidata); stroke-dasharray: 7 4; }
+.fb-punt.fb-web, .fb-punt.fb-vigent, .fb-clau.fb-web, .fb-clau.fb-vigent { fill: var(--fb-web); background: var(--fb-web); }
+.fb-punt.fb-meteocat, .fb-clau.fb-meteocat { fill: var(--fb-meteocat); background: var(--fb-meteocat); }
+.fb-punt.fb-aemet, .fb-clau.fb-aemet { fill: var(--fb-aemet); background: var(--fb-aemet); }
+.fb-punt.fb-candidata, .fb-clau.fb-candidata { fill: var(--fb-candidata); background: var(--fb-candidata); }
+.fb-clau { display: inline-block; width: .9rem; height: .3rem; border-radius: .15rem; margin-right: .35rem; vertical-align: middle; }
+.fb-llegenda { display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin: .4rem 0 0; font-size: .9rem; color: var(--suau); }
+.fb-retol { position: absolute; top: .3rem; z-index: 2; min-width: 9rem; padding: .35rem .5rem; background: var(--superficie);
+  border: 1px solid var(--vora); border-radius: .4rem; box-shadow: 0 4px 12px rgb(0 0 0 / .15); font-size: .85rem; pointer-events: none; }
+.fb-retol[hidden] { display: none; }
+.fb-retol strong, .fb-retol-fila { display: block; }
+.fb-aprens { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .6rem; margin: .5rem 0; }
+.fb-apren { background: var(--superficie); border: 1px solid var(--vora); border-radius: .6rem; padding: .6rem .75rem; }
+.fb-apren h3 { margin: 0 0 .2rem; font-size: 1rem; }
+.fb-apren p { margin: .2rem 0; font-size: .95rem; }
+.fb-apren-ara { font-weight: 600; }
+.fb-apren-progres { display: grid; gap: .25rem; color: var(--suau); font-size: .9rem !important; }
+.fb-barra { display: block; width: 100%; height: .5rem; border-radius: .25rem; background: var(--vora); overflow: hidden; }
+.fb-barra-fet { display: block; height: 100%; background: var(--fb-web); }
+.fb-canvis { list-style: none; padding: 0; margin: .3rem 0; }
+.fb-canvis li { display: flex; gap: .7rem; padding: .25rem 0 .25rem .7rem; border-left: .25rem solid var(--fb-web); margin: .3rem 0; }
+.fb-canvi-dia { flex: none; min-width: 3.6rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fiabilitat .vg-encert-taula { margin: .4rem 0; }
+.fiabilitat .vg-encert-taula thead th, .fiabilitat .vg-encert-taula tbody th { white-space: normal; }
+.fiabilitat .vg-encert-taula th, .fiabilitat .vg-encert-taula td { padding-right: .4rem; }
+/* Una taula ampla, desplaçable a part, perquè la pàgina no es desplaci de costat. */
+.taula-desplaca { overflow-x: auto; max-width: 100%; }
 /* Els avisos de després de la gràfica (grafica.js, avisosMesEnlla). */
 .g-mes-enlla { display: flex; flex-direction: column; gap: .2rem; margin: 0 0 .4rem; font-size: .85rem; font-weight: 600; }
 .g-mes-enlla-avis { display: inline-flex; align-items: center; gap: .4rem; color: var(--text); text-decoration: none; }

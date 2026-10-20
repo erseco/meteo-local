@@ -25,10 +25,10 @@ class FakeDate extends RealDate {
   constructor(...a) { super(...(a.length ? a : [ara])); }
   static now() { return new RealDate(ara).getTime(); }
 }
-const el = () => ({ setAttribute() {}, addEventListener() {}, append() {}, after() {}, replaceChildren() {},
+const el = () => ({ setAttribute() {}, addEventListener() {}, append() {}, after() {}, replaceChildren() {}, classList: { add() {} },
   querySelector: () => ({ setAttribute() {} }), dataset: {}, style: { setProperty() {} } });
 const ctx = vm.createContext({
-  Date: FakeDate, Math, JSON, Number, Object, Set, URL, console,
+  Date: FakeDate, Math, JSON, Number, Object, Set, URL, URLSearchParams, console,
   document: { querySelectorAll: () => [], getElementById: el, createElement: el, createElementNS: el, addEventListener() {},
     documentElement: { dataset: {} } },
   matchMedia: () => ({ matches: false, addEventListener() {} }), addEventListener() {}, AbortController,
@@ -36,7 +36,7 @@ const ctx = vm.createContext({
   history: { replaceState() {} }, window: { addEventListener() {} }, setInterval: () => 0, clearInterval() {},
   fetch: () => new Promise(() => {}), setTimeout: () => 0, clearTimeout() {},
 });
-for (const f of ['comu.js', ...(['casa.js', 'consultes.js'].includes(pagina) ? ['grafica.js'] : []), pagina]) vm.runInContext(fs.readFileSync(`${web}/${f}`, 'utf8'), ctx);
+for (const f of ['comu.js', ...(['casa.js', 'consultes.js', 'fiabilitat.js'].includes(pagina) ? ['grafica.js'] : []), pagina]) vm.runInContext(fs.readFileSync(`${web}/${f}`, 'utf8'), ctx);
 console.log(JSON.stringify(vm.runInContext(expr, ctx)));
 """
 
@@ -708,22 +708,24 @@ class Web(unittest.TestCase):
         self.assertEqual(self.avalua(ara, expr, "casa.js"),
                          [["13 (77)", "ratxa-forta groc"], ["5 (72)", ""], ["20 (110)", "ratxa-forta taronja"]])
 
-    def test_com_encerta_amb_recompte(self):
-        # 18-10-2026: el dia sumava els encerts de pluja i de sec («23 de 24») encara
-        # que fallés tota la pluja; ara, com el resum, quantes van ploure de cada.
-        ara = "2026-10-18T10:00:00+02:00"
-        dia = self.avalua(ara, "textPlujaEncert({plou: [0, 4], sec: [19, 19]})", "casa.js")
-        self.assertEqual(dia, "Pluja: de les 4 hores en què deia que plouria (50\u00a0% o més), no en va ploure cap; "
-                              "de les 19 en què deia que no (menys del 20\u00a0%), no en va ploure cap.")
-        resum = self.avalua(ara, "textPlujaEncert({plou: [5, 15], sec: [200, 203]}, 20)", "casa.js")
-        self.assertTrue(resum.startswith("Pluja: de les 15 hores en què deia que plouria (50\u00a0% o més), en va ploure 5; "
-                                         "de les 203 en què deia que no (menys del 20\u00a0%), en va ploure 3."))
-        self.assertTrue(resum.endswith("Encara són poques hores per treure’n conclusions."))
-        self.assertEqual(self.avalua(ara, "textPlujaEncert({plou: [1, 1], sec: [0, 0]})", "casa.js"),
-                         "Pluja: de l’hora en què deia que plouria (50\u00a0% o més), va ploure.")
-        self.assertEqual(self.avalua(ara, "textPeriode({des_de: '2026-10-04', dies: 15})", "casa.js"),
-                         "Des del 4 d’octubre fins ara (15 dies).")
-        self.assertEqual(self.avalua(ara, "textPeriode({des_de: '2026-09-19', dies: 30})", "casa.js"), "Els darrers 30 dies.")
+    def test_fiabilitat_dita_com_a_conclusio(self):
+        # «Fiabilitat», pàgina pròpia (ADR 0110): conclusions curtes, si la
+        # diferència és segura (95 % dels remostrejos per dies) i els canvis apresos.
+        ara = "2026-10-20T10:00:00+02:00"
+        av = lambda expr: self.avalua(ara, expr, "fiabilitat.js")
+        # Dit perquè ho entengui tothom (Juanjo, 20-10-2026: «hablas para gente sin conocimientos»).
+        self.assertEqual(av("[textSegur(0.97), textSegur(0.02), textSegur(0.5), textSegur(null)]"),
+                         ["no és casualitat", "no és casualitat", "encara pot ser casualitat", "encara poques dades per saber-ho"])
+        self.assertEqual(av("textCanvi({dia: '2026-10-07', que: 'radar', a: 'rainviewer'})"),
+                         "Fa servir el radar de RainViewer, que encertava més la pluja al barri.")
+        self.assertEqual(av("textCanvi({dia: '2026-10-30', que: 'pluja', a: 'local'})"),
+                         "La probabilitat de pluja passa a ser la pròpia, apresa al barri, que encertava més.")
+        self.assertEqual(av("[fraseNova(1.11, 1.07), fraseNova(0.9, 1.07), fraseNova(null, 1)]"),
+                         ["De moment, la nova s’equivoca més que l’actual.",
+                          "La nova ja s’equivoca menys: la farà servir quan es vegi que no és casualitat.", None])
+        self.assertEqual(av("[escalaMax(0.67), escalaMax(1.16), escalaMax(0.0488), escalaMax(3.2)]"), [0.8, 1.5, 0.06, 4])
+        self.assertEqual(av("textPeriode({des_de: '2026-10-04', dies: 15})"), "Des del 4 d’octubre fins ara (15 dies).")
+        self.assertEqual(av("textPeriode({des_de: '2026-09-19', dies: 30})"), "Els darrers 30 dies.")
 
     def test_meteocat_agrupat_per_fenomen(self):
         # 18-10-2026: «Avisos actius (3)» i, desplegat, 4 línies (dos meteors de la pluja).

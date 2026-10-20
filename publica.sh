@@ -72,7 +72,7 @@ fi
 [ -z "$ESTAT_DIR" ] || timeout 180 python3 ecotop.py apunta "$ESTAT_DIR/casa.json" >/dev/null \
   || echo "$(date '+%F %T')  ha fallat el registre de l'ecotop" >&2
 # Las previsiones de Meteocat y AEMET para Cerdanyola, para compararlas con la
-# de la web en «Com encerta» (previsio_oficial.py, ADR 0110): Meteocat cada 3
+# de la web en «Fiabilitat» (previsio_oficial.py, ADR 0110): Meteocat cada 3
 # horas, AEMET cada hora. Antes del historial, que las lee.
 [ -z "$ESTAT_DIR" ] || timeout 120 python3 previsio_oficial.py apunta >/dev/null \
   || echo "$(date '+%F %T')  ha fallat el registre de les previsions oficials" >&2

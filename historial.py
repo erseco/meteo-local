@@ -46,6 +46,7 @@ Archivos para la web (los sube publica.sh a IONOS):
 
   python3 historial.py fes CARPETA [DIES]   escribe el índice y los días (DIES: solo los últimos)
 """
+import csv
 import datetime as dt
 import glob
 import json
@@ -54,7 +55,9 @@ import sys
 
 import aprenentatge as A
 import config as C
+import previsio_oficial as O
 import prevision as P
+import remostreig as R
 import sol_estacio as SE
 
 REGISTRE = A.REGISTRE
@@ -79,8 +82,19 @@ MIN_CASOS_PLUJA = 20                     # para dar el acierto de la lluvia (en 
 # acepta como mucho 12 archivos por envío (reserva/rep-dades.sh, ADR 0057), y
 # todos de golpe se rechazaron (18-10-2026, 22 archivos). Con los 2 días de
 # siempre, el índice, los datos y las 4 imágenes, caben 3 más por pasada.
-FORMAT = 4
+FORMAT = 5
 REFER_PER_PASSADA = 3
+# Si mejora con el tiempo (ADR 0110; Juanjo, 20-10-2026: «dado que la pagina
+# aprende, estaria bien una comparación semana a semana»): por semanas de
+# lunes a domingo, y la conclusión, las últimas SETMANES_COMPARA semanas
+# completas contra las SETMANES_COMPARA anteriores, con el remuestreo por
+# días (remostreig.seguretat_periodes).
+SETMANES_COMPARA = 4
+# Frente a Meteocat y AEMET (previsio_oficial.py): cada previsión oficial se
+# compara con la que publicaba la web en el mismo momento (la publicación más
+# cercana, a PARELLA_MIN minutos como mucho), en las mismas horas.
+PARELLA_MIN = 35
+FONTS_OFICIALS = ("meteocat", "aemet")
 
 
 def hores_del_dia(dia):
@@ -171,15 +185,18 @@ def encert(files, n):
     pluja: {plou: [sí, de], sec: [sí, de], franges: {"20": [hores, plogudes,
     suma de la probabilidad]}}, mm: {previst, mesurat, hores}}. Sin las horas
     con sol sobre el termómetro para la temperatura."""
-    errors = [abs(f["temperatura"] - _prev(f, n)[0]) for f in files
+    signes = [_prev(f, n)[0] - f["temperatura"] for f in files
               if f["temperatura"] is not None and _prev(f, n)[0] is not None and not f.get("sol")]
+    errors = [abs(e) for e in signes]
     plou, sec = [0, 0], [0, 0]
     franges = {str(k): [0, 0, 0.0] for k in FRANGES}
+    brier = [0, 0, 0.0]
     for f in files:
         p = _prev(f, n)[1]
         if p is None or f["pluja_mm"] is None:
             continue
         mullat = f["pluja_mm"] >= C.UMBRAL_MM
+        brier = [brier[0] + 1, brier[1] + mullat, round(brier[2] + (p - mullat) ** 2, 4)]
         if p >= PROB_PLOU:
             plou = [plou[0] + mullat, plou[1] + 1]
         elif p < PROB_SEC:
@@ -191,8 +208,9 @@ def encert(files, n):
     # Los mm esperados: probabilidad por mm (1 si ya llovía, que la web da como 100 %).
     mm = [((_prev(f, n)[1] if _prev(f, n)[1] is not None else 1.0) * _prev(f, n)[2], f["pluja_mm"])
           for f in files if _prev(f, n)[2] is not None and f["pluja_mm"] is not None]
-    return {"temperatura": {"error": round(sum(errors) / len(errors), 2) if errors else None, "hores": len(errors)},
-            "pluja": {"plou": plou, "sec": sec, "franges": franges},
+    return {"temperatura": {"error": round(sum(errors) / len(errors), 2) if errors else None, "hores": len(errors),
+                            "biaix": round(sum(signes) / len(signes), 2) if signes else None},
+            "pluja": {"plou": plou, "sec": sec, "franges": franges, "brier": brier},
             "mm": {"previst": round(sum(p for p, _ in mm), 1), "mesurat": round(sum(m for _, m in mm), 1),
                    "hores": len(mm)}}
 
@@ -201,6 +219,11 @@ def suma(encerts):
     """El acierto de varios días juntos."""
     hores = sum(e["temperatura"]["hores"] for e in encerts)
     err = sum((e["temperatura"]["error"] or 0) * e["temperatura"]["hores"] for e in encerts)
+    signe = sum((e["temperatura"].get("biaix") or 0) * e["temperatura"]["hores"] for e in encerts)
+    brier = [0, 0, 0.0]
+    for e in encerts:
+        b = e["pluja"].get("brier") or [0, 0, 0.0]
+        brier = [brier[0] + b[0], brier[1] + b[1], round(brier[2] + b[2], 4)]
     plou = [sum(e["pluja"]["plou"][i] for e in encerts) for i in (0, 1)]
     sec = [sum(e["pluja"]["sec"][i] for e in encerts) for i in (0, 1)]
     franges = {}
@@ -211,20 +234,226 @@ def suma(encerts):
             fr[1] += pl
             fr[2] = round(fr[2] + sp, 3)
     mms = [e["mm"] for e in encerts if e.get("mm")]
-    return {"temperatura": {"error": round(err / hores, 2) if hores else None, "hores": hores},
-            "pluja": {"plou": plou, "sec": sec, "franges": franges},
+    return {"temperatura": {"error": round(err / hores, 2) if hores else None, "hores": hores,
+                            "biaix": round(signe / hores, 2) if hores else None},
+            "pluja": {"plou": plou, "sec": sec, "franges": franges, "brier": brier},
             "mm": {"previst": round(sum(m["previst"] for m in mms), 1), "mesurat": round(sum(m["mesurat"] for m in mms), 1),
                    "hores": sum(m["hores"] for m in mms)}}
 
 
-def tots(avui=None, registre=None):
+# --- La lluvia con el error de Brier, por semanas y frente a las previsiones
+# oficiales (ADR 0110) ---------------------------------------------------------
+
+def _brier_clima(b, clima):
+    """El error de Brier sumado de decir siempre la climatología: b = [horas,
+    con lluvia, …]. Con o = 0 o 1, (c − o)² = c² − 2co + o."""
+    return b[0] * clima * clima - 2 * clima * b[1] + b[1]
+
+
+def resum_pluja(b, clima):
+    """El error de Brier medio y cuánto mejora a decir siempre la frecuencia
+    de lluvia habitual (clima): 1 − Brier / Brier de la climatología."""
+    n, plogudes, suma_b = b
+    if not n:
+        return {"hores": 0, "plogudes": 0, "brier": None, "clima": None, "millora_clima": None}
+    ref = _brier_clima(b, clima) / n
+    return {"hores": n, "plogudes": plogudes, "brier": round(suma_b / n, 4), "clima": round(ref, 4),
+            "millora_clima": round(1 - (suma_b / n) / ref, 3) if ref > 0 else None}
+
+
+def dilluns(d):
+    return d - dt.timedelta(days=d.weekday())
+
+
+def _emissio_propera(temps, valors, t):
+    """La publicación de la web más cercana a t, a PARELLA_MIN minutos como mucho."""
+    import bisect
+    i = bisect.bisect_left(temps, t)
+    millor = None
+    for j in (i - 1, i):
+        if 0 <= j < len(temps) and abs((temps[j] - t).total_seconds()) <= PARELLA_MIN * 60:
+            if millor is None or abs((temps[j] - t).total_seconds()) < abs((temps[millor] - t).total_seconds()):
+                millor = j
+    return valors[millor] if millor is not None else None
+
+
+def comparacio(dies, emes, oficials):
+    """Las previsiones oficiales contra la de la web publicada en el mismo
+    momento: {font: {N: {dia: [horas temp, Σ|web|, Σ|oficial|, Σ web, Σ oficial,
+    horas lluvia, con lluvia, Brier web, Brier oficial]}}}. La temperatura
+    oficial de la hora es la media de la de su principio y su final (como la
+    de la web y la medida); la lluvia, «plou» si da UMBRAL_MM o más en la hora
+    que acaba al final del tramo, y su Brier es el de una previsión de sí o no.
+    Sin las horas con sol sobre el termómetro para la temperatura."""
+    obs = {f["fins"]: (d["dia"], f) for d in dies for f in d["hores"]}
+    ordenades = sorted((dt.datetime.fromisoformat(k), v) for k, v in emes.items())
+    temps, valors = [t for t, _ in ordenades], [v for _, v in ordenades]
+    res = {}
+    for font in FONTS_OFICIALS:
+        per_n = res.setdefault(font, {})
+        for s, prev in oficials.get(font) or []:
+            web = _emissio_propera(temps, valors, s)
+            if not web:
+                continue
+            for fins, m in web.items():
+                if fins not in obs:
+                    continue
+                dia, f = obs[fins]
+                ini = dt.datetime.fromisoformat(f["hora"])
+                ini = ini if ini.tzinfo else ini.replace(tzinfo=P.ZONA)
+                n = round((ini - s).total_seconds() / 3600)
+                if n not in ANTELACIONS:
+                    continue
+                acc = per_n.setdefault(n, {}).setdefault(dia, [0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0.0, 0.0])
+                t0, t1 = prev["t"].get(f["hora"]), prev["t"].get(fins)
+                tw = m.get("temperatura")
+                if None not in (t0, t1, tw, f["temperatura"]) and not f.get("sol"):
+                    to = (t0 + t1) / 2
+                    acc[0] += 1
+                    acc[1] += abs(tw - f["temperatura"])
+                    acc[2] += abs(to - f["temperatura"])
+                    acc[3] += tw - f["temperatura"]
+                    acc[4] += to - f["temperatura"]
+                pw, mo = m.get("probabilitat"), prev["mm"].get(fins)
+                if None not in (pw, mo, f["pluja_mm"]):
+                    o = f["pluja_mm"] >= C.UMBRAL_MM
+                    acc[5] += 1
+                    acc[6] += o
+                    acc[7] += (pw - o) ** 2
+                    acc[8] += ((mo >= C.UMBRAL_MM) - o) ** 2
+    return res
+
+
+def resum_comparacio(per_dia):
+    """La comparación de unos días: {temperatura: {hores, web, oficial,
+    web_biaix, oficial_biaix, seguretat}, pluja: {hores, plogudes, web,
+    oficial, seguretat}}. seguretat: en qué parte de los remuestreos por días
+    se equivoca menos la web (remostreig.seguretat); con un 95 % o más la
+    web acierta más, con un 5 % o menos acierta más la oficial."""
+    dies = sorted(per_dia)
+    v = [per_dia[d] for d in dies]
+    nt, npl = sum(x[0] for x in v), sum(x[5] for x in v)
+    temp = {"hores": nt}
+    if nt:
+        temp.update({"web": round(sum(x[1] for x in v) / nt, 2), "oficial": round(sum(x[2] for x in v) / nt, 2),
+                     "web_biaix": round(sum(x[3] for x in v) / nt, 2),
+                     "oficial_biaix": round(sum(x[4] for x in v) / nt, 2),
+                     "seguretat": R.seguretat([x[1] for x in v], [x[2] for x in v], dies)})
+    pluja = {"hores": npl, "plogudes": sum(x[6] for x in v)}
+    if npl:
+        pluja.update({"web": round(sum(x[7] for x in v) / npl, 4), "oficial": round(sum(x[8] for x in v) / npl, 4),
+                      "seguretat": R.seguretat([x[7] for x in v], [x[8] for x in v], dies)})
+    return {"temperatura": temp, "pluja": pluja}
+
+
+def millora(dies_encert, avui):
+    """Las últimas SETMANES_COMPARA semanas completas contra las anteriores:
+    {setmanes, temperatura: {abans, ara, seguretat}, pluja: {…}}, con el
+    error medio por hora de cada periodo (°C; Brier) y en qué parte de los
+    remuestreos por días es menor el de ahora. Sin bastantes semanas, solo
+    las que hay."""
+    fi = dilluns(avui)                      # la semana en curso no cuenta
+    complets = [(d, e) for d, e in dies_encert if dt.date.fromisoformat(d) < fi
+                and (e["temperatura"]["hores"] or (e["pluja"].get("brier") or [0])[0])]
+    setmanes = len({dilluns(dt.date.fromisoformat(d)) for d, _ in complets})
+    res = {"setmanes": setmanes, "cal": 2 * SETMANES_COMPARA}
+    if setmanes < 2 * SETMANES_COMPARA:
+        return res
+    tall = fi - dt.timedelta(weeks=SETMANES_COMPARA)
+    ini = tall - dt.timedelta(weeks=SETMANES_COMPARA)
+    abans = [e for d, e in complets if ini <= dt.date.fromisoformat(d) < tall]
+    ara = [e for d, e in complets if tall <= dt.date.fromisoformat(d) < fi]
+
+    def compara(sumes, casos):
+        sa, na = [sumes(e) for e in abans], [casos(e) for e in abans]
+        sb, nb = [sumes(e) for e in ara], [casos(e) for e in ara]
+        if not sum(na) or not sum(nb):
+            return None
+        return {"abans": round(sum(sa) / sum(na), 4), "ara": round(sum(sb) / sum(nb), 4),
+                "seguretat": R.seguretat_periodes(sa, na, sb, nb)}
+    res["temperatura"] = compara(lambda e: (e["temperatura"]["error"] or 0) * e["temperatura"]["hores"],
+                                 lambda e: e["temperatura"]["hores"])
+    res["pluja"] = compara(lambda e: (e["pluja"].get("brier") or [0, 0, 0])[2],
+                           lambda e: (e["pluja"].get("brier") or [0, 0, 0])[0])
+    return res
+
+
+# --- Cómo aprende la web (ADR 0110; Juanjo, 20-10-2026: «no veo nada sobre
+# como aprende la web») -------------------------------------------------------
+
+def _json(ruta):
+    try:
+        with open(ruta, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def aprenentatge(dir_=None):
+    """Lo que la página cuenta del aprendizaje, de lo que deja cada día en el
+    NAS: la probabilidad de lluvia y la temperatura (aprenentatge.py,
+    historial.csv: el método vigente, el candidato propio con su error y el
+    del vigente en las mismas horas, y lo que le falta para poder decidir), el
+    radar (radar_fonts.py) y el cielo (nuvols.py)."""
+    dir_ = dir_ or A.DIR
+    num = lambda x: float(x) if x not in (None, "") else None
+    dies = []
+    try:
+        with open(os.path.join(dir_, "historial.csv"), encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                dies.append({"dia": r["dia"], "pluja": r.get("pluja") or None, "temperatura": r.get("temperatura") or None,
+                             "hores_pluja": num(r.get("hores_pluja")), "error_pluja": num(r.get("error_pluja")),
+                             "error_pluja_vigent": num(r.get("error_pluja_arxiu")),
+                             "dies_temperatura": num(r.get("dies_temperatura")), "error_temp": num(r.get("error_temp")),
+                             "error_temp_vigent": num(r.get("error_temp_model"))})
+    except OSError:
+        pass
+    res = {"dies": dies, "minims": {"hores_pluja": A.MIN_HORES_PLUJA, "dies_temperatura": A.MIN_DIES_TEMPERATURA}}
+    radar = _json(os.path.join(dir_, "radar-font.json"))
+    if radar and radar.get("preferida"):
+        c = radar.get("comparacio") or {}
+        res["radar"] = {"preferida": radar["preferida"], "des_de": radar.get("des_de"), "dia": radar.get("dia"),
+                        "dies_pluja": c.get("dies_pluja"), "seguretat": c.get(f"seguretat_{radar['preferida']}")}
+    cel = _json(os.path.join(dir_, "nuvols-pesos.json"))
+    if cel and cel.get("pesos"):
+        res["cel"] = {"pesos": cel["pesos"], "dia": cel.get("dia"),
+                      "dies": (cel.get("comparacio") or {}).get("dies")}
+    res["canvis"] = canvis(dies, dir_)
+    return res
+
+
+def canvis(dies, dir_=None):
+    """Lo que la web ha cambiado sola, con la fecha (Juanjo, 20-10-2026: «en
+    como aprende quiero q aparezcan las mejoras que hay dia a dia»): el
+    método de la lluvia y de la temperatura (historial.csv) y, desde cuándo,
+    el radar que usa (radar-font.json) y la regla del final de la lluvia
+    (fi-pluja.json): de esos dos solo se guarda la vigente. Las pasadas de
+    radar-fonts-*.jsonl no sirven: cambian de radar cuando uno falla.
+    [{dia, que, a}], del más reciente al más antiguo."""
+    res = []
+    for que in ("pluja", "temperatura"):
+        abans = None
+        for d in dies:
+            if d.get(que) and abans and d[que] != abans:
+                res.append({"dia": d["dia"], "que": que, "a": d[que]})
+            abans = d.get(que) or abans
+    radar = _json(os.path.join(dir_ or A.DIR, "radar-font.json"))
+    if radar and radar.get("des_de") and radar.get("preferida"):
+        res.append({"dia": radar["des_de"], "que": "radar", "a": radar["preferida"]})
+    fi = _json(os.path.join(dir_ or A.DIR, "fi-pluja.json"))
+    if fi and fi.get("des_de"):
+        res.append({"dia": fi["des_de"], "que": "fi_pluja", "a": None})
+    return sorted(res, key=lambda c: c["dia"], reverse=True)
+
+
+def tots(avui=None, registre=None, emes=None):
     """Todos los días del registro, del primero a hoy."""
     avui = avui or dt.date.today()
     if registre:
         A.REGISTRE = registre
     casa = A._llegeix("estacio-casa.csv")
     meteocat, veines = A._meteocat(), A._veines()
-    previstes = per_hora(emissions(registre))
+    previstes = per_hora(emes if emes is not None else emissions(registre))
     # Las horas con sol directo sobre el termómetro (ADR 0081), del registro.
     sol = SE.hores_tocades(list(casa), SE.episodis(os.path.join(registre or A.REGISTRE, "sol-estacio.csv")))
     dies, d = [], PRIMER_DIA
@@ -234,15 +463,20 @@ def tots(avui=None, registre=None):
     return dies
 
 
-def index(dies, avui):
+def index(dies, avui, comp=None):
     """historial.json: los días que hay y el acierto de los últimos 30 días,
     de los 30 anteriores y de cada mes, con los mínimos para darlo. Hoy
     también, con sus horas ya pasadas (las que faltan no tienen medida): así
     cuadra con la gráfica (Juanjo, 18-10-2026: «entre ayer y hoy ha habido
-    más»). `periode`: desde qué día cuenta la ventana y cuántos días son."""
+    más»). `periode`: desde qué día cuenta la ventana y cuántos días son.
+    Desde la 3.165.0 (ADR 0110), para cada antelación: la lluvia con el error
+    de Brier frente a la climatología de todo el registro (`pluja`), el acierto
+    por semanas (`setmanes`), si mejora (`millora`) y, con comp
+    (comparacio()), frente a Meteocat y AEMET (`oficial`)."""
     complets = [d for d in dies if d["dia"] <= avui.isoformat()]
     fi = avui + dt.timedelta(days=1)
     des_de = max(PRIMER_DIA, fi - dt.timedelta(days=DIES_FINESTRA))
+    comp = comp or {}
 
     def per_antelacio(n):
         finestra = lambda ini, fi_: [d["encert"][str(n)] for d in complets
@@ -250,10 +484,44 @@ def index(dies, avui):
         mesos = {}
         for d in complets:
             mesos.setdefault(d["dia"][:7], []).append(d["encert"][str(n)])
-        return {"darrers": suma(finestra(fi - dt.timedelta(days=DIES_FINESTRA), fi)),
+        # La climatología: la parte de las horas con lluvia en todo el registro.
+        total = suma([d["encert"][str(n)] for d in complets])["pluja"]["brier"]
+        clima = total[1] / total[0] if total[0] else 0
+        darrers = [(d["dia"], d["encert"][str(n)]) for d in complets
+                   if (fi - dt.timedelta(days=DIES_FINESTRA)).isoformat() <= d["dia"] < fi.isoformat()]
+        pluja = resum_pluja(suma([e for _, e in darrers])["pluja"]["brier"], clima)
+        pluja["seguretat_clima"] = (R.seguretat([(e["pluja"].get("brier") or [0, 0, 0])[2] for _, e in darrers],
+                                                [_brier_clima(e["pluja"].get("brier") or [0, 0, 0], clima)
+                                                 for _, e in darrers], [d for d, _ in darrers])
+                                    if pluja["hores"] else None)
+        per_setmana = {}
+        for d in complets:
+            per_setmana.setdefault(dilluns(dt.date.fromisoformat(d["dia"])), []).append(d)
+        setmanes = []
+        for dl, ds in sorted(per_setmana.items()):
+            e = suma([d["encert"][str(n)] for d in ds])
+            fila = {"des_de": dl.isoformat(), "dies": len(ds), "en_curs": dl == dilluns(avui),
+                    "temperatura": e["temperatura"], "pluja": resum_pluja(e["pluja"]["brier"], clima)}
+            dies_s = {d["dia"] for d in ds}
+            oficials = {font: resum_comparacio({k: v for k, v in (comp.get(font) or {}).get(n, {}).items()
+                                                if k in dies_s}) for font in FONTS_OFICIALS}
+            fila["oficial"] = {f: r for f, r in oficials.items() if r["temperatura"]["hores"] or r["pluja"]["hores"]}
+            if e["temperatura"]["hores"] or e["pluja"]["brier"][0]:
+                setmanes.append(fila)
+        oficial = {}
+        for font in FONTS_OFICIALS:
+            dies_f = {k: v for k, v in (comp.get(font) or {}).get(n, {}).items()
+                      if (fi - dt.timedelta(days=DIES_FINESTRA)).isoformat() <= k < fi.isoformat()}
+            r = resum_comparacio(dies_f)
+            if r["temperatura"]["hores"] or r["pluja"]["hores"]:
+                oficial[font] = {**r, "des_de": min(dies_f)}
+        return {"darrers": suma([e for _, e in darrers]),
                 "anteriors": suma(finestra(fi - dt.timedelta(days=2 * DIES_FINESTRA),
                                            fi - dt.timedelta(days=DIES_FINESTRA))),
-                "mesos": {m: suma(e) for m, e in sorted(mesos.items())}}
+                "mesos": {m: suma(e) for m, e in sorted(mesos.items())},
+                "pluja": pluja, "setmanes": setmanes,
+                "millora": millora([(d["dia"], d["encert"][str(n)]) for d in complets], avui),
+                "oficial": oficial}
     return {"generat": dt.datetime.now(P.ZONA).isoformat(timespec="minutes"),
             "dies": [d["dia"] for d in dies],
             "minims": {"temperatura_hores": MIN_HORES_TEMP, "pluja_casos": MIN_CASOS_PLUJA},
@@ -265,12 +533,16 @@ def index(dies, avui):
 def fes(carpeta, ultims=None, avui=None, registre=None):
     """Escribe historial.json y los días (todos o los `ultims`). Devuelve los nombres."""
     avui = avui or dt.date.today()
-    dies = tots(avui, registre)
+    emes = emissions(registre)
+    dies = tots(avui, registre, emes)
+    comp = comparacio(dies, emes, O.registre(registre or A.REGISTRE))
     os.makedirs(carpeta, exist_ok=True)
     noms = ["historial.json"]
     escriu = lambda nom, dades: json.dump(dades, open(os.path.join(carpeta, nom), "w", encoding="utf-8"),
                                           ensure_ascii=False, separators=(",", ":"))
-    escriu("historial.json", index(dies, avui))
+    i = index(dies, avui, comp)
+    i["aprenentatge"] = aprenentatge()
+    escriu("historial.json", i)
     # La marca: el formato, si ya están todos; si no, {"format", "seguent"}, el
     # primer día que falta rehacer.
     marca = os.path.join(registre or A.REGISTRE, "historial-format")

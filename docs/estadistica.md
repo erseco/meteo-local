@@ -1473,35 +1473,88 @@ más días se decidirá si se calcula por franjas horarias.
 
 ## 17 bis. Cómo acierta la previsión
 
-Lo que la web enseña en la vista en grande de la gráfica, con el botón «Com
-encerta», y en cada día del historial (`historial.py`, ADR 0099). Para cada
+Lo que enseña la página «Fiabilitat» (`fiabilitat.html`, a la que se llega desde
+el menú ⋮), con los archivos de `historial.py` (ADR 0099 y 0110). Para cada
 hora se compara lo que mostraba la web en la publicación de N horas antes
 de que empezara (N de 1 a 23, elegible; `mostrat` en `casa-AAAA-MM.jsonl`)
 con lo medido en Montflorit:
 
-- **Temperatura**: el error medio absoluto,
-  $$\mathrm{EMA} = \frac{1}{N}\sum_{h=1}^{N} \lvert T^{\text{mesurada}}_h - T^{\text{prevista}}_h \rvert,$$
+- **Temperatura**: el error medio absoluto y el sesgo,
+  $$\mathrm{EMA} = \frac{1}{N}\sum_{h=1}^{N} \lvert T^{\text{prevista}}_h - T^{\text{mesurada}}_h \rvert,
+  \qquad \mathrm{sesgo} = \frac{1}{N}\sum_{h=1}^{N} \left(T^{\text{prevista}}_h - T^{\text{mesurada}}_h\right),$$
   donde la temperatura medida del tramo es la media de las lecturas de la
   estación de casa al principio y al final de la hora, que es lo que la
   previsión anuncia para el tramo (la media de las dos horas en punto,
-  apartado 6). Las horas con sol directo sobre el termómetro (apartado 17)
-  no cuentan, como en el aprendizaje. Se da desde 48 horas.
-- **Lluvia**: la comprobación de calibración de una probabilidad, contada en
-  casos y por franjas de probabilidad anunciada: menos del 20 %, del 20 al
-  50, del 50 al 70 y del 70 o más. Para cada franja, las horas, la
-  probabilidad media anunciada y en cuántas llovió (0,2 mm o más, con
-  `aprenentatge.observada`: casa, las vecinas y, para las horas secas,
-  Meteocat). Si la probabilidad es buena, la fracción de horas con lluvia de
-  cada franja se parece a la media anunciada. Las horas en que no se sabe si
-  llovió no cuentan. Con menos de 20 horas de 50 % o más, «encara poques
-  hores».
+  apartado 6). Un sesgo negativo quiere decir que suele dar menos
+  temperatura de la que hace. Las horas con sol directo sobre el termómetro
+  (apartado 17) no cuentan, como en el aprendizaje. Se da desde 48 horas.
+- **Lluvia**: el error de Brier de la probabilidad anunciada $p_h$ contra lo
+  que pasó, $o_h = 1$ si llovió (0,2 mm o más, con `aprenentatge.observada`:
+  casa, las vecinas y, para las horas secas, Meteocat) y 0 si no,
+  $$\mathrm{BS} = \frac{1}{N}\sum_{h=1}^{N} (p_h - o_h)^2,$$
+  comparado con el de decir siempre la climatología $c$, la parte de las
+  horas con lluvia en todo el registro de esa antelación:
+  $$\mathrm{BS}_c = \frac{1}{N}\sum_{h=1}^{N} (c - o_h)^2, \qquad
+  \text{mejora} = 1 - \frac{\mathrm{BS}}{\mathrm{BS}_c}.$$
+  La página lo dice como «encerta un 35 % més que dir sempre la probabilitat
+  habitual». Con $o_h \in \{0, 1\}$, la suma de un día con $n$ horas y $r$
+  con lluvia es $\sum (c - o_h)^2 = n c^2 - 2 c r + r$, y así se calcula a
+  partir de lo guardado de cada día. Las horas en que no se sabe si llovió
+  no cuentan. Además, en el desplegable, la comprobación de calibración por
+  franjas de probabilidad anunciada (menos del 20 %, del 20 al 50, del 50 al
+  70 y del 70 o más): para cada franja, las horas, la probabilidad media
+  anunciada y en cuántas llovió. Si la probabilidad es buena, la fracción de
+  horas con lluvia de cada franja se parece a la media anunciada.
 - **Cantidad**: la lluvia esperada (la probabilidad de cada hora por sus
   milímetros, apartado 6 bis) y la medida, sumadas en las horas que tienen
   las dos.
 
-Los últimos 30 días, los 30 anteriores (para ver si mejora) y la
-temperatura por meses cuando hay más de uno. Las previsiones se apuntan
-desde el 5 de octubre de 2026; lo medido, desde el 4.
+**Si una diferencia es segura** se decide con la regla de todo el programa
+(apartado 8, `remostreig.py`, ADR 0105): la web acierta más que la
+referencia si su suma de errores es menor en al menos el 95 % de 2.000
+remuestreos por días con reposición, con los mismos casos para las dos. Así
+se compara la lluvia de la web con la climatología y la web con Meteocat y
+AEMET.
+
+**Semana a semana**, de lunes a domingo: el EMA de la temperatura y la
+mejora de la lluvia sobre la climatología, con la $c$ de todo el registro
+para que las semanas se puedan comparar entre sí. **Si mejora con el
+tiempo**: las 4 últimas semanas completas contra las 4 anteriores. Los dos
+periodos no tienen los mismos casos, así que cada uno se remuestrea por
+días por su cuenta (`remostreig.seguretat_periodes`): en cada remuestreo se
+calcula el error medio por hora de cada periodo,
+$$\bar e = \frac{\sum_{d} E_d}{\sum_{d} n_d},$$
+con $E_d$ la suma de errores del día $d$ y $n_d$ sus horas, y se mira en qué
+parte de los 2.000 el periodo reciente se equivoca menos. Con un 95 % o más,
+ha mejorado; con un 5 % o menos, ha empeorado. Hasta tener 8 semanas
+completas no se dice nada. Como unas semanas son más fáciles de prever que
+otras, la comparación con Meteocat y AEMET de cada semana ayuda a distinguir
+la mejora de la web de la del tiempo que ha hecho.
+
+**Frente a Meteocat y AEMET** (`previsio_oficial.py`, `historial.comparacio`):
+la previsión municipal por horas de Meteocat para Cerdanyola (cada 3 horas) y
+la predicción horaria de AEMET para el municipio (cada hora) se apuntan en el
+NAS desde el 20-10-2026; ninguno de los dos guarda sus previsiones pasadas.
+Cada previsión oficial leída en el momento $s$ se compara con la que
+publicaba la web en el mismo momento (la publicación más cercana, a 35
+minutos como mucho), en las horas que empiezan $N$ horas después de $s$
+(redondeado) y tienen medida. La temperatura oficial del tramo es la media de
+la de su principio y su final; la lluvia oficial, $q_h = 1$ si da 0,2 mm o
+más en la hora y 0 si no, con su Brier $(q_h - o_h)^2$. Se dan los errores de
+las dos en las mismas horas y la seguridad de la diferencia. Por comprobar
+con las primeras lluvias: que los milímetros de cada hora oficial son los de
+la hora que acaba a esa hora (ADR 0110). La probabilidad de AEMET por tramos
+de 6 horas se apunta, pero todavía no se compara.
+
+Los últimos 30 días para el resumen y la comparación con las oficiales. Las
+previsiones de la web se apuntan desde el 5 de octubre de 2026; lo medido,
+desde el 4.
+
+**Cómo aprende**: la página cuenta, de lo que el aprendizaje deja cada día en
+el NAS (apartados 2, 3, 8 y siguientes), qué usa ahora la web en la lluvia, la
+temperatura, el radar y el cielo; lo que le falta al candidato propio para
+poder decidir (30 horas de lluvia; 14 días de temperatura); su error y el del
+vigente, día a día, y los cambios que ha hecho sola, con la fecha.
 
 ## 18. Límites
 

@@ -1,6 +1,6 @@
 # 99. Historial de la gráfica y acierto de la previsión
 
-Fecha: 2026-10-17 · Estado: aceptado
+Fecha: 2026-10-17 · Estado: aceptado; la página y los botones, sustituidos por el ADR 0110
 
 ## Contexto
 
@@ -173,3 +173,12 @@ móvil.
 
 La cantidad que se compara con lo medido es la esperada, la probabilidad de cada hora por sus milímetros, no la suma de los milímetros «si llueve» de todas las horas, que daba el doble de lo que caía en el archivo 2024-2026 (`FORMAT` 4; motivo y cifras en el ADR 0103).
 
+## Cambio del 20-10-2026 (3.165.0): a su propia página
+
+El acierto y el historial de cada día salen de la vista en grande de la
+gráfica a la página «Fiabilitat» (`fiabilitat.html`), a la que se llega desde el
+menú ⋮. Lo que este ADR dice del botón «Com encerta», de las flechas y de la
+antelación en la vista en grande ya no vale: la vista en grande solo enseña
+la previsión. `historial.py` sigue preparando los mismos archivos, con más
+cifras (sesgo, Brier, semanas y comparación con Meteocat y AEMET). Motivo y
+detalle, en el ADR 0110.

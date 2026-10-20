@@ -162,6 +162,12 @@ CANVIS_COM_FUNCIONA = [
      f'<html lang="ca" data-theme="light" data-dades="{DADES}" data-notes="{NOTES}">'),
     ("<title>Com funciona · Temps a casa</title>", "<title>Com funciona · Temps a Montflorit</title>"),
 ]
+# «Fiabilitat» (ADR 0110): cuánto acierta la previsión, frente a Meteocat y AEMET, y cómo aprende.
+CANVIS_FIABILITAT = [
+    ('<html lang="ca" data-theme="light">',
+     f'<html lang="ca" data-theme="light" data-dades="{DADES}" data-notes="{NOTES}">'),
+    ("<title>Fiabilitat · Temps a casa</title>", "<title>Fiabilitat · Temps a Montflorit</title>"),
+]
 # En «Si surts» se habla de medios de transporte: ahí sí van «moto» y «cotxe».
 PROHIBIDES_SORTIR = ("casa", "trajecte")
 # Los créditos y el README enlazan el código fuente y los ADR, que están en
@@ -176,10 +182,12 @@ FORA_FONTS = [re.compile(r"\n      <li>Icones de roba i pluja de .*?</li>")]
 
 SW_PECES = re.compile(r"const PECES = \[.*?\];", re.S)
 PECES = ["./", "index.html", "sortir.html", "perill.html", "riera.html", "consultes.html", "avisos.html", "telegram.html",
-         "fonts.html", "com-funciona.html", "privacitat.html", "es/", "es/sortir.html", "es/perill.html", "es/riera.html",
-         "es/consultes.html",
-         "es/avisos.html", "es/telegram.html", "es/fonts.html", "es/com-funciona.html", "es/privacitat.html", "estil.css",
-         "comu.js", "grafica.js", "casa.js", "sortir.js", "perill.js", "riera.js", "consultes.js", "avisos.js", "es.js",
+         "fonts.html", "com-funciona.html", "fiabilitat.html", "privacitat.html", "es/", "es/sortir.html", "es/perill.html",
+         "es/riera.html", "es/consultes.html",
+         "es/avisos.html", "es/telegram.html", "es/fonts.html", "es/com-funciona.html", "es/fiabilitat.html",
+         "es/privacitat.html", "estil.css",
+         "comu.js", "grafica.js", "casa.js", "sortir.js", "perill.js", "riera.js", "consultes.js", "avisos.js",
+         "fiabilitat.js", "es.js",
          "manifest.webmanifest",
          "icones/icona-192.png"]
 
@@ -253,6 +261,12 @@ CANVIS_ES_COM_FUNCIONA = [
     ('href="img/montflorit-limits.svg"', 'href="../img/montflorit-limits.svg"'),
     ('src="img/montflorit-limits.svg"', 'src="../img/montflorit-limits.svg"'),
 ]
+CANVIS_ES_FIABILITAT = [
+    (f'data-dades="{DADES}"', f'data-dades="{DADES}" data-arrel="../"'),
+    ('<script src="comu.js"></script>', '<script src="../es.js"></script>\n  <script src="../comu.js"></script>'),
+    ('<script src="grafica.js"></script>', '<script src="../grafica.js"></script>'),
+    ('<script src="fiabilitat.js"></script>', '<script src="../fiabilitat.js"></script>'),
+]
 CANVIS_ES_NAV = [(">Temps</a>", ">Tiempo</a>"), (">Si surts</a>", ">Si sales</a>"),
                  (">Consultes</a>", ">Consultas</a>")]
 # La traducción es automática: se dice en los créditos.
@@ -300,6 +314,7 @@ def castella(html, nom, taula=None):
                    "avisos.html": CANVIS_ES_AVISOS + CANVIS_ES_NAV,
                    "fonts.html": CANVIS_ES_FONTS + CANVIS_ES_NAV + [CREDIT_TRADUCCIO],
                    "com-funciona.html": CANVIS_ES_COM_FUNCIONA + CANVIS_ES_NAV,
+                   "fiabilitat.html": CANVIS_ES_FIABILITAT + CANVIS_ES_NAV,
                    "privacitat.html": CANVIS_ES_PRIVACITAT + CANVIS_ES_NAV}[nom], nom)
     if nom == "telegram.html":     # les captures, les de Telegram en castellà
         t = t.replace('img/telegram/ca/', 'img/telegram/es/').replace('="img/', '="../img/')
@@ -457,6 +472,14 @@ def com_funciona(html):
     return t
 
 
+def fiabilitat(html):
+    t = menu(canvia(html, CANVIS_FIABILITAT, "fiabilitat.html"), "fiabilitat.html", "fiabilitat.html")
+    if INDEXABLE:
+        t = canvia(t, [(ROBOTS, "")], "fiabilitat.html")
+    comprova("fiabilitat.html", t)
+    return t
+
+
 def service_worker(sw):
     t = canvia(sw, [("const MAGATZEM = 'meteo-local';", "const MAGATZEM = 'meteo-montflorit';")], "sw.js")
     t, n = SW_PECES.subn("const PECES = " + json.dumps(PECES).replace('"', "'") + ";", t)
@@ -503,6 +526,7 @@ def construeix(desti, web=None):
                "avisos.html": avisos(llegeix("avisos.html")), "telegram.html": telegram(llegeix("telegram.html")),
                "fonts.html": fonts(llegeix("fonts.html")),
                "com-funciona.html": com_funciona(llegeix("com-funciona.html")),
+               "fiabilitat.html": fiabilitat(llegeix("fiabilitat.html")),
                "privacitat.html": privacitat(llegeix("privacitat.html"))}
     pagines = {nom: app_android(alternes(idioma(html, nom), nom), nom) for nom, html in pagines.items()}
     os.makedirs(os.path.join(desti, "es"), exist_ok=True)
@@ -511,7 +535,7 @@ def construeix(desti, web=None):
         escriu("es/" + nom, castella(html, nom))
     escriu("sw.js", service_worker(llegeix("sw.js")))
     for nom in ("estil.css", "comu.js", "grafica.js", "casa.js", "sortir.js", "perill.js", "riera.js", "consultes.js",
-                "avisos.js"):
+                "avisos.js", "fiabilitat.js"):
         shutil.copy(os.path.join(web, nom), desti)
     shutil.copytree(propi, desti, dirs_exist_ok=True)
     shutil.copytree(os.path.join(web, "img"), os.path.join(desti, "img"), dirs_exist_ok=True)
