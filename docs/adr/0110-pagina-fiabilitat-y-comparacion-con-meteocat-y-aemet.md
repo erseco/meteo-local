@@ -53,9 +53,10 @@ hay dia a dia».
   temperatura, lluvia???? debes identificar lo que haces» y «el usuario debe
   saber lo que está viendo en cada momento»). Por lo mismo, el selector de
   antelación va junto a lo que cambia y lo que depende de él lo dice.
-  **La antelación, con un deslizador** de 1 a 23 h sobre 23 barras con el
-  error de temperatura de la web en cada antelación: se elige de una vez, se
-  ve cómo crece el error y tocar una barra la elige. Antes eran dos flechas
+  **La antelación, con un deslizador** de 1 a 23 h: se elige de una vez.
+  Al principio llevaba encima 23 barras con el error de temperatura de cada
+  antelación; se quitaron el mismo día (Juanjo: «quita las columnas de aquí,
+  deja solo el deslizador»). Antes eran dos flechas
   que pasaban de una en una (Juanjo: «hay que pasar una a una. Haz algo util
   pero profesional y vistoso»). Es un `input type="range"` nativo: flechas
   del teclado, arrastre con el dedo y lector de pantalla.

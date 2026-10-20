@@ -284,7 +284,8 @@ function pintaSetmanes(e) {
         : T('L’error de la temperatura setmana a setmana, de la web, Meteocat i AEMET.'),
     });
   }
-  $('setmanes-nota').textContent = setmanes.some((s) => s.en_curs) ? T('Cada setmana comença en dilluns; * la setmana en curs.') : T('Cada setmana comença en dilluns.');
+  // Sense «Cada setmana comença en dilluns», que és una obvietat (Juanjo, 20-10-2026).
+  $('setmanes-nota').textContent = setmanes.some((s) => s.en_curs) ? T('* La setmana en curs.') : '';
 }
 
 // --- Com aprèn ---
@@ -565,9 +566,9 @@ function pinta() {
 
 // L'antelació, amb un lliscador d'1 a 23 h (Juanjo, 20-10-2026: «el selector
 // de horas no me gusta porque hay que pasar una a una. Haz algo util pero
-// profesional y vistoso»). A sota, una barra per antelació amb l'error de
-// temperatura de la web: es veu com creix l'error i on és la triada. Tocar
-// una barra la tria (el lliscador cobreix les barres).
+// profesional y vistoso»). Només el lliscador: les barres de l'error per
+// antelació que hi havia a sobre es van treure (Juanjo, 20-10-2026: «quita
+// las columnas de aquí, deja solo el deslizador»).
 function pintaLliscador() {
   const a = estat.antelacio;
   const r = $('antelacio');
@@ -576,21 +577,6 @@ function pintaLliscador() {
   r.setAttribute('aria-valuetext', T`${a} hores abans`);
   const rotol = $('antelacio-rotol');
   rotol.replaceChildren(T('Previsió feta '), element('strong', null, `${a}\u00a0h`), T(' abans'));
-  const errs = Array.from({ length: ANTELACIO_MAX }, (_, i) => {
-    const e = INDEX && INDEX.encert[String(i + 1)];
-    return e && e.darrers.temperatura.error;
-  });
-  const max = Math.max(...errs.filter((v) => v != null), 0.1);
-  $('antelacio-barres').replaceChildren(...errs.map((v, i) => {
-    const b = element('span', `fb-barra-h${i + 1 === a ? ' triada' : ''}`);
-    b.style.height = `${v == null ? 4 : Math.max(8, Math.round((v / max) * 100))}%`;
-    return b;
-  }));
-  const e = INDEX && INDEX.encert[String(a)];
-  const t = e && e.darrers.temperatura;
-  $('antelacio-nota').textContent = t && t.error != null
-    ? T`Cada barra, l’error de temperatura de la web amb aquella antelació; amb ${a}\u00a0h, ${coma(t.error)}\u00a0°C.`
-    : T('Cada barra, l’error de temperatura de la web amb aquella antelació.');
 }
 
 let pendent = null;
