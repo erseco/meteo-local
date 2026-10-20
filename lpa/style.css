@@ -1,0 +1,8 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+.lpa-station-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:1rem; margin-block:1rem; }
+.lpa-station { border:1px solid var(--linia,#94a3b8); border-radius:.75rem; padding:1rem; min-width:0; overflow-wrap:anywhere; }
+.lpa-station h3 { margin-top:0; }
+.lpa-station p { margin-block:.5rem; }
+.lpa-fresh { font-weight:600; }
+#lpa-observations details { padding:1rem; border:1px solid var(--linia,#94a3b8); border-radius:.75rem; }
+#lpa-observations summary { cursor:pointer; }

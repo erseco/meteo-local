@@ -33,7 +33,7 @@ URL prevista: <https://erseco.github.io/meteo-local/>; redirige a la interfaz en
 castellano en `/es/`. La URL efectiva se muestra en el entorno `github-pages`.
 
 Cada 15 minutos se programa otra ejecución para recoger datos reales y renovar
-la publicación, sin commits automáticos. GitHub puede retrasar las ejecuciones;
+la publicación, sin commits en el código. El historial público se persiste en `lpa-data`. GitHub puede retrasar las ejecuciones;
 no es una garantía de actualización puntual ni un sistema de alertas en tiempo
 real. El cron se ejecuta desde la rama predeterminada, que debe seguir siendo
 `lpa`. Las ejecuciones programadas mantienen las pruebas unitarias y la generación;
@@ -80,7 +80,7 @@ python3 -m lpa.collect /tmp/meteo-lpa/montflorit.json
 
 El alojamiento debe servir esa carpeta y ejecutar la recogida cada 15 minutos;
 **no basta con publicar el HTML una vez**. No guardar el resultado de cada
-consulta en Git. `lpa.serve` hace esa actualización sin commits automáticos.
+consulta en la rama de código. `lpa.serve` hace esa actualización y conserva el historial en disco.
 La API gratuita de Open-Meteo tiene condiciones y límites de uso; revisar su
 licencia antes de un despliegue comercial.
 
@@ -91,17 +91,17 @@ licencia antes de un despliegue comercial.
 | Interfaz, gráficos, tablas y tema | Los del original, generados en castellano |
 | Previsión y probabilidad de lluvia | Open-Meteo `best_match`, coordenadas públicas aproximadas `28.124, -15.436` |
 | Hora y cambio de horario | `Atlantic/Canary`; consulta por Unix time y fechas con desfase explícito |
-| Temperatura, humedad y viento actuales | Estimación del modelo; se identifican como estimación, no observación |
+| Temperatura, humedad y viento actuales | Estimación del modelo separada de AEMET, METAR y red escolar; página Estaciones con procedencia y antigüedad |
 | Sol e índice UV | Open-Meteo para Las Palmas |
 | Aire | CAMS global; índice calculado con las funciones del original, sin correcciones catalanas |
 | Avisos oficiales | AEMET vía Meteoalarm, zona **Norte de Gran Canaria** |
 | Si sales | Interfaz y reglas meteorológicas del original; umbrales provisionales, sin validación local |
-| Estaciones locales y contraste con lo medido | No disponible hasta integrar una fuente local |
+| Estaciones locales y contraste con lo medido | AEMET Plaza de la Feria y Tafira, aeropuerto GCLP y catálogo de 14 estaciones escolares; historial y comprobación prospectiva |
 | Radar y llegada/final de lluvia | No disponible hasta validar cobertura y proveedor local |
 | Protección Civil, incendios y restricciones | No disponible; no se usa Meteocat, INUNCAT ni Pla Alfa |
 | Crecidas de barrancos | No disponible; no se traslada el modelo de Sant Cugat |
 | Guaguas, tráfico, luz y polen | No disponible; no se presentan datos de Cataluña |
-| Aprendizaje, correcciones y fiabilidad | No disponible hasta disponer de observaciones e historial locales |
+| Aprendizaje, correcciones y fiabilidad | Historial persistente y validación temporal de temperatura; corrección solo tras superar los requisitos de muestra y mejora |
 | Notificaciones y Telegram | Requieren backend y credenciales propios; desactivados |
 | Aplicación Android del original | No se anuncia ni se usa su asociación de dominio |
 
@@ -109,7 +109,7 @@ No se afirma una equivalencia funcional completa: se conserva la aplicación y
 su navegación, y cada servicio sin equivalente local aparece como no disponible.
 Una fuente que falla conserva `null` y un error; no equivale a «sin avisos» ni a
 «sin incidencias». No se usa ningún historial ni calibración de Montflorit.
-La capa actual no acumula un registro de aprendizaje local.
+La capa conserva observaciones y previsiones en `lpa-data` (Actions) o en disco/volumen (servidor local y Docker). Véase [OBSERVACIONES.md](OBSERVACIONES.md) para fuentes, contratos, límites y método.
 
 Las Palmas tiene microclimas: el punto urbano elegido no representa por igual
 Las Canteras, Ciudad Alta, Tafira y el resto del municipio. Para otra ubicación,

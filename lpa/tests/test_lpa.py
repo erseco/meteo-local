@@ -74,7 +74,7 @@ class Sources(unittest.TestCase):
         def reader(url, params):
             if url == C.FORECAST: return json.dumps(forecast())
             raise TimeoutError('source offline')
-        data = C.collect(NOW, reader)
+        data = C.collect(NOW, reader, include_observations=False)
         self.assertIsNone(data['avisos'])
         self.assertIsNone(data['aire'])
         self.assertIsNone(data['trens'])
@@ -94,7 +94,7 @@ class Sources(unittest.TestCase):
             h['time'] = forecast()['hourly']['time'][:24]
             return json.dumps({'hourly': h})
         with patch.object(C.prevision, 'leer_calibracion', side_effect=AssertionError('local training forbidden')):
-            data = C.collect(NOW, reader)
+            data = C.collect(NOW, reader, include_observations=False)
         self.assertEqual(data['errors'], [])
         self.assertFalse(data['aire']['corregit'])
         self.assertEqual(len(requests), 3)
@@ -140,7 +140,7 @@ class Build(unittest.TestCase):
         self.assertFalse((self.dest/'.well-known/assetlinks.json').exists())
 
     def test_unavailable_services_have_no_active_scripts(self):
-        for name in ('avisos.html','telegram.html','riera.html','fiabilitat.html'):
+        for name in ('avisos.html','telegram.html','riera.html'):
             page = (self.dest/'es'/name).read_text()
             self.assertIn('Función no disponible', page)
             self.assertNotIn('<script src=', page)

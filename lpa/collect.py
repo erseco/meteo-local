@@ -18,6 +18,7 @@ import xml.etree.ElementTree as ET
 import aire
 import prevision
 from . import profile as P
+from . import observations
 
 FORECAST = "https://api.open-meteo.com/v1/forecast"
 AIR = "https://air-quality-api.open-meteo.com/v1/air-quality"
@@ -117,7 +118,7 @@ def parse_alerts(xml, now):
     return list(result.values())
 
 
-def collect(now=None, reader=fetch):
+def collect(now=None, reader=fetch, include_observations=True):
     """Collect independent sources concurrently; retain explicit failure state."""
     now = (now or dt.datetime.now(dt.timezone.utc)).astimezone(P.ZONE)
     params = parameters()
@@ -140,7 +141,8 @@ def collect(now=None, reader=fetch):
                        "avis_min": 15, "mode_avis": [], "desfase_min": 0},
             "lpa": {"nom": P.NAME, "timezone": P.TIMEZONE, "unavailable": P.UNAVAILABLE,
                     "current_model": None, "sources": {}}, "consultes": {"es": {}}}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        obs_future = pool.submit(observations.collect, now) if include_observations else None
         futures = {pool.submit(reader, url, values): name for name, (url, values) in requests.items()}
         for future in concurrent.futures.as_completed(futures):
             name = futures[future]
@@ -173,6 +175,12 @@ def collect(now=None, reader=fetch):
             except Exception as error:
                 data["errors"].append(f"{name}: {error}")
                 data["lpa"]["sources"][name] = "unavailable"
+        if obs_future is not None:
+            try:
+                data["lpa"]["observations"] = obs_future.result()
+            except Exception:
+                data["lpa"]["observations"] = {"stations": [], "providers": observations.institutional_sources()}
+                data["errors"].append("observaciones: no se pudo completar la recogida")
     for row in data["hores"] or []:
         row["avisos"] = [a for a in data["avisos"] or []
                          if dt.datetime.fromisoformat(a["inicio"]) < dt.datetime.fromisoformat(row["fins"])
@@ -204,11 +212,22 @@ def write_json(destination, data):
             temp.unlink(missing_ok=True)
 
 
+def finalize(data, state_dir=None):
+    """Persist the verification history before producing a compact public payload."""
+    if state_dir:
+        from .history import update
+        update(data, state_dir)
+    else:
+        (data.get("lpa", {}).get("observations") or {}).pop("_archive", None)
+    return data
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("destination")
+    parser.add_argument("--state-dir", default=os.environ.get("LPA_STATE_DIR"))
     args = parser.parse_args()
-    data = collect()
+    data = finalize(collect(), args.state_dir)
     write_json(args.destination, data)
     for message in data["errors"]:
         print(message)

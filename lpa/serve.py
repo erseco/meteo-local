@@ -7,7 +7,7 @@ from pathlib import Path
 import threading
 
 from .build import build
-from .collect import collect, write_json
+from .collect import collect, write_json, finalize
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -17,10 +17,10 @@ class Handler(SimpleHTTPRequestHandler):
         super().end_headers()
 
 
-def refresh(destination, stop):
+def refresh(destination, stop, state_dir):
     while not stop.is_set():
         try:
-            data = collect()
+            data = finalize(collect(), state_dir)
             write_json(destination, data)
             print('LPA update:', data['generat'], data['errors'], flush=True)
         except Exception as error:
@@ -31,12 +31,13 @@ def refresh(destination, stop):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--directory', default='/tmp/meteo-lpa')
+    parser.add_argument('--state-dir', default=str(Path.home() / '.local/share/meteo-local/lpa'))
     parser.add_argument('--port', type=int, default=8080)
     parser.add_argument('--bind', default='127.0.0.1')
     args = parser.parse_args()
     destination = build(args.directory)
     stop = threading.Event()
-    updater = threading.Thread(target=refresh, args=(Path(destination) / 'montflorit.json', stop), daemon=True)
+    updater = threading.Thread(target=refresh, args=(Path(destination) / 'montflorit.json', stop, args.state_dir), daemon=True)
     updater.start()
     server = ThreadingHTTPServer((args.bind, args.port), partial(Handler, directory=str(destination)))
     try:

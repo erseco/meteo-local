@@ -59,7 +59,7 @@ jobs:
     if: github.ref == 'refs/heads/lpa' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pages: read
     env:
       TZ: Atlantic/Canary
@@ -73,10 +73,16 @@ jobs:
         uses: actions/configure-pages@v6
       - name: Generate production website
         run: python3 -m lpa.build _site
+      - name: Restore persistent observation history
+        id: history_restore
+        run: ./lpa/data-branch.sh prepare "$RUNNER_TEMP/lpa-history"
       - name: Collect live weather data
         # A failed forecast must not overwrite the last working deployment.
         # The frontend hides that deployment's data when they become stale.
-        run: python3 -m lpa.collect _site/montflorit.json
+        run: python3 -m lpa.collect _site/montflorit.json --state-dir "$RUNNER_TEMP/lpa-history"
+      - name: Persist observation history
+        if: always() && steps.history_restore.outcome == 'success' && hashFiles('_site/montflorit.json') != ''
+        run: ./lpa/data-branch.sh save "$RUNNER_TEMP/lpa-history"
       - name: Upload production website
         uses: actions/upload-pages-artifact@v5
         with:

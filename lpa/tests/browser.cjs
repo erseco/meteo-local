@@ -27,11 +27,12 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
           if (!request.url().startsWith(root + '/')) external.push(request.url());
         });
         for (const file of ['index.html', 'sortir.html', 'consultes.html', 'perill.html',
-                            'riera.html', 'fonts.html', 'avisos.html', 'fuentes.html']) {
+                            'riera.html', 'fonts.html', 'avisos.html', 'fuentes.html', 'observaciones.html', 'fiabilitat.html']) {
           errors = []; external = [];
           await page.goto(`${root}/es/${file}`);
           if (file === 'index.html') await page.locator('#casa .previsio').first().waitFor();
           if (file === 'sortir.html') await page.getByText('No hay datos de servicio de Guaguas Municipales ni Global.').waitFor();
+          if (file === 'observaciones.html' || file === 'fiabilitat.html') await page.getByText('Plaza de la Feria: Recogiendo datos', {exact:false}).waitFor();
           if (file === 'perill.html') await page.getByText('No hay avisos de AEMET en el feed consultado', {exact: false}).waitFor();
           await page.addScriptTag({content: axe.source});
           const violations = await page.evaluate(async () => (await axe.run()).violations.map(v => ({id:v.id, nodes:v.nodes.length})));

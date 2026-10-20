@@ -74,10 +74,10 @@ def build(destination):
         text = text.replace('https://www.meteo.cat/observacions/radar', P.AEMET_ALERTS).replace('Radar de Meteocat', 'Avisos de AEMET')
         text = re.sub(r'https://github.com/meteo-montflorit/meteo-local/releases[^"<]*', P.REPOSITORY + '/tree/lpa', text)
         notice = ('<section id="lpa-status" class="targeta" aria-label="Estado de las fuentes">'
-                  '<h2>Datos para Las Palmas</h2><p>Hora canaria. Previsión de Open-Meteo sin '
-                  'calibración local. Las mediciones locales y el radar no están disponibles. '
+                  '<h2>Datos para Las Palmas</h2><p>Hora canaria. Previsión de Open-Meteo; los ajustes locales se indican cuando están validados. '
+                  'Las observaciones se identifican por estación y antigüedad. El radar no está integrado. '
                   'Los consejos de salida son orientativos; sus umbrales no están validados aquí.</p>'
-                  '<p><a href="fuentes.html">Fuentes y funciones disponibles</a> · '
+                  '<p><a href="observaciones.html">Estaciones e historial</a> · <a href="fuentes.html">Fuentes y funciones disponibles</a> · '
                   f'<a href="{P.AEMET_ALERTS}">Avisos oficiales de AEMET</a></p></section>')
         text, count = re.subn(r'(<main\b[^>]*>)', lambda m: m[1] + notice, text)
         if count != 1:
@@ -94,7 +94,7 @@ def build(destination):
                 raise ValueError('Upstream warnings layout changed')
             text = re.sub(r'<details\b[^>]*>.*?</details>', '', text, flags=re.S)
             text = text.replace('src="../perill.js"', 'src="../lpa-alerts.js"')
-        if source.name in ('riera.html', 'avisos.html', 'telegram.html', 'fiabilitat.html'):
+        if source.name in ('riera.html', 'avisos.html', 'telegram.html'):
             key = {'riera.html': 'riera', 'avisos.html': 'notificaciones',
                    'telegram.html': 'notificaciones', 'fiabilitat.html': 'aprenentatge'}[source.name]
             text = static_page(text, 'Función no disponible', '<p>' + html.escape(P.UNAVAILABLE[key]) + '</p>'
@@ -103,7 +103,20 @@ def build(destination):
             text = static_page(text, 'Fuentes, funcionamiento y privacidad', sources_html())
         source.write_text(text)
     (dest / 'es' / 'fuentes.html').write_text(static_page((dest / 'es/fonts.html').read_text(), 'Fuentes y disponibilidad', sources_html()))
+    template = (dest / 'es/fonts.html').read_text()
+    station_page = static_page(template, 'Observaciones e historial', '<p>Cada lectura corresponde a su estación. Costa, Tafira y aeropuerto tienen condiciones distintas.</p><div id="lpa-observations"><p>Cargando observaciones…</p></div>')
+    station_page = re.sub(r'<h1>.*?</h1>', '<h1>Estaciones e historial</h1>', station_page, flags=re.S)
+    station_page = station_page.replace('</head>', '<link rel="stylesheet" href="../lpa-style.css"></head>')
+    station_page = station_page.replace('</body>', '<script src="../lpa-time.js"></script><script src="../lpa-station-page.js"></script><script src="../lpa-ui.js"></script></body>')
+    for name in ('observaciones.html', 'fiabilitat.html'):
+        (dest / 'es' / name).write_text(station_page)
+    for page in (dest / 'es').glob('*.html'):
+        text = page.read_text()
+        text = re.sub(r'(<nav class="pagines"[^>]*>)(.*?)(</nav>)', lambda m: m[1] + m[2] + '<a href="observaciones.html">Estaciones</a>' + m[3], text, flags=re.S)
+        page.write_text(text)
+    shutil.copyfile(HERE / 'style.css', dest / 'lpa-style.css')
     # Redirect every root HTML entry point to its Spanish counterpart, retaining deep links.
+    (dest / 'observaciones.html').touch()
     for path in dest.glob('*.html'):
         path.write_text('<!doctype html><html lang="es"><meta charset="utf-8"><title>Tiempo en Las Palmas</title>'
                         f'<meta http-equiv="refresh" content="0;url=es/{path.name}"><a href="es/{path.name}">Abrir</a>'
@@ -152,7 +165,7 @@ def build(destination):
         # Local calendar operations use the site timezone, including for mainland visitors.
         text = text.replace('new Date(', 'new LpaDate(')
         path.write_text(rebrand(text))
-    for source, name in (('time.js', 'lpa-time.js'), ('ui.js', 'lpa-ui.js'), ('alerts.js', 'lpa-alerts.js')):
+    for source, name in (('time.js', 'lpa-time.js'), ('ui.js', 'lpa-ui.js'), ('alerts.js', 'lpa-alerts.js'), ('station-page.js', 'lpa-station-page.js')):
         shutil.copyfile(HERE / source, dest / name)
     # Never cache weather/alerts or register upstream push handlers.
     (dest / 'sw.js').write_text("// LPA: no offline weather cache or push backend.\n")
@@ -174,7 +187,7 @@ def sources_html():
             '<p>Previsión: <a href="https://open-meteo.com/">Open-Meteo</a>, selección automática best_match, '
             'CC BY 4.0. Aire: CAMS global a través de Open-Meteo, sin corrección local. '
             'Avisos de AEMET a través de Meteoalarm, zona Norte de Gran Canaria. '
-            'Las probabilidades y consejos no proceden de un aprendizaje local validado.</p>'
+            'Observaciones de AEMET, METAR de NOAA y estaciones escolares en Weathercloud. La disponibilidad de cada lectura se muestra en Estaciones. Los ajustes de temperatura requieren validación temporal; los consejos de salida no tienen validación local.</p>'
             f'<p>Ubicación aproximada: {P.COORDINATES}; zona horaria {P.TIMEZONE}. '
             'Los datos no representan todos los microclimas del municipio.</p>'
             '<p>La página consulta solo los JSON de su propio alojamiento. Preferencias de interfaz en '
