@@ -72,8 +72,22 @@ Condiciones consultadas el 20-10-2026:
 - **e-distribución**: su aviso legal
   (<https://www.edistribucion.com/es/aviso-legal.html>) no autoriza
   «comunicar públicamente la información contenida en la Web» sin permiso del
-  titular. La web muestra los cortes que publica su mapa (ADR 0072). Queda
-  para que decida Juanjo; no se ha cambiado nada.
+  titular. La web muestra los cortes que publica su mapa (ADR 0072).
+  Revisado el mismo día (Juanjo: «mira las notas del registro y luego
+  decide»): el NAS no guarda las notas pasadas, pero los 302 cortes de la capa
+  pública a las 13:50 solo traían siete frases fijas sobre el estado de la
+  reparación («estamos trabajando en su resolución», «un equipo se dirige a su
+  zona», «trabajos de mejora en la red eléctrica»…). Son frases de trámite, sin
+  la originalidad que protege la propiedad intelectual: quitarlas no reduce el
+  riesgo y quita información. Lo que queda es el derecho *sui generis* de su
+  base de datos (art. 133 de la Ley de Propiedad Intelectual), que solo
+  prohíbe extraer partes no sustanciales de forma repetida si va contra su
+  explotación normal o les perjudica (TJUE C-762/19, CV-Online), y las
+  condiciones de uso de su web (TJUE C-30/14, Ryanair). La web toma solo los
+  cortes de un barrio, cita la fuente y enlaza su mapa, que no explotan
+  comercialmente. **Decisión del agente: se deja como está, no se pide
+  permiso (una negativa lo quitaría) y, si e-distribución lo pide, se retira
+  enseguida.**
 - No se han encontrado las condiciones de Meteoalarm (los avisos son de AEMET
   y se citan con las suyas) ni las del Consorci de Collserola.
 
