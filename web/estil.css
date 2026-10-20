@@ -562,6 +562,11 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 /* Plegat quan no hi ha res de nou (ADR 0094): el títol amb el nombre d'avisos
    és el plec, i dins, les línies curtes. */
 .avisos-plec > summary { cursor: pointer; }
+/* Sempre plegat (20-10-2026): la franja, del color de l'avís més greu. */
+.avisos-actius[class*="nivell-"] { border-left: .35rem solid var(--nivell-avisos, var(--compte)); }
+.avisos-actius.nivell-vermell { --nivell-avisos: var(--vermell); }
+.avisos-actius.nivell-taronja { --nivell-avisos: #fb923c; }
+.avisos-actius.nivell-groc { --nivell-avisos: #eab308; }
 .avisos-plec > summary > .seccio { display: inline; margin: 0; }
 .avisos-plec[open] > summary { margin-bottom: .4rem; }
 .avisos-curts { margin-top: .4rem; }

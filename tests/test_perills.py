@@ -124,8 +124,9 @@ class Perills(unittest.TestCase):
         self.assertTots(r["text"], "ca", B.TIPUS_PERILL, "«Avisos actius» de la web")
         # Plegat, una línia per avís: tampoc no se'n pot deixar cap (ADR 0094).
         self.assertTots(r["curts"], "ca", B.TIPUS_PERILL, "«Avisos actius» plegat")
-        # A la portada, plegat sota el títol si no hi ha res de nou (Juanjo, 18-10-2026); vermell, sempre obert.
-        self.assertEqual(r["plec"], ["details", False, True, True], "quan es desplega «Avisos actius» a la portada")
+        # A la portada, sempre plegat sota el títol, també amb un de nou o de vermell (Juanjo,
+        # 20-10-2026: «los avisos activos siempre plegados»; abans, des del 18-10, s'obria sol).
+        self.assertEqual(r["plec"], ["details", False, False, False], "«Avisos actius» a la portada, sempre plegat")
         # Cada alerta porta a la seva fitxa de «Perill», perquè s'hi destaqui
         # (Juanjo, 16-10-2026: «con este enlace no me sale el resalte»): a
         # «Avisos actius» i a les línies del resum.
@@ -210,9 +211,7 @@ vm.runInContext(`HISTORIAL_PERILL = ${JSON.stringify(historial.filter((e) => e.t
 ctx.__pocs = { ...dades, entorn: null };
 ctx.__mes = { ...ctx.__pocs, riscos: [{ ...dades.riscos[0], nivell: 'taronja' }] };
 ctx.__vermell = { ...ctx.__pocs, entorn: dades.entorn };
-// A la portada (18-10-2026), en cada visita: plegat si no hi ha cap «Nou» (la
-// segona vegada que es veu el mateix);
-// obert si n'hi ha o si n'hi ha cap de vermell.
+// A la portada, sempre plegat (20-10-2026), també amb un «Nou» o un vermell.
 const portada = (nom) => vm.runInContext(
   `LLEGITS_ABANS = null; PLEC_AVISOS = null; blocAvisos(${nom}).fills[0]`, ctx);
 const plec = [portada('__vermell').tag, (portada('__pocs'), portada('__pocs').open), portada('__mes').open,

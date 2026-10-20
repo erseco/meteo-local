@@ -848,9 +848,8 @@ function avisosAemet(dades) {
 // la fitxa del seu avís (Juanjo, 17-10-2026: «quita lo de desplegar, que
 // muestre la información como sale ahora plegado y al pulsar lleva al detalle
 // del aviso, es para simplificar la pagina inicial»). I plegades sota el
-// títol, amb el nombre d'avisos, si no n'hi ha cap amb «Nou» ni cap de
-// vermell (Juanjo, 18-10-2026: «quiero que esto aparezca plegado a no ser que
-// haya algo nuevo»; ADR 0094). Fins a la 3.148.0, «Si surts» en mostrava els
+// títol, amb el nombre d'avisos (ADR 0094); des del 20-10-2026, sempre, amb
+// un punt vermell si n'hi ha de nous. Fins a la 3.148.0, «Si surts» en mostrava els
 // textos sencers; ara hi surt una sola línia que remet a «Perill» (sortir.js,
 // liniaAvisosConduccio).
 function blocAvisos(dades, { ara = new Date() } = {}) {
@@ -871,9 +870,26 @@ function blocAvisos(dades, { ara = new Date() } = {}) {
   const llista = element('div', 'avisos-curts');
   llista.append(...curts);
   plec.append(resum, llista);
-  const nou = curts.some((c) => c.querySelector('.avis-nou') || nivellDe(c) === 'vermell');
-  plec.open = PLEC_AVISOS && PLEC_AVISOS.empremta === empremta ? PLEC_AVISOS.obert : nou;
-  plec.addEventListener('toggle', () => { PLEC_AVISOS = { empremta, obert: plec.open }; });
+  // Sempre plegat, també amb un de nou o de vermell: un punt vermell diu que hi
+  // ha novetats (el de la pestanya «Avisos») i la franja, del color del més
+  // greu, quant importa; així la gràfica cap a la pantalla del mòbil (Juanjo,
+  // 20-10-2026: «los avisos activos siempre plegados, solo cuando hay uno nuevo
+  // aparecerá un punto rojo»). Fins a la 3.163.0 es desplegava sol.
+  const pitjor = NIVELLS_AVIS.find((n) => curts.some((c) => nivellDe(c) === n));
+  if (pitjor) sec.classList.add(`nivell-${pitjor}`);
+  const nou = curts.some((c) => c.querySelector('.avis-nou'));
+  if (nou) {
+    const punt = element('span', 'punt-perill');
+    punt.setAttribute('role', 'img');
+    punt.setAttribute('aria-label', T('Hi ha un avís nou'));
+    punt.title = T('Hi ha un avís nou');
+    resum.append(punt);
+  }
+  plec.open = Boolean(PLEC_AVISOS && PLEC_AVISOS.empremta === empremta && PLEC_AVISOS.obert);
+  plec.addEventListener('toggle', () => {
+    PLEC_AVISOS = { empremta, obert: plec.open };
+    if (plec.open) resum.querySelector('.punt-perill')?.remove();
+  });
   sec.append(plec);
   return sec;
 }

@@ -225,3 +225,17 @@ visita; y al volver de esa memoria (`pageshow` con `persisted`),
 recargar. Validado en Chromium y Firefox, a 360 y 1.280 px: cinco «Nou» al
 abrir, cuatro tras pulsar uno, ninguno al volver de la memoria (simulada con
 el evento, porque el navegador de pruebas no la usa).
+
+
+## Cambio del 20-10-2026 (3.164.0): siempre plegado, con punto rojo y franja
+
+Juanjo (20-10-2026): «los avisos activos siempre plegados, solo cuando hay uno
+nuevo aparecerá un punto rojo indicando que hay novedades». «Avisos actius»
+ya no se despliega solo con un aviso nuevo o rojo: queda siempre plegado. Si
+hay alguno con «Nou», lleva al lado el mismo punto rojo que la pestaña
+«Avisos», que desaparece al desplegarlo; y la franja de la izquierda toma el
+color del aviso más grave (amarillo, naranja o rojo), para que se vea cuánto
+importa sin desplegarlo. Se planteó pasar el bloque debajo del gráfico, ya
+que los avisos meteorológicos salen en él, y se descartó: el gráfico no
+enseña los planes de Protecció Civil, los incendios, la riera, el Pla Alfa ni
+los cortes de luz. Así el gráfico cabe en la pantalla del móvil (ADR 0074).

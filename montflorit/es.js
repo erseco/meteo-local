@@ -74,6 +74,7 @@ var IDIOMA = {
     "Per {0}": "Por {0}",
     "24 h": "24 h",
     "Més opcions": "Más opciones",
+    "Hi ha un avís nou": "Hay un aviso nuevo",
     "Com funciona": "Cómo funciona",
     "Idioma": "Idioma",
     "Tema": "Tema",
