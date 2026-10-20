@@ -11,13 +11,41 @@ están en `lpa/`; no se reescribe ni sustituye la aplicación original.
 ## Ramas
 
 - `main`: referencia del original, sin personalización local.
-- `lpa`: versión de Las Palmas, prevista como rama predeterminada del fork.
+- `lpa`: versión de Las Palmas y rama predeterminada del fork.
 
 La rama predeterminada se cambia en **Settings → Default branch → lpa** del fork.
 Ese ajuste es independiente del contenido Git. No elimina ni renombra `main`.
-El workflow original continúa comprobando `main`; `lpa.yml` comprueba `lpa`.
+El workflow original continúa comprobando `main`; `lpa.yml` comprueba y publica `lpa`.
 
-## Ejecutar
+## Web en GitHub Pages
+
+El workflow `Las Palmas` genera y despliega la web con cada push a `lpa`,
+tras superar las pruebas. Los pull requests ejecutan las comprobaciones, pero
+no despliegan. También se puede lanzar manualmente desde **Actions → Las Palmas →
+Run workflow**, eligiendo `lpa`.
+
+**Configuración inicial:** en **Settings → Pages → Build and deployment → Source**,
+seleccionar **GitHub Actions**. El workflow usa el token del repositorio, sin PAT
+ni secretos adicionales. Si Pages no está habilitado, `configure-pages` lo indicará;
+el token estándar del workflow no puede habilitarlo por sí solo.
+
+URL prevista: <https://erseco.github.io/meteo-local/>; redirige a la interfaz en
+castellano en `/es/`. La URL efectiva se muestra en el entorno `github-pages`.
+
+Cada 15 minutos se programa otra ejecución para recoger datos reales y renovar
+la publicación, sin commits automáticos. GitHub puede retrasar las ejecuciones;
+no es una garantía de actualización puntual ni un sistema de alertas en tiempo
+real. El cron se ejecuta desde la rama predeterminada, que debe seguir siendo
+`lpa`. Las ejecuciones programadas mantienen las pruebas unitarias y la generación;
+las pruebas de navegador y accesibilidad se ejecutan al cambiar código o al lanzar
+el workflow manualmente.
+
+Los datos ficticios de las pruebas no se publican: la compilación de producción
+se hace en otro job y vuelve a consultar las fuentes. Si falla la previsión,
+se detiene el despliegue; la web anterior oculta los datos cuando superan las dos
+horas. Los fallos de fuentes secundarias aparecen como no disponibles.
+
+## Ejecutar localmente
 
 Desde la raíz del repositorio:
 
@@ -40,8 +68,8 @@ docker compose -f lpa/compose.yml up -d --build
 ```
 
 Abrir <http://localhost:8080/es/>. Publica en el puerto 8080 del equipo. Para
-acceso público, colocar detrás del proxy HTTPS habitual. No incluye despliegue
-a GitHub Pages, Telegram, push ni configuración de un dominio.
+acceso público desde Docker, colocar detrás del proxy HTTPS habitual. Telegram,
+push y la configuración de un dominio propio no están incluidos.
 
 También se pueden generar los archivos para otro alojamiento:
 
