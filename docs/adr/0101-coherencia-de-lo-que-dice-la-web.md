@@ -380,3 +380,61 @@ páginas.
 Validación: `tests/test_smp.py` (`test_la_fitxa_de_l_aemet_allargada_diu_el_final_nou`);
 el bloque del radar, con las horas de las 16:22, en Node; «Perill» y la
 portada con los datos del NAS, en Chromium y Firefox, móvil y escritorio.
+
+
+## Cambio del 20-10-2026 (3.162.0): los hallazgos del revisor del 19-10 (18:22) al 20-10 (03:10)
+
+- **Fin del aviso propio** (18:22): decía «ja no hi ha cap situació de
+  perill al barri» con INUNCAT, Meteocat y AEMET abiertos, y «Fa 3 hores»
+  sin decir desde cuándo (las tres horas eran correctas: se cuentan desde
+  que la previsión dejó de ver la racha, a las 15:21, no desde el final de la
+  franja de la ficha). Ahora nombra lo que acaba («s'acaba l'avís per vent
+  fort al barri»), dice desde qué hora no se mide ni se prevé y, si hay
+  avisos oficiales abiertos, «Continuen els avisos oficials de…»
+  (`avisos_bot.text_perill_fi`, `oficials_actius`).
+- **Cifra de la ficha propia** (03:10): el aviso de las 13:09 decía 77 km/h y
+  la ficha, que lo enlaza, 89, porque se pone al día en cada pasada. Sigue
+  poniéndose al día (sin mensaje nuevo: solo una subida de nivel lo merece,
+  ADR 0092), pero añade «Ha pujat des de l'avís de les 13:09, que deia
+  77 km/h» si la cifra redondeada ya no es la enviada (`linia_canvi`).
+- **AEMET sustituido por uno que empieza más tarde** (19:28): el de
+  tormentas de 16 h a 8:59 cambiado por uno de 19 h a 8:59 se cerraba como
+  «L'AEMET l'ha retirat abans d'hora». `aemet_que_inclou` busca ahora el que
+  cubre lo que queda del viejo (desde ahora, si ya había empezado), con
+  fechas y no con texto.
+- **Dos avisos de AEMET con la misma clave** (19:58): lluvia de 40 mm en 1 h
+  (cubierta por Meteocat) y de 80 mm en 12 h empezaban a la vez; ganaba el
+  último de la lista, cuyo orden cambia, y la ficha del de 80 mm se cerró
+  como «Substituït per l'avís de Meteocat». `aemet_per_clau` deja uno por
+  clave: el que Meteocat no cubre, luego el de más nivel y luego el que acaba
+  más tarde. `smp.marca_coberts` era correcto.
+- **Mañana «sense pluja» con avisos** (19:58): el resumen del día decía «Sense
+  pluja prevista» con avisos oficiales de lluvia de 0 a 9 h, y en la portada
+  esas líneas se quitan porque van en «Avisos actius». Ahora, si la previsión
+  no da lluvia pero hay aviso oficial, «La previsió no dona pluja, però hi ha
+  avís oficial per pluja de 0 a 9 h» (`bot.text_pluja`).
+- **«Si surts» negaba el radar** (01:28): con aviso a la ida y a la vuelta y
+  nada más, bici, moto y coche decían «ni el radar, ni les estacions, ni els
+  models hi veuen pluja», mientras el radar veía llegar lluvia hacia las
+  02:10, entre medias. Ahora la frase vale para toda la salida: si el radar
+  ve lluvia que llega antes de la vuelta, o una hora intermedia tiene datos
+  de lluvia, lo dice (`sortir.plujaEntremig`).
+- **Comparación con ayer del resumen** (19:04): «Temperatura d'aquí a
+  mitjanit» decía «2 graus més que ahir» con Tarda y Nit «semblant», porque
+  comparaba la máxima de 19 a 24 h y los 17 °C caían pasadas las 21 h, en el
+  tramo de noche, que compara la mínima. `bot.compara_resum` usa el criterio
+  de las cabeceras: si quedan horas de día (7 a 21 h), la máxima de esas
+  horas; si no, la mínima de la noche hasta las 7.
+- **Rocío por encima de la temperatura** (23:10): 16 °C con 15,2 °C. El rocío
+  es la mediana de casa y de las vecinas, que lo dan en grados enteros, y
+  casa está en la zona fría; `casa.consens` lo limita a la temperatura (en
+  octubre pasaba en 17 de 334 horas). No entra en ningún cálculo.
+- **Queda por decidir** (01:28): «Demà matí 9–18 °C · semblant a avui» con una
+  mañana unos 2 °C más fría de media sigue la regla del ADR 0061 (solo la
+  máxima de día, 18 frente a 19). Cambiarla es una decisión de criterio.
+
+Validación: `tests/test_bot.py` (`FitxesDelRevisor`,
+`test_sense_pluja_pero_amb_avis_oficial`, la comparación del resumen),
+`tests/test_web.py` (lluvia entre medias en «Si surts»),
+`tests/test_estacio_casa.py` (`test_rosada_no_supera_la_temperatura`); las
+609 pruebas pasan.

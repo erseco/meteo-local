@@ -310,6 +310,9 @@ def consens(ara_casa, casa, veines=None):
         res["intensitat"] = _mediana([e.get("intensitat") for e in mullades])
     rosada = _mediana([(casa or {}).get("rosada")] + [v.get("rosada") for v in veines or []])
     if rosada is not None and res.get("temperatura") is not None and veines:
+        # El rocío no pasa de la temperatura: las vecinas lo dan en grados
+        # enteros y casa está en la zona fría (revisor, 19-10-2026).
+        rosada = min(rosada, res["temperatura"])
         res.setdefault("humitat_estacio", ara_casa.get("humitat"))
         res["rosada"] = rosada
         res["humitat"] = round(SE.humitat(rosada, res["temperatura"]))

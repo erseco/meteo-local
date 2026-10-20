@@ -13,6 +13,7 @@ sys.path.insert(0, ARREL)
 sys.path.insert(0, os.path.join(ARREL, "bot"))
 import avisos_bot as AB  # noqa: E402
 import bot as B  # noqa: E402
+import smp as SMP  # noqa: E402
 
 # Les proves no escriuen mai a ~/.temps-bot: el registre d'errors i el comptador
 # van a una carpeta temporal.
@@ -219,6 +220,17 @@ class Resum(unittest.TestCase):
         d["hores"] = [f for f in d["hores"] if f["hora"][:10] == vespre.date().isoformat()]
         self.assertIn("no en porten", B.resum(d, "ca", vespre))
 
+    def test_sense_pluja_pero_amb_avis_oficial(self):
+        # Revisor, 19-10-2026: «Sense pluja prevista» per a demà amb avisos de Meteocat i AEMET de 0 a 9 h.
+        def fila(h, avis=None):
+            return {"hora": f"2026-10-20T{h:02d}:00", "fins": f"2026-10-20T{h + 1:02d}:00", "probabilitat": 0.0,
+                    "avisos": [{"nivell": "groc", "tipus": avis}] if avis else []}
+        files = [fila(h, ["pluja"] if h < 6 else ["pluja", "tempestes"] if h < 9 else None) for h in range(12)]
+        self.assertEqual(B.text_pluja(files[6:], "ca", avis=files),
+                         "La previsió no dona pluja, però hi ha avís oficial per pluja de 0 a 9 h.")
+        self.assertEqual(B.text_pluja(files[6:], "es"), "La previsión no da lluvia, pero hay aviso oficial por lluvia de 6 a 9 h.")
+        self.assertEqual(B.text_pluja([fila(10, ["vent"]), fila(11)], "ca"), "Sense pluja prevista.")
+
     def test_graus_mes_o_menys_que_el_dia_abans(self):
         # ADR 0061: la màxima prevista d'avui contra les mateixes hores mesurades ahir.
         def fila(dia, h, t):
@@ -255,6 +267,21 @@ class Resum(unittest.TestCase):
         avui2 = [fila(19, 15, 17.6)]
         dema2 = [fila(20, 15, 19.4)]
         self.assertEqual(B.compara_temp({"temperatura_mesurada": mes, "hores": avui2 + dema2}, dema2), 1)
+        # El resum travessa trams i compara com les capçaleres (revisor, 19-10-2026: a les 19 h,
+        # «2 graus més» per 17 °C a les 22 h, amb Tarda i Nit «semblant»): de dia, la màxima de les
+        # hores de dia; de nit, la mínima fins a les 7.
+        def fila_t(t, temp):
+            return {"hora": t.strftime("%Y-%m-%dT%H:%M"), "temperatura": temp,
+                    "fins": (t + dt.timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M")}
+        t0 = dt.datetime(2026, 10, 19, 19)
+        temps = [15.4, 15.8, 17.0, 17.0, 16.2] + [15.0] * 7         # de 19 a 7 h
+        files = [fila_t(t0 + dt.timedelta(hours=k), v) for k, v in enumerate(temps)]
+        ahir = {(t0 - dt.timedelta(days=1, hours=-k)).strftime("%Y-%m-%dT%H:%M"): (15.0 if k < 5 else 14.0)
+                for k in range(13)}
+        d = {"temperatura_mesurada": ahir, "hores": files}
+        self.assertEqual(B.compara_temp(d, files[:5]), 2)                   # el càlcul d'abans: 17 contra 15
+        self.assertEqual(B.compara_resum(d, files[:5]), 1)                  # 19–21 h: 16 contra 15
+        self.assertEqual(B.compara_resum(d, files[2:5]), 1)                 # de nit, la mínima fins a les 7: 15 contra 14
         self.assertEqual(B.graus(18.5), "19 °C")
         self.assertEqual(B.graus(-2.5), "−2 °C")
 
@@ -949,7 +976,9 @@ class AvisosPublics(unittest.TestCase):
         AB.decideix(estat2, {**dades, "riscos": [r]}, ARA)
         self.assertEqual(AB.decideix(estat2, dades, ARA + dt.timedelta(days=2)), [])
         self.assertEqual(estat2["perill"], {})
-        self.assertTrue(fi[0]["ca"].startswith("🟢 <b>Temps a Montflorit: ja no hi ha cap situació de perill al barri</b>"))
+        self.assertTrue(fi[0]["ca"].startswith("🟢 <b>Temps a Montflorit: s'acaba l'avís per vent fort al barri</b>"))
+        self.assertIn(f"des de les {ARA:%H:%M}", fi[0]["ca"])
+        self.assertNotIn("avisos oficials", fi[0]["ca"])
         self.assertEqual(AB.decideix(estat, dades, ARA + dt.timedelta(hours=4)), [])
         # Sense previsió no es pot saber: no es dona per acabat.
         estat = {}
@@ -1138,6 +1167,88 @@ class AltesIRiscos(unittest.TestCase):
         # Amb dades i sense veure'l 3 hores, caduca i es tornaria a avisar.
         AB.decideix(estat, {"riscos": [], "hores": [{}], "ara_casa": {"temperatura": 1}}, ARA + dt.timedelta(hours=10))
         self.assertNotIn("previsio:ratxa", estat["perill"])
+
+
+ARA_R = dt.datetime(2026, 10, 19, 13, 9).astimezone()
+
+
+class FitxesDelRevisor(unittest.TestCase):
+    """Revisor, 19 i 20-10-2026 (ADR 0101): fitxes d'avisos que es contradeien."""
+
+    def test_final_del_propi_amb_oficials_oberts(self):
+        # Revisor, 19-10-2026 18:22: «ja no hi ha cap situació de perill al barri» amb INUNCAT,
+        # Meteocat i AEMET oberts, i «Fa 3 hores» sense dir des de quan.
+        r = {"clau": "previsio:ratxa", "tipus": "ratxa", "origen": "previsio", "nivell": "groc", "valor": 77,
+             "text": "Vent fort previst: ratxes de fins a 77 km/h, avui de 17 a 18 h."}
+        dades = {"hores": [{}], "ara_casa": {"temperatura": 18},
+                 "avisos": [{"zona": "Prelitoral de Barcelona", "tipo": "tempestes", "nivel": "groc",
+                             "inicio": "2026-10-19T19:00:00+02:00", "fin": "2026-10-20T08:59:59+02:00"}],
+                 "plans": [{"pla": "INUNCAT", "nom": "inundacions", "fase": "alerta"}]}
+        estat = {}
+        AB.decideix(estat, {**dades, "riscos": [r]}, ARA_R)
+        AB.decideix(estat, {**dades, "riscos": [r]}, ARA_R + dt.timedelta(hours=2, minutes=12))   # 15:21
+        fi = [a for a in AB.decideix(estat, dades, ARA_R + dt.timedelta(hours=5, minutes=12)) if a["nivell"] == "fi"]
+        self.assertEqual(len(fi), 1)
+        self.assertNotIn("cap situació", fi[0]["ca"])
+        self.assertIn("vent fort", fi[0]["ca"])
+        self.assertIn("des de les 15:21", fi[0]["ca"])
+        self.assertIn("Continuen els avisos oficials de l'AEMET i Protecció Civil.", fi[0]["ca"])
+        self.assertIn("Siguen los avisos oficiales de la AEMET y Protección Civil.", fi[0]["es"])
+        self.assertNotIn("perill_tipus", estat)
+
+    def test_la_fitxa_propia_diu_que_la_xifra_ha_canviat(self):
+        # Revisor, 20-10-2026 03:10: l'avís de les 13:09 deia 77 km/h i la fitxa, 89, sense dir-ho.
+        r = {"clau": "previsio:ratxa", "tipus": "ratxa", "origen": "previsio", "nivell": "groc", "valor": 77,
+             "text": "Vent fort previst: ratxes de fins a 77 km/h, avui de 17 a 18 h."}
+        dades = {"hores": [{}], "ara_casa": {"temperatura": 18}}
+        estat = {}
+        nous = AB.decideix(estat, {**dades, "riscos": [r]}, ARA_R)
+        self.assertNotIn("Ha pujat", nous[0]["ca"])
+        self.assertNotIn("Ha pujat", estat["perill_text"]["ca"])
+        r89 = dict(r, valor=89, text=r["text"].replace("77", "89"))
+        self.assertEqual(AB.decideix(estat, {**dades, "riscos": [r89]}, ARA_R + dt.timedelta(hours=1)), [])  # mateix nivell
+        self.assertIn("Ha pujat des de l'avís de les 13:09, que deia 77 km/h.", estat["perill_text"]["ca"])
+        self.assertIn("Ha subido desde el aviso de las 13:09, que decía 77 km/h.", estat["perill_text"]["es"])
+        # Amb la mateixa xifra arrodonida, res.
+        AB.decideix(estat, {**dades, "riscos": [dict(r, valor=77.4)]}, ARA_R + dt.timedelta(hours=1, minutes=30))
+        self.assertNotIn("Ha ", estat["perill_text"]["ca"].split("\n")[2] if len(estat["perill_text"]["ca"].split("\n")) > 2 else "")
+
+    def test_l_aemet_substituit_per_un_que_comenca_mes_tard(self):
+        # Revisor, 19-10-2026 19:28: el de tempestes de 16 h a 8:59 (allargat) canviat a les 19:27
+        # per un de 19 h a 8:59 es tancava amb «L'AEMET l'ha retirat abans d'hora».
+        ara = dt.datetime.fromisoformat("2026-10-19T19:27:00+02:00")
+        vell, nou = "aemet:tempestes:2026-10-19T16:00:00+02:00", "aemet:tempestes:2026-10-19T19:00:00+02:00"
+        fitxa = lambda k, inici: {"clau": k, "tipus": "perill", "inici": inici, "nivell": "groc", "ca": "x", "es": "x",
+                                  "fins": "2026-10-20T08:59:59+02:00"}
+        estat = {"historial": [fitxa(vell, "2026-10-18T00:15+02:00"), fitxa(nou, "2026-10-19T19:27+02:00")],
+                 "aemet_vigents": {nou: {"fin": "2026-10-20T08:59:59+02:00", "cobert": False}}}
+        h = {e["clau"]: e for e in AB.historial(estat, [], ara)}
+        self.assertEqual(h[vell]["fi_ca"], AB.INCLOS["ca"])
+        self.assertEqual(h[vell]["substituit_per"], {"clau": nou, "inici": "2026-10-19T19:27+02:00"})
+        # Un altre fenomen, o un que no arriba a cobrir el que en queda, continua essent retirat.
+        estat = {"historial": [fitxa(vell, "2026-10-18T00:15+02:00")],
+                 "aemet_vigents": {"aemet:tempestes:2026-10-19T21:00:00+02:00": {"fin": "2026-10-20T08:59:59+02:00",
+                                                                                 "cobert": False}}}
+        self.assertEqual(AB.historial(estat, [], ara)[0]["fi_ca"], AB.RETIRAT["ca"])
+
+    def test_dos_avisos_de_l_aemet_amb_la_mateixa_clau(self):
+        # Revisor, 19-10-2026 19:58: pluja de 40 mm/1 h (19-23:59, la cobreix Meteocat) i de 80 mm/12 h
+        # (19-8:59, visible de 6 a 9) amb la mateixa clau: guanyava el darrer i la fitxa es tancava
+        # com a «Substituït per l'avís de Meteocat».
+        base = {"zona": "Prelitoral de Barcelona", "tipo": "pluja", "nivel": "groc", "inicio": "2026-10-19T19:00:00+02:00"}
+        a40 = dict(base, fin="2026-10-19T23:59:59+02:00", descripcio="40 mm")
+        a80 = dict(base, fin="2026-10-20T08:59:59+02:00", descripcio="80 mm")
+        mc = [{"meteor": "Intensitat de pluja en 30 minuts", "tipus": "previsio", "llindar": None, "perill": 4,
+               "emissio": "2026-10-19T16:35Z", "dies": {"2026-10-19": [(12, 24)], "2026-10-20": [(0, 6)]}}]
+        k = "aemet:pluja:2026-10-19T19:00:00+02:00"
+        for ordre in ([a40, a80], [a80, a40]):
+            avisos = [dict(a) for a in ordre]
+            SMP.marca_coberts(avisos, {"avisos": mc})
+            estat = {"oficials": {"aemet": {}, "plans": {}}}
+            AB.decideix(estat, {"avisos": avisos}, dt.datetime.fromisoformat("2026-10-19T19:57:00+02:00"))
+            self.assertEqual(estat["aemet_coberts"], [])
+            self.assertEqual(estat["aemet_vigents"][k], {"fin": "2026-10-20T08:59:59+02:00", "cobert": False})
+
 
 if __name__ == "__main__":
     unittest.main()

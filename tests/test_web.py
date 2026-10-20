@@ -542,6 +542,21 @@ class Web(unittest.TestCase):
         self.assertTrue(avalua("peu", 0.01)["motius"][0].startswith("Avís oficial per pluja mentre ets fora"))
         # Si els models també hi veuen pluja, com sempre.
         self.assertEqual(avalua("bici", 0.6)["motius"], ["Pluja probable a l’anada i a la tornada."])
+        # «Ni el radar…» val per a tota la sortida (revisor, 20-10-2026: pluja que el radar veu
+        # arribar cap a les 02:10 i un 37 % a la fila de les 2, amb sortida a la 1 i tornada a les 4).
+        avis_mc = [{"nivell": "groc", "tipus": ["pluja"], "font": "meteocat"}]
+        nit = [{"hora": f"2026-10-20T{h:02d}:00", "probabilitat": p, "pluja_mm": 0, "temperatura": 14,
+                "avisos": avis_mc} for h, p in ((1, 0.03), (2, 0.37), (3, 0.06), (4, 0.0))]
+        def entremig(mitja, entorn):
+            return self.avalua("2026-10-20T01:28:00+02:00",
+                               f"avalua({json.dumps(mitja)}, {json.dumps(nit)}, [], false, null, {json.dumps(entorn)})",
+                               "sortir.js")["motius"][0]
+        radar = {"pluja_ara": {"estat": "possible", "possible": "2026-10-20T02:10:00+02:00"}}
+        self.assertEqual(entremig("bici", radar), "Avís oficial per pluja a l’anada i a la tornada, "
+                                                  "i el radar veu pluja que pot arribar cap a les 02:10.")
+        self.assertTrue(entremig("moto", radar).endswith("02:10. Per si de cas, porta l’impermeable."))
+        self.assertEqual(entremig("cotxe", {"hores": nit}), "Avís oficial per pluja a l’anada i a la tornada, "
+                                                            "i entremig pot ploure, cap a les 2\u00a0h. Condueix amb compte.")
         consells = self.avalua("2026-10-07T18:10:00+02:00",
                                f"consells({json.dumps(tram(0.01))}, new Date())", "sortir.js")
         self.assertIn("Cap a les 20\u00a0h s’acaba l’avís oficial.", consells)

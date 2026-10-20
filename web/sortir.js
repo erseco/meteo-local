@@ -89,6 +89,26 @@ function senseDades(f) {
   return !sobre(f, llindars(f).risc, MM_RISC) && !f.plou_ara && !(f.radar && f.radar.prob >= llindars(f).risc);
 }
 
+// «Ni el radar, ni les estacions, ni els models» ha de valer per a tota la
+// sortida, no només per a l'anada i la tornada (revisor, 20-10-2026: «Pot
+// arribar pluja cap a les 02:10» a la portada i la fila de les 2 amb un 37 %).
+// La pluja que el radar veu venir (pluja_ara, si se surt ara) o una hora del
+// mig amb dades; null si no n'hi ha.
+function plujaEntremig(tram, entorn, futur) {
+  const pa = (entorn || {}).pluja_ara || {};
+  const t = !futur && (pa.estat === 'arriba' || pa.estat === 'possible') ? pa[pa.estat] : null;
+  const fi = new Date(tram[tram.length - 1].hora).getTime() + 3600e3;
+  if (t && new Date(t).getTime() < fi) return { radar: horaCurta(t) };
+  const f = tram.find((x) => !senseDades(x));
+  return f ? { hora: hora(f) } : null;
+}
+
+function textNomesAvis(q, entremig, cua) {
+  if (!entremig) return T`Avís oficial per pluja ${q}: ni el radar, ni les estacions, ni els models hi veuen pluja.` + cua;
+  return (entremig.radar ? T`Avís oficial per pluja ${q}, i el radar veu pluja que pot arribar cap a les ${entremig.radar}.`
+    : T`Avís oficial per pluja ${q}, i entremig pot ploure, cap a les ${entremig.hora}\u00a0h.`) + cua;
+}
+
 function plouClar(f) {
   return plouRodes(f) || avisPluja(f);
 }
@@ -193,9 +213,8 @@ function avalua(mitja, tram, trens, futur, transit, entorn) {
     } else if (viatge.some(mullaRodes)) {
       const moto = mitja === 'moto';
       if (viatge.filter(mullaRodes).every(nomesAvisRodes)) {
-        puja('compte', moto
-          ? T`Avís oficial per pluja ${quan(anada, tornada, mullaRodes)}: ni el radar, ni les estacions, ni els models hi veuen pluja. Per si de cas, porta l’impermeable.`
-          : T`Avís oficial per pluja ${quan(anada, tornada, mullaRodes)}: ni el radar, ni les estacions, ni els models hi veuen pluja.`);
+        puja('compte', textNomesAvis(quan(anada, tornada, mullaRodes), plujaEntremig(tram, entorn, futur),
+          moto ? T(' Per si de cas, porta l’impermeable.') : ''));
       } else if (pocaPluja(viatge.filter(mullaRodes))) {
         puja('compte', moto ? T`Poca probabilitat de pluja ${quan(anada, tornada, mullaRodes)}: porta l’impermeable per si de cas.`
           : T`Poca probabilitat de pluja ${quan(anada, tornada, mullaRodes)}.`);
@@ -229,7 +248,7 @@ function avalua(mitja, tram, trens, futur, transit, entorn) {
           : T`Pot ploure ${quan(anada, tornada, dades)}: condueix amb compte.`);
       }
       else if (viatge.some(avisPluja)) {
-        puja('compte', T`Avís oficial per pluja ${quan(anada, tornada, avisPluja)}: ni el radar, ni les estacions, ni els models hi veuen pluja. Condueix amb compte.`);
+        puja('compte', textNomesAvis(quan(anada, tornada, avisPluja), plujaEntremig(tram, entorn, futur), T(' Condueix amb compte.')));
       } else puja('compte', T`Pot ploure ${quan(anada, tornada, plouClar)}: condueix amb compte.`);
     } else if (viatge.some(mullaRodes)) {
       res.motius.push(pocaPluja(viatge.filter(mullaRodes)) ? T`Poca probabilitat de pluja ${quan(anada, tornada, mullaRodes)}.`

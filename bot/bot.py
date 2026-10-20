@@ -640,11 +640,38 @@ def text_paraigua(hores, idioma, nit=None):
     return ("Paraguas " if idioma == "es" else "Paraigua ") + hores_txt + "."
 
 
-def text_pluja(tram, idioma, icona=True):
-    """Sense pluja, sense icona: la línia destaca només quan n'hi ha (ADR 0065)."""
+# Els avisos oficials per pluja de les hores (els que pinta la taula), com
+# avisPluja de web/sortir.js.
+TIPUS_AVIS_PLUJA = {"pluja", "tempestes", "temps_violent"}
+
+
+def hores_avis_pluja(files):
+    """[(inici, fi)] de les hores seguides amb avís oficial per pluja."""
+    res = []
+    for f in files:
+        if any(set(a.get("tipus") or []) & TIPUS_AVIS_PLUJA for a in f.get("avisos") or []):
+            h = hora_local(f["hora"])
+            if res and res[-1][1] == h:
+                res[-1] = (res[-1][0], h + dt.timedelta(hours=1))
+            else:
+                res.append((h, h + dt.timedelta(hours=1)))
+    return res
+
+
+def text_pluja(tram, idioma, icona=True, avis=None):
+    """Sense pluja, sense icona: la línia destaca només quan n'hi ha (ADR 0065).
+    Si la previsió no en dona però hi ha avís oficial per pluja (avis: les
+    hores on mirar-lo, per defecte el tram), es diu (revisor, 19-10-2026:
+    «Sense pluja prevista» per a demà amb avisos de Meteocat i AEMET de 0 a 9 h)."""
     pluges = franges(tram)
     if not pluges:
-        return "Sin lluvia prevista." if idioma == "es" else "Sense pluja prevista."
+        es = idioma == "es"
+        trams = [f"de {a.hour} a {b.hour} h" for a, b in hores_avis_pluja(tram if avis is None else avis)]
+        if trams:
+            quan = (" y " if es else " i ").join(trams)
+            return (f"La previsión no da lluvia, pero hay aviso oficial por lluvia {quan}." if es
+                    else f"La previsió no dona pluja, però hi ha avís oficial per pluja {quan}.")
+        return "Sin lluvia prevista." if es else "Sense pluja prevista."
     text = text_franges(pluges, idioma)
     return amb_icona(emoji_pluja(tram) if icona else None, text[0].upper() + text[1:] + ".")
 
@@ -681,6 +708,25 @@ def compara_temp(dades, files, nit=False):
     # (revisor, 19-10-2026: 15–18 frente a 14–19 decía «2° més»).
     r = lambda x: math.floor(x + 0.5)
     return (r(min(ara)) - r(min(abans))) if nit else (r(max(ara)) - r(max(abans)))
+
+
+# Les hores de dia de les capçaleres (Matí i Tarda, TRAMS de web/casa.js).
+TRAM_DIA = (7, 21)
+
+
+def compara_resum(dades, files):
+    """La comparació d'un resum que travessa trams, amb el criteri de les
+    capçaleres (revisor, 19-10-2026: «2 graus més que ahir» amb Tarda i Nit
+    «semblant», per una màxima que queia passades les 21 h): si queden hores
+    de dia, la màxima d'aquestes hores; si no, la mínima de la nit fins a les 7."""
+    dia = [f for f in files if TRAM_DIA[0] <= hora_local(f["hora"]).hour < TRAM_DIA[1]]
+    if dia:
+        return compara_temp(dades, dia)
+    if not files:
+        return None
+    ini = hora_local(files[0]["hora"])
+    fi = (ini if ini.hour < TRAM_DIA[0] else ini + dt.timedelta(days=1)).replace(hour=TRAM_DIA[0], minute=0)
+    return compara_temp(dades, [f for f in dades.get("hores") or [] if ini <= hora_local(f["hora"]) < fi], nit=True)
 
 
 def text_comparacio(n, idioma, respecte):
@@ -929,8 +975,8 @@ def resum(dades, idioma, moment, dema=False, avui=False, telegram=False):
         if franges(nit):    # la noche, solo si se espera lluvia
             linies.append(amb_icona(emoji_pluja(nit), ("Esta noche: " if idioma == "es" else "Aquesta nit: ")
                                     + text_franges(franges(nit), idioma) + "."))
-        linies.append(text_temperatura(dia, idioma, "Temperatura", compara_temp(dades, dia), "avui"))
-        linies.append(text_pluja(dia, idioma))
+        linies.append(text_temperatura(dia, idioma, "Temperatura", compara_resum(dades, dia), "avui"))
+        linies.append(text_pluja(dia, idioma, avis=[f for f in nit + dia if hora(f).date() == dema]))
         roba = text_roba(dia, idioma)
         paraigua = text_paraigua(dia, idioma, nit)
         linies += linies_perill_dia(dades, idioma, dema, moment)
@@ -944,7 +990,7 @@ def resum(dades, idioma, moment, dema=False, avui=False, telegram=False):
                   else f"<b>Avui, {nom_dia}, a Montflorit</b>",
                   text_ara(dades, idioma, moment=moment),
                   text_temperatura(tram, idioma, "Temperatura de aquí a medianoche" if idioma == "es"
-                                   else "Temperatura d'aquí a mitjanit", compara_temp(dades, tram), "ahir",
+                                   else "Temperatura d'aquí a mitjanit", compara_resum(dades, tram), "ahir",
                                    (dades.get("ara_casa") or {}).get("temperatura")),
                   text_pluja(tram, idioma)]
         roba = text_roba(tram, idioma)

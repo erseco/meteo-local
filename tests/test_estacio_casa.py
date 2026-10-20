@@ -95,6 +95,15 @@ class Ecowitt(unittest.TestCase):
         self.assertEqual(casa.consens_pluja(casa_, veines)["pluja_1h"], 2.5)
         self.assertEqual(casa.consens_pluja(None, veines[:1])["pluja_1h"], 4.0)
 
+    def test_rosada_no_supera_la_temperatura(self):
+        # Revisor, 19-10-2026: rocío 16 con 15,2 °C (vecinas en grados enteros, casa en la zona fría).
+        casa_ = {"temperatura": 15.2, "humitat": 99, "rosada": 15.0}
+        veines = [{"estacio": e, "rosada": 16, "compta": True} for e in ("A", "B", "C")]
+        r = casa.consens(dict(casa_), casa_, veines)
+        self.assertEqual(r["rosada"], 15.2)
+        self.assertEqual(r["humitat"], 100)
+        self.assertEqual(r["humitat_estacio"], 99)
+
     def test_la_de_15_minuts_tambe_per_consens(self):
         # Revisor, 18-10-2026: 0,3 mm en 15 minuts (només casa) i 0 a l'última hora (mediana).
         casa_ = {"pluja_15min": 0.3, "pluja_30min": 0.3, "pluja_1h": 0.3, "pluja_3h": 0.8, "pluja_avui": 4.0,
