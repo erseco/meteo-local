@@ -14,7 +14,7 @@ case "$(git remote get-url upstream)" in
 esac
 git fetch upstream main
 git merge --no-edit upstream/main
-python3 -m unittest discover -s tests -b
+TZ=Europe/Madrid python3 -m unittest discover -s tests -b
 python3 -m unittest discover -s lpa/tests -v
 build_dir=$(mktemp -d)
 trap 'rm -rf "$build_dir"' EXIT
