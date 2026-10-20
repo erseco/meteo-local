@@ -43,8 +43,9 @@ class RadarAProp(unittest.TestCase):
         self.assertAlmostEqual(rumb, 90, delta=5)
         self.assertEqual(mm, 0.17)
         self.assertEqual(res["a_prop"]["rainviewer"]["px"], [])
-        # El que ja feia el radar no canvia: la pluja més propera, la del píxel de 5 km.
-        self.assertAlmostEqual(res["km_lluvia"], 5, delta=1)
+        # La pluja que posa la pàgina en mode avís és la que la pàgina diu pluja (0,5 mm/h o
+        # més, 3.166.2): la de 30 km; l'eco feble de 5 km, no (Juanjo, 20-10-2026).
+        self.assertAlmostEqual(res["km_lluvia"], 30, delta=1)
 
     def test_una_linia_per_pasada(self):
         radar = {"imatge": "meteocat", "km_lluvia": 8.4,

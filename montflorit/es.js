@@ -479,6 +479,13 @@ var IDIOMA = {
     "El temps avui a {0}": "El tiempo hoy en {0}",
     ", cap a les {0}\u00a0h": ", hacia las {0}\u00a0h",
     // «Fiabilitat», pàgina pròpia (fiabilitat.js, ADR 0110).
+    "Ara cada {0} minuts perquè {1}. ": "Ahora cada {0} minutos porque {1}. ",
+    "el radar veu pluja a {0}\u00a0km": "el radar ve lluvia a {0}\u00a0km",
+    "el radar veu pluja que pot arribar en la propera hora": "el radar ve lluvia que puede llegar en la próxima hora",
+    "hi ha un avís de l\u2019AEMET": "hay un aviso de AEMET",
+    "hi ha un avís del Meteocat": "hay un aviso de Meteocat",
+    "hi ha un pla de Protecció Civil en alerta o emergència": "hay un plan de Protección Civil en alerta o emergencia",
+    "plou a Montflorit": "llueve en Montflorit",
     "Gràfica hora a hora: es desplaça de costat": "Gráfica hora a hora: se desplaza de lado",
     "Aquest dia, {0}.": "Este día, {0}.",
     "Ara corregeix el que diuen els models amb un any de mesures de l\u2019estació del barri.": "Ahora corrige lo que dicen los modelos con un año de medidas de la estación del barrio.",

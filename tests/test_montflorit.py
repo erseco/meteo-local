@@ -303,7 +303,11 @@ class Castella(unittest.TestCase):
         # de la línea de actualización explica cada cuánto se actualiza.
         explicacio = ("La página se actualiza cada 15 minutos, y cada 6 cuando hay un aviso de Meteocat o de AEMET, un plan de "
                       "Protección Civil en alerta o emergencia, lluvia en Montflorit o lluvia en el radar a menos de 15 km.")
-        self.assertEqual(js("textActualitzacio({trams: [['00:00', '23:45']], cada_min: 6, mode_avis: ['pluja al radar'], normal_min: 15, avis_min: 6, radar_km: 15})"), explicacio)
+        # En mode avís, el motiu d'ara al davant (Juanjo, 20-10-2026: «por qué se actualiza cada 6 minutos?»).
+        self.assertEqual(js("textActualitzacio({trams: [['00:00', '23:45']], cada_min: 6, mode_avis: ['pluja al radar'], normal_min: 15, avis_min: 6, radar_km: 15, km_pluja: 12.6})"),
+                         "Ahora cada 6 minutos porque el radar ve lluvia a 13\u00a0km. " + explicacio)
+        self.assertEqual(js("textActualitzacio({trams: [['00:00', '23:45']], cada_min: 6, mode_avis: ['avís del Meteocat', 'pluja al radar'], normal_min: 15, avis_min: 6, radar_km: 15})"),
+                         "Ahora cada 6 minutos porque hay un aviso de Meteocat y el radar ve lluvia que puede llegar en la próxima hora. " + explicacio)
         self.assertEqual(js("textActualitzacio({trams: [['00:00', '23:45']], cada_min: 15, mode_avis: []})"), explicacio)
         self.assertEqual(js("textActualitzacio({trams: [['05:00', '07:30'], ['13:00', '15:30']], cada_min: 15, mode_avis: []})"),
                          explicacio + " Solo se actualiza de 05:00\u201307:30 y 13:00\u201315:30.")

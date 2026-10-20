@@ -153,3 +153,18 @@ como mucho; al arrancar, solo el de ahora) y, si alguno tocaba, hace una
 pasada. Probado con `que_toca.py` y el horario de hoy: de 06:50 a 06:52 toca
 (06:51 saltada); de 06:52 a 06:53 no; de 06:51 a 06:52, ya mirada, no.
 
+
+## Cambio del 20-10-2026 (3.166.2): la lluvia del radar, la que enseña la página
+
+«Pluja al radar» pone la página en modo aviso con la lluvia de 0,5 mm/h o más
+(`nowcast.PLOU_MMH`) a `RADAR_AVISO_KM` o menos, la misma que la página enseña
+como «pluja» y como la más cercana (`nowcast.propera`). Antes contaba desde
+0,08 mm/h (unos 6 dBZ, casi siempre llovizna que no llega al suelo): el
+20-10-2026 la página se actualizaba cada 6 minutos por ecos de 0,1 mm/h a 14,6
+km mientras decía que la lluvia más cercana estaba a 36 km (Juanjo: «por qué
+se actualiza cada 6 minutos si no hay ningun aviso?»). La lluvia débil que se
+acerca sigue cubierta por la otra regla (un 20 % o más en casa en la próxima
+hora, según el radar llevado hacia delante). Y el «?» de «Actualitzat a
+les…» dice primero el motivo de ahora («Ara cada 6 minuts perquè el radar veu
+pluja a 13 km.»), con la distancia (`horari.km_pluja`). Con el radar de ese
+momento, la lluvia de 0,5 mm/h más cercana estaba a 61 km: sin modo aviso.

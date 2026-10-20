@@ -842,7 +842,7 @@ def recoger(anterior=None):
         salida["riera_previsio"] = None
         salida["errors"].append(f"riera, previsió: {ex}")
     salida["horari"] = P.horario([C.HORARIO_CASA_AVISO if motivos else C.HORARIO_CASA],
-                                 C.INTERVALO_CASA_MIN, motivos)
+                                 C.INTERVALO_CASA_MIN, motivos, (radar or {}).get("km_lluvia"))
     # El cielo que se ve ahora desde el aeropuerto de Sabadell (ADR 0088). Si
     # no se puede leer, el de la hora en curso es el de los modelos.
     metars = []

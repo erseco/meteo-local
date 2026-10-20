@@ -326,8 +326,15 @@ def radar():
     dist = np.hypot((yy - fila) * r["km_px"], (xx - col) * r["km_px"])
     cerca = dist <= 50
     lluvia = ara >= RADAR_APRECIABLE_MMH
+    # La distancia que pone la página en modo aviso, con la misma lluvia que
+    # la página enseña como «pluja» (nowcast.propera, PLOU_MMH): con la
+    # apreciable (unos 6 dBZ, casi siempre llovizna que no llega al suelo),
+    # el 20-10-2026 la página se actualizaba cada 6 minutos por ecos de 0,1
+    # mm/h a 14,6 km y decía que la lluvia más cercana estaba a 36 km (Juanjo:
+    # «por qué se actualiza cada 6 minutos si no hay ningun aviso?»).
+    pluja = ara >= N.PLOU_MMH
     res = {"hora": hora.isoformat(), "imatge": origen,
-           "km_lluvia": round(float(dist[lluvia].min()), 1) if lluvia.any() else None,
+           "km_lluvia": round(float(dist[pluja].min()), 1) if pluja.any() else None,
            "km2_50km_ahora": round(float((lluvia & cerca).sum() * r["km_px"] ** 2)),
            "km2_50km_antes": None, "nowcast": N.resum(r), "a_prop": {},
            "mapa": N.mapa(ara, fila, col, r["km_px"]), "propera": N.propera(ara, fila, col, r["km_px"]),
@@ -568,11 +575,15 @@ def motivos_modo_aviso(avisos_, planes, obs, radar_, smp=None):
     return res
 
 
-def horario(trams, cada_min, motivos_aviso):
+def horario(trams, cada_min, motivos_aviso, km_pluja=None):
     """El horario que muestra la página y que sigue el reloj del NAS. Con los
     dos ritmos y la distancia del radar, para que la web explique los dos
-    modos en cualquiera de ellos (ADR 0010)."""
+    modos en cualquiera de ellos (ADR 0010), y, en modo aviso, a qué
+    distancia está la lluvia del radar (km_pluja), para decir el motivo de
+    ahora («Ara cada 6 minuts: …»)."""
     explica = {"normal_min": cada_min, "avis_min": C.MODO_AVISO_INTERVALO_MIN, "radar_km": C.RADAR_AVISO_KM}
+    if motivos_aviso and km_pluja is not None:
+        explica["km_pluja"] = km_pluja
     if motivos_aviso:
         return {"trams": trams, "cada_min": C.MODO_AVISO_INTERVALO_MIN,
                 "desfase_min": C.MODO_AVISO_DESFASE_MIN, "mode_avis": motivos_aviso, **explica}

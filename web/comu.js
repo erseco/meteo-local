@@ -138,7 +138,26 @@ function textActualitzacio(horari) {
   const totElDia = horari.trams.length === 1 && inici === '00:00';
   const franges = horari.trams.map(([a, b]) => `${a}\u2013${b}`).join(T(' i '));
   const trams = totElDia ? '' : T` Només s’actualitza de ${franges}.`;
-  return T`La pàgina s’actualitza cada ${normal} minuts, i cada ${avis} quan hi ha un avís del Meteocat o de l’AEMET, un pla de Protecció Civil en alerta o emergència, pluja a Montflorit o pluja al radar a menys de ${horari.radar_km || 15} km.` + trams;
+  return motiuActualitzacio(horari, avis) + T`La pàgina s’actualitza cada ${normal} minuts, i cada ${avis} quan hi ha un avís del Meteocat o de l’AEMET, un pla de Protecció Civil en alerta o emergència, pluja a Montflorit o pluja al radar a menys de ${horari.radar_km || 15} km.` + trams;
+}
+
+// En mode avís, el motiu d'ara, al davant (Juanjo, 20-10-2026: «por qué se
+// actualiza cada 6 minutos si no hay ningun aviso?»). Els motius arriben en
+// català, com els escriu prevision.motivos_modo_aviso.
+function motiuActualitzacio(horari, avis) {
+  const motius = horari.mode_avis || [];
+  if (!motius.length) return '';
+  const textos = {
+    'avís del Meteocat': T('hi ha un avís del Meteocat'),
+    'avís de l\'AEMET': T('hi ha un avís de l’AEMET'),
+    'pla de Protecció Civil': T('hi ha un pla de Protecció Civil en alerta o emergència'),
+    'pluja a les estacions': T('plou a Montflorit'),
+    'pluja al radar': horari.km_pluja != null ? T`el radar veu pluja a ${coma(horari.km_pluja, 0)}\u00a0km`
+      : T('el radar veu pluja que pot arribar en la propera hora'),
+  };
+  const llista = motius.map((m) => textos[m] || m);
+  const junts = llista.length > 1 ? `${llista.slice(0, -1).join(', ')}${T(' i ')}${llista[llista.length - 1]}` : llista[0];
+  return T`Ara cada ${avis} minuts perquè ${junts}. `;
 }
 
 // Un «?» que mostra o amaga una explicació al costat (els plans de Protecció
