@@ -318,7 +318,7 @@ function fitxaAprenentatge(titol, ara, progres, text, dades = null) {
 // información estática, por qué no pones los datos de quien acierta y se
 // equivoca más? un diagrama de barras»): una fila per opció, la barra
 // proporcional a l'error, i la que fa servir la web, en color i rotulada.
-function barresError(titol, files, decimals) {
+function barresError(titol, files, decimals, marca = T(' (la que fa servir)')) {
   const max = Math.max(...files.map((f) => f.valor), 1e-9);
   const taula = element('div', 'fb-comp');
   const cap = element('p', 'fb-comp-titol', titol);
@@ -326,7 +326,7 @@ function barresError(titol, files, decimals) {
   for (const f of files) {
     const li = element('li', f.enUs ? 'en-us' : null);
     const nom = element('span', 'fb-comp-nom', f.nom);
-    if (f.enUs) nom.append(element('span', 'fb-comp-marca', T(' (la que fa servir)')));
+    if (f.enUs) nom.append(element('span', 'fb-comp-marca', marca));
     const b = element('span', 'fb-comp-barra');
     const dins = element('span', 'fb-comp-fet');
     dins.style.width = `${Math.max(2, Math.round((f.valor / max) * 100))}%`;
@@ -385,7 +385,7 @@ function pintaAprenentatge() {
     let text = T`Hi ha dos radars, el de Meteocat i el de RainViewer. Cada dia mira quin ha encertat més la pluja al barri l’últim mes: ara és el de ${nom}, i ${textSegur(a.radar.seguretat)}.`;
     if (radars.length === 2) {
       dades = barresError(T('Error de cada radar l’últim mes (0 vol dir que encerta sempre)'),
-        radars.map((r) => ({ nom: NOMS_RADAR[r], valor: err[r], enUs: r === a.radar.preferida })), 3);
+        radars.map((r) => ({ nom: NOMS_RADAR[r], valor: err[r], enUs: r === a.radar.preferida })), 3, T(' (el que fa servir)'));
       const [millor, altra] = [...radars].sort((x, y) => err[x] - err[y]);
       const menys = percentMenys(err[millor], err[altra]);
       text = (menys > 0 ? T`${NOMS_RADAR[millor]} s’equivoca un ${menys}\u00a0% menys que ${NOMS_RADAR[altra]}`

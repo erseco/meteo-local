@@ -545,6 +545,7 @@ var IDIOMA = {
     "Cada punt és una setmana, amb el dia que comença; * la setmana en curs.": "Cada punto es una semana, con el día en que empieza; * la semana en curso.",
     "Cada punt és una setmana, amb el dia que comença.": "Cada punto es una semana, con el día en que empieza.",
     " (la que fa servir)": " (la que usa)",
+    " (el que fa servir)": " (el que usa)",
     "Error de cada radar l\u2019últim mes (0 vol dir que encerta sempre)": "Error de cada radar el último mes (0 quiere decir que acierta siempre)",
     "{0} s\u2019equivoca un {1}\u00a0% menys que {2}": "{0} se equivoca un {1}\u00a0% menos que {2}",
     "Els dos s\u2019equivoquen igual": "Los dos se equivocan igual",
