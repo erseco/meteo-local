@@ -55,9 +55,10 @@ NAV = re.compile(r'\n( *)<nav class="pagines".*?</nav>', re.S)   # amb el sagnat
 # El menú de la web pública: el temps ara i «Si surts» (ADR 0029).
 # «El temps», sense «ara»: la pàgina també porta la previsió (Juanjo, 08-10-2026).
 # Desde el 09-10-2026, también «Consultes»: lo mismo que el bot, eligiendo qué ver (ADR 0054).
-# Desde el 11-10-2026, «Perill», entre «El temps» y «Si surts»: las situaciones de peligro (ADR 0071).
+# Desde el 11-10-2026, «Perill», entre «El temps» y «Si surts»: las situaciones de peligro (ADR 0071);
+# desde el 20-10-2026 se llama «Avisos», y la página de la campana, «Notificacions».
 # Desde el 19-10-2026, «Riera», tras «Perill»: la riera ahora, la previsión y los episodios (ADR 0107).
-PAGINES_PUBLIQUES = [("./", "El temps", "i-cloud-sun"), ("perill.html", "Perill", "i-triangle-alert"),
+PAGINES_PUBLIQUES = [("./", "El temps", "i-cloud-sun"), ("perill.html", "Avisos", "i-triangle-alert"),
                      ("riera.html", "Riera", "i-waves"), ("sortir.html", "Si surts", "i-door-open"),
                      ("consultes.html", "Consultes", "i-message-square-text")]
 
@@ -128,7 +129,7 @@ CANVIS_CONSULTES = [
 CANVIS_PERILL = [
     ('<html lang="ca" data-theme="light">',
      f'<html lang="ca" data-theme="light" data-dades="{DADES}" data-notes="{NOTES}">'),
-    ("<title>Perill</title>", "<title>Perill · Temps a Montflorit</title>"),
+    ("<title>Avisos</title>", "<title>Avisos · Temps a Montflorit</title>"),
 ]
 # «Riera» (ADR 0107): ara, properes hores i episodis.
 CANVIS_RIERA = [
@@ -150,7 +151,7 @@ CANVIS_TELEGRAM = [
 CANVIS_AVISOS = [
     ('<html lang="ca" data-theme="light">',
      f'<html lang="ca" data-theme="light" data-dades="{DADES}" data-notes="{NOTES}">'),
-    ("<title>Avisos</title>", "<title>Avisos · Temps a Montflorit</title>"),
+    ("<title>Notificacions</title>", "<title>Notificacions · Temps a Montflorit</title>"),
 ]
 # «Com funciona» (Juanjo, 09-10-2026): por qué nació, qué ofrece, cómo aprende
 # y de qué fuentes sale.
@@ -251,7 +252,7 @@ CANVIS_ES_COM_FUNCIONA = [
     ('src="img/montflorit-limits.svg"', 'src="../img/montflorit-limits.svg"'),
 ]
 CANVIS_ES_NAV = [(">El temps</a>", ">El tiempo</a>"), (">Si surts</a>", ">Si sales</a>"),
-                 (">Perill</a>", ">Peligro</a>"), (">Consultes</a>", ">Consultas</a>")]
+                 (">Consultes</a>", ">Consultas</a>")]
 # La traducción es automática: se dice en los créditos.
 CREDIT_TRADUCCIO = ('</a>, licencia ISC.</li>',
                     '</a>, licencia ISC.</li>\n      <li>Versión en castellano traducida con IA, sin revisión profesional.</li>')

@@ -20,7 +20,7 @@ var IDIOMA = {
     'Tanca': 'Cerrar',
     "Nou!": "¡Nuevo!",
     // «Perill» (ADR 0071).
-    "activa els avisos": "activa los avisos",
+    "activa les notificacions": "activa las notificaciones",
     "Per rebre els talls de llum al moment, ": "Para recibir los cortes de luz al momento, ",
     "Què compta com a barri: el ": "Qué cuenta como barrio: el ",
     "mapa dels límits": "mapa de los límites",

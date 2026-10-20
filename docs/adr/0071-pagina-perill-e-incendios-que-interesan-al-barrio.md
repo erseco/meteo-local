@@ -237,3 +237,20 @@ Juanjo: «en la pestaña perill, els últims 30 dies han de estar plegados,
 ahora mismo hay demasiada información». Desde la 3.113.2, bajo el título
 «Últims 30 dies» va un desplegable cerrado con el número de situaciones,
 como los meses de antes; un enlace a una de sus fichas lo abre.
+
+
+## Cambio del 20-10-2026 (3.163.0): la página se llama «Avisos»
+
+A Juanjo no le gustaba «Perill» (20-10-2026: «el nombre Perill no me gusta
+demasiado»). De las alternativas («Avisos», «Alertes», «Riscos»,
+«Emergències») se eligió **«Avisos»**: es el término de los propios
+organismos (los «avisos de perill» de Meteocat, los avisos de AEMET) y todo
+lo que hay en la página es un aviso, también la riera, los incendios y el
+temps extrem. «Alertes» se confunde con la fase de los planes de Protecció
+Civil, «Riscos» con el «risc» que calcula la web y «Emergències» exagera.
+Para no tener dos piezas con el mismo nombre, la página de la campana
+(`avisos.html`, recibir los avisos en el móvil, el ordenador o Telegram) pasa
+a llamarse **«Notificacions» / «Notificaciones»**, y los enlaces que llevan a
+ella dicen «activa les notificacions». Las direcciones no cambian
+(`perill.html`, `avisos.html`), para que los enlaces ya enviados sigan
+funcionando; tampoco los nombres internos del código.

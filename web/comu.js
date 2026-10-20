@@ -786,7 +786,7 @@ function blocLlum(llum, ara = new Date()) {
 // peligros»; ADR 0072). Com a «Perill»: «…, activa els avisos.»
 function enllacAvisos(davant) {
   const p = element('p', 'enllac-avisos');
-  const a = element('a', null, T('activa els avisos'));
+  const a = element('a', null, T('activa les notificacions'));
   a.href = 'avisos.html';
   p.append(davant, a, '.');
   return p;

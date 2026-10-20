@@ -576,7 +576,7 @@ function liniaAvisosConduccio(dades, ara = new Date()) {
   const n = avisos.length;
   const pitjor = ['vermell', 'taronja', 'groc', 'prealerta'].find((c) => avisos.some((a) => nivellDe(a) === c)) || 'compte';
   const p = element('p', `avis-item avisos-conduccio ${pitjor}`);
-  const a = element('a', null, T('Perill'));
+  const a = element('a', null, T('Avisos'));
   a.href = 'perill.html';
   p.append(n === 1 ? T('Hi ha 1 avís de perill que pot afectar la conducció: mira’l a ')
     : T`Hi ha ${n} avisos de perill que poden afectar la conducció: mira’ls a `, a, '.');
