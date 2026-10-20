@@ -254,9 +254,15 @@ class Resum(unittest.TestCase):
         self.assertIn("(hasta 25 °C en la parte alta)", B.text_temperatura(alta, "es", "Temperatura"))
         self.assertEqual(B.text_temperatura([dict(f, dif_alta=0.4) for f in avui], "ca", "Temperatura"),
                          "Temperatura: entre 20 °C i 23 °C.")
-        # Si la xifra de dalt, arrodonida, és la mateixa que la màxima, no es repeteix (15,6 i 16,4: 16 i 16).
+        # La xifra de dalt, com a les files: 18,2 + 2,4 es llegeix «18 °C» i «+2»,
+        # així que 20 °C, no els 21 de la suma arrodonida (revisor, 20-10-2026).
+        tarda = [fila(20, 17, 18.2), fila(20, 18, 17.0)]
+        tarda = [dict(tarda[0], dif_alta=2.4), dict(tarda[1], dif_alta=1.0)]
+        self.assertIn("(fins a 20 °C a la part alta)", B.text_temperatura(tarda, "ca", "Temperatura"))
+        # La xifra de dalt no repeteix mai la màxima: amb 15,6 i 0,8, la fila diu
+        # «16 °C» i «+1», i el resum «fins a 17» (abans, «entre 11 i 16 (fins a 16)»).
         self.assertEqual(B.text_temperatura([fila(11, 5, 11.0), dict(fila(11, 15, 15.6), dif_alta=0.8)], "es", "Temperatura"),
-                         "Temperatura: entre 11 °C y 16 °C.")
+                         "Temperatura: entre 11 °C y 16 °C (hasta 17 °C en la parte alta).")
         # La nit compara la mínima; si falta una hora del dia abans, no es diu res.
         self.assertEqual(B.compara_temp(d, avui, nit=True), 0)              # 20 contra 19,5: es llegeix 20 i 20
         self.assertIsNone(B.compara_temp({"temperatura_mesurada": {"2026-10-09T14:00": 19.0}, "hores": avui}, avui))

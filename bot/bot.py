@@ -752,12 +752,18 @@ def text_alta(tram, idioma):
         return ""
     alta = max(f["temperatura"] + (f.get("dif_alta") or 0) for f in files)
     maxima = max(f["temperatura"] for f in files)
+    # La xifra de dalt és la màxima arrodonida més la diferència arrodonida,
+    # com «18 °C» i «+2» a les files dels trams (arrodoneixAlta, grafica.js):
+    # arrodonir la suma donava «fins a 21 °C» amb 18,2 i 2,4, i a les files es
+    # llegia 20 (revisor, 20-10-2026). Si la diferència arrodonida és zero,
+    # «entre 11 °C i 16 °C (fins a 16 °C…)» repetiria la xifra (Juanjo,
+    # 20-10-2026: «el 2º 16 sobra»).
     d = alta - maxima
-    # Si les dues xifres arrodonides coincideixen, «entre 11 °C i 16 °C (fins a
-    # 16 °C…)» repetiria la xifra (Juanjo, 20-10-2026: «el 2º 16 sobra»).
-    if math.floor(abs(d) + 0.5) < 1 or graus(alta) == graus(maxima):
+    r = int(math.copysign(math.floor(abs(d) + 0.5), d))
+    if r == 0:
         return ""
-    return f" (hasta {graus(alta)} en la parte alta)" if idioma == "es" else f" (fins a {graus(alta)} a la part alta)"
+    xifra = graus(math.floor(maxima + 0.5) + r)
+    return f" (hasta {xifra} en la parte alta)" if idioma == "es" else f" (fins a {xifra} a la part alta)"
 
 
 def text_temperatura(tram, idioma, quan, comparacio=None, respecte="ahir", ara=None):
