@@ -31,7 +31,9 @@ partes («hazlo así»).
   donde esté todo»): bajo la entrada, la misma invitación que en «Perill» a
   activar las notificaciones, con el enlace a «Notificacions» (desde la
   3.169.0; Juanjo, 20-10-2026: «en la riera añade un enlace para activar las
-  notificaciones, como en la sección de avisos»); **Avís**, si hay uno activo (la misma franja que en
+  notificaciones, como en la sección de avisos»); encima de todo, la línea
+  «Actualitzat a les…», justo debajo de las pestañas como en las demás
+  páginas (desde la 3.169.1; antes iba tras la entrada); **Avís**, si hay uno activo (la misma franja que en
   «Perill», con el enlace), **Ara** (una línea con el nivel y la lluvia
   medida: «Sense risc de crescuda ara…», en verde), **Properes hores** (la
   previsión, con el recuadro «És una previsió en fase de proves…» que dice
