@@ -393,7 +393,7 @@ function pinta(dades, ara = new Date()) {
   const prealerta = (dades.plans_prealerta || []).map(fitxaPla);
   peces.push(...prealerta);
   // Sense res, la franja verda, com la riera sense risc (Juanjo, 21-10-2026).
-  if (!actius.length && !alfa && !prealerta.length) peces.push(element('p', 'avis-item be', T('Ara no hi ha cap situació de perill.')));
+  if (!actius.length && !alfa && !prealerta.length) peces.push(element('p', 'avis-item be', T('Ara no hi ha cap avís.')));
   peces.push(element('h2', 'seccio', T`Últims ${DIES_RECENTS} dies`));
   // Plegats, com els mesos d'abans (Juanjo, 17-10-2026: «els últims 30 dies
   // han de estar plegados, ahora mismo hay demasiada información»); un enllaç
@@ -401,10 +401,10 @@ function pinta(dades, ara = new Date()) {
   if (recents.length) {
     const plec = element('details', 'mes-perill');
     const n = recents.length;
-    plec.append(element('summary', null, n === 1 ? T('1 situació') : T`${n} situacions`),
+    plec.append(element('summary', null, n === 1 ? T('1 avís') : T`${n} avisos`),
       ...recents.map((e) => fitxa(e, ara)));
     peces.push(plec);
-  } else peces.push(element('p', 'nota', T`Cap situació de perill acabada en els últims ${DIES_RECENTS} dies.`));
+  } else peces.push(element('p', 'nota', T`Cap avís acabat en els últims ${DIES_RECENTS} dies.`));
   // Els mesos d'abans, plegats, del més recent al més antic.
   const mesos = new Map();
   for (const e of antics) {
@@ -417,7 +417,7 @@ function pinta(dades, ara = new Date()) {
     for (const llista of mesos.values()) {
       const plec = element('details', 'mes-perill');
       const n = llista.length;
-      plec.append(element('summary', null, `${nomMes(llista[0].inici)} · ${n === 1 ? T('1 situació') : T`${n} situacions`}`),
+      plec.append(element('summary', null, `${nomMes(llista[0].inici)} · ${n === 1 ? T('1 avís') : T`${n} avisos`}`),
         ...llista.map((e) => fitxa(e, ara)));
       peces.push(plec);
     }

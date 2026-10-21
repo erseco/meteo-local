@@ -1532,8 +1532,8 @@ function marcaNovetats(ara = new Date()) {
       document.querySelectorAll('.novetat').forEach((p) => {
         p.classList.remove('novetat');
         p.querySelector('.nou')?.remove();
-        // Sense «Nou:», la frase comença amb majúscula: «Les situacions de
-        // perill…», no «les situacions…» (Juanjo, 20-10-2026).
+        // Sense «Nou:», la frase comença amb majúscula: «Els avisos de
+        // perill…», no «els avisos…» (Juanjo, 20-10-2026).
         const t = p.firstChild;
         if (t && t.nodeType === Node.TEXT_NODE) {
           const text = t.textContent.trimStart();
@@ -1556,7 +1556,7 @@ function marcaNovetats(ara = new Date()) {
 
 marcaNovetats();
 
-// Un punt vermell a la pestanya «Perill» quan hi ha una situació de perill
+// Un punt vermell a la pestanya «Perill» quan hi ha un avís
 // activa que no s'ha vist, tant si s'han activat els avisos com si no (Juanjo,
 // 11-10-2026; ADR 0071), fins que s'obre «Perill», que apunta fins a quan
 // s'ha vist. Només mentre és activa: abans durava 24 hores, i el punt vermell
@@ -1587,8 +1587,8 @@ function senyalaPerill(historial, ara = new Date()) {
     if (nous && !punt) {
       punt = element('span', 'punt-perill');
       punt.setAttribute('role', 'img');
-      punt.setAttribute('aria-label', T('Hi ha una situació de perill nova'));
-      punt.title = T('Hi ha una situació de perill nova');
+      punt.setAttribute('aria-label', T('Hi ha un avís nou'));
+      punt.title = T('Hi ha un avís nou');
       a.append(punt);
     } else if (!nous && punt) punt.remove();
   }

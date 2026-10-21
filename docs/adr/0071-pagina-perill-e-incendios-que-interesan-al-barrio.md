@@ -62,6 +62,16 @@ situació de perill» deja de ser una nota gris y lleva la franja verde de la
 riera sin riesgo (`.avis-item.be`, ahora común a las dos páginas). Juanjo:
 «cuando dice que no hay peligro quiero una barra verde como el que hay ahora
 en la riera».
+
+**21-10-2026 (3.173.2): «avisos», no «situacions de perill».** La pestaña
+se llama «Avisos»; la página usaba otro nombre para lo mismo. Pasan a
+«avisos» la entrada y la descripción («Els avisos de perill a Montflorit: els
+oficials de l'AEMET…»), «Ara no hi ha cap avís», los recuentos («16 avisos»),
+el historial vacío, el punto rojo de la pestaña («Hi ha un avís nou», como el
+de «Avisos actius» de la portada) y la línea «Avisos» de «Com funciona».
+Telegram y las notificaciones, que se leen fuera de la página, no cambian.
+Juanjo: «como ya no se llama peligro sino avisos, no debería cambiar el
+mensaje?».
 ## Contexto
 
 La noche del 10 al 11-10-2026 llegó por Telegram y al móvil el aviso de un
