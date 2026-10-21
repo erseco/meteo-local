@@ -24,7 +24,7 @@ La recogida genera también:
 - `weather.json`: contrato público `schema_version=1.0`, unidades, fechas ISO,
   caducidad, previsión diaria/horaria, observaciones por estación, avisos,
   metadatos del radar y ambiente. No incluye imágenes, credenciales ni archivos internos.
-- `es/datos.html`: resumen **renderizado al publicar**, legible sin JavaScript,
+- `datos.html`: resumen **renderizado al publicar**, legible sin JavaScript,
   con la misma fecha que el JSON y metadatos `Dataset` / `DataDownload` de Schema.org.
 - Canonical, descripción, Open Graph y descubrimiento del JSON en el HTML;
   `WebSite` en portada y `sitemap.xml` con las páginas principales.
@@ -57,8 +57,10 @@ seleccionar **GitHub Actions**. El workflow usa el token del repositorio, sin PA
 ni secretos adicionales. Si Pages no está habilitado, `configure-pages` lo indicará;
 el token estándar del workflow no puede habilitarlo por sí solo.
 
-URL prevista: <https://erseco.github.io/meteo-local/>; redirige a la interfaz en
-castellano en `/es/`. La URL efectiva se muestra en el entorno `github-pages`.
+URL: <https://erseco.github.io/meteo-local/>. La única interfaz se publica en
+castellano en la raíz. Las antiguas direcciones `/es/` redirigen a su página
+equivalente, conservando consulta y fragmento. La URL efectiva se muestra en el
+entorno `github-pages`.
 
 Cada 15 minutos se programa otra ejecución para recoger datos reales y renovar
 la publicación, sin commits en el código. El historial público se persiste en `lpa-data`. GitHub puede retrasar las ejecuciones;
@@ -83,7 +85,7 @@ python3 -m pip install -r lpa/requirements.txt
 python3 -m lpa.serve
 ```
 
-Abrir <http://127.0.0.1:8080/es/>. El servidor genera la interfaz y consulta los
+Abrir <http://127.0.0.1:8080/>. El servidor genera la interfaz y consulta los
 datos al arrancar y cada 15 minutos. Durante la primera consulta puede aparecer
 el aviso de datos no disponibles. No necesita claves, el NAS de Juanjo ni IONOS.
 No ejecutar `publica.sh`, `nas/`, `bot/instalar.sh` ni `reserva/instalar.sh` para
@@ -95,7 +97,7 @@ Con Docker, imagen basada en Alpine:
 docker compose -f lpa/compose.yml up -d --build
 ```
 
-Abrir <http://localhost:8080/es/>. Publica en el puerto 8080 del equipo. Para
+Abrir <http://localhost:8080/>. Publica en el puerto 8080 del equipo. Para
 acceso público desde Docker, colocar detrás del proxy HTTPS habitual. Telegram,
 push y la configuración de un dominio propio no están incluidos.
 
@@ -144,7 +146,7 @@ Una fuente que falla conserva `null` y un error; no equivale a «sin avisos» ni
 La capa conserva observaciones y previsiones en `lpa-data` (Actions) o en disco/volumen (servidor local y Docker). Véase [OBSERVACIONES.md](OBSERVACIONES.md) para fuentes, contratos, límites y método.
 
 Radar, PORTUS y accesos de transporte: [RADAR-MAR-MOVILIDAD.md](RADAR-MAR-MOVILIDAD.md).
-La portada incluye radar y `es/radar.html` reúne radar y gráficos marinos. Los
+La portada incluye radar y `radar.html` reúne radar y gráficos marinos. Los
 gráficos oficiales de PORTUS se consultan directamente al cargarlos y no se
 archivan en la rama de datos. Las llegadas de Guaguas no están integradas: las
 consultas verificadas no proporcionaron muestras utilizables.

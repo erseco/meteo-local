@@ -16,8 +16,8 @@ DESCRIPTION = 'Previsión de siete días para Las Palmas de Gran Canaria y obser
 
 def dataset(data=None):
     value = {'@context':'https://schema.org','@type':'Dataset',
-        '@id':SITE+'es/datos.html#dataset','name':'Tiempo en Las Palmas · datos públicos',
-        'description':DESCRIPTION,'url':SITE+'es/datos.html','inLanguage':'es',
+        '@id':SITE+'datos.html#dataset','name':'Tiempo en Las Palmas · datos públicos',
+        'description':DESCRIPTION,'url':SITE+'datos.html','inLanguage':'es',
         'spatialCoverage':{'@type':'Place','name':P.NAME,
             'geo':{'@type':'GeoCoordinates','latitude':P.COORDINATES[0],'longitude':P.COORDINATES[1]}},
         'variableMeasured':['Temperatura del aire','Probabilidad de precipitación',
@@ -71,12 +71,12 @@ def normalize(data):
              'starts_at':a['inicio'],'ends_at':a['fin'],'description':a['descripcio'],'url':a['url']}
              for a in data['avisos']],
         'radar':{'status':radar.get('status','unavailable'),'observed_at':radar.get('observed_at'),
-            'max_age_minutes':radar.get('max_age_minutes',45),'url':SITE+'es/radar.html',
+            'max_age_minutes':radar.get('max_age_minutes',45),'url':SITE+'radar.html',
             'kind':'reflectivity_dbz','surface_rain_inferred':False},
         'environment':{key:{field:value for field,value in (environment.get(key) or {}).items()
             if field in ('status','provider','url','station','last_count','events','detail')}
             for key in ('pollen','earthquakes')},
-        'links':{'human':SITE+'es/','sources':SITE+'es/fuentes.html','documentation':SITE+'llms.txt'},
+        'links':{'human':SITE,'sources':SITE+'fuentes.html','documentation':SITE+'llms.txt'},
         'notes':['Not an official weather service. A station represents its own location.',
             'Recalculate age using observed_at and max_age_minutes; status reflects collection time.',
             'Missing or unavailable values are not zero. Check generated_at/expires_at before treating data as current.',
@@ -120,7 +120,7 @@ def export(directory,data):
     from .collect import write_json
     directory=Path(directory);public=normalize(data)
     write_json(directory/'weather.json',public)
-    page=directory/'es/datos.html'
+    page=directory/'datos.html'
     if page.exists():
         text=page.read_text()
         text,count=re.subn(r'<div id="lpa-public-snapshot">.*?</div><!-- snapshot-end -->',

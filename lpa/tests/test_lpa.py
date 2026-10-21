@@ -2,6 +2,8 @@
 """Contract, source isolation, missing-provider and Canary DST regression tests."""
 import datetime as dt
 import json
+from html.parser import HTMLParser
+from urllib.parse import urlsplit
 import os
 from pathlib import Path
 import subprocess
@@ -135,7 +137,7 @@ class Build(unittest.TestCase):
         self.assertNotIn('navigator.serviceWorker.register(', js)
         for file in self.dest.glob('*.js'):
             subprocess.run(['node', '--check', str(file)], check=True, capture_output=True)
-        page = (self.dest/'es/index.html').read_text()
+        page = (self.dest/'index.html').read_text()
         self.assertIn('Las Palmas', page)
         self.assertIn('lpa-time.js', page)
         self.assertNotIn('io.github.meteo_montflorit', page)
@@ -144,9 +146,38 @@ class Build(unittest.TestCase):
 
     def test_unavailable_services_have_no_active_scripts(self):
         for name in ('avisos.html','telegram.html','riera.html'):
-            page = (self.dest/'es'/name).read_text()
+            page = (self.dest/name).read_text()
             self.assertIn('Función no disponible', page)
             self.assertNotIn('<script src=', page)
+
+    def test_spanish_root_assets_manifest_and_legacy_bookmarks(self):
+        class Resources(HTMLParser):
+            def __init__(self):
+                super().__init__(); self.paths = []
+            def handle_starttag(self, tag, attrs):
+                attrs = dict(attrs)
+                if tag == 'script' and attrs.get('src'):
+                    self.paths.append(attrs['src'])
+                if tag == 'link' and attrs.get('rel') in ('stylesheet', 'manifest', 'apple-touch-icon'):
+                    self.paths.append(attrs['href'])
+        # Rebuilding an existing output must not treat legacy redirects as source pages.
+        build(self.dest)
+        for page in self.dest.glob('*.html'):
+            text = page.read_text()
+            self.assertIn('<html lang="es"', text)
+            self.assertNotIn('data-arrel="../"', text)
+            self.assertNotIn('meteo.idioma', text)
+            resources = Resources(); resources.feed(text)
+            for resource in resources.paths:
+                self.assertFalse(urlsplit(resource).scheme)
+                self.assertTrue((self.dest / resource).is_file(), resource)
+            legacy = (self.dest/'es'/page.name).read_text()
+            self.assertIn('noindex,follow', legacy)
+            self.assertIn('location.search+location.hash', legacy)
+            self.assertNotIn('src="', legacy)
+        self.assertEqual(json.loads((self.dest/'manifest.webmanifest').read_text())['start_url'], './')
+        self.assertNotIn('meteo-local/es/', (self.dest/'sitemap.xml').read_text())
+        self.assertNotIn('meteo-local/es/', (self.dest/'llms.txt').read_text())
 
     def test_canary_calendar_in_a_foreign_browser_timezone(self):
         script = (Path(__file__).parents[1]/'time.js').read_text() + '''

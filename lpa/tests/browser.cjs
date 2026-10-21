@@ -29,7 +29,7 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
         for (const file of ['index.html', 'sortir.html', 'consultes.html', 'perill.html',
                             'riera.html', 'fonts.html', 'avisos.html', 'fuentes.html', 'observaciones.html', 'fiabilitat.html', 'radar.html', 'datos.html']) {
           errors = []; external = [];
-          await page.goto(`${root}/es/${file}`);
+          await page.goto(`${root}/${file}`);
           if (file === 'index.html') {
             const graph=page.locator('#casa .g-desplaca').first();
             await graph.waitFor();
@@ -37,7 +37,7 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
             assert.ok(await page.locator('.g-dia').count()>=6,'graph must cover the forecast week');
             const labels=await page.locator('.g-dia').allTextContents();
             const lastDate=await page.evaluate(async()=>{
-              const data=await (await fetch('../montflorit.json')).json();
+              const data=await (await fetch('./montflorit.json')).json();
               return new Intl.DateTimeFormat('es',{timeZone:'Atlantic/Canary',weekday:'long',day:'numeric',month:'short'}).format(new Date(data.hores.at(-1).hora));
             });
             assert.ok(labels.includes(lastDate),'last forecast date must be visible');
@@ -85,15 +85,23 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
           assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${name}/${file}: overflow`);
           await page.screenshot({path: path.join(screenshots, `${name}-${mobile?'mobile':'desktop'}-${dark?'dark':'light'}-${file}.png`), fullPage:true});
         }
+        // Old bookmarks preserve the project prefix, query and fragment.
+        await page.goto(`${root}/es/observaciones.html?legacy=1#lpa-observations`);
+        await page.waitForURL(`${root}/observaciones.html?legacy=1#lpa-observations`);
+        await page.getByRole('heading',{name:'Plaza de la Feria',exact:true}).waitFor();
+        await page.goto(`${root}/es/?legacy=1#casa`);
+        await page.waitForURL(`${root}/?legacy=1#casa`);
+        assert.equal(await page.locator('html').getAttribute('lang'),'es');
+        assert.equal(await page.locator('html').getAttribute('data-arrel'),'./');
         // Official embeds are opt-in and use the reviewed station URL, without a proxy.
-        await page.goto(`${root}/es/radar.html`);
+        await page.goto(`${root}/radar.html`);
         await page.route('https://portus.puertos.es/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>PORTUS fixture</title><p>Official graph fixture</p>'}));
         await page.getByRole('button',{name:'Cargar gráfico de PORTUS',exact:true}).first().click();
         assert.equal(await page.locator('iframe').count(),1);
         assert.equal(await page.locator('iframe').getAttribute('src'),'https://portus.puertos.es/PortusData/rtChart?station=3450&params=SeaLevel&locale=es');
         await page.unroute('https://portus.puertos.es/**');
         // Exercise air, unavailable providers, source failure and stale-data handling.
-        await page.goto(`${root}/es/consultes.html`);
+        await page.goto(`${root}/consultes.html`);
         await page.getByRole('radio', {name:'Aire',exact:true}).check();
         await page.locator('#consulta').getByText('Calidad del aire', {exact:false}).waitFor();
         await page.getByRole('radio', {name:'Polen',exact:true}).check();
@@ -104,7 +112,7 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
           data.avisos = null;
           await route.fulfill({json:data});
         });
-        await page.goto(`${root}/es/perill.html`);
+        await page.goto(`${root}/perill.html`);
         await page.getByText('Avisos no disponibles o datos caducados.', {exact:false}).waitFor();
         await page.unroute('**/montflorit.json?*');
         await page.route('**/montflorit.json?*', async route => {
@@ -113,7 +121,7 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
           data.generat = '2000-01-01T00:00:00+00:00';
           await route.fulfill({json:data});
         });
-        await page.goto(`${root}/es/index.html`);
+        await page.goto(`${root}/index.html`);
         await page.getByText('Datos caducados.', {exact:false}).waitFor();
         await page.getByText('Radar antiguo:',{exact:false}).waitFor();
         assert.equal(await page.locator('#casa .previsio').count(),0);

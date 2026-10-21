@@ -59,13 +59,15 @@ def build(destination):
     dest.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as temp:
         montflorit.construeix(temp)
+        spanish_names = [page.name for page in (Path(temp) / 'es').glob('*.html')]
         shutil.copytree(temp, dest, dirs_exist_ok=True)
     # The original Spanish pages and shared assets are kept in their expected layout.
-    # The root has no duplicate untranslated application.
-    for source in (dest / 'es').glob('*.html'):
+    # Spanish output is staged in es/ and promoted to the root below.
+    for name in spanish_names:
+        source = dest / 'es' / name
         text = source.read_text()
         # Public URLs point to this fork; no upstream canonical or Android association.
-        text = text.replace('https://meteo-montflorit.github.io/', 'https://erseco.github.io/meteo-local/es/')
+        text = text.replace('https://meteo-montflorit.github.io/', SITE)
         text = re.sub(r'data-notes="[^"]*"', f'data-notes="{P.REPOSITORY}/tree/lpa"', text)
         text = re.sub(r'<nav class="idiomes".*?</nav>', '', text, flags=re.S)
         text = re.sub(r'<link rel="alternate"[^>]*>', '', text)
@@ -149,7 +151,7 @@ def build(destination):
         text=re.sub(r'<meta name="description"[^>]*>','<meta name="description" content="'+html.escape(DESCRIPTION,quote=True)+'">',text)
         text=re.sub(r'<meta name="robots"[^>]*>','',text)
         text=re.sub(r'<link rel="canonical"[^>]*>','',text)
-        canonical=SITE+'es/'+('' if page.name=='index.html' else page.name)
+        canonical=SITE+('' if page.name=='index.html' else page.name)
         title={'index.html':'Tiempo en Las Palmas · 7 días','radar.html':'Radar y mar · Las Palmas',
             'observaciones.html':'Estaciones meteorológicas · Las Palmas','datos.html':'Datos del tiempo · Las Palmas',
             'perill.html':'Avisos meteorológicos · Las Palmas','sortir.html':'Si sales · Las Palmas',
@@ -165,19 +167,30 @@ def build(destination):
               '<meta property="og:description" content="'+html.escape(DESCRIPTION,quote=True)+'">')
         if page.name=='index.html':
             meta+='<script type="application/ld+json">'+json.dumps({'@context':'https://schema.org','@type':'WebSite',
-                'name':'Tiempo en Las Palmas','url':SITE+'es/','inLanguage':'es',
-                'description':DESCRIPTION,'hasPart':{'@type':'Dataset','@id':SITE+'es/datos.html#dataset','url':SITE+'es/datos.html'}},ensure_ascii=False)+'</script>'
+                'name':'Tiempo en Las Palmas','url':SITE,'inLanguage':'es',
+                'description':DESCRIPTION,'hasPart':{'@type':'Dataset','@id':SITE+'datos.html#dataset','url':SITE+'datos.html'}},ensure_ascii=False)+'</script>'
         text=text.replace('</head>',meta+('' if '../lpa-style.css' in text else '<link rel="stylesheet" href="../lpa-style.css">')+'</head>')
         page.write_text(text)
     shutil.copyfile(HERE / 'style.css', dest / 'lpa-style.css')
-    # Redirect every root HTML entry point to its Spanish counterpart, retaining deep links.
-    (dest / 'observaciones.html').touch()
-    (dest / 'radar.html').touch()
-    (dest / 'datos.html').touch()
-    for path in dest.glob('*.html'):
-        path.write_text('<!doctype html><html lang="es"><meta charset="utf-8"><title>Tiempo en Las Palmas</title>'
-                        f'<meta http-equiv="refresh" content="0;url=es/{path.name}"><a href="es/{path.name}">Abrir</a>'
-                        f'<script>location.replace("es/{path.name}"+location.search+location.hash)</script></html>')
+    # Promote the generated Spanish pages; keep /es/ as redirects only.
+    spanish_pages = list((dest / 'es').glob('*.html'))
+    names = {page.name for page in spanish_pages}
+    for page in dest.glob('*.html'):
+        if page.name not in names:
+            page.unlink()
+    for page in spanish_pages:
+        text = page.read_text().replace(montflorit.IDIOMA_RECORDAT, '')
+        text = text.replace('data-arrel="../"', 'data-arrel="./"')
+        text = re.sub(r'((?:href|src)=")\.\./', r'\1', text)
+        (dest / page.name).write_text(text)
+        target = '../' + ('' if page.name == 'index.html' else page.name)
+        canonical = SITE + ('' if page.name == 'index.html' else page.name)
+        page.write_text('<!doctype html><html lang="es"><head><meta charset="utf-8">'
+                        '<title>Tiempo en Las Palmas</title><meta name="robots" content="noindex,follow">'
+                        f'<link rel="canonical" href="{canonical}">'
+                        f'<meta http-equiv="refresh" content="0;url={target}"></head><body>'
+                        f'<a href="{target}">Abrir la página en español</a>'
+                        f'<script>location.replace({json.dumps(target)}+location.search+location.hash)</script></body></html>')
     for path in dest.glob('*.js'):
         text = path.read_text()
         if path.name == 'comu.js':
@@ -235,7 +248,7 @@ def build(destination):
         if folder.exists():
             shutil.rmtree(folder)
     manifest = json.loads((dest / 'manifest.webmanifest').read_text())
-    manifest.update(name='Tiempo en Las Palmas', short_name='Las Palmas', lang='es', start_url='./es/',
+    manifest.update(name='Tiempo en Las Palmas', short_name='Las Palmas', lang='es', start_url='./',
                     description='Previsión para Las Palmas de Gran Canaria, en hora canaria.')
     (dest / 'manifest.webmanifest').write_text(json.dumps(manifest, ensure_ascii=False, indent=2))
     (dest / 'README.md').write_text(f'# Tiempo en Las Palmas\n\nSource: {P.REPOSITORY}/tree/lpa\n\nUpstream: https://github.com/jjdeharo/meteo-local\n')
@@ -243,9 +256,9 @@ def build(destination):
         '> Proyecto independiente. Previsión de modelos y observaciones de estaciones; no es un servicio oficial.\n\n'
         '## Recursos públicos\n\n'
         f'- [JSON documentado]({SITE}weather.json): schema_version, generated_at, expires_at, unidades en los nombres de los campos.\n'
-        f'- [Datos legibles sin JavaScript]({SITE}es/datos.html): resumen actualizado y metadatos Dataset.\n'
-        f'- [Fuentes y condiciones]({SITE}es/fuentes.html).\n'
-        f'- [Interfaz]({SITE}es/): previsión de siete días en hora canaria.\n\n'
+        f'- [Datos legibles sin JavaScript]({SITE}datos.html): resumen actualizado y metadatos Dataset.\n'
+        f'- [Fuentes y condiciones]({SITE}fuentes.html).\n'
+        f'- [Interfaz]({SITE}): previsión de siete días en hora canaria.\n\n'
         '## Semántica\n\n'
         'Zona horaria Atlantic/Canary; fechas ISO 8601 con desplazamiento. Comprobar generated_at/expires_at y la antigüedad de cada estación. '
         'forecast es una estimación; observations contiene mediciones. null o unavailable no significa cero. '
@@ -255,7 +268,7 @@ def build(destination):
         'Este archivo es una guía de acceso; no garantiza indexación ni citas por parte de buscadores o asistentes.\n')
     (dest/'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+''.join(
-            '<url><loc>'+SITE+'es/'+name+'</loc></url>' for name in
+            '<url><loc>'+SITE+name+'</loc></url>' for name in
             ('','observaciones.html','radar.html','perill.html','fuentes.html','datos.html'))+'</urlset>')
     return dest
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Standalone observation pages do not need upstream interactive controls.
 async function llegeixDades(name) {
-  const url = new URL('../' + name, location.href);
+  const url = new URL(name, location.href);
   url.searchParams.set('t', Date.now());
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
