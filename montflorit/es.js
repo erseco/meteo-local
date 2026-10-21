@@ -629,6 +629,8 @@ var IDIOMA = {
     "Aquest dia no es pot llegir.": "Este día no se puede leer.",
     "Part alta": "Parte alta",
     "Part baixa": "Parte baja",
+    "La temperatura de vora la riera, la zona més freda del barri.": "La temperatura junto a la riera, la zona más fría del barrio.",
+    "La temperatura de la part alta del barri, que sol ser més alta que vora la riera.": "La temperatura de la parte alta del barrio, que suele ser más alta que junto a la riera.",
     "Comparteix l’enllaç de la gràfica": "Compartir el enlace de la gráfica",
     "Comparteix la imatge de la gràfica": "Compartir la imagen de la gráfica",
     "Temps a Montflorit (Cerdanyola del Vallès) · previsió de {0}, {1} · meteo-montflorit.github.io": "Temps a Montflorit (Cerdanyola del Vallès) · previsión del {0}, {1} · meteo-montflorit.github.io",

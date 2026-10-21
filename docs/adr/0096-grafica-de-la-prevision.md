@@ -457,3 +457,7 @@ previsión.
   (`test_zona_de_la_temperatura_de_les_opcions_velles`), `probar-web` en tres
   navegadores, móvil, escritorio y tableta, claro y oscuro, y axe-core sobre
   la ventana de la gráfica.
+- **Descripción** (3.174.1): cada botón lleva la suya al pasar el ratón
+  («La temperatura de vora la riera, la zona més freda del barri» y «… de la
+  part alta del barri, que sol ser més alta que vora la riera»). Juanjo: «no
+  me queda claro que la gente lo entienda a la primera».

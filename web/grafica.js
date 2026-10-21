@@ -1028,9 +1028,15 @@ function vistaGrafica() {
   const zona = element('div', 'vg-trams');
   zona.setAttribute('role', 'group');
   zona.setAttribute('aria-label', T('Temperatura'));
-  const botonsZona = [['baixa', 'i-waves', T('Part baixa')], ['alta', 'i-mountain', T('Part alta')]].map(([clau, icon, text]) => {
+  // Amb la descripció en passar-hi el ratolí (Juanjo, 21-10-2026: «no me
+  // queda claro que la gente lo entienda a la primera»).
+  const botonsZona = [
+    ['baixa', 'i-waves', T('Part baixa'), T('La temperatura de vora la riera, la zona més freda del barri.')],
+    ['alta', 'i-mountain', T('Part alta'), T('La temperatura de la part alta del barri, que sol ser més alta que vora la riera.')],
+  ].map(([clau, icon, text, descripcio]) => {
     const b = element('button', 'vg-opcio');
     b.type = 'button';
+    b.title = descripcio;
     b.dataset.zona = clau;
     b.append(icona(icon), element('span', null, text));
     b.addEventListener('click', () => {
