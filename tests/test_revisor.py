@@ -52,6 +52,25 @@ class Regles(unittest.TestCase):
         self.assertEqual(RV.text_visible(dom), "Plou\nPluja a sobre")
 
 
+class Context(unittest.TestCase):
+    def test_les_fitxes_de_l_aemet_acabades_per_l_hora_no_son_obertes(self):
+        # Revisor, 21-10-2026 05:53: creia obertes quatre fitxes de l'AEMET amb el
+        # «fins» passat; «Perill» les dona per acabades (perill.js, finalDe).
+        moment = dt.datetime.fromisoformat("2026-10-21T05:53+02:00")
+        avisos = {"historial": [
+            {"clau": "aemet:pluja:2026-10-20T00:00", "inici": "2026-10-19T20:00+02:00", "ca": "a",
+             "fins": "2026-10-20T08:59:59+02:00"},
+            {"clau": "aemet:vent:2026-10-21T00:00", "inici": "2026-10-20T20:00+02:00", "ca": "b",
+             "fins": "2026-10-21T12:00+02:00"},
+            {"clau": "propi", "inici": "2026-10-20T20:00+02:00", "ca": "c"},
+            {"clau": "smp:1", "inici": "2026-10-19T20:00+02:00", "ca": "d", "fi": "2026-10-20T10:00+02:00"}]}
+        text = RV.context({}, avisos, {}, moment, "prova", [])
+        self.assertNotIn("aemet:pluja:2026-10-20T00:00", text)
+        self.assertIn("aemet:vent:2026-10-21T00:00", text)
+        self.assertIn('"propi"', text)
+        self.assertNotIn("smp:1", text)
+
+
 class Correccions(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()

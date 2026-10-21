@@ -56,6 +56,9 @@ inclúyelas si son reales, explicando por qué.
 - Meteocat manda sobre AEMET en el mismo fenómeno; AEMET sale para lo que
   Meteocat no cubre, también en las horas de un aviso que Meteocat solo
   cubre en parte (`inicio_visible` y `fin_visible`, desde la 3.154.0).
+- Un aviso de AEMET acaba a su hora final (`fins`) sin mensaje de final: el
+  aviso que se envió ya decía hasta cuándo. Su ficha no lleva `fi` y
+  «Perill» la da por acabada con `fins`; no es un cierre que falte.
 - Si en los datos `aemet` (los avisos de AEMET) es null, es que esa pasada no se
   ha podido leer AEMET (la página lo dice con «No s'han pogut llegir totes
   les fonts»): las fichas de AEMET abiertas se mantienen tal cual hasta que se

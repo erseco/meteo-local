@@ -993,6 +993,11 @@ class Web(unittest.TestCase):
         # Les d'abans, sense `escrit`: el començament; «demà», el dia següent.
         self.assertEqual(text(aemet, "2026-10-20T17:31:00+02:00"), "Des del dissabte 17 a les 12 h fins a mitjanit.")
         self.assertEqual(text(aemet, "2026-10-20T17:31:00+02:00", "es"), "Desde el sábado 17 a las 12 h hasta medianoche.")
+        # La franja de l'AEMET d'abans del 18-10-2026, amb coma (revisor, 20-10-2026 21:01).
+        franja = {"clau": "aemet:pluja:2026-10-18T00:00", "inici": "2026-10-17T00:39+02:00",
+                  "ca": "títol\nDemà, de les 0 h a les 4 h.", "es": "título\nMañana, de las 0 h a las 4 h."}
+        self.assertEqual(text(franja, "2026-10-20T21:01:00+02:00"), "Diumenge 18, de les 0 h a les 4 h.")
+        self.assertEqual(text(franja, "2026-10-20T21:01:00+02:00", "es"), "Domingo 18, de las 0 h a las 4 h.")
 
     def test_grafica_sempre_totes_les_hores(self):
         # Juanjo, 20-10-2026: «quiero que hagas siempre tot pero con barra de desplazamiento

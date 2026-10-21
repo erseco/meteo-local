@@ -322,8 +322,12 @@ def context(casa, avisos, textos, moment, motiu, problemes_regles, resum=None, i
         "entorn": casa.get("entorn"),
         "riscos_propis": casa.get("riscos"),
     }
+    # Les obertes, amb la mateixa regla que «Perill» (perill.js, finalDe): una
+    # de l'AEMET que ha passat la seva hora final ja s'ha acabat, sense
+    # missatge de final (revisor, 21-10-2026: les creia obertes).
     fitxes = [{k: e.get(k) for k in ("clau", "inici", "nivell", "ca", "fi", "fins")}
-              for e in avisos.get("historial") or [] if not e.get("fi")]
+              for e in avisos.get("historial") or []
+              if not e.get("fi") and not (e.get("fins") and dt.datetime.fromisoformat(e["fins"]) <= moment)]
     enviats = [{k: a.get(k) for k in ("id", "hora", "ca")} for a in (avisos.get("avisos") or [])[-6:]]
     trossos = [f"Motiu de la revisió: {motiu}.", "",
                "## Ja informats a Juanjo (no els repeteixis si no han canviat)",

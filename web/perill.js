@@ -24,10 +24,11 @@ const locale = () => (IDIOMA.codi === 'es' ? 'es-ES' : 'ca-ES');
 // darrer avís o el començament). Llegit un altre dia, el dia de la setmana i
 // del mes, com nom_dia d'avisos_bot.py: «dilluns 19 de 17 a 18 h» (revisor,
 // 20-10-2026: la fitxa acabada del vent del dilluns deia «avui» el dimarts;
-// Juanjo ho va aprovar el mateix dia).
+// Juanjo ho va aprovar el mateix dia). També la forma de les franges de l'AEMET
+// d'abans del 18-10-2026, «Demà, de les 0 h a les 4 h.» (revisor, 20-10-2026).
 const RELATIUS = {
-  ca: { re: /(des de )?(avui|demà)(?= (?:de \d|a les ))/gi, dema: /^dem/i, article: 'des del ' },
-  es: { re: /(desde )?(hoy|mañana)(?= (?:de \d|a las ))/gi, dema: /^ma/i, article: 'desde el ' },
+  ca: { re: /(des de )?(avui|demà)(?=,? (?:de (?:les )?\d|a les ))/gi, dema: /^dem/i, article: 'des del ' },
+  es: { re: /(desde )?(hoy|mañana)(?=,? (?:de (?:las )?\d|a las ))/gi, dema: /^ma/i, article: 'desde el ' },
 };
 
 function textFitxa(e, ara) {

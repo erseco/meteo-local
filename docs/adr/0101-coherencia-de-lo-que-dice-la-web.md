@@ -514,3 +514,14 @@ mismo día que pasen a ser el día: «dilluns 19 de 17 a 18 h».
 Validación: `tests/test_web.py` (`test_perill_avui_i_dema_d_un_altre_dia`:
 catalán, castellano y gallego, el mismo día y otro, con y sin `escrit`) y
 `tests/test_historial.py` (`escrit` al rehacer el texto propio).
+
+**Fichas antiguas de AEMET y fichas acabadas por su hora** (21-10-2026,
+3.171.1). El revisor vio el 20-10 a las 21:01 dos fichas de AEMET del 17 que
+seguían diciendo «Demà, de les 0 h a les 4 h.»: la regla de la 3.170.4 no
+reconocía la forma de las franjas de AEMET de antes del 18-10 (con coma y
+«de les»). Ahora sí («Diumenge 18, de les 0 h a les 4 h.»). Y el 21-10 a las
+5:53 creyó abiertas cuatro fichas de AEMET con la hora final pasada: un aviso
+de AEMET acaba a su hora sin mensaje de final, y «Perill» ya lo da por
+acabado. El revisor recibe ahora las fichas abiertas con la misma regla que
+«Perill», y sus instrucciones lo explican. Validación: `tests/test_web.py` y
+`tests/test_revisor.py`.
