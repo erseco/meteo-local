@@ -21,8 +21,14 @@ puedes aplicar todo».
   propia página ya traducida: nada se escribe dos veces. Las páginas sin
   descripción (fuentes, cómo funciona, privacidad) van sin
   `og:description`.
-- **Una imagen fija por lengua** (`web/img/og-ca.png`, `og-es.png`, 1200 ×
-  630, unos 19 KB): el icono, el nombre, qué es y la dirección.
+- **Una imagen fija por lengua** (`web/img/compartir-ca.png`,
+  `compartir-es.png`, 1200 × 630, unos 25 KB): un sol detrás de una nube
+  sobre un cielo azul, el nombre, qué es y la dirección. En la 3.177.0 era el
+  icono de la app, con la nube y la moto de cuando la web trataba también del
+  trayecto; Juanjo: «es muy malo… ¿algo del tiempo más tradicional?». De dos
+  propuestas (cielo azul o el azul oscuro de «Ara») eligió la del cielo
+  (3.178.2). El nombre del archivo cambia para que los servicios que
+  guardaban la anterior pidan la nueva.
 - **Sin el tiempo del momento en la imagen**: WhatsApp y Telegram guardan la
   vista previa días, y enseñaría un tiempo caducado.
 - De paso, los títulos en castellano de «Consultas», «Privacidad» y «Riera»,

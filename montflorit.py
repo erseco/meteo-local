@@ -374,7 +374,7 @@ def open_graph(html, nom, es=False):
     titol = OG_TITOL.search(html).group(1)
     desc = OG_DESCRIPCIO.search(html)
     url = WEB + ("es/" if es else "") + ("" if nom == "index.html" else nom)
-    imatge = f"{WEB}img/og-{'es' if es else 'ca'}.png"
+    imatge = f"{WEB}img/compartir-{'es' if es else 'ca'}.png"
     etiquetes = [("og:type", "website"), ("og:site_name", OG_NOM[es]), ("og:title", titol), ("og:url", url),
                  ("og:locale", "es_ES" if es else "ca_ES"), ("og:locale:alternate", "ca_ES" if es else "es_ES"),
                  ("og:image", imatge), ("og:image:width", "1200"), ("og:image:height", "630"),
