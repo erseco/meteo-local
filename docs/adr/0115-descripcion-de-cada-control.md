@@ -47,5 +47,6 @@ Chrome de Android y Safari de iPhone: la burbuja sale con su texto, también
 sobre la gráfica en grande, y la ficha o el botón no cambian; un toque corto
 cambia la ficha. `probar-web` sin errores en Chrome y Firefox; Safari sin
 pantalla se cuelga en «Notificacions» también con la versión publicada antes
-de este cambio. axe-core sin incidencias en claro y oscuro. Falta probarlo en
-un móvil de verdad (el menú del sistema al mantener el dedo).
+de este cambio. axe-core sin incidencias en claro y oscuro. El 21-10-2026,
+con la 3.175.0 publicada, Juanjo lo probó en su móvil: al mantener el dedo
+sale la burbuja y no el menú del sistema.
