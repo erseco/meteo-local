@@ -304,7 +304,13 @@ function titularAra(hores, radarDades, plou, ara = new Date()) {
   const estat = radarDades && radarDades.pluja && radarDades.pluja.estat;
   const radarDiu = plou || ['plou', 'radar_sobre', 'arriba', 'possible'].includes(estat);
   if (!radarDiu) {
-    div.append(liniaPlujaPrevista(hores, ara) || element('p', 'resum-linia', T('Sense pluja prevista.')));
+    // Si els models no hi veuen pluja però hi ha avís de pluja o tempestes en
+    // les 24 hores, mana l'avís: es diu la contradicció, no «sense pluja».
+    const fins = ara.getTime() + 24 * 3600e3;
+    const ambAvis = (hores || []).some((f) => new Date(f.fins) > ara && new Date(f.hora).getTime() < fins
+      && (f.avisos || []).some((a) => (a.tipus || []).some((t) => t === 'pluja' || t === 'tempestes')));
+    div.append(liniaPlujaPrevista(hores, ara) || element('p', 'resum-linia',
+      ambAvis ? T('Els models no hi veuen pluja, però hi ha avís: mira’l a dalt.') : T('Sense pluja prevista.')));
   }
   return div;
 }
