@@ -1446,12 +1446,13 @@ function tancaBombolla() {
   BOMBOLLA = null;
 }
 
-function obreBombolla(etiqueta) {
-  const b = element('div', 'bombolla-alta', TEXT_ALTA());
+function obreBombolla(etiqueta, text = TEXT_ALTA()) {
+  const b = element('div', 'bombolla-alta', text);
   b.id = 'bombolla-alta';
   b.setAttribute('role', 'tooltip');
   // Dins del contingut principal, i fixa a la pantalla: es tanca en desplaçar-se.
-  (document.querySelector('main') || document.body).append(b);
+  // Dins d'una finestra (la gràfica en gran), a la finestra, que va per sobre.
+  (etiqueta.closest('dialog') || document.querySelector('main') || document.body).append(b);
   // A sota de l'etiqueta i dins de la pantalla; si no hi cap (la barra de
   // pestanyes del mòbil, a baix), a sobre.
   const r = etiqueta.getBoundingClientRect();
@@ -1470,6 +1471,13 @@ function obreBombolla(etiqueta) {
 }
 
 document.addEventListener('click', (e) => {
+  // El toc que ha obert una descripció amb el dit no fa res més.
+  if (TOC_LLARG) {
+    TOC_LLARG = false;
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
   // La de la llegenda ja té l'explicació al costat.
   const etiqueta = e.target.closest && !e.target.closest('.llegenda') && e.target.closest('.alta');
   const jaOberta = BOMBOLLA && BOMBOLLA.etiqueta === etiqueta;
@@ -1488,6 +1496,54 @@ document.addEventListener('pointerdown', (e) => {
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') tancaBombolla(); });
 addEventListener('scroll', tancaBombolla, { passive: true });
 addEventListener('resize', tancaBombolla);
+
+// Què hi ha a cada pestanya, en passar-hi el ratolí o mantenint-hi el dit
+// (Juanjo, 21-10-2026: «habría que poner descripciones por todo el programa»).
+const DESCRIPCIO_PESTANYA = {
+  temps: () => T('El temps al barri: ara, la previsió hora a hora i la gràfica.'),
+  'perill.html': () => T('Els avisos de perill: els oficials, els incendis, la riera i el temps extrem.'),
+  'riera.html': () => T('La riera de Sant Cugat: el risc de crescuda ara i en les properes hores.'),
+  'sortir.html': () => T('Si has de sortir: com anirà cada mitjà de transport, què posar-te i els trens.'),
+  'consultes.html': () => T('Fitxes per consultar: avui, demà, el sol, l’aire, el pol·len, els trens, el trànsit i els talls de llum.'),
+};
+for (const a of document.querySelectorAll('.pagines a')) {
+  const fitxer = (a.getAttribute('href') || '').split('/').pop();
+  const d = DESCRIPCIO_PESTANYA[['', '.', 'index.html', 'casa.html'].includes(fitxer) ? 'temps' : fitxer];
+  if (d && !a.title) a.title = d();
+}
+
+// La descripció de cada control (el «title») surt en passar-hi el ratolí; amb
+// el dit, que no en té, mantenint-lo premut mig segon, com a Android: s'obre
+// la mateixa bombolla i el control no fa res (Juanjo, 21-10-2026: «al poner
+// el raton encima quiero que salga una descripción»). Un toc normal fa el de
+// sempre; si el dit es mou (desplaçar, arrossegar), no s'obre.
+const PREMUT_MS = 500;
+let TOC_LLARG = false;
+let premut = null;
+const cancelaPremut = () => {
+  if (premut) clearTimeout(premut.temps);
+  premut = null;
+};
+document.addEventListener('pointerdown', (e) => {
+  TOC_LLARG = false;
+  cancelaPremut();
+  if (e.pointerType === 'mouse' || !e.target.closest) return;
+  const el = e.target.closest('[title]');
+  if (!el || el.closest('.alta') || !el.title.trim()) return;
+  premut = { x: e.clientX, y: e.clientY, temps: setTimeout(() => {
+    premut = null;
+    TOC_LLARG = true;
+    tancaBombolla();
+    obreBombolla(el, el.title);
+  }, PREMUT_MS) };
+});
+document.addEventListener('pointermove', (e) => {
+  if (premut && Math.hypot(e.clientX - premut.x, e.clientY - premut.y) > 10) cancelaPremut();
+});
+document.addEventListener('pointerup', cancelaPremut);
+document.addEventListener('pointercancel', cancelaPremut);
+// Sense el menú del navegador (copiar l'enllaç, seleccionar) en lloc de la descripció.
+document.addEventListener('contextmenu', (e) => { if (TOC_LLARG || premut) e.preventDefault(); });
 
 function pintaResum(text) {
   const peces = [];

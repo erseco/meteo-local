@@ -1011,8 +1011,9 @@ function vistaGrafica() {
 
   // Les opcions que es recorden: la zona de la temperatura, el vent, la humitat i l'UV.
   // Les que es recorden, amb interruptors, com a «Avisos».
-  const interruptor = (clau, icon, text) => {
+  const interruptor = (clau, icon, text, descripcio) => {
     const fila = element('label', 'vg-fixa');
+    fila.title = descripcio;
     const c = element('input', 'interruptor');
     c.type = 'checkbox';
     c.setAttribute('role', 'switch');
@@ -1021,7 +1022,7 @@ function vistaGrafica() {
     fila.append(icona(icon), element('span', null, text), c);
     return fila;
   };
-  const vent = interruptor('vent', 'i-wind', T('Vent'));
+  const vent = interruptor('vent', 'i-wind', T('Vent'), T('Afegeix el vent i les ratxes, en km/h.'));
   const ambVent = HORES_GRAFICA.some((f) => f.vent != null);
   // La zona de la temperatura: una o l'altra, amb un sol toc (Juanjo,
   // 21-10-2026: «o te interesa la de arriba o la de abajo»).
@@ -1050,9 +1051,9 @@ function vistaGrafica() {
   });
   zona.append(...botonsZona);
   const ambDifAlta = HORES_GRAFICA.some((f) => f.dif_alta != null);
-  const humitat = interruptor('humitat', 'i-droplets', T('Humitat'));
+  const humitat = interruptor('humitat', 'i-droplets', T('Humitat'), T('Afegeix la humitat relativa de l’aire, en %.'));
   const ambHumitat = HORES_GRAFICA.some((f) => f.humitat != null);
-  const uv = interruptor('uv', 'i-sun', T('UV'));
+  const uv = interruptor('uv', 'i-sun', T('UV'), T('Afegeix l’índex UV de les hores de sol, amb els colors de l’OMS.'));
   const ambUv = HORES_GRAFICA.some((f) => f.uv != null);
   // Només es desen les que es recorden.
   const desa = () => {

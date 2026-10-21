@@ -227,8 +227,8 @@ CANVIS_ES_SORTIR = [
     (f'data-dades="{DADES}"', f'data-dades="{DADES}" data-arrel="../"'),
     ('<script src="comu.js"></script>', '<script src="../es.js"></script>\n  <script src="../comu.js"></script>'),
     ('<script src="sortir.js"></script>', '<script src="../sortir.js"></script>'),
-    ("<label>Surto ", "<label>Salgo "),
-    ("<label>Torno ", "<label>Vuelvo "),
+    (">Surto <select", ">Salgo <select"),
+    (">Torno <select", ">Vuelvo <select"),
     (">Mitjans que vols veure</legend>", ">Medios que quieres ver</legend>"),
 ]
 # El menú público: lo que no traduce la tabla de bloques (los enlaces).

@@ -1210,6 +1210,7 @@ function posaBotoTot() {
   const obre = [...document.querySelectorAll('.tram-hores')].some((d) => !d.open);
   boto.dataset.accio = obre ? 'obre' : 'plega';
   boto.replaceChildren(icona(obre ? 'i-chevrons-up-down' : 'i-chevrons-down-up'), obre ? T('Desplega-ho tot') : T('Plega-ho tot'));
+  boto.title = obre ? T('Obre totes les franges del dia per veure la previsió hora a hora.') : T('Tanca totes les franges del dia.');
 }
 
 // En imprimir, tots els trams oberts; després, com estaven.

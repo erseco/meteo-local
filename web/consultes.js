@@ -9,12 +9,17 @@ const FITXER_DADES = document.documentElement.dataset.dades || 'casa.json';
 // L'ordre i les claus, les del menú del bot.
 // Sense «Ara», «Radar» ni «Avisos actius», que ja surten a «El temps»; amb el
 // sol, l'aire i el pol·len, que no surten enlloc més (Juanjo, 09-10-2026).
+// Amb la descripció de cada fitxa, en passar-hi el ratolí o mantenint-hi el dit.
 const OPCIONS = [
-  ['avui', () => T('Avui'), 'i-calendar-check'], ['dema', () => T('Demà'), 'i-calendar-plus'],
-  ['sol', () => T('Sol'), 'i-sunrise'], ['aire', () => T('Aire'), 'i-factory'], ['pollen', () => T('Pol·len'), 'i-flower'],
-  ['trens', () => T('Trens'), 'i-train-front'], ['transit', () => T('Trànsit'), 'i-traffic-cone'],
+  ['avui', () => T('Avui'), 'i-calendar-check', () => T('La previsió d’avui, amb els avisos i l’estat dels trens.')],
+  ['dema', () => T('Demà'), 'i-calendar-plus', () => T('La previsió de demà.')],
+  ['sol', () => T('Sol'), 'i-sunrise', () => T('La sortida i la posta del sol, les hores de llum i l’índex UV.')],
+  ['aire', () => T('Aire'), 'i-factory', () => T('La qualitat de l’aire.')],
+  ['pollen', () => T('Pol·len'), 'i-flower', () => T('El nivell de cada tipus de pol·len.')],
+  ['trens', () => T('Trens'), 'i-train-front', () => T('L’estat de les línies de Rodalies i FGC de la zona.')],
+  ['transit', () => T('Trànsit'), 'i-traffic-cone', () => T('L’estat del trànsit a les carreteres de la zona.')],
   // Els talls de llum a prop, d'e-distribució (ADR 0072).
-  ['llum', () => T('Llum'), 'i-zap-off'],
+  ['llum', () => T('Llum'), 'i-zap-off', () => T('Els talls de llum a prop del barri, segons e-distribució.')],
 ];
 const CLAU_TRIADA = 'meteo.consultes';
 let DADES = null;
@@ -41,8 +46,9 @@ function tria(clau) {
 
 function pintaOpcions() {
   const caixa = $('opcions');
-  for (const [clau, nom, icon] of OPCIONS) {
+  for (const [clau, nom, icon, descripcio] of OPCIONS) {
     const etiqueta = element('label', 'consulta-opcio');
+    etiqueta.title = descripcio();
     const boto = element('input');
     boto.type = 'radio';
     boto.name = 'consulta';

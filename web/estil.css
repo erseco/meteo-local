@@ -412,6 +412,9 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .alta { display: inline-flex; align-items: center; gap: .25rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .alta:focus-visible { outline: 2px solid var(--alta-text); outline-offset: 2px; }
 button.alta { border: 0; font-family: inherit; line-height: inherit; }
+/* Mantenir el dit en un control amb descripció l'obre a la bombolla (comu.js):
+   sense seleccionar text ni el menú de l'enllaç de l'iPhone. */
+button[title], a[title], label[title], [role="button"][title] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .bombolla-alta { position: fixed; z-index: 1000; max-width: min(20rem, calc(100vw - 16px)); background: var(--superficie); color: var(--text); border: 1px solid var(--vora); border-radius: .6rem; padding: .55rem .75rem; box-shadow: 0 4px 16px rgba(0, 0, 0, .18); font-size: .92rem; line-height: 1.4; }
 .tram-hores summary svg { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--suau); }
 .tram-hores .fenomen { color: var(--compte); font-weight: 600; }

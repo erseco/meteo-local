@@ -6,12 +6,16 @@
 
 // Clau, nom, icona i, si en té, una etiqueta i una línia de detall: el rètol
 // queda curt i el que està en proves es diu igualment (Juanjo, 16-10-2026).
+// L'últim, la descripció, en passar-hi el ratolí o mantenint-hi el dit.
 const TIPUS_PUSH = [
-  ['perill', T('Situacions de perill'), 'i-triangle-alert'],
-  ['riera', T('Desbordament de la riera de Sant Cugat'), 'i-waves', T('en proves')],
-  ['pluja', T('Pluja a punt de començar'), 'i-cloud-rain', null, T('15 min abans')],
+  ['perill', T('Situacions de perill'), 'i-triangle-alert', null, null,
+    T('Un avís quan n’hi ha un de nou: els oficials, els incendis i el temps extrem.')],
+  ['riera', T('Desbordament de la riera de Sant Cugat'), 'i-waves', T('en proves'), null,
+    T('Un avís quan la pluja pot fer desbordar la riera. Està en proves.')],
+  ['pluja', T('Pluja a punt de començar'), 'i-cloud-rain', null, T('15 min abans'),
+    T('Un avís uns 15 minuts abans que comenci a ploure al barri.')],
   // Els talls de llum del barri (ADR 0072).
-  ['llum', T('Talls de llum al barri'), 'i-zap-off'],
+  ['llum', T('Talls de llum al barri'), 'i-zap-off', null, null, T('Un avís quan hi ha un tall de llum al barri.')],
 ];
 // Per començar, com al bot: la riera i el perill (AVISOS_PER_DEFECTE, a comu.js).
 const PER_DEFECTE_PUSH = AVISOS_PER_DEFECTE;
@@ -108,17 +112,19 @@ async function prova() {
   }
 }
 
-function boto(text, classe, accio) {
+function boto(text, classe, accio, descripcio) {
   const b = element('button', classe, text);
   b.type = 'button';
+  if (descripcio) b.title = descripcio;
   b.addEventListener('click', accio);
   return b;
 }
 
 // Una fila de la llista: icona i nom a l'esquerra, el control a la dreta,
 // com als ajustos del mòbil. Tota la fila es pot tocar.
-function fila(icon, nom, control, etiqueta, detall, costat) {
+function fila(icon, nom, control, etiqueta, detall, costat, descripcio) {
   const f = element('label', 'push-fila');
+  if (descripcio) f.title = descripcio;
   const text = element('span', 'push-nom');
   text.append(element('span', null, nom));
   if (etiqueta) text.append(' ', element('span', 'push-etiqueta', etiqueta));
@@ -145,8 +151,8 @@ function pinta(opcions) {
   const form = $('push');
   const tipus = element('fieldset', 'push-grup');
   tipus.append(element('legend', null, T('Què vols rebre')));
-  for (const [clau, nom, icon, etiqueta, detall] of TIPUS_PUSH) {
-    tipus.append(fila(icon, nom, interruptor('tipus', clau, opcions.avisos.includes(clau)), etiqueta, detall));
+  for (const [clau, nom, icon, etiqueta, detall, descripcio] of TIPUS_PUSH) {
+    tipus.append(fila(icon, nom, interruptor('tipus', clau, opcions.avisos.includes(clau)), etiqueta, detall, null, descripcio));
   }
   const previsio = element('fieldset', 'push-grup');
   previsio.append(element('legend', null, T('Previsió')));
@@ -163,14 +169,16 @@ function pinta(opcions) {
   const mati = interruptor('mati', null, Boolean(opcions.resum));
   select.hidden = !mati.checked;
   mati.addEventListener('change', () => { select.hidden = !mati.checked; });
-  const filaMati = fila('i-sun', T('Del dia, al matí'), mati, null, null, select);
+  const filaMati = fila('i-sun', T('Del dia, al matí'), mati, null, null, select, T('La previsió del dia, cada matí a l’hora que triïs.'));
   previsio.append(filaMati,
-    fila('i-moon', T('De demà, a les 21 h'), interruptor('nit', null, Boolean(opcions.nit))));
+    fila('i-moon', T('De demà, a les 21 h'), interruptor('nit', null, Boolean(opcions.nit)), null, null, null,
+      T('La previsió de demà, cada vespre a les 21 h.')));
   const botons = element('p', 'push-botons');
   if (subscripcioPush) {
-    botons.append(boto(T('Envia’m una prova'), 'boto', prova), boto(T('Desactiva'), 'boto secundari', desactiva));
+    botons.append(boto(T('Envia’m una prova'), 'boto', prova, T('T’envia ara un avís de prova per comprovar que arriben.')),
+      boto(T('Desactiva'), 'boto secundari', desactiva, T('Deixa d’enviar avisos a aquest dispositiu.')));
   } else {
-    botons.append(boto(T('Activa els avisos'), 'boto', activa));
+    botons.append(boto(T('Activa els avisos'), 'boto', activa, T('Demana permís al navegador i comença a enviar-te els avisos triats.')));
   }
   form.replaceChildren(tipus, previsio, botons);
   form.hidden = false;

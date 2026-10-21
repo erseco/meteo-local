@@ -490,6 +490,7 @@ function pintaTriats() {
   explica.hidden = explicat() || fora.size > 0;
   for (const [clau, nom, icon] of MITJANS) {
     const etiqueta = element('label', 'xip');
+    etiqueta.title = T`Mostra o amaga «${TD(nom)}». Es recorda en aquest dispositiu.`;
     const casella = element('input');
     casella.type = 'checkbox';
     casella.value = clau;
