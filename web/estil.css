@@ -264,7 +264,8 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; }
 .com summary { cursor: pointer; font-weight: 600; }
 .com ol { padding-left: 1.3rem; }
 .com li { margin-bottom: .3rem; }
-/* «Com es decideixen els avisos», a «Perill»: un plec per tipus, junts. */
+/* «Com es decideixen els avisos», a «Perill»: tot plegat i, a dins, un plec per tipus. */
+.com-avisos[open] > summary { margin-bottom: .2rem; }
 .com-avisos .com { margin-top: .5rem; }
 .com-avisos .com[open] summary { margin-bottom: .4rem; }
 

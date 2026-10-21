@@ -51,6 +51,11 @@ excesivo»). Cada uno, en pocas líneas sacadas de su ADR (0051, 0062, 0071,
 0092 y 0093); la riera y el temps extrem, que tienen su apartado en «Com
 funciona», enlazan allí en lugar de repetirlo. El mapa solo se descarga si
 se abre el de los incendios.
+
+**21-10-2026 (3.172.1): todo el apartado, plegado.** «Com es decideixen els
+avisos» pasa de título a desplegable que contiene los siete, para que al final
+de «Perill» quede una sola línea (Juanjo: «todo esto plegado bajo: cómo se
+deciden los avisos»).
 ## Contexto
 
 La noche del 10 al 11-10-2026 llegó por Telegram y al móvil el aviso de un
