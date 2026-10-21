@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
-/* La lletra de tot el lloc (portada nova, ADR 0117): Figtree, servida des
+/* La lletra de tot el lloc (portada nova, ADR 0118): Figtree, servida des
    d'aquí mateix, sense Google (SIL OFL 1.1, crèdits a fonts.html). */
 @font-face { font-family: 'Figtree'; font-style: normal; font-weight: 300 900; font-display: swap;
   src: url(fonts/figtree-latin.woff2) format('woff2');
@@ -1427,7 +1427,7 @@ button[title], a[title], label[title], [role="button"][title] { -webkit-touch-ca
 .pluja-prevista svg { width: 1.1rem; height: 1.1rem; flex: none; fill: none; stroke: var(--c-aigua); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .pluja-prevista.segura { font-weight: 600; }
 
-/* --- La portada nova (ADR 0117) --- */
+/* --- La portada nova (ADR 0118) --- */
 :root { --heroi: #1e3a5f; --heroi-suau: #c9d8ee; }
 :root[data-theme="dark"] { --heroi: #1b2d4a; --heroi-suau: #bacae3; }
 /* «Ara», destacat: la conclusió a dalt, la temperatura en gran i les dades en
@@ -1469,3 +1469,10 @@ button[title], a[title], label[title], [role="button"][title] { -webkit-touch-ca
 .estat-text { display: flex; flex-direction: column; min-width: 0; }
 .estat-text span { font-size: .92rem; color: var(--suau); }
 .enllacos { margin: .8rem 0 0; }
+/* Els avisos actius, que no quedin a l'ombra d'«Ara»: el fons i la vora del
+   color del més greu i el títol més gran. Segueixen plegats (20-10-2026). */
+.avisos-actius[class*="nivell-"] { border: 1px solid var(--nivell-avisos); border-left-width: .45rem; border-radius: 1rem;
+  background: color-mix(in srgb, var(--nivell-avisos) 16%, var(--superficie)); padding: .75rem 1rem; }
+.avisos-actius[class*="nivell-"] .seccio { font-size: 1.1rem; font-weight: 700; text-transform: none; letter-spacing: 0;
+  color: var(--text); }
+.avisos-actius[class*="nivell-"] .avisos-curts .avis-item { background: var(--superficie); }

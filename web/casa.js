@@ -274,7 +274,7 @@ function resumTram(t) {
 // sin repetirse arriba y abajo»; ADR 0074): a dalt, el que es mesura ara; a
 // sota, el resum d'avui (el de «Consultes › Avui», sense el títol), amb el que
 // falta per a la pluja dins la seva línia, i el radar, si diu alguna cosa.
-// La conclusió, a dalt de tot d'«Ara» (portada nova, ADR 0117): el cel dels
+// La conclusió, a dalt de tot d'«Ara» (portada nova, ADR 0118): el cel dels
 // dos trams que venen i la pluja de les 24 hores, amb les mateixes peces de la
 // taula (resumTrams) i de la línia de pluja (liniaPlujaPrevista), perquè no
 // digui res diferent. Si plou o el radar en veu, la pluja la diu el radar, a
@@ -315,7 +315,7 @@ function titularAra(hores, radarDades, plou, ara = new Date()) {
   return div;
 }
 
-// Avisos i riera d'una ullada, sota «Ara» (portada nova, ADR 0117): «cap avís»
+// Avisos i riera d'una ullada, sota «Ara» (portada nova, ADR 0118): «cap avís»
 // només si no n'hi ha cap (si n'hi ha, ja surten a dalt, a «Avisos actius»), i
 // l'estat de la riera amb el títol i el color de la pàgina «Riera».
 function estatPortada(dades) {
@@ -1354,7 +1354,7 @@ function pinta(dades) {
   // La gràfica, just després d'«Ara» (19-10-2026); el detall del dia, després.
   if (previsio && previsio._grafica) cont.append(previsio._grafica);
   // El resum d'avui i el de demà, en text, ja no hi són (portada nova, ADR
-  // 0117): ho diuen la frase de dalt d'«Ara» i els trams. Sense dades d'ara,
+  // 0118): ho diuen la frase de dalt d'«Ara» i els trams. Sense dades d'ara,
   // el resum d'avui, com sempre.
   if (OFERTA_AVISOS) cont.append(OFERTA_AVISOS);
   if (!ara) cont.append(...blocsResum(dades, true));
