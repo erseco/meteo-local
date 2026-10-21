@@ -627,7 +627,6 @@ var IDIOMA = {
     "Aquest dia no es pot llegir.": "Este día no se puede leer.",
     "Part alta": "Parte alta",
     "Part baixa": "Parte baja",
-    "{0}\u00a0°C (part alta)": "{0}\u00a0°C (parte alta)",
     "Comparteix l’enllaç de la gràfica": "Compartir el enlace de la gráfica",
     "Comparteix la imatge de la gràfica": "Compartir la imagen de la gráfica",
     "Temps a Montflorit (Cerdanyola del Vallès) · previsió de {0}, {1} · meteo-montflorit.github.io": "Temps a Montflorit (Cerdanyola del Vallès) · previsión del {0}, {1} · meteo-montflorit.github.io",

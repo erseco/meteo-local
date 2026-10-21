@@ -193,7 +193,14 @@ siempre en la hora en curso.
   dos a la vez, para ver a qué horas y cuánto difieren, en lugar de cambiar
   una por otra. Apagado por defecto; la elección se recuerda y vale para
   todas las gráficas, como el viento. Con ella, la raya del techo marca la
-  máxima de las dos y, si es la de arriba, lo dice («26 °C (part alta)»).
+  máxima de las dos, sin decir de cuál (3.172.0; Juanjo, 21-10-2026: «no
+  hace falta el paréntesis»). Bajo la cifra de cada icono, la de la parte
+  baja, va otra con la de la parte alta, del color de su curva; si se quita
+  la parte baja, la de la parte alta ocupa su sitio con su color, para
+  distinguirlas (Juanjo, 21-10-2026: «deberían aparecer debajo de las
+  temperaturas de la parte baja las de la parte alta» y «para distinguirlos
+  debe mantener su color»). Las horas pasadas no la llevan: allí no se
+  calcula.
   Deshace en parte lo de la ficha de cada hora («las capas de UV y parte
   alta sobran»): la ficha sigue dando el valor; la curva enseña la forma.
 - **El viento, por defecto en todas las gráficas** (3.106.0; Juanjo,

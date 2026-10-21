@@ -449,13 +449,10 @@ function dibuixaGrafica(fig) {
   // Sota cada icona, la temperatura d'aquella hora (Juanjo, 16-10-2026: «no
   // quedaría bien la temperatura bajo el cielo?»).
   const yXifra = yCel + hCel + 13;
-  const yTemp = yXifra + 12;
   // A la vista en gran, més alta; al mòbil, menys, perquè la gràfica i les
   // seves opcions hi càpiguen sense desplaçar (Juanjo, 19-10-2026: «ocupa
   // mucho espacio vertical, se puede optimizar?»).
   const hTemp = opcions.gran ? Math.round(Math.min(260, Math.max(110, innerHeight * (innerWidth <= 600 ? 0.22 : 0.32)))) : 100;
-  const yPluja = yTemp;
-  const hPluja = hTemp;
   // El vent, a sota de la pluja, amb el mateix eix d'hores.
   // A la vista en gran, el que s'hi tria; a la resta, el que s'hi va triar
   // (per defecte, amb vent). Sense dades de vent, res.
@@ -468,6 +465,14 @@ function dibuixaGrafica(fig) {
   // I la de la part baixa (la de l'estació, vora la riera), que es pot treure
   // per a qui no la necessita (Juanjo, 17-10-2026); per defecte, sí.
   const ambBaixa = opcions.gran ? opcions.baixa !== false : opcions.baixa ?? baixaTriada();
+  // Amb les dues, sota la xifra de baix, la de dalt, del seu color (Juanjo,
+  // 21-10-2026: «deberían aparecer debajo de las temperaturas de la parte
+  // baja las de la parte alta»).
+  const ambDuesXifres = ambBaixa && ambAlta;
+  const yXifraAlta = yXifra + 12;
+  const yTemp = (ambDuesXifres ? yXifraAlta : yXifra) + 12;
+  const yPluja = yTemp;
+  const hPluja = hTemp;
   // La nit, de la posta a la sortida (a mitja hora de cada tram): l'ombra i
   // l'UV, que de nit no surt.
   const esNit = files.map((f) => alturaSol(new Date(new Date(f.hora).getTime() + 18e5)) < 0);
@@ -569,7 +574,14 @@ function dibuixaGrafica(fig) {
       g.append(ic);
       const mig = files[Math.floor((i + j - 1) / 2)];
       if (tempXifra(mig) != null) {
-        g.append(svg('text', { class: 'g-xifra', x: cx, y: yXifra, 'text-anchor': 'middle' }, `${Math.round(tempXifra(mig))}°`));
+        // Sense la de baix, la de dalt ocupa el seu lloc amb el seu color
+        // (Juanjo, 21-10-2026: «para distinguirlos debe mantener su color»).
+        g.append(svg('text', { class: ambBaixa ? 'g-xifra' : 'g-xifra g-xifra-alta', x: cx, y: yXifra, 'text-anchor': 'middle' },
+          `${Math.round(tempXifra(mig))}°`));
+      }
+      if (ambDuesXifres && !mig.mesura && mig.temperatura != null && mig.dif_alta != null) {
+        g.append(svg('text', { class: 'g-xifra g-xifra-alta', x: cx, y: yXifraAlta, 'text-anchor': 'middle' },
+          `${Math.round(mig.temperatura + mig.dif_alta)}°`));
       }
     }
     i = j;
@@ -591,11 +603,11 @@ function dibuixaGrafica(fig) {
   // la seva xifra: una sola ratlla per al màxim de les dues escales (Juanjo,
   // 17-10-2026: «la temperatura debe llegar al máximo de la lluvia y poner
   // esa temperatura máxima a la izquierda»). Amb la part alta, la més alta
-  // de les dues, i si és la de dalt, ho diu.
+  // de les dues, sense dir de quina (Juanjo, 21-10-2026: «no hace falta el
+  // paréntesis»).
   const escala = [...(ambTemp ? [...temps, ...altes] : baixes), ...previstes].filter(valid);
   if (!escala.length) escala.push(0, 1);
   const tMax = Math.max(...escala);
-  const maxAlta = ambAlta && (!ambBaixa || Math.max(...altes.filter(valid)) > Math.max(...temps));
   const tMin = Math.min(Math.floor(Math.min(...escala)) - 1, tMax - 2);
   const ySostre = yPluja + 14;
   const yT = (t) => yTemp + hTemp - ((t - tMin) / (tMax - tMin)) * (yTemp + hTemp - ySostre);
@@ -665,7 +677,7 @@ function dibuixaGrafica(fig) {
   if (ambBarres) g.append(svg('text', { class: 'g-mm g-sostre-xifra', x: W - 2, y: ySostre - 3, 'text-anchor': 'end' }, `${sostre}\u00a0mm`));
   if (ambTemp) {
     g.append(svg('text', { class: 'g-mm g-sostre-xifra g-sostre-temp', x: 2, y: ySostre - 3 },
-      maxAlta ? T`${Math.round(tMax)}\u00a0°C (part alta)` : `${Math.round(tMax)}\u00a0°C`));
+      `${Math.round(tMax)}\u00a0°C`));
   }
 
   // El vent i les ratxes, en km/h: una ratlla a dalt amb la xifra de l'escala,
