@@ -39,6 +39,9 @@ La recogida genera también:
   metadatos del radar y ambiente. No incluye imágenes, credenciales ni archivos internos.
 - `datos.html`: resumen **renderizado al publicar**, legible sin JavaScript,
   con la misma fecha que el JSON y metadatos `Dataset` / `DataDownload` de Schema.org.
+- Imagen para compartir (`og-image.png`, 1200×630) con `og:image` y tarjeta grande de
+  Twitter/X. Es estática: las redes la guardan en caché y no debe mostrar datos del
+  tiempo. Se dibuja con `python3 -m lpa.og_image` y se guarda en `lpa/assets/`.
 - Canonical, descripción, Open Graph y descubrimiento del JSON en el HTML;
   `WebSite` en portada y `sitemap.xml` con las páginas principales.
 - `llms.txt`: guía orientativa de acceso y semántica. No es un estándar universal

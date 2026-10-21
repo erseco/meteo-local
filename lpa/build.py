@@ -54,6 +54,8 @@ def static_page(template, title, body):
     return template.replace('</head>', theme + '</head>')
 
 
+OG_ALT = 'Tiempo en Las Palmas de Gran Canaria: 7 días, radar, viento, calima y mar, con el mapa de Gran Canaria.'
+
 HOME = (
     '<main id="lpa-home">'
     '<div id="lh-alerts" aria-live="polite"></div>'
@@ -213,7 +215,13 @@ def build(destination):
               '<meta property="og:type" content="website"><meta property="og:locale" content="es_ES">'
               '<meta property="og:url" content="'+canonical+'">'
               '<meta property="og:title" content="'+title+'">'
-              '<meta property="og:description" content="'+html.escape(DESCRIPTION,quote=True)+'">')
+              '<meta property="og:description" content="'+html.escape(DESCRIPTION,quote=True)+'">'
+              # Static sharing card drawn by og_image.py; absolute URL as social crawlers require.
+              '<meta property="og:image" content="'+SITE+'og-image.png">'
+              '<meta property="og:image:type" content="image/png">'
+              '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">'
+              '<meta property="og:image:alt" content="'+OG_ALT+'">'
+              '<meta name="twitter:card" content="summary_large_image">')
         if page.name=='index.html':
             meta+='<script type="application/ld+json">'+json.dumps({'@context':'https://schema.org','@type':'WebSite',
                 'name':'Tiempo en Las Palmas','url':SITE,'inLanguage':'es',
@@ -221,6 +229,7 @@ def build(destination):
         text=text.replace('</head>',meta+('' if '../lpa-style.css' in text else '<link rel="stylesheet" href="../lpa-style.css">')+'</head>')
         page.write_text(text)
     shutil.copyfile(HERE / 'style.css', dest / 'lpa-style.css')
+    shutil.copyfile(HERE / 'assets/og-image.png', dest / 'og-image.png')
     # Barranco floods are not modelled here: the upstream river page only redirects home.
     (dest / 'es' / 'riera.html').write_text(redirect_page('./'))
     # Promote the generated Spanish pages; keep /es/ as redirects only.
