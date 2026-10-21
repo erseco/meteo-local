@@ -13,8 +13,6 @@ const FONTS_RIERA = ['previsió', 'estació', 'radar'];
 const NOM_MODEL = {
   meteofrance_arome_france_hd: 'AROME HD', meteofrance_arome_france: 'AROME', icon_eu: 'ICON-EU', ecmwf_ifs: 'ECMWF',
 };
-const COLOR_NIVELL = { perill: 'vermell', atencio: 'taronja', registre: 'groc' };
-
 function h(iso) {
   return `${new Date(iso).getHours()}`;
 }
@@ -97,8 +95,7 @@ function pintaAra(dades) {
   const fins = horaCurta(v ? v.fins : r.fins);
   const qui = v ? T`Segons la mediana de ${v.n} estacions particulars de Sant Cugat,` : T('A Sant Cugat (Meteocat)');
   const estat = element('p', `avis-item riera-estat ${COLOR_NIVELL[r.nivell] || 'be'}`);
-  const titol = r.nivell === 'perill' ? T('Perill de desbordament.') : r.nivell === 'atencio' ? T('Atenció.')
-    : r.nivell === 'registre' ? T('Plou a la conca.') : T('Sense risc de crescuda ara.');
+  const titol = titolRiera(r.nivell);
   estat.append(element('strong', null, titol), ' ',
     T`${qui} han caigut ${coma(mm3)} mm en 3 hores i ${coma(mm6)} en 6 (fins a les ${fins}).`);
   const frases = [];

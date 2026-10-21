@@ -189,7 +189,7 @@ PECES = ["./", "index.html", "sortir.html", "perill.html", "riera.html", "consul
          "comu.js", "grafica.js", "casa.js", "sortir.js", "perill.js", "riera.js", "consultes.js", "avisos.js",
          "fiabilitat.js", "es.js",
          "manifest.webmanifest",
-         "icones/icona-192.png"]
+         "icones/icona-192.png", "fonts/figtree-latin.woff2"]
 
 # --- En castellano (ADR 0025) ---
 TRADUCCIONS = os.path.join(ARREL, "i18n", "es.json")
@@ -564,6 +564,7 @@ def construeix(desti, web=None):
         shutil.copy(os.path.join(web, nom), desti)
     shutil.copytree(propi, desti, dirs_exist_ok=True)
     shutil.copytree(os.path.join(web, "img"), os.path.join(desti, "img"), dirs_exist_ok=True)
+    shutil.copytree(os.path.join(web, "fonts"), os.path.join(desti, "fonts"), dirs_exist_ok=True)
     for nom in ("LICENSE", "LICENSE-CONTINGUTS.md"):
         shutil.copy(os.path.join(ARREL, nom), desti)
     open(os.path.join(desti, ".nojekyll"), "w").close()

@@ -1425,6 +1425,14 @@ function nodesAmbMarques(trossos) {
 const TEXT_ALTA = () => T('Les temperatures són les de vora la riera, la zona més freda del barri; a la part alta sol fer més calor, i aquesta etiqueta diu quants graus més.');
 let BOMBOLLA = null;
 
+// L'estat de la riera ara: el color i el títol, els mateixos a «Riera» i a la
+// portada (casa.estatPortada).
+const COLOR_NIVELL = { perill: 'vermell', atencio: 'taronja', registre: 'groc' };
+function titolRiera(nivell) {
+  return nivell === 'perill' ? T('Perill de desbordament.') : nivell === 'atencio' ? T('Atenció.')
+    : nivell === 'registre' ? T('Plou a la conca.') : T('Sense risc de crescuda ara.');
+}
+
 function etiquetaAlta(text, dinsDeTram = false) {
   const el = element(dinsDeTram ? 'span' : 'button', 'alta');
   if (dinsDeTram) el.title = TEXT_ALTA();

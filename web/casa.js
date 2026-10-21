@@ -274,8 +274,77 @@ function resumTram(t) {
 // sin repetirse arriba y abajo»; ADR 0074): a dalt, el que es mesura ara; a
 // sota, el resum d'avui (el de «Consultes › Avui», sense el títol), amb el que
 // falta per a la pluja dins la seva línia, i el radar, si diu alguna cosa.
+// La conclusió, a dalt de tot d'«Ara» (portada nova, ADR 0117): el cel dels
+// dos trams que venen i la pluja de les 24 hores, amb les mateixes peces de la
+// taula (resumTrams) i de la línia de pluja (liniaPlujaPrevista), perquè no
+// digui res diferent. Si plou o el radar en veu, la pluja la diu el radar, a
+// sota: aquí només el cel.
+const QUAN_TRAM = { Matí: () => T('Aquest matí'), Tarda: () => T('Aquesta tarda'), Nit: () => T('Aquesta nit') };
+const QUAN_TRAM_DEMA = { Matí: () => T('Demà al matí'), Tarda: () => T('Demà a la tarda'), Nit: () => T('Demà a la nit') };
+function titularAra(hores, radarDades, plou, ara = new Date()) {
+  let trams = resumTrams(hores, ara, null).filter((t) => t.cel);
+  // El tram en curs, si només li queda una hora, ja no és el que ve.
+  if (trams.length > 2 && trams[0].files.length <= 1) trams = trams.slice(1);
+  const dema = new Date(ara);
+  dema.setDate(dema.getDate() + 1);
+  const parts = trams.slice(0, 2).map((t) => {
+    const nom = t.clau.split('|')[1];
+    const quan = (t.files[0] && new Date(t.files[0].hora).toDateString() === dema.toDateString()
+      && nom !== 'Nit' ? QUAN_TRAM_DEMA : QUAN_TRAM)[nom]();
+    return [quan, t.cel[0].toLowerCase()];
+  });
+  if (!parts.length) return null;
+  const minuscula = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+  // El mateix cel als dos trams, en una sola frase: «Aquesta tarda i aquesta nit, ennuvolat.»
+  const frase = parts.length === 2 && parts[0][1] === parts[1][1]
+    ? T`${parts[0][0]} i ${minuscula(parts[1][0])}, ${parts[0][1]}.`
+    : parts.map(([quan, cel], i) => T`${i ? minuscula(quan) : quan}, ${cel}`).join('; ') + '.';
+  const div = element('div', 'titular');
+  div.append(element('p', 'titular-cel', frase));
+  const estat = radarDades && radarDades.pluja && radarDades.pluja.estat;
+  const radarDiu = plou || ['plou', 'radar_sobre', 'arriba', 'possible'].includes(estat);
+  if (!radarDiu) {
+    div.append(liniaPlujaPrevista(hores, ara) || element('p', 'resum-linia', T('Sense pluja prevista.')));
+  }
+  return div;
+}
+
+// Avisos i riera d'una ullada, sota «Ara» (portada nova, ADR 0117): «cap avís»
+// només si no n'hi ha cap (si n'hi ha, ja surten a dalt, a «Avisos actius»), i
+// l'estat de la riera amb el títol i el color de la pàgina «Riera».
+function estatPortada(dades) {
+  const files = [];
+  const fila = (href, classe, iconaId, titol, detall) => {
+    const a = element('a', `estat-fila ${classe}`);
+    a.href = href;
+    const ic = element('span', 'estat-icona');
+    ic.append(icona(iconaId));
+    const text = element('span', 'estat-text');
+    text.append(element('strong', null, titol));
+    if (detall) text.append(element('span', null, detall));
+    a.append(ic, text, icona('i-chevron-right'));
+    return a;
+  };
+  if (!blocAvisos(dades)) {
+    files.push(fila('perill.html', 'be', 'i-circle-check', T('Ara no hi ha cap avís.'),
+      T('Ni oficials ni dels que calcula aquesta pàgina.')));
+  }
+  const r = dades.riera;
+  if (r) {
+    // La pluja, d'on la compta «Riera»: Meteocat o, si falla, les estacions particulars.
+    const v = r.font === 'veines' && r.veines ? r.veines : r;
+    files.push(fila('riera.html', COLOR_NIVELL[r.nivell] || 'be', 'i-waves', T`Riera: ${titolRiera(r.nivell).toLowerCase()}`,
+      T`A Sant Cugat, ${coma(v.mm_6h || 0)} mm en les últimes 6 hores.`));
+  }
+  if (!files.length) return null;
+  const sec = element('section', 'targeta estat-portada');
+  sec.setAttribute('aria-label', T('Avisos i riera'));
+  sec.append(...files);
+  return sec;
+}
+
 function blocAra(casa, radarDades, vent, veines, hores, resum) {
-  const sec = element('section', 'decisio targeta ara');
+  const sec = element('section', 'decisio targeta ara heroi');
   sec.setAttribute('aria-label', T`El temps avui a ${LLOC}`);
   // Sense l'hora de la mesura: la de «Actualitzat a les…», a dalt, ja la diu, i
   // dues hores juntes semblaven un error (Juanjo, 16-10-2026; ADR 0094).
@@ -299,6 +368,8 @@ function blocAra(casa, radarDades, vent, veines, hores, resum) {
   // mediana de les que en marquen (casa.consens), sense dir de quina estació
   // surt (Juanjo, 13-10-2026). Les veïnes, per a les dades d'abans de la 3.76.0.
   const plou = !!casa.plou || (veines || []).some((v) => v.plou && v.compta);
+  const titular = hores && titularAra(hores, radarDades, plou);
+  if (titular) sec.prepend(titular);
   const intensitat = (casa.plou && casa.intensitat) || 0;
   const llista = element('ul', 'dades-ara');
   // Plugim que només veu el radar (els dos, estès a sobre del barri): el
@@ -1271,13 +1342,16 @@ function pinta(dades) {
   const ara = dades.ara_casa && blocAra(dades.ara_casa, radarAmbPluja, dades.vent, dades.veines, dades.hores,
     textResum(dades, 'avui'));
   if (ara) cont.append(ara);
+  const estat = estatPortada(dades);
+  if (estat) cont.append(estat);
   const previsio = dades.hores && taula(dades.hores, dades.temperatura_mesurada, dades.riscos, dades.sol);
   // La gràfica, just després d'«Ara» (19-10-2026); el detall del dia, després.
   if (previsio && previsio._grafica) cont.append(previsio._grafica);
-  if (ara && ara._avui) cont.append(ara._avui);
+  // El resum d'avui i el de demà, en text, ja no hi són (portada nova, ADR
+  // 0117): ho diuen la frase de dalt d'«Ara» i els trams. Sense dades d'ara,
+  // el resum d'avui, com sempre.
   if (OFERTA_AVISOS) cont.append(OFERTA_AVISOS);
-  const resum = blocsResum(dades, !ara);
-  cont.append(...resum);
+  if (!ara) cont.append(...blocsResum(dades, true));
   if (previsio) {
     cont.append(previsio);
     dibuixaGrafiques();
