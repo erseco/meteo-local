@@ -191,11 +191,28 @@ let ajudaModeOberta = false;
 const FONTS_TEMPS = ['previsió', 'ensemble', 'estació', 'estació de casa', 'estacions veïnes', 'vent', 'radar',
   'final de la pluja', 'avisos', 'plans', 'riera', 'entorn'];
 
-// Si ha fallat alguna de les fonts de la pàgina. La previsió que falla i
-// s'ha substituït per l'anterior ja té el seu avís.
-function fontsFallades(dades, fonts) {
-  return (dades.errors || []).some((e) => fonts.includes(e.split(':')[0])
+// Les fonts de la pàgina que han fallat, què falla i què deixa de funcionar
+// (Juanjo, 21-10-2026: abans només deia «menys segura»). La riera, amb el seu
+// text, i només si no s'ha pogut calcular: sense Meteocat la calculen les
+// estacions particulars de Sant Cugat i no cal avisar. La resta, el general.
+// La previsió que falla i s'ha substituït per l'anterior ja té el seu avís.
+function avisosFonts(dades, fonts) {
+  const avisos = [];
+  const errors = (dades.errors || []).filter((e) => fonts.includes(e.split(':')[0])
     && !(dades.previsio_de && e.startsWith('previsió')));
+  const riera = errors.filter((e) => e.startsWith('riera:'));
+  if (riera.some((e) => e.includes('sense dades recents')) && !dades.riera) {
+    const fins = dades.riera_meteocat_fins;
+    const dia = fins && new Date(fins).toDateString() !== new Date().toDateString()
+      ? T` del ${new Date(fins).toLocaleDateString(IDIOMA.codi)}` : '';
+    const falta = fins ? T`Sense dades de Meteocat a Sant Cugat des de les ${horaCurta(fins) + dia}`
+      : T('Sense dades recents de Meteocat a Sant Cugat');
+    avisos.push(T`${falta}: ara no es pot calcular el risc de la riera.`);
+  } else if (riera.some((e) => e.includes('falten mitges hores'))) {
+    avisos.push(T('A l’estació de Meteocat de Sant Cugat li falten mitges hores de pluja: el risc de la riera pot quedar curt.'));
+  }
+  if (errors.length > riera.length) avisos.push(T('No s’han pogut llegir totes les fonts: la informació és menys segura.'));
+  return avisos;
 }
 
 function pintaHorari(dades, fonts = FONTS_TEMPS) {
@@ -223,9 +240,7 @@ function pintaHorari(dades, fonts = FONTS_TEMPS) {
       && ara - darreraPrevista > MARGE_RETARD_MIN * 60000) {
     avisos.push(T`L’actualització de les ${horaCurta(darreraPrevista)} no s’ha fet: les dades són de les ${horaCurta(generat)}.`);
   }
-  if (fontsFallades(dades, fonts)) {
-    avisos.push(T('No s’han pogut llegir totes les fonts: la informació és menys segura.'));
-  }
+  avisos.push(...avisosFonts(dades, fonts));
   $('avis-dades').textContent = avisos.join(' ');
   $('avis-dades').hidden = !avisos.length;
 }

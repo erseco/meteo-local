@@ -858,6 +858,11 @@ def recoger(anterior=None):
         salida["riera"] = RI.calcula(P.AHORA, nc, pluja_barri=(salida.get("ara_casa") or {}).get("pluja_30min"))
         if salida["riera"] is None or salida["riera"].get("sense_meteocat"):
             salida["errors"].append("riera: Sant Cugat (Meteocat) sense dades recents")
+            # Desde cuándo, para que la página lo diga (21-10-2026).
+            try:
+                salida["riera_meteocat_fins"] = RI.darrera_meteocat(P.AHORA)
+            except Exception:
+                salida["riera_meteocat_fins"] = None
         elif salida["riera"].get("incomplet"):
             salida["errors"].append("riera: a Sant Cugat (Meteocat) li falten mitges hores de pluja")
     except Exception as ex:

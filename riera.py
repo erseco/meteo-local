@@ -276,8 +276,14 @@ def cal_veines(res, nc, ahora, pluja_barri=None):
     del barri (casa.consens, la mediana); des d'1 mm, 2 mm/h, el primer graó
     de l'escala d'intensitat de la web: amb plugim la riera no puja (Juanjo,
     18-10-2026: «que llueva, pero de forma importante»). Cobreix la pluja que
-    el radar encara no veu sobre la conca mentre Meteocat no s'ha actualitzat."""
-    if res and (res.get("mm_3h") or 0) >= 1:
+    el radar encara no veu sobre la conca mentre Meteocat no s'ha actualitzat.
+    Sense dades recents de Meteocat, sempre: les estacions el substitueixen
+    encara que no plogui, perquè sense ell no se sap què ha plogut a la conca
+    (Juanjo, 21-10-2026: «si el resto de estaciones de sant cugat sí que
+    funcionan, por qué no la reemplazan?»)."""
+    if res is None:
+        return True
+    if (res.get("mm_3h") or 0) >= 1:
         return True
     if nc and previst(nc, ahora, 60) >= 1:
         return True
@@ -317,6 +323,14 @@ def calcula(ahora, nc, lector=None, consulta=None, pluja_barri=None):
     elif res.get("sense_meteocat"):
         res["font"] = "veines"
     return res
+
+
+def darrera_meteocat(ahora, lector=None):
+    """Hasta cuándo tiene lluvia la estación de Meteocat de la riera, para
+    decir en la página desde cuándo falta (ISO, o None si no hay nada en las
+    últimas horas)."""
+    filas = files(C.RIERA_ESTACIO, ahora, 6, lector)
+    return (filas[-1][0] + MITJA_HORA).astimezone().isoformat(timespec="minutes") if filas else None
 
 
 def calcula_meteocat(ahora, nc, lector=None):

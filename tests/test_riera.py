@@ -150,6 +150,22 @@ class Index(unittest.TestCase):
         self.assertEqual(r["mm_3h"], 22.7)      # 40,7 menos las dos medias horas que faltan (9,1 y 8,9)
         self.assertIn("li falten mesures", RI.missatge(r, "registre"))
 
+    def test_darrera_meteocat_diu_des_de_quan_falta(self):
+        # Meteocat calla des de les 23:00 UTC; tres hores després la riera no es calcula
+        # i la pàgina ha de poder dir des de quan (21-10-2026).
+        fins = dt.datetime(2026, 10, 3, 23, 0, tzinfo=UTC)
+        ara = fins + dt.timedelta(hours=3)
+        import prevision as P
+        original = P.taula_meteocat
+        P.taula_meteocat = lambda codi, dia=None, lector=None: [
+            f for f in files_xv(fins) if f[0].date() == dia] if codi == C.RIERA_ESTACIO else []
+        try:
+            self.assertIsNone(RI.calcula_meteocat(ara, None))
+            self.assertEqual(dt.datetime.fromisoformat(RI.darrera_meteocat(ara)), fins)
+            self.assertIsNone(RI.darrera_meteocat(ara + dt.timedelta(days=2)))
+        finally:
+            P.taula_meteocat = original
+
     def test_canvi_de_dia_utc_sense_forats(self):
         # Ventana de 3 h que cruza la medianoche UTC (filas de dos días): completa.
         fins = dt.datetime(2026, 10, 4, 1, 0, tzinfo=UTC)
@@ -341,6 +357,15 @@ class Veines(unittest.TestCase):
     def test_sense_pluja_no_es_consulta(self):
         self.calcula(0, 30)
         self.assertEqual(self.crides, 0)
+
+    def test_sense_meteocat_les_consulta_encara_que_no_plogui(self):
+        # Meteocat callat i temps sec (21-10-2026): les estacions el substitueixen.
+        import prevision as P
+        from unittest import mock
+        with mock.patch.object(P, "taula_meteocat", lambda codi, dia=None, lector=None: []):
+            r = RI.calcula(self.ara, None, consulta=self.consulta(0))
+        self.assertGreater(self.crides, 0)
+        self.assertEqual((r["font"], r["sense_meteocat"], r["nivell"]), ("veines", True, None))
 
     def test_pluja_moderada_al_barri_les_consulta(self):
         # Meteocat encara sense pluja i el radar sense res sobre la conca: amb plugim al barri,

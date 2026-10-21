@@ -361,7 +361,7 @@ class Web(unittest.TestCase):
         # Juanjo, 09-10-2026: «cada pagina solo avisa de lo que usa»; un 503 del sol no fa menys segura la previsió.
         def falla(errors, fonts, pagina="casa.js", previsio_de=None):
             d = json.dumps({"errors": errors, "previsio_de": previsio_de})
-            return self.avalua("2026-10-09T18:05:00+02:00", f"fontsFallades({d}, {fonts})", pagina)
+            return self.avalua("2026-10-09T18:05:00+02:00", f"avisosFonts({d}, {fonts}).length > 0", pagina)
         sol = ["sol: HTTP Error 503: Service Unavailable"]
         self.assertFalse(falla(sol, "FONTS_TEMPS"))
         self.assertFalse(falla(sol, "FONTS_SORTIR", "sortir.js"))
@@ -372,10 +372,23 @@ class Web(unittest.TestCase):
         self.assertTrue(falla(["índex UV: 500"], "FONTS_SORTIR", "sortir.js"))
         # La previsió substituïda per l'anterior ja té el seu avís.
         self.assertFalse(falla(["previsió: 503"], "FONTS_TEMPS", previsio_de="2026-10-09T17:00+02:00"))
+        # La riera diu què falla i què deixa de funcionar (Juanjo, 21-10-2026).
+        def text(dades):
+            return self.avalua("2026-10-09T12:05:00+02:00", f"avisosFonts({json.dumps(dades)}, FONTS_TEMPS)", "casa.js")
+        caiguda = "riera: Sant Cugat (Meteocat) sense dades recents"
+        self.assertEqual(text({"errors": [caiguda], "riera": None, "riera_meteocat_fins": "2026-10-09T10:00+02:00"}),
+                         ["Sense dades de Meteocat a Sant Cugat des de les 10:00: ara no es pot calcular el risc de la riera."])
+        self.assertEqual(text({"errors": [caiguda], "riera": None, "riera_meteocat_fins": None}),
+                         ["Sense dades recents de Meteocat a Sant Cugat: ara no es pot calcular el risc de la riera."])
+        # Si les estacions particulars l'han substituït, la riera funciona i no s'avisa.
+        self.assertEqual(text({"errors": [caiguda], "riera": {"sense_meteocat": True}}), [])
+        self.assertEqual(len(text({"errors": [caiguda, "radar: timeout"], "riera": None})), 2)
+        self.assertIn("pot quedar curt", text({"errors": ["riera: a Sant Cugat (Meteocat) li falten mitges hores de pluja"],
+                                               "riera": {}})[0])
         # A «Consultes», segons la fitxa: el sol no avisa enlloc; els trens, només a «Avui».
         def consulta(triada, errors):
             return self.avalua("2026-10-09T18:05:00+02:00",
-                               f"triada = '{triada}'; fontsFallades({json.dumps({'errors': errors})}, fontsConsulta())",
+                               f"triada = '{triada}'; avisosFonts({json.dumps({'errors': errors})}, fontsConsulta()).length > 0",
                                "consultes.js")
         self.assertEqual([consulta(t, sol) for t in ("avui", "dema", "sol")], [False, False, False])
         self.assertEqual([consulta(t, ["trens: 500"]) for t in ("avui", "dema", "trens")], [True, False, False])

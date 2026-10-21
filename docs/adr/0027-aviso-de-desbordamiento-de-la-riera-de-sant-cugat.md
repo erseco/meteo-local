@@ -229,3 +229,27 @@ de IONOS no tiene el bot y no pregunta). Los episodios solo de registro,
 sin aviso, no se preguntan. Validación: `tests/test_riera.py`
 (`Desbordament`).
 
+
+## Cambio del 21-10-2026 (3.173.0): sin Meteocat, las estaciones particulares siempre
+
+El 21-10-2026 todas las estaciones del Meteocat dejaron de publicar a las
+10:00 (la tabla, «(s/d)» en todas las medidas). Con tiempo seco no se cumplía
+ninguna condición para consultar las estaciones particulares, la riera quedó
+sin calcular y la portada mostró «No s'han pogut llegir totes les fonts».
+Juanjo: «si el resto de estaciones de sant cugat sí que funcionan, por qué no
+la reemplazan? pensaba que era así».
+
+- **Decisión**: sin datos recientes del Meteocat de Sant Cugat (más de dos
+  horas, `RETARD_MAX`), `cal_veines` consulta siempre las estaciones
+  particulares, llueva o no: sin el Meteocat no se sabe qué ha llovido en la
+  cuenca en las últimas horas. Si ellas calculan la riera, la página no
+  avisa; el fallo sigue en `errors` para el registro. Si fallan las dos, la
+  página dice desde cuándo falta el Meteocat y que no se puede calcular el
+  riesgo (`comu.avisosFonts`, con `riera_meteocat_fins` en los datos), en
+  lugar del aviso general.
+- **Coste**: 6 consultas por pasada mientras dure la caída (unas 70 en tres
+  horas), dentro del tope diario de 500 de la riera.
+- **Validación**: `tests/test_riera.py`
+  (`test_sense_meteocat_les_consulta_encara_que_no_plogui`,
+  `test_darrera_meteocat_diu_des_de_quan_falta`) y `tests/test_web.py`
+  (`test_cada_pagina_avisa_de_les_seves_fonts`).
