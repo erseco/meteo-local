@@ -603,6 +603,9 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .sentit-fase[hidden] { display: none; }
 .avisos-actius .risc-previst { margin-top: .5rem; }
 .avis-item.compte { --nivell: var(--compte); }
+/* Tot bé, amb la franja verda: la riera sense risc i «Perill» sense cap
+   situació de perill (Juanjo, 21-10-2026). */
+.avis-item.be { --nivell: var(--verd); }
 /* Nota de Protecció Civil sobre els veredictes de «Si surts». */
 .avis-pc { border-color: var(--vermell); background: var(--vermell-fons); }
 .taula-hores td.cel { white-space: normal; }
@@ -959,7 +962,6 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 .perill .seccio { margin: 1.2rem 0 .5rem; }
 /* «Riera» (ADR 0107): ara, properes hores i episodis. */
 .riera section { margin-top: 1.1rem; }
-.riera .avis-item.be { --nivell: var(--verd, #16a34a); }
 .riera .riera-detalls { margin: .4rem 0 0 1rem; color: var(--suau); font-size: .92rem; }
 .riera .nota { margin-top: .7rem; }
 .riera .avis-previsio { margin-top: .6rem; border-color: #d97706; background: color-mix(in srgb, #d97706 10%, var(--superficie)); }

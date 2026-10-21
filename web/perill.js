@@ -392,7 +392,8 @@ function pinta(dades, ara = new Date()) {
   if (alfa) peces.push(alfa);
   const prealerta = (dades.plans_prealerta || []).map(fitxaPla);
   peces.push(...prealerta);
-  if (!actius.length && !alfa && !prealerta.length) peces.push(element('p', 'nota', T('Ara no hi ha cap situació de perill.')));
+  // Sense res, la franja verda, com la riera sense risc (Juanjo, 21-10-2026).
+  if (!actius.length && !alfa && !prealerta.length) peces.push(element('p', 'avis-item be', T('Ara no hi ha cap situació de perill.')));
   peces.push(element('h2', 'seccio', T`Últims ${DIES_RECENTS} dies`));
   // Plegats, com els mesos d'abans (Juanjo, 17-10-2026: «els últims 30 dies
   // han de estar plegados, ahora mismo hay demasiada información»); un enllaç

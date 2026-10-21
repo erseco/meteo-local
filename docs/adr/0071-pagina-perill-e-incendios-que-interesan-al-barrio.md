@@ -56,6 +56,12 @@ se abre el de los incendios.
 avisos» pasa de título a desplegable que contiene los siete, para que al final
 de «Perill» quede una sola línea (Juanjo: «todo esto plegado bajo: cómo se
 deciden los avisos»).
+
+**21-10-2026 (3.173.1): sin peligro, la franja verde.** «Ara no hi ha cap
+situació de perill» deja de ser una nota gris y lleva la franja verde de la
+riera sin riesgo (`.avis-item.be`, ahora común a las dos páginas). Juanjo:
+«cuando dice que no hay peligro quiero una barra verde como el que hay ahora
+en la riera».
 ## Contexto
 
 La noche del 10 al 11-10-2026 llegó por Telegram y al móvil el aviso de un
