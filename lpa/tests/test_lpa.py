@@ -203,6 +203,17 @@ class Build(unittest.TestCase):
         self.assertIn('url=./', river)
         self.assertNotIn('<script src=', river)
 
+    def test_social_card_is_published_on_every_page(self):
+        from PIL import Image
+        with Image.open(self.dest/'og-image.png') as card:
+            self.assertEqual((card.format, card.size), ('PNG', (1200, 630)))
+        self.assertLess((self.dest/'og-image.png').stat().st_size, 300_000)
+        for page in self.dest.glob('*.html'):
+            text = page.read_text()
+            if 'og:title' in text:
+                self.assertIn('<meta property="og:image" content="https://erseco.github.io/meteo-local/og-image.png">', text)
+                self.assertIn('content="summary_large_image"', text)
+
     def test_home_navigation_and_footer(self):
         index = (self.dest/'index.html').read_text()
         nav = index[index.index('<nav class="pagines"'):]
