@@ -29,6 +29,14 @@ def forecast(now=NOW):
                       'weather_code':[2]*7,'wind_speed_10m_max':[15]*7}}
 
 
+def hourly_payload(params, now=NOW, value=10):
+    """Answer any Open-Meteo hourly request with the fields it asked for."""
+    times = forecast(now)['hourly']['time'][:24 * params.get('forecast_days', 1)]
+    h = {field: [value] * len(times) for field in params['hourly'].split(',')}
+    h['time'] = times
+    return json.dumps({'hourly': h})
+
+
 def feed(entry='', updated=None):
     updated = updated or NOW.isoformat()
     return (f'<feed xmlns="http://www.w3.org/2005/Atom" xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2">'
@@ -63,6 +71,12 @@ class Sources(unittest.TestCase):
         self.assertEqual(rows[0]['hora'], '2026-10-25T01:00+01:00')
         self.assertEqual(rows[0]['fins'], '2026-10-25T01:00+00:00')
         self.assertEqual(rows[1]['hora'], '2026-10-25T01:00+00:00')
+
+    def test_daily_dates_survive_the_october_change(self):
+        # Open-Meteo returns daily midnights at the request offset (+01:00 before the change).
+        midnights = [int(dt.datetime(2026, 10, d, tzinfo=dt.timezone(dt.timedelta(hours=1))).timestamp()) for d in (24, 25, 26)]
+        self.assertEqual([C.day_of(t, 3600) for t in midnights], ['2026-10-24', '2026-10-25', '2026-10-26'])
+        self.assertEqual(C.local(midnights[2]).date().isoformat(), '2026-10-25')
 
     def test_warning_area_and_empty_success(self):
         rows = C.parse_alerts(feed(warning() + warning('Prelitoral de Barcelona')), NOW)
@@ -111,20 +125,39 @@ class Sources(unittest.TestCase):
             requests.append((url, params))
             if url == C.FORECAST: return json.dumps(forecast())
             if url == C.ALERTS: return feed()
-            h = {field: [10]*24 for field in C.aire.CONTAMINANTS}
-            h['time'] = forecast()['hourly']['time'][:24]
-            return json.dumps({'hourly': h})
+            return hourly_payload(params)
         with patch.object(C.prevision, 'leer_calibracion', side_effect=AssertionError('local training forbidden')):
             data = C.collect(NOW, reader, include_observations=False)
         self.assertEqual(data['errors'], [])
         self.assertFalse(data['aire']['corregit'])
-        self.assertEqual(len(requests), 3)
+        self.assertEqual(len(requests), 5)
         for url, params in requests:
-            if params:
+            if params and url != C.MARINE:
                 self.assertEqual(params['latitude'], 28.124)
                 self.assertEqual(params['longitude'], -15.436)
                 self.assertEqual(params['timezone'], 'Atlantic/Canary')
-        self.assertEqual(next(p for u,p in requests if u==C.AIR)['domains'], 'cams_global')
+        self.assertTrue(all(p['domains'] == 'cams_global' for u, p in requests if u == C.AIR))
+        self.assertEqual(data['lpa']['calima']['now']['nivel'], 'none')
+        self.assertEqual(data['lpa']['marine']['now']['wave_height'], 10)
+
+    def test_calima_levels_and_peak(self):
+        self.assertIsNone(C.dust_level(None))
+        self.assertEqual([C.dust_level(v) for v in (0, 19.9, 20, 60, 150, 500)],
+                         ['none', 'none', 'light', 'moderate', 'intense', 'very_intense'])
+        payload = json.loads(hourly_payload({'hourly': ','.join(C.DUST), 'forecast_days': 4}))
+        payload['hourly']['dust'][40] = 180
+        calima = C.parse_calima(payload, NOW)
+        self.assertEqual(calima['peak']['dust'], 180)
+        self.assertEqual(calima['peak']['nivel'], 'intense')
+        self.assertTrue(calima['now']['hora'] == '2026-10-20T16:00+01:00')
+        payload['hourly']['dust'] = [None] * len(payload['hourly']['dust'])
+        with self.assertRaises(ValueError): C.parse_calima(payload, NOW)
+
+    def test_marine_requires_sea_values(self):
+        payload = json.loads(hourly_payload({'hourly': ','.join(C.MARINE_FIELDS), 'forecast_days': 3}))
+        self.assertEqual(len(C.parse_marine(payload, NOW)['hours']), 57)
+        payload['hourly']['wave_height'] = [None] * len(payload['hourly']['wave_height'])
+        with self.assertRaises(ValueError): C.parse_marine(payload, NOW)
 
     def test_atomic_output(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -161,10 +194,30 @@ class Build(unittest.TestCase):
         self.assertFalse((self.dest/'.well-known/assetlinks.json').exists())
 
     def test_unavailable_services_have_no_active_scripts(self):
-        for name in ('avisos.html','telegram.html','riera.html'):
+        for name in ('avisos.html','telegram.html'):
             page = (self.dest/name).read_text()
             self.assertIn('Función no disponible', page)
             self.assertNotIn('<script src=', page)
+        # Barranco floods are not offered: the old river page only leads home.
+        river = (self.dest/'riera.html').read_text()
+        self.assertIn('url=./', river)
+        self.assertNotIn('<script src=', river)
+
+    def test_home_navigation_and_footer(self):
+        index = (self.dest/'index.html').read_text()
+        nav = index[index.index('<nav class="pagines"'):]
+        nav = nav[:nav.index('</nav>')]
+        self.assertIn('href="radar.html"', nav)
+        self.assertNotIn('sortir.html', nav)
+        self.assertNotIn('riera.html', nav)
+        for section in ('lh-hours', 'lh-days', 'lh-radar', 'lh-wind', 'lh-calima', 'lh-sea'):
+            self.assertIn(f'id="{section}"', index)
+        self.assertNotIn('Guaguas', (self.dest/'sortir.html').read_text())
+        for page in self.dest.glob('*.html'):
+            text = page.read_text()
+            if '<footer' in text:
+                self.assertEqual(text.count('class="peu lpa-footer"'), 1, page.name)
+                self.assertIn('Juan José de Haro', text)
 
     def test_spanish_root_assets_manifest_and_legacy_bookmarks(self):
         class Resources(HTMLParser):

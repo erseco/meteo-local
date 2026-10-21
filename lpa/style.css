@@ -23,3 +23,16 @@
 .lpa-data-table { overflow-x:auto; }
 .lpa-data-table table { width:100%; border-collapse:collapse; }
 .lpa-data-table th,.lpa-data-table td { padding:.65rem; text-align:left; border-bottom:1px solid var(--vora); white-space:nowrap; }
+
+/* Footer shared by every page */
+body:has(.lpa-footer) { max-width: 76rem; }
+.lpa-footer { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr)); gap: 1.5rem; margin-top: 2.5rem; padding: 1.5rem; border-radius: 1.1rem; background: var(--superficie); border: 1px solid var(--vora); color: var(--suau); font-size: .9rem; line-height: 1.5; text-align: left; }
+.lpa-footer p { display: block; margin: 0 0 .5rem; }
+.lpa-footer p + p::before, .lpa-footer p:has(#versio)::before, .lpa-footer p:last-child::before { content: none; }
+.lpa-footer ul { margin: 0; padding: 0; list-style: none; }
+.lpa-footer li { margin: 0; }
+.lpa-footer li a { display: inline-flex; align-items: center; min-height: 2rem; }
+.lpa-footer .lf-title { font-size: 1.05rem; font-weight: 700; color: var(--text); }
+.lpa-footer .lf-head { font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text); }
+@media (max-width: 52rem) { .lpa-footer { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lpa-footer .lf-brand { grid-column: 1 / -1; } }
+@media (max-width: 30rem) { .lpa-footer { grid-template-columns: minmax(0, 1fr); padding: 1.1rem; } }

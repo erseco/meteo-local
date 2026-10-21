@@ -73,22 +73,7 @@ function lpaMarine(box) {
   box.append(lpaText('p','Las boyas de Las Palmas Este (1414) y Gran Canaria (2442) figuraban con «Sin trasmisión» y «En tierra» en la comprobación del 20/10/2026. Consulte PORTUS para su estado actual.','nota'));
   box.append(lpaText('p','Al cargar un gráfico se establece una conexión con Puertos del Estado, que aplica sus condiciones de uso y privacidad.'));
 }
-function lpaMobility(box) {
-  box.replaceChildren(lpaText('h2','Guaguas Municipales'));
-  box.append(lpaText('p','Las llegadas en tiempo real dentro de esta web están pendientes: el acceso automático no ha proporcionado datos verificables. Consulte el servicio oficial para saber cuánto falta.','nota'));
-  box.append(lpaLink('Consultar Próxima Guagua','https://www.guaguas.com/lineas/proxima-guagua'),document.createTextNode(' · '),
-    lpaLink('Incidencias del servicio','https://www.guaguas.com/lineas/estado-del-servicio'),document.createTextNode(' · '),
-    lpaLink('Planear una ruta','https://www.guaguas.com/lineas/planea-tu-ruta'));
-  const details=document.createElement('details');details.append(lpaText('summary','Códigos de algunas paradas de referencia'));
-  const list=document.createElement('ul');
-  for(const [code,name,line] of [['8','León y Castillo (pl. de La Feria)','1'],['3','Rafael Cabrera (San Telmo)','1'],['944','Manuel Becerra (Puerto)','21'],['423','Auditorio','32']]) {
-    const item=lpaText('li',`${name} · parada ${code} · `);
-    item.append(lpaLink(`Ver línea ${line}`,`https://www.guaguas.com/lineas/${line}`));list.append(item);
-  }
-  details.append(list,lpaText('p','Introduzca el código en Próxima Guagua. Un mismo intercambiador tiene varias paradas y sentidos; compruebe el poste y su línea.','nota'));box.append(details);
-}
 const lpaMarineBox=document.getElementById('lpa-marine');if(lpaMarineBox)lpaMarine(lpaMarineBox);
-const lpaMobilityBox=document.getElementById('lpa-mobility');if(lpaMobilityBox)lpaMobility(lpaMobilityBox);
 const lpaRadarBox=document.getElementById('lpa-radar');
 if(lpaRadarBox) {
   let loading=false;

@@ -54,6 +54,47 @@ def static_page(template, title, body):
     return template.replace('</head>', theme + '</head>')
 
 
+HOME = (
+    '<main id="lpa-home">'
+    '<div id="lh-alerts" aria-live="polite"></div>'
+    '<section id="lh-now" class="lh-hero lh-sky-cloud" aria-label="El tiempo ahora"><p>Cargando el tiempo…</p></section>'
+    '<section id="lh-hours" class="lh-card"><h2>Próximas 48 horas</h2><p class="lh-empty">Cargando previsión…</p></section>'
+    '<div class="lh-top">'
+    '<section id="lh-days" class="lh-card"><h2>7 días</h2></section>'
+    '<section id="lh-radar" class="lh-card"><h2>Radar de Canarias</h2><p class="lh-empty">Cargando radar…</p></section>'
+    '</div><div class="lh-grid">'
+    '<section id="lh-wind" class="lh-card"><h2>Viento</h2></section>'
+    '<section id="lh-calima" class="lh-card"><h2>Calima</h2></section>'
+    '<section id="lh-sea" class="lh-card"><h2>Mar</h2></section>'
+    '<section id="lh-sun" class="lh-card"><h2>Sol y UV</h2></section>'
+    '<section id="lh-stations" class="lh-card"><h2>Medido ahora</h2></section>'
+    '<section id="lh-air" class="lh-card"><h2>Calidad del aire</h2></section>'
+    '</div></main>')
+
+
+def footer():
+    """One informative footer for every page; keeps the upstream credit and version link."""
+    def links(items):
+        return '<ul>' + ''.join(f'<li><a href="{href}">{html.escape(text)}</a></li>' for text, href in items) + '</ul>'
+    return ('<footer class="peu lpa-footer">'
+            '<div class="lf-brand"><p class="lf-title">Tiempo en Las Palmas</p>'
+            '<p>Previsión, radar, viento, calima y mar en hora canaria. Proyecto independiente: '
+            'no es una web oficial ni sustituye los avisos de AEMET.</p>'
+            f'<p><a id="versio" href="{P.REPOSITORY}/tree/lpa" target="_blank" rel="noopener">versión lpa-{P.VERSION}</a></p></div>'
+            '<nav aria-label="Más páginas"><p class="lf-head">Explorar</p>' + links((
+                ('El tiempo', './'), ('Radar y mar', 'radar.html'), ('Avisos', 'perill.html'),
+                ('Estaciones', 'observaciones.html'), ('Consultas', 'consultes.html'), ('Si sales', 'sortir.html'))) + '</nav>'
+            '<div><p class="lf-head">Datos</p>' + links((
+                ('Fuentes y créditos', 'fuentes.html'), ('Datos abiertos', 'datos.html'), ('JSON', 'weather.json'),
+                ('Privacidad', 'privacitat.html'), ('Avisos oficiales de AEMET', P.AEMET_ALERTS))) + '</div>'
+            '<div><p class="lf-head">Créditos</p>'
+            '<p>Open-Meteo (CC BY 4.0), AEMET, CAMS, GRAFCAN y Puertos del Estado.</p>'
+            '<p>Basado en <a href="https://github.com/jjdeharo/meteo-local">meteo-local</a> de Juan José de Haro. '
+            'Código <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL v3</a> · contenidos '
+            '<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.es">CC BY-SA 4.0</a>.</p></div>'
+            '</footer>')
+
+
 def build(destination):
     dest = Path(destination)
     dest.mkdir(parents=True, exist_ok=True)
@@ -91,24 +132,24 @@ def build(destination):
                           '', text, flags=re.S)
         text = text.replace('<script src="../comu.js">', '<script src="../lpa-time.js"></script>\n<script src="../comu.js">')
         text = replace_once(text, '</body>', '<script src="../lpa-ui.js"></script>\n</body>')
-        if source.name in ('index.html','sortir.html'):
-            extra = ('<section id="lpa-radar" class="targeta"><h2>Radar de Canarias</h2><p>Cargando radar…</p></section>'
-                     if source.name == 'index.html' else
-                     '<section id="lpa-mobility" class="targeta"><h2>Guaguas Municipales</h2></section>')
-            text = replace_once(text,'</main>',extra+'</main>')
-            text = replace_once(text,'</head>','<link rel="stylesheet" href="../lpa-style.css"></head>')
-            text = replace_once(text,'</body>','<script src="../lpa-extras.js"></script></body>')
         if source.name == 'index.html':
-            text = replace_once(text, '</body>', '<script src="../lpa-forecast-scroll.js"></script></body>')
+            # The visual home replaces the upstream forecast page; comu.js keeps theme, menus and data loading.
+            text, count = re.subn(r'<main\b[^>]*>.*?</main>', lambda m: HOME, text, flags=re.S)
+            if count != 1:
+                raise ValueError('Upstream home layout changed')
+            for script in ('grafica.js', 'casa.js'):
+                text = replace_once(text, f'<script src="../{script}"></script>', '')
+            text = re.sub(r'<p class="ruta">.*?</p>', '<p class="ruta">Previsión, radar, viento, calima y mar, en hora canaria.</p>', text, flags=re.S)
+            text = replace_once(text, '</head>', '<link rel="stylesheet" href="../lpa-style.css"><link rel="stylesheet" href="../lpa-home.css"></head>')
+            text = replace_once(text, '</body>', '<script src="../lpa-home.js"></script></body>')
         if source.name == 'perill.html':
             text, count = re.subn(r'<main\b[^>]*>.*?</main>', '<main>' + notice + '<p>Avisos oficiales de AEMET para Norte de Gran Canaria, recibidos a través de Meteoalarm.</p><p id="avis-dades" hidden></p><section id="perill" aria-live="polite"><p>Cargando avisos…</p></section></main>', text, flags=re.S)
             if count != 1:
                 raise ValueError('Upstream warnings layout changed')
             text = re.sub(r'<details\b[^>]*>.*?</details>', '', text, flags=re.S)
             text = text.replace('src="../perill.js"', 'src="../lpa-alerts.js"')
-        if source.name in ('riera.html', 'avisos.html', 'telegram.html'):
-            key = {'riera.html': 'riera', 'avisos.html': 'notificaciones',
-                   'telegram.html': 'notificaciones', 'fiabilitat.html': 'aprenentatge'}[source.name]
+        if source.name in ('avisos.html', 'telegram.html'):
+            key = 'notificaciones'
             text = static_page(text, 'Función no disponible', '<p>' + html.escape(P.UNAVAILABLE[key]) + '</p>'
                                '<p><a href="./">Volver al tiempo</a> · <a href="fuentes.html">Ver fuentes</a></p>')
         if source.name in ('fonts.html', 'com-funciona.html', 'privacitat.html'):
@@ -139,14 +180,22 @@ def build(destination):
     (dest/'es/datos.html').write_text(data_page)
     for page in (dest / 'es').glob('*.html'):
         text = page.read_text()
-        # Replace the unavailable upstream river tab; keep the mobile bar at five items.
+        # Replace the river tab (no Canary equivalent) and the outing advice with stations and radar;
+        # keep the mobile bar at five items.
         def station_nav(match):
-            nav, count = re.subn(r'<a\b[^>]*href="riera.html"[^>]*>.*?</a>',
-                '<a href="observaciones.html"><svg aria-hidden="true"><use href="#i-waves"></use></svg>Estaciones</a>', match[0], flags=re.S)
-            if count != 1:
-                raise ValueError('Upstream river navigation anchor changed')
+            nav = match[0]
+            for old, new in (('riera.html', '<a href="observaciones.html"><svg aria-hidden="true"><use href="#i-waves"></use></svg>Estaciones</a>'),
+                             ('sortir.html', '<a href="radar.html"><svg aria-hidden="true"><use href="#i-radar"></use></svg>Radar</a>')):
+                nav, count = re.subn(r'<a\b[^>]*href="' + re.escape(old) + r'"[^>]*>.*?</a>', new, nav, flags=re.S)
+                if count != 1:
+                    raise ValueError(f'Upstream navigation anchor changed: {old}')
             return nav
         text = re.sub(r'<nav class="pagines"[^>]*>.*?</nav>', station_nav, text, flags=re.S)
+        if page.name == 'radar.html':
+            text = re.sub(r'(<nav class="pagines".*?<a href="radar.html")', r'\1 aria-current="page"', text, flags=re.S)
+        text, count = re.subn(r'<footer class="peu">.*?</footer>', lambda m: footer(), text, flags=re.S)
+        if count > 1:
+            raise ValueError('Unexpected footer layout')
         # Keep public metadata alongside the original interface.
         text=re.sub(r'<meta name="description"[^>]*>','<meta name="description" content="'+html.escape(DESCRIPTION,quote=True)+'">',text)
         text=re.sub(r'<meta name="robots"[^>]*>','',text)
@@ -172,6 +221,8 @@ def build(destination):
         text=text.replace('</head>',meta+('' if '../lpa-style.css' in text else '<link rel="stylesheet" href="../lpa-style.css">')+'</head>')
         page.write_text(text)
     shutil.copyfile(HERE / 'style.css', dest / 'lpa-style.css')
+    # Barranco floods are not modelled here: the upstream river page only redirects home.
+    (dest / 'es' / 'riera.html').write_text(redirect_page('./'))
     # Promote the generated Spanish pages; keep /es/ as redirects only.
     spanish_pages = list((dest / 'es').glob('*.html'))
     names = {page.name for page in spanish_pages}
@@ -240,7 +291,7 @@ def build(destination):
         # Local calendar operations use the site timezone, including for mainland visitors.
         text = text.replace('new Date(', 'new LpaDate(')
         path.write_text(rebrand(text))
-    for source, name in (('time.js', 'lpa-time.js'), ('ui.js', 'lpa-ui.js'), ('alerts.js', 'lpa-alerts.js'), ('station-page.js', 'lpa-station-page.js'), ('extras.js','lpa-extras.js'), ('forecast-scroll.js','lpa-forecast-scroll.js')):
+    for source, name in (('home.js', 'lpa-home.js'), ('home.css', 'lpa-home.css'), ('time.js', 'lpa-time.js'), ('ui.js', 'lpa-ui.js'), ('alerts.js', 'lpa-alerts.js'), ('station-page.js', 'lpa-station-page.js'), ('extras.js','lpa-extras.js')):
         shutil.copyfile(HERE / source, dest / name)
     # Never cache weather/alerts or register upstream push handlers.
     (dest / 'sw.js').write_text("// LPA: no offline weather cache or push backend.\n")
@@ -273,6 +324,13 @@ def build(destination):
     return dest
 
 
+def redirect_page(target):
+    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Tiempo en Las Palmas</title>'
+            '<meta name="robots" content="noindex,follow">'
+            f'<meta http-equiv="refresh" content="0;url={target}"></head><body><main>'
+            f'<p><a href="{target}">Ir al tiempo en Las Palmas</a></p></main></body></html>')
+
+
 def sources_html():
     items = ''.join(f'<li><strong>{html.escape(k)}</strong>: {html.escape(v)}</li>' for k, v in P.UNAVAILABLE.items())
     return (f'<p>Adaptación de <a href="https://github.com/jjdeharo/meteo-local">meteo-local, de Juanjo de Haro</a>. '
@@ -283,7 +341,7 @@ def sources_html():
             'Observaciones de AEMET, METAR de NOAA, GRAFCAN y estaciones escolares y particulares en Weathercloud y Weather Underground. '
             'Polen y esporas: recuentos fechados de SEAIC; sismicidad: GeoRSS del IGN. '
             'Radar y cartografía: AEMET, reflectividad sin extrapolación de lluvia. '
-            'Mar: widgets oficiales de Puertos del Estado, cargados bajo demanda. Guaguas: enlaces a consultas oficiales; llegadas no integradas. '
+            'Calima: polvo, PM10 y turbidez de CAMS global vía Open-Meteo, con niveles orientativos. Mar: olas y temperatura del agua de Open-Meteo Marine (CC BY 4.0) y widgets oficiales de Puertos del Estado, cargados bajo demanda. '
             'La disponibilidad y antigüedad de cada lectura se muestran en Estaciones. Los ajustes de temperatura requieren validación temporal; los consejos de salida no tienen validación local.</p>'
             f'<p>Ubicación aproximada: {P.COORDINATES}; zona horaria {P.TIMEZONE}. '
             'Los datos no representan todos los microclimas del municipio.</p>'

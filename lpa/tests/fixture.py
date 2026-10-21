@@ -4,9 +4,8 @@ import datetime as dt
 import json
 import sys
 
-from lpa.collect import collect, publish, FORECAST, AIR
-from lpa.tests.test_lpa import forecast, feed
-import aire
+from lpa.collect import collect, publish, FORECAST, AIR, MARINE
+from lpa.tests.test_lpa import forecast, feed, hourly_payload
 
 
 def create(destination):
@@ -14,10 +13,13 @@ def create(destination):
     def reader(url, params):
         if url == FORECAST:
             return json.dumps(forecast(now))
-        if url == AIR:
-            h = {key: [10] * 24 for key in aire.CONTAMINANTS}
-            h['time'] = forecast(now)['hourly']['time'][:24]
-            return json.dumps({'hourly': h})
+        if url in (AIR, MARINE):
+            payload = json.loads(hourly_payload(params, now, 1.2 if url == MARINE else 10))
+            if 'dust' in payload['hourly']:
+                # Clear air now with a moderate calima episode later in the forecast.
+                payload['hourly']['dust'] = [8] * len(payload['hourly']['time'])
+                payload['hourly']['dust'][-6] = 60
+            return json.dumps(payload)
         # An active official warning must coexist with the hourly forecast.
         start = (now - dt.timedelta(hours=1)).isoformat()
         end = (now + dt.timedelta(hours=6)).isoformat()
