@@ -209,9 +209,7 @@ const CURT_AIRE = () => ({ nitrogen_dioxide: 'NO₂', ozone: T('ozó'), pm10: 'P
 
 
 // --- Sol: el dia en una barra (la llum entre la sortida i la posta, i ara), i
-// l'índex UV amb els colors de l'OMS. ---
-const UV = () => [[2, 'uv-baix', T('baix')], [5, 'uv-moderat', T('moderat')], [7, 'uv-alt', T('alt')],
-  [10, 'uv-molt-alt', T('molt alt')], [99, 'uv-extrem', T('extrem')]];
+// l'índex UV amb els colors de l'OMS (UV, a grafica.js). ---
 const minutsDelDia = (iso) => Number(iso.slice(11, 13)) * 60 + Number(iso.slice(14, 16));
 
 function pintaSol(dies) {

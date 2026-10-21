@@ -27,6 +27,7 @@ registros de decisiones de arquitectura (ADR, siglas en inglés de
 1. [Qué se registra](#1-qué-se-registra)
 2. [La probabilidad de lluvia: regresión logística](#2-la-probabilidad-de-lluvia-regresión-logística)
 3. [La temperatura: regresión lineal](#3-la-temperatura-regresión-lineal)
+   - [La humedad](#3-bis-la-humedad)
 4. [Las dos primeras horas: el radar llevado hacia delante](#4-las-dos-primeras-horas-el-radar-llevado-hacia-delante)
 5. [La persistencia de la lluvia medida](#5-la-persistencia-de-la-lluvia-medida)
 6. [Cómo se calcula cada hora de la tabla](#6-cómo-se-calcula-cada-hora-de-la-tabla)
@@ -440,6 +441,70 @@ arriba:
 
 Si falla la estación de casa, la temperatura de «Ara» es la de ICERDA6 o, sin
 ella, la de arriba menos $`\Delta_h`$.
+
+### 3 bis. La humedad
+
+*(ADR 0114.)* La gráfica puede mostrar la humedad relativa de cada hora. No
+se toma la de AROME tal cual: es la de su temperatura, y la temperatura de
+la página está corregida (apartado 3); con la misma agua en el aire y menos
+temperatura, la humedad es mayor. Por eso se corrige el **punto de rocío**,
+que solo depende del agua que lleva el aire, y la humedad sale de él y de la
+temperatura que se muestra.
+
+El rocío del modelo sale de su temperatura $`T`$ y su humedad $`H`$ con la
+fórmula de Magnus ($`a = 17{,}625`$, $`b = 243{,}04`$ °C), y la humedad, al
+revés:
+
+```math
+\gamma = \ln\frac{H}{100} + \frac{a\,T}{b + T}, \qquad
+T_d = \frac{b\,\gamma}{a - \gamma}, \qquad
+H = 100 \, \frac{e^{a T_d / (b + T_d)}}{e^{a T / (b + T)}}
+```
+
+El error del rocío, $`e_d = T_{d,\text{modelo}} - T_{d,\text{medido}}`$, se
+corrige con la misma regresión *ridge* que la temperatura y las mismas
+señales, más el propio rocío previsto; el error al prever es el del rocío
+($`e_{d,0}\,e^{-t/3}`$ y $`e_{d,0}\,e^{-t/24}`$). Lo medido es el rocío del
+barrio: la mediana de casa y las vecinas, el mismo del recuadro «Ara». El
+rocío casi no cambia dentro del barrio (del 9 al 21-10-2026, en 280 horas,
+la mediana de las vecinas quedó a −0,07 °C del de casa de media): lo que
+cambia de un sitio a otro es la temperatura.
+
+En cada tramo, como la temperatura, el rocío es la media de los dos extremos,
+y no pasa de la temperatura del tramo:
+
+```math
+H_{18\text{–}19} = H\!\left(\min\!\left(\tfrac{1}{2}\big(T_d(18) + T_d(19)\big),\; T_{18\text{–}19}\right),\; T_{18\text{–}19}\right)
+```
+
+**Primer modelo: un año de la estación de casa** (`calibracio/humitat_casa.py`,
+pesos en `calibracio/humitat_casa.json`). Las vecinas solo están registradas
+desde octubre de 2026; como su rocío es el mismo, el primer año es el de
+casa: 43.099 horas de 363 días, del 08-10-2025 al 06-10-2026, con las mismas
+previsiones archivadas que la temperatura. AROME ve el aire más seco de lo
+que está: su rocío queda 1,28 °C por debajo de media. Comprobado con avance
+temporal (cada día, con los pesos ajustados con los anteriores; apartado 8),
+356 días evaluados, en puntos de humedad (la humedad que sale de cada rocío
+con la temperatura medida):
+
+| Antelación | Modelo sin corregir | Corregida | Corregida sin el error al prever |
+|---|---|---|---|
+| 1 h | 7,2 | **3,7** | 4,5 |
+| 3 h | 7,2 | **4,3** | 4,5 |
+| 6 h | 7,2 | **4,5** | 4,5 |
+| 24 h | 7,7 | **5,1** | 5,2 |
+| Todas | 7,3 | **4,4** | 4,6 |
+
+En rocío, el error medio baja de 1,82 a 0,98 °C, y gana en el 100 % de los
+remuestreos por días: se adopta (`"adoptat": true`). Sin ninguna estación al
+prever, se usan los pesos sin el error al prever.
+
+**Segundo modelo: el registro del barrio.** Cada día el NAS ajusta el mismo
+modelo con lo previsto y el rocío del barrio, con **14 días** como mínimo, y
+lo usa si gana al del año de casa con la regla del apartado 8
+(`aprenentatge.valida_humitat`; el día a día, en `historial-humitat.csv` y
+en la página «Fiabilitat»). El error al prever se guarda desde la 3.171.0:
+hasta tener 14 días con él, no hay candidato.
 
 ## 4. Las dos primeras horas: el radar llevado hacia delante
 

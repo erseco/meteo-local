@@ -331,6 +331,7 @@ class Diari(unittest.TestCase):
         A.DIR = os.path.join(self.dir, "aprenentatge")
         A.MODEL, A.PROPOSAT = os.path.join(A.DIR, "model.json"), os.path.join(A.DIR, "proposat.json")
         A.ATURA, A.HISTORIAL = os.path.join(A.DIR, "atura"), os.path.join(A.DIR, "historial.csv")
+        A.HISTORIAL_HUMITAT = os.path.join(A.DIR, "historial-humitat.csv")
         A.AVIS_XV = os.path.join(A.DIR, "avis-sant-cugat")
         A.SORTIR, A.AVIS_SORTIR = os.path.join(A.REGISTRE, "sortir.csv"), os.path.join(A.DIR, "avis-sortir")
         A.MOTO_VELL = os.path.join(A.REGISTRE, "moto.csv")

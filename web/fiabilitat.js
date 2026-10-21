@@ -375,6 +375,7 @@ function pintaAprenentatge() {
       : T('Ara corregeix el que diuen els models amb un any de mesures de l’estació del barri.'),
     darrer.temperatura === 'casa' ? null : { fet: Math.min(dt, calT), cal: calT, text: T`Per provar una correcció nova, calen ${calT} dies; en porta ${dt}.` },
     fraseNova(darrer.error_temp, darrer.error_temp_vigent)));
+  if (a.humitat) fitxes.push(fitxaHumitat(a.humitat, mn.dies_humitat || 14));
   if (a.radar) {
     const NOMS_RADAR = { meteocat: 'Meteocat', rainviewer: 'RainViewer' };
     const nom = NOMS_RADAR[a.radar.preferida] || a.radar.preferida;
@@ -433,6 +434,41 @@ function pintaAprenentatge() {
         : T('L’error de la temperatura de la previsió actual i de la nova, dia a dia.'),
     });
   }
+  const hum = ((a.humitat || {}).dies || []).filter((d) => d.error != null);
+  graficaLinies($('grafica-apren-humitat'), {
+    etiquetes: hum.map((d) => dataCurta(d.dia)),
+    series: [{ clau: 'vigent', valors: hum.map((d) => d.error_vigent) }, { clau: 'candidata', valors: hum.map((d) => d.error) }],
+    unitat: '', decimals: 1,
+    descripcio: T('L’error de la humitat de la previsió actual i de la nova, dia a dia.'),
+  });
+}
+
+// La humitat de la gràfica (ADR 0114): el punt de rosada dels models, corregit
+// amb el que s'ha après, i la temperatura de la web. El que va sortir amb un
+// any de l'estació del barri i, dia a dia, el que aprèn amb totes les del
+// barri, en punts d'humitat (Juanjo, 21-10-2026: «añade estos datos a la
+// pagina de fiabilitat»).
+const ANY = { day: 'numeric', month: 'long', year: 'numeric' };
+function fitxaHumitat(h, calH) {
+  const dies = h.dies || [];
+  const darrer = dies[dies.length - 1] || {};
+  const barri = darrer.humitat === 'barri';
+  const arxiu = h.arxiu || {};
+  const ara = barri ? T('Ara corregeix la humitat dels models amb el que ha après aquests dies de les estacions del barri.')
+    : arxiu.adoptat ? T('Ara corregeix la humitat dels models amb un any de mesures de l’estació del barri.')
+      : T('Ara fa servir la humitat dels models sense corregir.');
+  const dh = darrer.dies || 0;
+  const progres = barri ? null : { fet: Math.min(dh, calH), cal: calH, text: T`Per provar una correcció apresa amb totes les estacions del barri, calen ${calH} dies; en porta ${dh}.` };
+  let dades = null;
+  let text = fraseNova(darrer.error, darrer.error_vigent);
+  if (arxiu.error != null && arxiu.error_model != null) {
+    dades = barresError(T('Error mitjà de la humitat, en punts de % (0 vol dir que encerta sempre)'), [
+      { nom: T('Corregida'), valor: arxiu.error, enUs: Boolean(arxiu.adoptat) && !barri },
+      { nom: T('Models sense corregir'), valor: arxiu.error_model }], 1);
+    const linia = T`Els models veuen l’aire més sec del que és. Corregida, la humitat s’equivoca ${coma(arxiu.error, 1)} punts de mitjana, en lloc de ${coma(arxiu.error_model, 1)}: un ${percentMenys(arxiu.error, arxiu.error_model)} % menys, en ${arxiu.dies} dies que no havia vist (del ${nomData(arxiu.des_de, ANY)} al ${nomData(arxiu.fins, ANY)}), i ${textSegur(arxiu.seguretat)}.`;
+    text = text ? `${linia} ${text}` : linia;
+  }
+  return fitxaAprenentatge(T('Humitat'), ara, progres, text, dades);
 }
 
 // Els canvis que la web ha fet sola, amb la data (Juanjo, 20-10-2026: «en como
@@ -445,6 +481,10 @@ function textCanvi(c) {
   if (c.que === 'pluja') {
     return c.a === 'local' ? T('La probabilitat de pluja passa a ser la pròpia, apresa al barri, que encertava més.')
       : T('La probabilitat de pluja torna a la de l’arxiu: la pròpia havia deixat d’encertar més.');
+  }
+  if (c.que === 'humitat') {
+    return c.a === 'barri' ? T('La correcció de la humitat passa a ser l’apresa amb les estacions del barri, que encertava més.')
+      : T('La correcció de la humitat torna a la de l’arxiu: la del barri havia deixat d’encertar més.');
   }
   if (c.que === 'temperatura') {
     return c.a === 'casa' ? T('La correcció de la temperatura passa a ser la pròpia, que encertava més.')

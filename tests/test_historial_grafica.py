@@ -218,6 +218,11 @@ class Historial(unittest.TestCase):
                     "dies": 7, "error_actual": 20.5, "error_arome": 22.0, "error_gfs": 25.1}}, f)
             with open(os.path.join(d, "fi-pluja.json"), "w") as f:
                 json.dump({"llindar": 0.3, "des_de": "2026-10-19"}, f)
+            # La humedad (ADR 0114), en su archivo: el cambio al barrio, también.
+            with open(os.path.join(d, "historial-humitat.csv"), "w", encoding="utf-8") as f:
+                f.write("dia,humitat,dies,mostres,error_rosada,error_rosada_abans,seguretat,error_humitat,"
+                        "error_humitat_abans\n2026-10-17,arxiu,13,900,0.9,1.0,0.8,4.1,4.4\n"
+                        "2026-10-18,barri,14,980,0.8,1.0,0.97,3.8,4.4\n")
             a = H.aprenentatge(d)
         self.assertEqual(a["dies"][-1]["error_pluja_vigent"], 0.04)
         self.assertEqual(a["radar"]["seguretat"], 0.977)
@@ -226,5 +231,10 @@ class Historial(unittest.TestCase):
                          ({"meteocat": 0.031, "rainviewer": 0.022}, 900, 40))
         self.assertEqual((a["cel"]["error"], a["cel"]["error_actual"]), ({"arome": 22.0, "gfs": 25.1}, 20.5))
         self.assertEqual([(c["dia"], c["que"]) for c in a["canvis"]],
-                         [("2026-10-19", "pluja"), ("2026-10-19", "fi_pluja"), ("2026-10-07", "radar")])
-        self.assertEqual(a["minims"], {"hores_pluja": 30, "dies_temperatura": 14})
+                         [("2026-10-19", "pluja"), ("2026-10-19", "fi_pluja"), ("2026-10-18", "humitat"),
+                          ("2026-10-07", "radar")])
+        self.assertEqual(a["minims"], {"hores_pluja": 30, "dies_temperatura": 14, "dies_humitat": 14})
+        self.assertEqual(a["humitat"]["dies"][-1], {"dia": "2026-10-18", "humitat": "barri", "dies": 14.0,
+                                                    "error": 3.8, "error_vigent": 4.4})
+        # El año de casa, del repositorio.
+        self.assertTrue(a["humitat"]["arxiu"]["adoptat"])

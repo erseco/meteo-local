@@ -13,6 +13,10 @@ Dos regresiones, sin IA, ajustadas con numpy:
   de casa según la propia temperatura, las nubes, la humedad, la radiación,
   la hora, el día del año, la antelación y el error que tenía el modelo al
   prever (ADR 0017). La temperatura corregida es la del modelo menos ese error.
+- Humedad: la misma regresión para el punto de rocío del modelo, contra el
+  rocío medido en el barrio (la mediana de casa y las vecinas, como el
+  recuadro «Ara»), con el error que tenía al prever (ADR 0114). La humedad de
+  cada hora sale de ese rocío y de la temperatura corregida.
 
 Mientras no hay bastantes datos propios, la lluvia usa el modelo ajustado con
 el archivo de 2024-2026 (calibracio/pluja_casa.json) y la temperatura, la
@@ -42,18 +46,21 @@ import numpy as np
 import config as C
 import prevision as P
 import remostreig as R
+import sol_estacio
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 ARXIU = os.path.join(AQUI, "calibracio", "pluja_casa.json")
 ARXIU_ECMWF = os.path.join(AQUI, "calibracio", "pluja_casa_ecmwf.json")
 ARXIU_AVISOS = os.path.join(AQUI, "calibracio", "pluja_casa_avisos.json")
 ARXIU_TEMPERATURA = os.path.join(AQUI, "calibracio", "temperatura_casa.json")
+ARXIU_HUMITAT = os.path.join(AQUI, "calibracio", "humitat_casa.json")
 REGISTRE = os.environ.get("REGISTRE_DIR", "/estat/registre")
 DIR = os.environ.get("APRENENTATGE_DIR", "/estat/aprenentatge")
 MODEL = os.path.join(DIR, "model.json")
 PROPOSAT = os.path.join(DIR, "proposat.json")
 ATURA = os.path.join(DIR, "atura")
 HISTORIAL = os.path.join(DIR, "historial.csv")
+HISTORIAL_HUMITAT = os.path.join(DIR, "historial-humitat.csv")
 
 # Cuándo hay bastantes datos propios para que un método pueda sustituir al
 # que se usa. Cuánto tiene que mejorar lo decide la regla común (remostreig:
@@ -61,6 +68,7 @@ HISTORIAL = os.path.join(DIR, "historial.csv")
 # un 5 % menos de error (MILLORA_MINIMA).
 MIN_HORES_PLUJA = 30        # horas con lluvia medida en casa
 MIN_DIES_TEMPERATURA = 14
+MIN_DIES_HUMITAT = 14
 SETMANES_VALIDACIO = 4      # grupos de semanas de la validación cruzada del archivo (calibracio/)
 PERSISTENCIA_H = 4          # horas en que cuenta lo medido al prever (lluvia, sequedad)
 # Cuánto dura el error de temperatura que tenía el modelo al prever: una
@@ -103,6 +111,10 @@ RASGOS_PROPIS_AVIS = RASGOS_PROPIS + ["avis_aemet", "pla_inuncat"]
 RASGOS_TEMPERATURA_SENSE_ESTACIO = ["constant", "temperatura", "nuvols", "humitat", "hora_sin",
                                     "hora_cos", "antelacio", "dia_sin", "dia_cos", "radiacio"]
 RASGOS_TEMPERATURA = RASGOS_TEMPERATURA_SENSE_ESTACIO + ["error_ara_3h", "error_ara_24h"]
+# El punto de rocío (ADR 0114): los mismos rasgos, con el rocío del modelo, y
+# el error que tenía al prever con los mismos plazos que la temperatura.
+RASGOS_ROSADA_SENSE_ESTACIO = ["constant", "rosada"] + RASGOS_TEMPERATURA_SENSE_ESTACIO[1:]
+RASGOS_ROSADA = RASGOS_ROSADA_SENSE_ESTACIO + ["error_rosada_ara_3h", "error_rosada_ara_24h"]
 
 
 # --- Rasgos ------------------------------------------------------------------------
@@ -122,6 +134,7 @@ def rasgos(d, noms):
     antelacio = max(d.get("antelacio_h", 0), 0)
     corto = d.get("antelacio_h", 99) <= PERSISTENCIA_H
     error_ara, deficit = d.get("error_temp_ara"), d.get("deficit_rosada_ara")
+    error_rosada = d.get("error_rosada_ara")
     valors = {
         "constant": 1.0,
         "arome_hd": pluja["meteofrance_arome_france_hd"],
@@ -152,6 +165,9 @@ def rasgos(d, noms):
         "radiacio": None if d.get("shortwave_radiation") is None else d["shortwave_radiation"] / 1000,
         "error_ara_3h": None if error_ara is None else error_ara * math.exp(-antelacio / ERROR_TEMP_H[0]),
         "error_ara_24h": None if error_ara is None else error_ara * math.exp(-antelacio / ERROR_TEMP_H[1]),
+        "rosada": rosada_model(d),
+        "error_rosada_ara_3h": None if error_rosada is None else error_rosada * math.exp(-antelacio / ERROR_TEMP_H[0]),
+        "error_rosada_ara_24h": None if error_rosada is None else error_rosada * math.exp(-antelacio / ERROR_TEMP_H[1]),
     }
     # Si un modelo da lluvia, cuántos coinciden y cuánto vale todo eso según
     # la antelación: la lluvia prevista para dentro de un día se cumple menos.
@@ -240,16 +256,25 @@ def modelo_arxiu_temperatura():
     return {k: v for k, v in m.items() if k != "pluja"}
 
 
+def modelo_arxiu_humitat():
+    """La corrección del rocío ajustada con el año de la estación de casa
+    (calibracio/humitat_casa.py), solo si ganó al modelo sin corregir."""
+    with open(ARXIU_HUMITAT, encoding="utf-8") as f:
+        m = json.load(f)
+    return m if m.get("adoptat") else None
+
+
 def carrega():
     """El modelo en uso: el aprendido en el NAS si lo hay; lo que falte, el
     del archivo (lluvia de 2024-2026, temperatura del último año en casa)."""
-    model = {"pluja": None, "temperatura": None}
+    model = {"pluja": None, "temperatura": None, "humitat": None}
     try:
         with open(MODEL, encoding="utf-8") as f:
             model.update(json.load(f))
     except (OSError, ValueError):
         pass
-    for clave, carga in (("pluja", modelo_arxiu), ("temperatura", modelo_arxiu_temperatura)):
+    for clave, carga in (("pluja", modelo_arxiu), ("temperatura", modelo_arxiu_temperatura),
+                         ("humitat", modelo_arxiu_humitat)):
         if not model.get(clave):
             try:
                 model[clave] = carga()
@@ -297,11 +322,34 @@ def temperatura(model, d):
     return d["temperature_2m"]
 
 
+def rosada_model(d):
+    """El punto de rocío del modelo (°C), con su temperatura y su humedad."""
+    t, hr = d.get("temperature_2m"), d.get("relative_humidity_2m")
+    return None if t is None or hr is None else sol_estacio.rosada(t, hr)
+
+
+def rosada(model, d):
+    """Punto de rocío corregido (ADR 0114); sin la estación al prever, con los
+    pesos que no la necesitan; sin corrección adoptada, el del modelo."""
+    r = rosada_model(d)
+    m = (model or {}).get("humitat")
+    if not m or r is None:
+        return r
+    for sufijo in ("", "_sense_estacio"):
+        if m.get(f"rasgos{sufijo}"):
+            x = rasgos(d, m[f"rasgos{sufijo}"])
+            if x is not None:
+                return r - float(np.array(m[f"w{sufijo}"]) @ np.array(x))
+    return r
+
+
 def resum_pagina(model):
     """Lo que dice la página sobre cómo se calcula."""
     p, t = (model or {}).get("pluja"), (model or {}).get("temperatura")
+    h = (model or {}).get("humitat")
     return {"pluja": p and {"origen": p["origen"], "des_de": p["des_de"]},
-            "temperatura": t and {"origen": t["origen"], "des_de": t["des_de"]}}
+            "temperatura": t and {"origen": t["origen"], "des_de": t["des_de"]},
+            "humitat": h and {"origen": h["origen"], "des_de": h["des_de"]}}
 
 
 # --- Datos propios ----------------------------------------------------------------------
@@ -410,7 +458,6 @@ def mostres():
     (ADR 0058 y 0060)."""
     casa, meteocat, veines = _llegeix("estacio-casa.csv"), _meteocat(), _veines()
     # Sin la temperatura de las horas con sol directo sobre el termómetro (ADR 0081).
-    import sol_estacio
     amb_sol = sol_estacio.hores_tocades(casa)
     res = []
     for arxiu in sorted(glob.glob(os.path.join(REGISTRE, "casa-*.jsonl"))):
@@ -421,13 +468,26 @@ def mostres():
                 for h in linea["hores"]:
                     obs_pluja = observada(casa, meteocat, veines, h["fins"])
                     obs_temp = None if h["fins"] in amb_sol else _num((casa.get(h["fins"]) or {}).get("temperatura"))
-                    if obs_pluja is None and obs_temp is None:
+                    obs_rosada = rosada_observada(casa, veines, h["fins"])
+                    if obs_pluja is None and obs_temp is None and obs_rosada is None:
                         continue
                     res.append({**h, "emes": linea["emes"], "pluja_1h_emes": max(plujas) if plujas else None,
                                 "pluja_1h_xv": (linea.get("sant_cugat") or {}).get("pluja_1h"),
                                 "pluja_1h_veines": pluja_veines(linea.get("veines")),
-                                "obs_pluja": obs_pluja, "obs_temp": obs_temp})
+                                "obs_pluja": obs_pluja, "obs_temp": obs_temp, "obs_rosada": obs_rosada})
     return res
+
+
+def rosada_observada(casa, veines, fins):
+    """El rocío del barrio en la hora que acaba en fins: la mediana de casa y
+    las vecinas, como el recuadro «Ara» (ADR 0114). El sol sobre el
+    termómetro no lo toca: el rocío sale del agua del aire."""
+    valors = [_num((r.get(fins) or {}).get("rosada")) for r in [casa, *veines.values()]]
+    valors = sorted(v for v in valors if v is not None)
+    if not valors:
+        return None
+    n = len(valors)
+    return valors[n // 2] if n % 2 else (valors[n // 2 - 1] + valors[n // 2]) / 2
 
 
 def valida_pluja(ms, arxiu, noms=RASGOS_PROPIS):
@@ -500,6 +560,43 @@ def valida_temperatura(ms, arxiu_t):
             "w": ajustar_ridge(x, error).tolist(), "w_sense_estacio": ajustar_ridge(xs, error).tolist()}
 
 
+def valida_humitat(ms, arxiu_h):
+    """Como valida_temperatura, para el rocío (ADR 0114): la corrección
+    ajustada con el registro propio de los días anteriores frente a la del
+    archivo (o, sin ella, el rocío del modelo), con las mismas horas."""
+    ms = [m for m in ms if m.get("obs_rosada") is not None and rasgos(m, RASGOS_ROSADA) is not None]
+    if not ms:
+        return None
+    x = np.array([rasgos(m, RASGOS_ROSADA) for m in ms])
+    obs = np.array([m["obs_rosada"] for m in ms])
+    error = np.array([rosada_model(m) for m in ms]) - obs
+    dia = np.array([m["fins"][:10] for m in ms])
+    pred = np.full(len(error), np.nan)
+    for ent, aval in R.avanc(dia):
+        pred[aval] = x[aval] @ ajustar_ridge(x[ent], error[ent])
+    s = ~np.isnan(pred)
+    if not s.any():
+        return None
+    abans = np.array([rosada({"humitat": arxiu_h}, m) for m in ms])
+    xs = np.array([rasgos(m, RASGOS_ROSADA_SENSE_ESTACIO) for m in ms])
+    dies = len({m["emes"][:10] for m in ms})
+    # Y en puntos de humedad, lo que ve quien mira la gráfica («Fiabilitat»):
+    # cada rocío con la temperatura medida en casa a esa hora.
+    t = np.array([np.nan if m.get("obs_temp") is None else m["obs_temp"] for m in ms])
+    ok = s & ~np.isnan(t)
+
+    def hum(r):
+        return np.array([sol_estacio.humitat(min(a, b), b) for a, b in zip(r[ok], t[ok])])
+    h_obs = hum(obs)
+    return {"mostres": len(ms), "dies": dies, "avaluades": int(s.sum()), "dies_avaluats": len(set(dia[s])),
+            "error_humitat": float(np.mean(np.abs(hum(obs + error - pred) - h_obs))) if ok.any() else None,
+            "error_humitat_abans": float(np.mean(np.abs(hum(abans) - h_obs))) if ok.any() else None,
+            "error": float(np.mean(np.abs(error[s] - pred[s]))),
+            "error_abans": float(np.mean(np.abs(abans[s] - obs[s]))),
+            "seguretat": R.seguretat(np.abs(error[s] - pred[s]), np.abs(abans[s] - obs[s]), dia[s]),
+            "w": ajustar_ridge(x, error).tolist(), "w_sense_estacio": ajustar_ridge(xs, error).tolist()}
+
+
 def valida_variant(ms, arxiu, noms):
     """Una variante (Sant Cugat, los avisos), solo con las muestras que llevan
     su dato, y el modelo base ajustado y comprobado con esas mismas muestras
@@ -524,16 +621,18 @@ def millora(v, clau="seguretat"):
     return R.guanya(v.get(clau))
 
 
-def candidat(ms, arxiu, arxiu_t, avui):
-    """El modelo que tocaría usar con los datos de hoy, y los números."""
+def candidat(ms, arxiu, arxiu_t, avui, arxiu_h=None):
+    """El modelo que tocaría usar con los datos de hoy, y los números (los
+    del rocío, en model["_vh"], que no se guarda)."""
     vp, vt = valida_pluja(ms, arxiu), valida_temperatura(ms, arxiu_t)
+    vh = valida_humitat(ms, arxiu_h)
     # Las variantes con Sant Cugat y con los avisos, aparte: solo con las
     # muestras que llevan el dato, y el base con esas mismas (valida_variant).
     if vp:
         vp["xv"] = valida_variant(ms, arxiu, RASGOS_PROPIS_XV)
         vp["avis"] = valida_variant(ms, arxiu, RASGOS_PROPIS_AVIS)
         vp["veines"] = valida_variant(ms, arxiu, RASGOS_PROPIS_VEINES)
-    model = {"pluja": arxiu, "temperatura": arxiu_t}
+    model = {"pluja": arxiu, "temperatura": arxiu_t, "humitat": arxiu_h, "_vh": vh}
 
     def val(v):
         return bool(v and v["hores_pluja"] >= MIN_HORES_PLUJA and v["w"] and millora(v))
@@ -556,12 +655,23 @@ def candidat(ms, arxiu, arxiu_t, avui):
                                 "w_sense_estacio": vt["w_sense_estacio"], "error": vt["error"],
                                 "error_abans": vt["error_abans"], "mostres": vt["mostres"],
                                 "seguretat": vt.get("seguretat")}
+    if vh and vh["dies"] >= MIN_DIES_HUMITAT and millora(vh):
+        model["humitat"] = {"origen": "barri", "des_de": ms[0]["emes"][:10], "fins": avui,
+                            "rasgos": RASGOS_ROSADA, "w": vh["w"],
+                            "rasgos_sense_estacio": RASGOS_ROSADA_SENSE_ESTACIO,
+                            "w_sense_estacio": vh["w_sense_estacio"], "error": vh["error"],
+                            "error_abans": vh["error_abans"], "mostres": vh["mostres"],
+                            "seguretat": vh.get("seguretat")}
     return model, vp, vt
 
 
 def metode(model):
     p, t = model.get("pluja"), model.get("temperatura")
     return ((p or {}).get("origen"), (t or {}).get("origen"))
+
+
+def metode_humitat(model):
+    return ((model or {}).get("humitat") or {}).get("origen")
 
 
 def explica(abans, nou, vp, vt):
@@ -590,6 +700,15 @@ def explica(abans, nou, vp, vt):
                              if vt.get("seguretat") is not None else "."))
         else:
             linies.append("Temperatura: torna a la correcció de l'arxiu; la del registre propi ja no millora.")
+    if metode_humitat(abans) != metode_humitat(nou):
+        vh = nou.get("_vh") or {}
+        if metode_humitat(nou) == "barri":
+            linies.append(f"Humitat: el rosada es corregeix amb el registre del barri ({vh['dies']} dies). "
+                          f"Error mitjà {vh['error']:.2f} °C, abans {vh['error_abans']:.2f} °C"
+                          + (f" (guanya en el {round(100 * vh['seguretat'])} % dels remostrejos per dies)."
+                             if vh.get("seguretat") is not None else "."))
+        else:
+            linies.append("Humitat: torna a la correcció de l'arxiu; la del registre del barri ja no millora.")
     linies.append("Per aturar-ho, demana-ho a Claude abans de demà.")
     return "\n".join(linies)
 
@@ -597,7 +716,7 @@ def explica(abans, nou, vp, vt):
 def per_desar(model):
     """Lo que se guarda en el NAS: solo los modelos propios. Los del archivo
     se leen siempre del repositorio, para que un ajuste nuevo llegue solo."""
-    return {k: (v if v and v.get("origen") != "arxiu" else None) for k, v in model.items()}
+    return {k: (v if v and v.get("origen") != "arxiu" else None) for k, v in model.items() if not k.startswith("_")}
 
 
 def guarda(ruta, dades):
@@ -622,6 +741,22 @@ def apunta_historial(avui, model, vp, vt):
                     vt and round(vt["error"], 2), vt and round(vt["error_abans"], 2),
                     xv and xv["hores_pluja"], xv and round(xv["error"], 5),
                     av and av["hores_pluja"], av and round(av["error"], 5)])
+
+
+def apunta_historial_humitat(avui, model):
+    """El rocío, en un archivo aparte (ADR 0114): historial.csv ya tenía sus
+    columnas cuando llegó."""
+    vh = model.get("_vh")
+    nou = not os.path.exists(HISTORIAL_HUMITAT)
+    with open(HISTORIAL_HUMITAT, "a", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        if nou:
+            w.writerow(["dia", "humitat", "dies", "mostres", "error_rosada", "error_rosada_abans", "seguretat",
+                        "error_humitat", "error_humitat_abans"])
+        r = lambda v, n: None if v is None else round(v, n)
+        w.writerow([avui, metode_humitat(model), vh and vh["dies"], vh and vh["mostres"],
+                    vh and r(vh["error"], 3), vh and r(vh["error_abans"], 3), vh and vh.get("seguretat"),
+                    vh and r(vh["error_humitat"], 2), vh and r(vh["error_humitat_abans"], 2)])
 
 
 def diari(avui=None, avisa=True):
@@ -687,6 +822,10 @@ def diari(avui=None, avisa=True):
     except Exception as ex:
         print("No he pogut aprendre el vent de les veïnes:", ex)
     arxiu, arxiu_t = modelo_arxiu(), modelo_arxiu_temperatura()
+    try:
+        arxiu_h = modelo_arxiu_humitat()
+    except (OSError, ValueError):
+        arxiu_h = None
     en_us = carrega()
     # 1. Una propuesta de ayer que nadie ha parado: se aplica.
     if os.path.exists(PROPOSAT):
@@ -701,8 +840,9 @@ def diari(avui=None, avisa=True):
             os.remove(PROPOSAT)
             print("Aplicada la proposta d'ahir:", metode(en_us))
     # 2. Lo que tocaría hoy.
-    nou, vp, vt = candidat(mostres(), arxiu, arxiu_t, avui)
+    nou, vp, vt = candidat(mostres(), arxiu, arxiu_t, avui, arxiu_h)
     apunta_historial(avui, nou, vp, vt)
+    apunta_historial_humitat(avui, nou)
     # Una sola vez: cuando haya bastante lluvia con el dato de Sant Cugat, el
     # resultado medido, para decidir si se pide la clave de AEMET (ADR 0042).
     text_xv = avis_sant_cugat(vp)
@@ -710,11 +850,11 @@ def diari(avui=None, avisa=True):
         print(text_xv)
         if avisa:
             subprocess.run(["avisar-juanjo", "--de", "Temps a Montflorit", "--asunto", "meteo-local", text_xv], check=False)
-    if metode(nou) == metode(en_us):
+    if metode(nou) == metode(en_us) and metode_humitat(nou) == metode_humitat(en_us):
         # Mismo método, más datos: se pone al día sin avisar.
         if per_desar(nou) != per_desar(en_us) and not os.path.exists(ATURA):
             guarda(MODEL, per_desar(nou))
-        print("Mateix mètode:", metode(nou))
+        print("Mateix mètode:", metode(nou), metode_humitat(nou))
         return
     if os.path.exists(ATURA):
         print("Canvi de mètode aturat (existeix «atura»).")
@@ -1151,9 +1291,10 @@ def avis_sortir(avisa=True):
 def estat():
     model = carrega()
     print(json.dumps(resum_pagina(model), ensure_ascii=False))
-    if os.path.exists(HISTORIAL):
-        with open(HISTORIAL, encoding="utf-8") as f:
-            print("".join(f.readlines()[-5:]), end="")
+    for ruta in (HISTORIAL, HISTORIAL_HUMITAT):
+        if os.path.exists(ruta):
+            with open(ruta, encoding="utf-8") as f:
+                print("".join(f.readlines()[-5:]), end="")
 
 
 if __name__ == "__main__":

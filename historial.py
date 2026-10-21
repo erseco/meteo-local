@@ -408,7 +408,9 @@ def aprenentatge(dir_=None):
                              "error_temp_vigent": num(r.get("error_temp_model"))})
     except OSError:
         pass
-    res = {"dies": dies, "minims": {"hores_pluja": A.MIN_HORES_PLUJA, "dies_temperatura": A.MIN_DIES_TEMPERATURA}}
+    res = {"dies": dies, "minims": {"hores_pluja": A.MIN_HORES_PLUJA, "dies_temperatura": A.MIN_DIES_TEMPERATURA,
+                                     "dies_humitat": A.MIN_DIES_HUMITAT}}
+    res["humitat"] = humitat(dir_)
     radar = _json(os.path.join(dir_, "radar-font.json"))
     if radar and radar.get("preferida"):
         c = radar.get("comparacio") or {}
@@ -430,6 +432,27 @@ def aprenentatge(dir_=None):
     return res
 
 
+def humitat(dir_=None):
+    """La corrección del rocío (ADR 0114): cómo salió con el año de casa
+    (calibracio/humitat_casa.json) y, día a día, la que aprende el NAS con el
+    barrio (historial-humitat.csv), en puntos de humedad. None sin ninguna."""
+    num = lambda x: float(x) if x not in (None, "") else None
+    dies = []
+    try:
+        with open(os.path.join(dir_ or A.DIR, "historial-humitat.csv"), encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                dies.append({"dia": r["dia"], "humitat": r.get("humitat") or None, "dies": num(r.get("dies")),
+                             "error": num(r.get("error_humitat")), "error_vigent": num(r.get("error_humitat_abans"))})
+    except OSError:
+        pass
+    arxiu = _json(A.ARXIU_HUMITAT)
+    v = (arxiu or {}).get("validacio") or {}
+    resum = arxiu and {"des_de": arxiu.get("des_de"), "fins": arxiu.get("fins"), "adoptat": arxiu.get("adoptat"),
+                       "dies": v.get("dies_avaluats"), "seguretat": v.get("seguretat"),
+                       "error": v.get("humitat_error_corregit"), "error_model": v.get("humitat_error_model")}
+    return {"dies": dies, "arxiu": resum} if dies or resum else None
+
+
 def canvis(dies, dir_=None):
     """Lo que la web ha cambiado sola, con la fecha (Juanjo, 20-10-2026: «en
     como aprende quiero q aparezcan las mejoras que hay dia a dia»): el
@@ -439,9 +462,10 @@ def canvis(dies, dir_=None):
     radar-fonts-*.jsonl no sirven: cambian de radar cuando uno falla.
     [{dia, que, a}], del más reciente al más antiguo."""
     res = []
-    for que in ("pluja", "temperatura"):
+    hum = (humitat(dir_) or {}).get("dies", [])
+    for que, llista in (("pluja", dies), ("temperatura", dies), ("humitat", hum)):
         abans = None
-        for d in dies:
+        for d in llista:
             if d.get(que) and abans and d[que] != abans:
                 res.append({"dia": d["dia"], "que": que, "a": d[que]})
             abans = d.get(que) or abans

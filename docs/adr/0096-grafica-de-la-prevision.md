@@ -418,3 +418,8 @@ la parte visible, a la altura de la línea del techo, que sigue dentro del
 dibujo. En las imágenes (compactas, sin desplazamiento) van dentro de la
 gráfica, como antes. Validación: Chromium y Firefox a 390 px, con las dos
 cifras visibles al principio y al final del desplazamiento.
+
+**Humedad e índice UV** (21-10-2026, 3.171.0). Dos interruptores más,
+«Humitat» y «UV», apagados por defecto y recordados con los demás: la humedad
+en una franja bajo el viento y el UV en casillas con los colores de la OMS.
+La humedad sale del rocío corregido: ADR 0114.

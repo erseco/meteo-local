@@ -468,19 +468,32 @@ function dibuixaGrafica(fig) {
   // I la de la part baixa (la de l'estació, vora la riera), que es pot treure
   // per a qui no la necessita (Juanjo, 17-10-2026); per defecte, sí.
   const ambBaixa = opcions.gran ? opcions.baixa !== false : opcions.baixa ?? baixaTriada();
+  // La nit, de la posta a la sortida (a mitja hora de cada tram): l'ombra i
+  // l'UV, que de nit no surt.
+  const esNit = files.map((f) => alturaSol(new Date(new Date(f.hora).getTime() + 18e5)) < 0);
+  // La humitat i l'índex UV, a sota del vent, si es trien (Juanjo, 21-10-2026:
+  // «haz el UV y la humedad»); com el vent, per defecte no.
+  const ambHumitat = (opcions.gran ? opcions.humitat : opcions.humitat ?? humitatTriada())
+    && files.some((f) => f.humitat != null);
+  const ambUv = (opcions.gran ? opcions.uv : opcions.uv ?? uvTriat())
+    && files.some((f, i) => !esNit[i] && f.uv != null);
   // La xifra de sota cada icona: la de baix; sense, la de dalt.
   const tempXifra = (f) => (f.temperatura == null ? null : ambBaixa ? f.temperatura
     : ambAlta && !f.mesura ? f.temperatura + (f.dif_alta || 0) : null);
   const yVent = yPluja + hPluja + (hVent ? 12 : 0);
-  const baix = hVent ? yVent + hVent : yPluja + hPluja;
+  const fiVent = hVent ? yVent + hVent : yPluja + hPluja;
+  const hHumitat = ambHumitat ? (opcions.gran ? 60 : 44) : 0;
+  const yHumitat = fiVent + (hHumitat ? 14 : 0);
+  const fiHumitat = hHumitat ? yHumitat + hHumitat : fiVent;
+  const hUv = ambUv ? 16 : 0;
+  const yUv = fiHumitat + (hUv ? 6 : 0);
+  const baix = hUv ? yUv + hUv : fiHumitat;
   const yEix = baix + 16;
   const H = yEix + 4;
   g.setAttribute('height', H);
   g.setAttribute('viewBox', `0 0 ${W} ${H}`);
 
-  // La nit, ombrejada, de la posta a la sortida (a mitja hora de cada tram),
-  // en un sol rectangle per nit.
-  const esNit = files.map((f) => alturaSol(new Date(new Date(f.hora).getTime() + 18e5)) < 0);
+  // La nit, ombrejada, en un sol rectangle per nit.
   for (let i = 0; i < n; i++) {
     if (!esNit[i] || (i && esNit[i - 1])) continue;
     let j = i;
@@ -662,7 +675,7 @@ function dibuixaGrafica(fig) {
     const vDalt = Math.max(20, Math.ceil(Math.max(0, ...vents) / 10) * 10);
     const yV = (v) => yVent + hVent - (Math.max(0, v) / vDalt) * hVent;
     g.append(svg('line', { class: 'g-vent-escala', x1: 0, x2: W, y1: yVent, y2: yVent }));
-    g.append(svg('line', { class: 'g-base', x1: 0, x2: W, y1: baix, y2: baix }));
+    g.append(svg('line', { class: 'g-base', x1: 0, x2: W, y1: fiVent, y2: fiVent }));
     g.append(svg('text', { class: 'g-vent-xifra', x: 2, y: yVent - 3 }, `${vDalt}\u00a0km/h`));
     const linia = (camp, classe) => {
       const p = files.map((f, i) => [x(i) + col / 2, f[camp]]).filter(([, v]) => v != null).map(([a, v]) => [a, yV(v)]);
@@ -670,6 +683,37 @@ function dibuixaGrafica(fig) {
     };
     linia('ratxa', 'g-ratxa');
     linia('vent', 'g-vent');
+  }
+
+  // La humitat relativa: la ratlla de dalt és el 100 % i la de baix, la
+  // desena per sota de la mínima, amb la seva xifra; de 0 a 100, un dia de
+  // 55 a 95 % semblava pla.
+  if (hHumitat) {
+    const hums = files.map((f) => f.humitat).filter((v) => v != null);
+    const hBaix = Math.min(90, Math.floor(Math.min(...hums) / 10) * 10);
+    const yH = (v) => yHumitat + hHumitat - ((Math.min(100, Math.max(hBaix, v)) - hBaix) / (100 - hBaix)) * hHumitat;
+    g.append(svg('line', { class: 'g-vent-escala', x1: 0, x2: W, y1: yHumitat, y2: yHumitat }));
+    g.append(svg('line', { class: 'g-base', x1: 0, x2: W, y1: fiHumitat, y2: fiHumitat }));
+    g.append(svg('text', { class: 'g-vent-xifra', x: 2, y: yHumitat - 3 }, T('Humitat, 100\u00a0%')));
+    if (hBaix > 0) g.append(svg('text', { class: 'g-vent-xifra', x: 2, y: fiHumitat - 3 }, `${hBaix}\u00a0%`));
+    const p = files.map((f, i) => [x(i) + col / 2, f.humitat]).filter(([, v]) => v != null).map(([a, v]) => [a, yH(v)]);
+    if (p.length > 1) g.append(svg('path', { class: 'g-humitat', d: corbaSuau(p) }));
+  }
+
+  // L'índex UV, una casella per hora de dia amb el color de l'OMS i la xifra
+  // si hi cap, com al «Sol» de «Consultes».
+  if (hUv) {
+    files.forEach((f, i) => {
+      if (esNit[i] || f.uv == null) return;
+      const uv = Math.round(f.uv);
+      // A trenc d'alba i al vespre, 0: sense casella, com de nit.
+      if (!uv) return;
+      const [, classe] = UV().find(([lim]) => uv <= lim);
+      g.append(svg('rect', { class: `g-uv ${classe}`, x: x(i) + 0.5, y: yUv, width: Math.max(1, col - 1), height: hUv, rx: 2 }));
+      if (col >= 14) {
+        g.append(svg('text', { class: `g-uv-xifra ${classe}`, x: x(i) + col / 2, y: yUv + 12, 'text-anchor': 'middle' }, String(uv)));
+      }
+    });
   }
 
   // Els mil·límetres, només on la pluja és més forta de cada episodi, a sobre
@@ -786,8 +830,11 @@ function dibuixaGrafica(fig) {
     if (f.vent != null) {
       linies.push(T`Vent: ${Math.round(f.vent)}\u00a0km/h` + (f.ratxa ? T`, ratxes de ${Math.round(f.ratxa)}\u00a0km/h` : ''));
     }
-    // L'UV, de dia i des de 3, quan l'OMS ja recomana protegir-se.
-    if (!esNit[i] && f.uv != null && Math.round(f.uv) >= 3) linies.push(T`Índex UV: ${Math.round(f.uv)}`);
+    if (f.humitat != null) linies.push(T`Humitat: ${f.humitat}\u00a0%`);
+    // L'UV, de dia i des de 3, quan l'OMS ja recomana protegir-se; amb la
+    // franja de l'UV a la vista, també el baix, perquè la casella i la fitxa
+    // diguin el mateix.
+    if (!esNit[i] && f.uv != null && (hUv || Math.round(f.uv) >= 3)) linies.push(T`Índex UV: ${Math.round(f.uv)}`);
     return linies;
   };
   const mostra = (i) => {
@@ -861,6 +908,8 @@ function dibuixaGrafica(fig) {
   if (intenses.includes('forta')) ll.append(clau('m-pluja forta', T('Pluja forta')));
   if (intenses.includes('torrencial')) ll.append(clau('m-pluja torrencial', T('Pluja torrencial')));
   if (hVent) ll.append(clau('m-vent', T('Vent')), clau('m-ratxa', T('Ratxes')));
+  if (hHumitat) ll.append(clau('m-humitat', T('Humitat')));
+  if (hUv) ll.append(clau('m-uv', T('Índex UV')));
   ll.append(clau('m-nit', T('Nit')));
   if (fig._botoImatge) ll.append(botoImatge(fig, 'g-imatge'));
   if (fig._botoOpcions) ll.append(botoOpcions());
@@ -896,6 +945,13 @@ const CLAU_GRAFICA_VELLA = 'meteo.grafica.2';
 const ambVentTriat = () => llegeixOpcionsGrafica().vent === true;
 const altaTriada = () => llegeixOpcionsGrafica().alta === true;
 const baixaTriada = () => llegeixOpcionsGrafica().baixa !== false;
+const humitatTriada = () => llegeixOpcionsGrafica().humitat === true;
+const uvTriat = () => llegeixOpcionsGrafica().uv === true;
+
+// L'índex UV amb els colors i els noms de l'OMS: el límit de dalt de cada
+// nivell, la classe i el nom (el «Sol» de «Consultes» i la gràfica).
+const UV = () => [[2, 'uv-baix', T('baix')], [5, 'uv-moderat', T('moderat')], [7, 'uv-alt', T('alt')],
+  [10, 'uv-molt-alt', T('molt alt')], [99, 'uv-extrem', T('extrem')]];
 
 // Totes les hores que queden, sempre (Juanjo, 20-10-2026: «quiero que hagas
 // siempre tot»). Fins a la 3.165.0 es triaven amb «24 h · Demà · Tot»; ara la
@@ -917,7 +973,7 @@ function llegeixOpcionsGrafica() {
 function vistaGrafica() {
   if (!HORES_GRAFICA || document.querySelector('dialog.vista-grafica')) return;
   // Les que es recorden (fixes) i les d'aquesta visita, que comencen sempre igual.
-  const fixes = { vent: false, baixa: true, alta: false, ...llegeixOpcionsGrafica() };
+  const fixes = { vent: false, baixa: true, alta: false, humitat: false, uv: false, ...llegeixOpcionsGrafica() };
   const opcions = { get vent() { return fixes.vent; },
     get alta() { return fixes.alta; }, get baixa() { return fixes.baixa; } };
   const dlg = element('dialog', 'vista-grafica');
@@ -944,7 +1000,7 @@ function vistaGrafica() {
   accions.append(botoImatge(fig, 'boto-icona'), comparteixBoto, tanca);
   cap.append(titol, accions);
 
-  // Les opcions que es recorden: el vent i les parts baixa i alta.
+  // Les opcions que es recorden: el vent, les parts baixa i alta, la humitat i l'UV.
   // Les que es recorden, amb interruptors, com a «Avisos».
   const interruptor = (clau, icon, text) => {
     const fila = element('label', 'vg-fixa');
@@ -961,6 +1017,10 @@ function vistaGrafica() {
   const baixa = interruptor('baixa', 'i-waves', T('Part baixa'));
   const alta = interruptor('alta', 'i-mountain', T('Part alta'));
   const ambDifAlta = HORES_GRAFICA.some((f) => f.dif_alta != null);
+  const humitat = interruptor('humitat', 'i-droplets', T('Humitat'));
+  const ambHumitat = HORES_GRAFICA.some((f) => f.humitat != null);
+  const uv = interruptor('uv', 'i-sun', T('UV'));
+  const ambUv = HORES_GRAFICA.some((f) => f.uv != null);
   // Només es desen les que es recorden.
   const desa = () => {
     try { localStorage.setItem(CLAU_GRAFICA, JSON.stringify(fixes)); } catch (_) {}
@@ -969,7 +1029,7 @@ function vistaGrafica() {
     fig._amaga?.();
     fig._files = horesVista();
     fig._opcions = { gran: true, vent: ambVent && opcions.vent, alta: ambDifAlta && Boolean(opcions.alta),
-      baixa: opcions.baixa !== false };
+      baixa: opcions.baixa !== false, humitat: ambHumitat && fixes.humitat, uv: ambUv && fixes.uv };
     dibuixaGrafica(fig);
   };
   // Les que es recorden, a part (Juanjo, 19-10-2026), sense el rètol «Es recorda
@@ -981,6 +1041,8 @@ function vistaGrafica() {
   if (ambVent) fixesEl.append(vent);
   fixesEl.append(baixa);
   if (ambDifAlta) fixesEl.append(alta);
+  if (ambHumitat) fixesEl.append(humitat);
+  if (ambUv) fixesEl.append(uv);
 
   dlg.append(cap, fig, fixesEl);
   // Un toc fora de la finestra la tanca, com Esc.

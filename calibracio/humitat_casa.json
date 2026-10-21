@@ -1,0 +1,150 @@
+{
+ "origen": "arxiu",
+ "des_de": "2025-10-08",
+ "fins": "2026-10-06",
+ "adoptat": true,
+ "rasgos": [
+  "constant",
+  "rosada",
+  "temperatura",
+  "nuvols",
+  "humitat",
+  "hora_sin",
+  "hora_cos",
+  "antelacio",
+  "dia_sin",
+  "dia_cos",
+  "radiacio",
+  "error_rosada_ara_3h",
+  "error_rosada_ara_24h"
+ ],
+ "w": [
+  -2.45549,
+  0.20016,
+  -0.14247,
+  -0.5108,
+  2.77898,
+  -0.15465,
+  0.38266,
+  -0.30969,
+  0.17099,
+  0.25366,
+  1.37702,
+  0.32307,
+  0.12166
+ ],
+ "validacio": {
+  "mostres": 43099,
+  "dies": 363,
+  "avaluades": 42295,
+  "dies_avaluats": 356,
+  "biaix_model": -1.28,
+  "error_model": 1.824,
+  "error_corregit": 0.98,
+  "seguretat": 1.0,
+  "humitat_error_model": 7.32,
+  "humitat_error_corregit": 4.36,
+  "per_antelacio": {
+   "1": {
+    "model": 1.8,
+    "corregit": 0.82,
+    "humitat_model": 7.2,
+    "humitat_corregit": 3.7
+   },
+   "2": {
+    "model": 1.8,
+    "corregit": 0.92,
+    "humitat_model": 7.2,
+    "humitat_corregit": 4.1
+   },
+   "3": {
+    "model": 1.8,
+    "corregit": 0.96,
+    "humitat_model": 7.2,
+    "humitat_corregit": 4.3
+   },
+   "6": {
+    "model": 1.8,
+    "corregit": 1.02,
+    "humitat_model": 7.2,
+    "humitat_corregit": 4.5
+   },
+   "24": {
+    "model": 1.92,
+    "corregit": 1.18,
+    "humitat_model": 7.7,
+    "humitat_corregit": 5.1
+   }
+  }
+ },
+ "rasgos_sense_estacio": [
+  "constant",
+  "rosada",
+  "temperatura",
+  "nuvols",
+  "humitat",
+  "hora_sin",
+  "hora_cos",
+  "antelacio",
+  "dia_sin",
+  "dia_cos",
+  "radiacio"
+ ],
+ "w_sense_estacio": [
+  -3.53899,
+  0.21849,
+  -0.14781,
+  -0.58103,
+  3.71145,
+  -0.05729,
+  0.39435,
+  0.01608,
+  0.21573,
+  0.3427,
+  1.48086
+ ],
+ "validacio_sense_estacio": {
+  "mostres": 43240,
+  "dies": 363,
+  "avaluades": 42400,
+  "dies_avaluats": 356,
+  "biaix_model": -1.28,
+  "error_model": 1.823,
+  "error_corregit": 1.041,
+  "seguretat": 1.0,
+  "humitat_error_model": 7.32,
+  "humitat_error_corregit": 4.64,
+  "per_antelacio": {
+   "1": {
+    "model": 1.8,
+    "corregit": 1.01,
+    "humitat_model": 7.2,
+    "humitat_corregit": 4.5
+   },
+   "2": {
+    "model": 1.8,
+    "corregit": 1.01,
+    "humitat_model": 7.2,
+    "humitat_corregit": 4.5
+   },
+   "3": {
+    "model": 1.8,
+    "corregit": 1.01,
+    "humitat_model": 7.2,
+    "humitat_corregit": 4.5
+   },
+   "6": {
+    "model": 1.8,
+    "corregit": 1.01,
+    "humitat_model": 7.2,
+    "humitat_corregit": 4.5
+   },
+   "24": {
+    "model": 1.92,
+    "corregit": 1.17,
+    "humitat_model": 7.7,
+    "humitat_corregit": 5.2
+   }
+  }
+ }
+}

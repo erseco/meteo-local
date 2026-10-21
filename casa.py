@@ -133,6 +133,22 @@ def modelos(desde, errors=None):
     return h, e
 
 
+def humitat_hora(model, d, d_abans, temp):
+    """La humedad relativa del tramo (%), para la gráfica (Juanjo, 21-10-2026:
+    «haz el UV y la humedad»): el punto de rocío corregido (A.rosada, ADR
+    0114; la media del principio y el final del tramo, como la temperatura)
+    con la temperatura de la página, que también lo está. Con la humedad de
+    AROME tal cual no cuadraría con esa temperatura, y AROME ve el aire más
+    seco de lo que está (1,3 °C de rocío de media en un año). Sin datos, None."""
+    if temp is None:
+        return None
+    rosades = [r for r in (A.rosada(model, x) for x in (d_abans, d) if x) if r is not None]
+    if not rosades:
+        return None
+    # El rocío no pasa de la temperatura.
+    return round(SE.humitat(min(sum(rosades) / len(rosades), temp), temp))
+
+
 def vent_hora(h, i):
     """El vent mitjà del tram que acaba a l'hora i (km/h): la mitjana dels
     valors cada 15 minuts de la hora, pels trapezis (els dos extrems hi compten
@@ -344,9 +360,10 @@ def ara_sense_casa(veines, taula, ahora):
     return consens(res, None, fresques)
 
 
-def temperatura_model_ara(h, ahora):
-    """Temperatura del modelo en este momento, entre las dos horas en punto."""
-    serie = h.get("temperature_2m_meteofrance_seamless") or []
+def temperatura_model_ara(h, ahora, camp="temperature_2m"):
+    """Temperatura del modelo en este momento, entre las dos horas en punto
+    (o, con camp, otra variable, como la humedad)."""
+    serie = h.get(f"{camp}_meteofrance_seamless") or []
     ini = ahora.replace(minute=0, second=0, microsecond=0)
     try:
         i = h["time"].index(P.clau_hora(ini))
@@ -384,6 +401,16 @@ def al_prever(desde, h, casa, riera=None, veines=None):
             d["error_temp_ara"] = round(t_model - casa["temperatura"], 2)
         if casa.get("rosada") is not None:
             d["deficit_rosada_ara"] = round(casa["temperatura"] - casa["rosada"], 1)
+    # El error del rocío del modelo contra el del barrio, la mediana de casa y
+    # las vecinas, el mismo del recuadro «Ara» (ADR 0114).
+    d["error_rosada_ara"] = None
+    rosada = _mediana([(casa or {}).get("rosada")] + [v.get("rosada") for v in veines or []])
+    hora = (casa or {}).get("hora") or next((v.get("hora") for v in veines or [] if v.get("hora")), None)
+    if rosada is not None and hora:
+        ahora = dt.datetime.fromisoformat(hora)
+        t, hr = temperatura_model_ara(h, ahora), temperatura_model_ara(h, ahora, "relative_humidity_2m")
+        if t is not None and hr is not None:
+            d["error_rosada_ara"] = round(SE.rosada(t, hr) - rosada, 2)
     return d
 
 
@@ -527,10 +554,12 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
         # de las 18 y las 19, las dos corregidas (la lluvia sí es la acumulada
         # hasta el final del tramo).
         temp = A.temperatura(model, d)
-        if i > 0:
-            antes = A.temperatura(model, variables_hora(desde, h, prob, i - 1, prever))
+        d_antes = variables_hora(desde, h, prob, i - 1, prever) if i > 0 else None
+        if d_antes:
+            antes = A.temperatura(model, d_antes)
             if antes is not None and temp is not None:
                 temp = (antes + temp) / 2
+        humitat = humitat_hora(model, d, d_antes, temp)
         segun_estacion = False
         # Primeras horas: la persistencia de la lluvia que mide ahora la
         # estación, si da más que los modelos.
@@ -574,7 +603,7 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
             # veuen (Juanjo, 19-10-2026: «indicar el origen de la alerta y a
             # ser posible la validez que tiene»; riscos.font).
             "ratxes_models": {m: h.get(f"wind_gusts_10m_{m}", [None] * (i + 1))[i] for m in C.MODELOS_FINOS},
-            "neu": valor("snowfall", i)})
+            "neu": valor("snowfall", i), "humitat": humitat})
     return filas
 
 

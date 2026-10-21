@@ -57,7 +57,8 @@ aviso de «Perill», con el suyo (ADR 0072).
 
 La probabilidad de lluvia sale de una regresión logística ajustada con lo que
 llovió de verdad y comprobada con todo el archivo (ADR 0021); la temperatura se
-corrige con un año de la estación particular (ADR 0017), y el NAS guarda cada
+corrige con un año de la estación particular (ADR 0017), igual que el punto de
+rocío del que sale la humedad de la gráfica (ADR 0114), y el NAS guarda cada
 hora lo previsto y lo medido para seguir aprendiendo (ADR 0012; explicación en
 [docs/estadistica.md](docs/estadistica.md)). Las dos primeras horas tienen en
 cuenta hacia dónde va la lluvia del radar (ADR 0019).

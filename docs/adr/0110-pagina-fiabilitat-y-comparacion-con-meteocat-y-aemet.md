@@ -213,3 +213,9 @@ gráficas dicen qué es cada punto: «de cada semana» y «de cada día» en el
 título, y una nota bajo la semanal («Cada punto es una semana, con el día en
 que empieza»), porque las fechas del eje se leían como días (Juanjo: «y donde
 pone que es una semana? no lo dice en ningun lado»).
+
+**La humedad en «Com aprèn»** (21-10-2026, 3.171.0; Juanjo: «añade estos
+datos a la pagina de fiabilitat»). Una ficha «Humitat» con el resultado del
+año de casa en barras (corregida y sin corregir, en puntos de humedad) y lo
+que lleva el aprendizaje del barrio, su gráfica día a día y sus cambios en la
+lista. Los datos, de `historial.humitat` (ADR 0114).

@@ -184,6 +184,14 @@ def humitat(rosada, temperatura):
     return max(0.0, min(100.0, 100 * e(rosada) / e(temperatura)))
 
 
+def rosada(temperatura, humitat):
+    """Punto de rocío (°C) con la temperatura y la humedad relativa (Magnus,
+    la inversa de humitat)."""
+    import math
+    g = math.log(max(humitat, 1) / 100) + 17.625 * temperatura / (243.04 + temperatura)
+    return 243.04 * g / (17.625 - g)
+
+
 def _llegeix_hores(ruta, camp="temperatura"):
     if not os.path.exists(ruta):
         return {}

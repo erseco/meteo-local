@@ -34,6 +34,7 @@
   --alta-fons: #ffedd5;     /* la part alta del barri (ADR 0087) */
   --alta-text: #9a3412;
   --c-minima: #1d4ed8;
+  --c-humitat: #7c3aed;
   color-scheme: light;
 }
 
@@ -69,6 +70,7 @@
   --c-lluna-fons: #3b3f6b;
   --c-maxima: #f87171;
   --c-minima: #93c5fd;
+  --c-humitat: #c4b5fd;
   color-scheme: dark;
 }
 
@@ -1265,6 +1267,15 @@ button.alta { border: 0; font-family: inherit; line-height: inherit; }
 /* La part alta a la gràfica: una segona corba, discontínua, del color de la part alta (ADR 0087). */
 .grafica .g-alta { fill: none; stroke: var(--alta-text); stroke-width: 2; stroke-dasharray: 6 4; stroke-linecap: round; }
 .g-clau .m-alta { width: 1rem; height: 0; border-top: 2px dashed var(--alta-text); }
+/* La humitat i l'índex UV, a sota del vent (3.171.0); l'UV, amb els colors de l'OMS de .uv-xip. */
+.grafica .g-humitat { fill: none; stroke: var(--c-humitat); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.g-clau .m-humitat { width: 1rem; height: 2px; background: var(--c-humitat); }
+.grafica .g-uv.uv-baix { fill: #3ea72d; } .grafica .g-uv.uv-moderat { fill: #fff300; } .grafica .g-uv.uv-alt { fill: #f18b00; }
+.grafica .g-uv.uv-molt-alt { fill: #e53210; } .grafica .g-uv.uv-extrem { fill: #b567a4; }
+.grafica .g-uv-xifra { font-size: 10px; font-weight: 700; fill: #fff; }
+.grafica .g-uv-xifra.uv-moderat, .grafica .g-uv-xifra.uv-alt { fill: #111; }
+.g-clau .m-uv { width: 1rem; height: .7rem; border-radius: 2px;
+  background: linear-gradient(90deg, #3ea72d 0 20%, #fff300 20% 40%, #f18b00 40% 60%, #e53210 60% 80%, #b567a4 80%); }
 /* El dia i l'antelació de «Fiabilitat» (fiabilitat.js, ADR 0110; fins a la
    3.164.0, a la vista en gran de la gràfica, ADR 0099). */
 .vg-dia { display: flex; align-items: center; gap: .5rem; }
