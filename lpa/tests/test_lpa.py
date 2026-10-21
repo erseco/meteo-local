@@ -71,6 +71,22 @@ class Sources(unittest.TestCase):
         self.assertEqual(rows[0]['tipo'], 'vent')
         self.assertEqual(C.parse_alerts(feed(), NOW), [])
 
+    def test_hourly_warning_contract_and_interval_boundaries(self):
+        start = NOW + dt.timedelta(hours=1)
+        end = start + dt.timedelta(hours=1)
+        xml = warning().replace('2026-10-20T12:00:00Z', start.isoformat()).replace('2026-10-21T12:00:00Z', end.isoformat())
+        def reader(url, params):
+            if url == C.FORECAST: return json.dumps(forecast())
+            if url == C.ALERTS: return feed(xml)
+            raise TimeoutError()
+        data = C.collect(NOW, reader, include_observations=False)
+        hours = data['hores']
+        self.assertEqual(hours[0]['avisos'], [])
+        self.assertEqual(hours[1]['avisos'], [{'font':'aemet', 'tipus':['vent'], 'nivell':'taronja'}])
+        self.assertEqual(hours[2]['avisos'], [])
+        self.assertEqual(data['avisos'][0]['tipo'], 'vent')
+        self.assertEqual(data['avisos'][0]['nivel'], 'taronja')
+
     def test_stale_and_invalid_feeds_are_not_empty_successes(self):
         for xml in ('<html/>', feed(updated='2026-10-18T00:00:00Z'), '<feed>'):
             with self.assertRaises(Exception): C.parse_alerts(xml, NOW)

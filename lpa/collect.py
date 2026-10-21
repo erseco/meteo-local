@@ -194,7 +194,9 @@ def collect(now=None, reader=fetch, include_observations=True):
         if radar_future is not None:
             data['lpa']['radar'] = radar_future.result()
     for row in data["hores"] or []:
-        row["avisos"] = [a for a in data["avisos"] or []
+        # The hourly graph uses a different upstream contract from the alert cards.
+        row["avisos"] = [{"font": "aemet", "tipus": [a["tipo"]], "nivell": a["nivel"]}
+                         for a in data["avisos"] or []
                          if dt.datetime.fromisoformat(a["inicio"]) < dt.datetime.fromisoformat(row["fins"])
                          and dt.datetime.fromisoformat(a["fin"]) > dt.datetime.fromisoformat(row["hora"])]
     for key, offset in (("avui", 0), ("dema", 1)):

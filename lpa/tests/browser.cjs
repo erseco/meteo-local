@@ -33,6 +33,9 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
           if (file === 'index.html') {
             const graph=page.locator('#casa .g-desplaca').first();
             await graph.waitFor();
+            await page.getByRole('heading',{name:'Avisos activos (1)',exact:true}).waitFor();
+            assert.ok(await page.locator('#casa .previsio').count()>0,'active warnings must not hide forecast');
+            assert.ok(await page.locator('#casa .g-avis').count()>0,'official warning must appear in graph');
             await page.getByText('Previsión · Open-Meteo · 7 días.',{exact:false}).waitFor();
             assert.ok(await page.locator('.g-dia').count()>=6,'graph must cover the forecast week');
             const labels=await page.locator('.g-dia').allTextContents();
@@ -61,7 +64,7 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
             await page.getByText('Red de estaciones de centros educativos',{exact:true}).click();
             await page.getByRole('heading',{name:'IES Santiago Santana',exact:true}).waitFor();
           }
-          if (file === 'perill.html') await page.getByText('No hay avisos de AEMET en el feed consultado', {exact: false}).waitFor();
+          if (file === 'perill.html') await page.getByRole('heading',{name:/AEMET.*amarillo.*lluvia/i}).waitFor();
           if (file === 'radar.html') {
             await page.locator('.lpa-radar-image').waitFor();
             const slider=page.getByLabel('Imagen de la secuencia',{exact:true});
@@ -93,6 +96,18 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
         await page.waitForURL(`${root}/?legacy=1#casa`);
         assert.equal(await page.locator('html').getAttribute('lang'),'es');
         assert.equal(await page.locator('html').getAttribute('data-arrel'),'./');
+        // Empty success remains distinct from unavailable warnings.
+        await page.route('**/montflorit.json?*', async route => {
+          const data=await (await route.fetch()).json();
+          data.avisos=[]; for(const hour of data.hores)hour.avisos=[];
+          await route.fulfill({json:data});
+        });
+        await page.goto(`${root}/perill.html`);
+        await page.getByText('No hay avisos de AEMET en el feed consultado',{exact:false}).waitFor();
+        await page.goto(`${root}/index.html`);
+        await page.locator('#casa .g-desplaca').first().waitFor();
+        assert.equal(await page.locator('.avisos-actius').count(),0);
+        await page.unroute('**/montflorit.json?*');
         // Official embeds are opt-in and use the reviewed station URL, without a proxy.
         await page.goto(`${root}/radar.html`);
         await page.route('https://portus.puertos.es/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>PORTUS fixture</title><p>Official graph fixture</p>'}));

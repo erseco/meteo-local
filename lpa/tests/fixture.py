@@ -18,7 +18,13 @@ def create(destination):
             h = {key: [10] * 24 for key in aire.CONTAMINANTS}
             h['time'] = forecast(now)['hourly']['time'][:24]
             return json.dumps({'hourly': h})
-        return feed(updated=now.isoformat())
+        # An active official warning must coexist with the hourly forecast.
+        start = (now - dt.timedelta(hours=1)).isoformat()
+        end = (now + dt.timedelta(hours=6)).isoformat()
+        entry = ('<entry><cap:areaDesc>Norte de Gran Canaria</cap:areaDesc>'
+                 '<cap:event>Moderate rain warning</cap:event>'
+                 f'<cap:onset>{start}</cap:onset><cap:expires>{end}</cap:expires></entry>')
+        return feed(entry, updated=now.isoformat())
     data = collect(now, reader, include_observations=False)
     from lpa.observations import STATIONS, URBAN_STATIONS, SCHOOL_STATIONS, validate
     data['lpa']['observations'] = {'stations': [validate({'observed_at':now.isoformat(),'temperature_c':22.5,'relative_humidity_pct':65,'wind_kmh':10}, station, now) for station in STATIONS + URBAN_STATIONS + SCHOOL_STATIONS[:1]], 'providers': []}
