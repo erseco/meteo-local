@@ -458,19 +458,16 @@ function dibuixaGrafica(fig) {
   // (per defecte, amb vent). Sense dades de vent, res.
   const ambVent = (opcions.gran ? opcions.vent : opcions.vent ?? ambVentTriat()) && files.some((f) => f.vent != null);
   const hVent = ambVent ? (opcions.gran ? 70 : 50) : 0;
-  // La temperatura de la part alta, una segona corba, si es tria (Juanjo,
-  // 17-10-2026): com el vent, la tria de la vista en gran val per a totes;
-  // per defecte, no.
-  const ambAlta = (opcions.gran ? opcions.alta : opcions.alta ?? altaTriada()) && files.some((f) => f.dif_alta != null);
-  // I la de la part baixa (la de l'estació, vora la riera), que es pot treure
-  // per a qui no la necessita (Juanjo, 17-10-2026); per defecte, sí.
-  const ambBaixa = opcions.gran ? opcions.baixa !== false : opcions.baixa ?? baixaTriada();
-  // Amb les dues, sota la xifra de baix, la de dalt, del seu color (Juanjo,
-  // 21-10-2026: «deberían aparecer debajo de las temperaturas de la parte
-  // baja las de la parte alta»).
-  const ambDuesXifres = ambBaixa && ambAlta;
-  const yXifraAlta = yXifra + 12;
-  const yTemp = (ambDuesXifres ? yXifraAlta : yXifra) + 12;
+  // La temperatura d'una sola zona, la que es tria: la part baixa (la de
+  // l'estació, vora la riera; per defecte) o la part alta, amb el seu color
+  // (Juanjo, 21-10-2026: «o te interesa la de arriba o la de abajo»; fins a la
+  // 3.173.2, dos interruptors i les dues corbes alhora). Com el vent, la
+  // tria de la vista en gran val per a totes. Sense la part alta (les hores
+  // passades), la de baix.
+  const ambAlta = (opcions.gran ? opcions.zona : opcions.zona ?? zonaTriada()) === 'alta'
+    && files.some((f) => f.dif_alta != null);
+  const ambBaixa = !ambAlta;
+  const yTemp = yXifra + 12;
   const yPluja = yTemp;
   const hPluja = hTemp;
   // La nit, de la posta a la sortida (a mitja hora de cada tram): l'ombra i
@@ -482,9 +479,9 @@ function dibuixaGrafica(fig) {
     && files.some((f) => f.humitat != null);
   const ambUv = (opcions.gran ? opcions.uv : opcions.uv ?? uvTriat())
     && files.some((f, i) => !esNit[i] && f.uv != null);
-  // La xifra de sota cada icona: la de baix; sense, la de dalt.
+  // La xifra de sota cada icona, la de la zona triada.
   const tempXifra = (f) => (f.temperatura == null ? null : ambBaixa ? f.temperatura
-    : ambAlta && !f.mesura ? f.temperatura + (f.dif_alta || 0) : null);
+    : !f.mesura ? f.temperatura + (f.dif_alta || 0) : null);
   const yVent = yPluja + hPluja + (hVent ? 12 : 0);
   const fiVent = hVent ? yVent + hVent : yPluja + hPluja;
   const hHumitat = ambHumitat ? (opcions.gran ? 60 : 44) : 0;
@@ -574,14 +571,10 @@ function dibuixaGrafica(fig) {
       g.append(ic);
       const mig = files[Math.floor((i + j - 1) / 2)];
       if (tempXifra(mig) != null) {
-        // Sense la de baix, la de dalt ocupa el seu lloc amb el seu color
-        // (Juanjo, 21-10-2026: «para distinguirlos debe mantener su color»).
+        // La de dalt, amb el seu color (Juanjo, 21-10-2026: «para
+        // distinguirlos debe mantener su color»).
         g.append(svg('text', { class: ambBaixa ? 'g-xifra' : 'g-xifra g-xifra-alta', x: cx, y: yXifra, 'text-anchor': 'middle' },
           `${Math.round(tempXifra(mig))}°`));
-      }
-      if (ambDuesXifres && !mig.mesura && mig.temperatura != null && mig.dif_alta != null) {
-        g.append(svg('text', { class: 'g-xifra g-xifra-alta', x: cx, y: yXifraAlta, 'text-anchor': 'middle' },
-          `${Math.round(mig.temperatura + mig.dif_alta)}°`));
       }
     }
     i = j;
@@ -598,26 +591,23 @@ function dibuixaGrafica(fig) {
   const altes = ambAlta ? files.map((f) => (f.mesura || f.temperatura == null ? null : f.temperatura + (f.dif_alta || 0))) : [];
   const previstes = files.map((f) => (f.mesura && f.prev ? f.prev.temperatura : null));
   const ambPrev = previstes.some(valid);
-  const ambTemp = (ambBaixa || ambAlta) && [...temps, ...altes].some(valid);
+  const ambTemp = [...temps, ...altes].some(valid);
   // La màxima toca la ratlla del sostre de la pluja, que porta a l'esquerra
   // la seva xifra: una sola ratlla per al màxim de les dues escales (Juanjo,
   // 17-10-2026: «la temperatura debe llegar al máximo de la lluvia y poner
-  // esa temperatura máxima a la izquierda»). Amb la part alta, la més alta
-  // de les dues, sense dir de quina (Juanjo, 21-10-2026: «no hace falta el
-  // paréntesis»).
+  // esa temperatura máxima a la izquierda»), la de la zona triada.
   const escala = [...(ambTemp ? [...temps, ...altes] : baixes), ...previstes].filter(valid);
   if (!escala.length) escala.push(0, 1);
   const tMax = Math.max(...escala);
   const tMin = Math.min(Math.floor(Math.min(...escala)) - 1, tMax - 2);
   const ySostre = yPluja + 14;
   const yT = (t) => yTemp + hTemp - ((t - tMin) / (tMax - tMin)) * (yTemp + hTemp - ySostre);
-  // El farciment, sota la corba de baix o, sense, sota la de dalt. Les hores
-  // sense dada, fora.
+  // El farciment, sota la corba de la zona triada. Les hores sense dada, fora.
   const corbaDe = (vals) => {
     const p = vals.map((v, i) => [x(i) + col / 2, v]).filter(([, v]) => valid(v)).map(([a, v]) => [a, yT(v)]);
     return p.length > 1 ? { p, d: corbaSuau(p) } : null;
   };
-  const principal = corbaDe(ambBaixa || !ambAlta ? baixes : altes);
+  const principal = corbaDe(ambBaixa ? baixes : altes);
   const punts = principal ? principal.p : [[0, 0], [0, 0]];
   const corba = principal ? principal.d : '';
   const base = yPluja + hPluja;
@@ -896,8 +886,8 @@ function dibuixaGrafica(fig) {
   // Una clau per cosa, sense explicacions entre parèntesis (Juanjo, 16-10-2026:
   // «es un galimatías»); què vol dir l'alçada ja ho diuen els mm de la barra.
   // Cada clau de pluja, només si n'hi ha (Juanjo, 16-10-2026).
-  // Amb les dues, cadascuna pel seu nom; amb una, «Temperatura» o «Part alta».
-  if (ambBaixa) ll.append(clau('m-temp', ambAlta ? T('Part baixa') : T('Temperatura')));
+  // La de la zona triada: «Temperatura» o «Part alta».
+  if (ambBaixa) ll.append(clau('m-temp', T('Temperatura')));
   if (ambPrev) {
     const a = opcions.antelacio || 1;
     ll.append(clau('m-prev', T`Previsió ${a}\u00a0h abans`));
@@ -944,7 +934,8 @@ function dibuixaGrafica(fig) {
 // diferente lo que queda fijado y lo que no cuando se sale de la
 // configuración, mi propuesta es hacer lo permanente con selectores»): les que
 // es recorden en aquest dispositiu i valen per a totes les gràfiques de la web
-// (el vent, la part baixa i la part alta), amb interruptors; i les d'aquesta
+// (la zona de la temperatura, el vent, la humitat i l'UV), amb selectors i
+// interruptors; i les d'aquesta
 // visita (quines hores), amb botons, que tornen a ser les de sempre en tancar.
 // «Com encerta» i l'historial de cada dia eren aquí fins a la 3.164.0: ara
 // són a la pàgina «Fiabilitat», fiabilitat.html (ADR 0110). El vent, per
@@ -955,8 +946,7 @@ function dibuixaGrafica(fig) {
 const CLAU_GRAFICA = 'meteo.grafica.3';
 const CLAU_GRAFICA_VELLA = 'meteo.grafica.2';
 const ambVentTriat = () => llegeixOpcionsGrafica().vent === true;
-const altaTriada = () => llegeixOpcionsGrafica().alta === true;
-const baixaTriada = () => llegeixOpcionsGrafica().baixa !== false;
+const zonaTriada = () => llegeixOpcionsGrafica().zona;
 const humitatTriada = () => llegeixOpcionsGrafica().humitat === true;
 const uvTriat = () => llegeixOpcionsGrafica().uv === true;
 
@@ -976,18 +966,25 @@ function horesVista() {
 function llegeixOpcionsGrafica() {
   try {
     const ara = JSON.parse(localStorage.getItem(CLAU_GRAFICA));
-    if (ara) return ara;
+    if (ara) return ambZona(ara);
     const vella = JSON.parse(localStorage.getItem(CLAU_GRAFICA_VELLA)) || {};
-    return { ...(vella.alta === true ? { alta: true } : {}), ...(vella.baixa === false ? { baixa: false } : {}) };
+    return ambZona({ alta: vella.alta, baixa: vella.baixa });
   } catch (_) { return {}; }
+}
+
+// La zona de la temperatura, de les opcions desades. Fins a la 3.173.2 eren
+// dos interruptors: qui tenia només la part alta la conserva; la resta (també
+// amb les dues o cap), la part baixa.
+function ambZona(o) {
+  const { alta, baixa, ...resta } = o;
+  return { ...resta, zona: o.zona || (alta === true && baixa === false ? 'alta' : 'baixa') };
 }
 
 function vistaGrafica() {
   if (!HORES_GRAFICA || document.querySelector('dialog.vista-grafica')) return;
   // Les que es recorden (fixes) i les d'aquesta visita, que comencen sempre igual.
-  const fixes = { vent: false, baixa: true, alta: false, humitat: false, uv: false, ...llegeixOpcionsGrafica() };
-  const opcions = { get vent() { return fixes.vent; },
-    get alta() { return fixes.alta; }, get baixa() { return fixes.baixa; } };
+  const fixes = { vent: false, zona: 'baixa', humitat: false, uv: false, ...llegeixOpcionsGrafica() };
+  const opcions = { get vent() { return fixes.vent; }, get zona() { return fixes.zona; } };
   const dlg = element('dialog', 'vista-grafica');
   dlg.setAttribute('aria-labelledby', 'vg-titol');
   const cap = element('div', 'vg-cap');
@@ -1012,7 +1009,7 @@ function vistaGrafica() {
   accions.append(botoImatge(fig, 'boto-icona'), comparteixBoto, tanca);
   cap.append(titol, accions);
 
-  // Les opcions que es recorden: el vent, les parts baixa i alta, la humitat i l'UV.
+  // Les opcions que es recorden: la zona de la temperatura, el vent, la humitat i l'UV.
   // Les que es recorden, amb interruptors, com a «Avisos».
   const interruptor = (clau, icon, text) => {
     const fila = element('label', 'vg-fixa');
@@ -1026,8 +1023,26 @@ function vistaGrafica() {
   };
   const vent = interruptor('vent', 'i-wind', T('Vent'));
   const ambVent = HORES_GRAFICA.some((f) => f.vent != null);
-  const baixa = interruptor('baixa', 'i-waves', T('Part baixa'));
-  const alta = interruptor('alta', 'i-mountain', T('Part alta'));
+  // La zona de la temperatura: una o l'altra, amb un sol toc (Juanjo,
+  // 21-10-2026: «o te interesa la de arriba o la de abajo»).
+  const zona = element('div', 'vg-trams');
+  zona.setAttribute('role', 'group');
+  zona.setAttribute('aria-label', T('Temperatura'));
+  const botonsZona = [['baixa', 'i-waves', T('Part baixa')], ['alta', 'i-mountain', T('Part alta')]].map(([clau, icon, text]) => {
+    const b = element('button', 'vg-opcio');
+    b.type = 'button';
+    b.dataset.zona = clau;
+    b.append(icona(icon), element('span', null, text));
+    b.addEventListener('click', () => {
+      fixes.zona = clau;
+      for (const x of botonsZona) x.setAttribute('aria-pressed', String(x.dataset.zona === clau));
+      desa();
+      dibuixa();
+    });
+    b.setAttribute('aria-pressed', String(fixes.zona === clau));
+    return b;
+  });
+  zona.append(...botonsZona);
   const ambDifAlta = HORES_GRAFICA.some((f) => f.dif_alta != null);
   const humitat = interruptor('humitat', 'i-droplets', T('Humitat'));
   const ambHumitat = HORES_GRAFICA.some((f) => f.humitat != null);
@@ -1040,8 +1055,8 @@ function vistaGrafica() {
   const dibuixa = () => {
     fig._amaga?.();
     fig._files = horesVista();
-    fig._opcions = { gran: true, vent: ambVent && opcions.vent, alta: ambDifAlta && Boolean(opcions.alta),
-      baixa: opcions.baixa !== false, humitat: ambHumitat && fixes.humitat, uv: ambUv && fixes.uv };
+    fig._opcions = { gran: true, vent: ambVent && opcions.vent, zona: ambDifAlta ? opcions.zona : 'baixa',
+      humitat: ambHumitat && fixes.humitat, uv: ambUv && fixes.uv };
     dibuixaGrafica(fig);
   };
   // Les que es recorden, a part (Juanjo, 19-10-2026), sense el rètol «Es recorda
@@ -1050,9 +1065,9 @@ function vistaGrafica() {
   const fixesEl = element('div', 'vg-fixes');
   fixesEl.setAttribute('role', 'group');
   fixesEl.setAttribute('aria-label', T('Es recorda per a totes les gràfiques'));
+  // Primer la temperatura, la corba principal.
+  if (ambDifAlta) fixesEl.append(zona);
   if (ambVent) fixesEl.append(vent);
-  fixesEl.append(baixa);
-  if (ambDifAlta) fixesEl.append(alta);
   if (ambHumitat) fixesEl.append(humitat);
   if (ambUv) fixesEl.append(uv);
 

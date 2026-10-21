@@ -563,7 +563,7 @@ async function pintaDia() {
   // Avui, només les hores que ja han acabat: la resta encara no té mesura.
   const ara = new Date();
   FIGURA._files = dades ? ambAntelacio(dades.hores, a).filter((f) => new Date(f.fins) <= ara) : [];
-  FIGURA._opcions = { gran: true, baixa: true, antelacio: a };
+  FIGURA._opcions = { gran: true, zona: 'baixa', antelacio: a };
   FIGURA._amaga?.();
   dibuixaGrafica(FIGURA);
   $('dia-text').textContent = textDia(dades, a);

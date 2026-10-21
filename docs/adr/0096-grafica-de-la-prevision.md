@@ -430,3 +430,30 @@ cifras visibles al principio y al final del desplazamiento.
 «Humitat» y «UV», apagados por defecto y recordados con los demás: la humedad
 en una franja bajo el viento y el UV en casillas con los colores de la OMS.
 La humedad sale del rocío corregido: ADR 0114.
+
+## Cambio del 21-10-2026 (3.174.0): una zona u otra, no las dos
+
+La parte alta se había añadido como segunda curva, junto a la de la parte
+baja, con dos interruptores. Lo de ver las dos a la vez no lo pidió Juanjo:
+el 17-10 pidió «un conmutador para mostrar la temperatura en la parte baja y
+alta», y se interpretó como añadir una curva. Juanjo, 21-10-2026: «¿para qué
+sirve tener los dos a la vez? o te interesa la de arriba o la de abajo».
+Cada vecino vive en una zona, y la diferencia ya la da el «+1», «+2» de la
+previsión.
+
+- **Decisión**: en «Opcions», un selector de dos posiciones, «Part baixa» y
+  «Part alta» (`vg-trams`, como los botones agrupados de la web), delante de
+  los interruptores. Por defecto, la parte baja. La gráfica dibuja una sola
+  curva, con una cifra bajo cada icono y la raya del techo de la zona
+  elegida; la parte alta, con su color. Desaparece la combinación sin
+  temperatura. Se recuerda en el dispositivo como `zona` en
+  `meteo.grafica.3`.
+- **Compatibilidad**: lo guardado con los dos interruptores se convierte al
+  leerlo (`grafica.ambZona`): solo la parte alta pasa a «alta»; las dos,
+  ninguna o solo la baja, a «baixa».
+- **Se quita** el dibujo de las dos curvas y las dos cifras a la vez
+  (3.172.0), que este cambio sustituye.
+- **Validación**: `tests/test_web.py`
+  (`test_zona_de_la_temperatura_de_les_opcions_velles`), `probar-web` en tres
+  navegadores, móvil, escritorio y tableta, claro y oscuro, y axe-core sobre
+  la ventana de la gráfica.

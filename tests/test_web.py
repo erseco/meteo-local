@@ -357,6 +357,16 @@ class Web(unittest.TestCase):
         self.assertEqual(desti("2026-10-11T00:20:00+02:00", dema, None), dema)        # avisos d'abans, sense dia
         self.assertEqual(desti("2026-10-11T07:00:00+02:00", "https://m.test/", None), "https://m.test/")
 
+    def test_zona_de_la_temperatura_de_les_opcions_velles(self):
+        # Fins a la 3.173.2, dos interruptors; ara una zona (Juanjo, 21-10-2026).
+        def zona(o):
+            return self.avalua("2026-10-21T12:00:00+02:00", f"ambZona({json.dumps(o)})", "casa.js")
+        self.assertEqual(zona({"alta": True, "baixa": False, "vent": True}), {"vent": True, "zona": "alta"})
+        self.assertEqual(zona({"alta": True, "baixa": True})["zona"], "baixa")
+        self.assertEqual(zona({"alta": False, "baixa": False})["zona"], "baixa")
+        self.assertEqual(zona({})["zona"], "baixa")
+        self.assertEqual(zona({"zona": "alta"})["zona"], "alta")
+
     def test_cada_pagina_avisa_de_les_seves_fonts(self):
         # Juanjo, 09-10-2026: «cada pagina solo avisa de lo que usa»; un 503 del sol no fa menys segura la previsió.
         def falla(errors, fonts, pagina="casa.js", previsio_de=None):
