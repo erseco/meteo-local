@@ -323,9 +323,11 @@ function titularAra(hores, radarDades, plou, ara = new Date()) {
   return div;
 }
 
-// Avisos i riera d'una ullada, sota «Ara» (portada nova, ADR 0118): «cap avís»
-// només si no n'hi ha cap (si n'hi ha, ja surten a dalt, a «Avisos actius»), i
-// l'estat de la riera amb el títol i el color de la pàgina «Riera».
+// La riera sota «Ara» (portada nova, ADR 0118), amb el títol i el color de la
+// pàgina «Riera», només quan anuncia alguna cosa (Juanjo, 21-10-2026: «que
+// solo aparezcan cuando anuncien algo»): si plou a la conca o hi ha risc, i
+// no si ja en surt l'avís a dalt, a «Avisos actius». «Cap avís», tampoc: fins
+// a la 3.178.0 en sortia una línia quan no n'hi havia.
 function estatPortada(dades) {
   const files = [];
   const fila = (href, classe, iconaId, titol, detall) => {
@@ -339,12 +341,8 @@ function estatPortada(dades) {
     a.append(ic, text, icona('i-chevron-right'));
     return a;
   };
-  if (!blocAvisos(dades)) {
-    files.push(fila('perill.html', 'be', 'i-circle-check', T('Ara no hi ha cap avís.'),
-      T('Ni oficials ni dels que calcula aquesta pàgina.')));
-  }
   const r = dades.riera;
-  if (r) {
+  if (r && r.nivell && !blocRiera(HISTORIAL_PERILL).length) {
     // La pluja, d'on la compta «Riera»: Meteocat o, si falla, les estacions particulars.
     const v = r.font === 'veines' && r.veines ? r.veines : r;
     files.push(fila('riera.html', COLOR_NIVELL[r.nivell] || 'be', 'i-waves', T`Riera: ${titolRiera(r.nivell).toLowerCase()}`,

@@ -462,7 +462,6 @@ var IDIOMA = {
     "{0}, {1}": "{0}, {1}",
     "Sense pluja prevista.": "Sin lluvia prevista.",
     "Els models no hi veuen pluja, però hi ha avís: mira’l a dalt.": "Los modelos no ven lluvia, pero hay aviso: míralo arriba.",
-    "Ni oficials ni dels que calcula aquesta pàgina.": "Ni oficiales ni de los que calcula esta página.",
     "{0} i {1}, {2}.": "{0} y {1}, {2}.",
     "Riera: {0}": "Riera: {0}",
     "A Sant Cugat, {0} mm en les últimes 6 hores.": "En Sant Cugat, {0} mm en las últimas 6 horas.",

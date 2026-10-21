@@ -251,6 +251,15 @@ class Web(unittest.TestCase):
         hores[10] = fila(25, 90, avisos=("vent",))
         self.assertFalse(self.avalua("2026-10-21T15:30:00+02:00", f"avisDePluja({json.dumps(hores)}, new Date())"))
 
+    def test_la_riera_a_la_portada_nomes_si_anuncia_alguna_cosa(self):
+        # Juanjo, 21-10-2026: «que solo aparezcan cuando anuncien algo».
+        ara = "2026-10-21T20:30:00+02:00"
+        self.assertIsNone(self.avalua(ara, "estatPortada({riera: {nivell: null, mm_6h: 0}})"))
+        self.assertIsNotNone(self.avalua(ara, "estatPortada({riera: {nivell: 'registre', mm_6h: 3.2}})"))
+        # Si l'avís de la riera ja surt a dalt, no es repeteix.
+        self.assertIsNone(self.avalua(ara, "HISTORIAL_PERILL = [{tipus: 'riera', clau: 'x', nivell: 'atencio',"
+                                           " ca: 'Avís: risc a la riera'}]; estatPortada({riera: {nivell: 'atencio'}})"))
+
     def test_part_alta_al_costat_de_la_temperatura(self):
         # Juanjo, 13-10-2026 (ADR 0087): les temperatures són de la riera; a la part alta, la diferència.
         def fila(h, t, dif):

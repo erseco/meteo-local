@@ -30,12 +30,14 @@ con una simulación de avisos. Juanjo: «me gusta, publica la portada nueva».
   los modelos no ven lluvia pero hay aviso de lluvia o tempestades en 24
   horas (`casa.avisDePluja`), lo dice: «Els models no hi veuen pluja, però
   hi ha avís: mira'l a dalt.» (ADR 0101: lo oficial manda).
-- **Avisos y riera de un vistazo** (`casa.estatPortada`), debajo de «Ara»:
-  «Ara no hi ha cap avís.» solo cuando no hay ninguno (si los hay, salen
-  arriba, en «Avisos actius»), y el estado de la riera con el título y el
-  color de la página «Riera» (`comu.titolRiera`, `COLOR_NIVELL`, que pasan de
-  `riera.js` a `comu.js` para que los dos digan lo mismo). Cada línea lleva a
-  su página.
+- **La riera, debajo de «Ara», solo cuando anuncia algo** (`casa.estatPortada`):
+  si llueve en la cuenca o hay riesgo, con el título y el color de la página
+  «Riera» (`comu.titolRiera`, `COLOR_NIVELL`, que pasan de `riera.js` a
+  `comu.js` para que las dos digan lo mismo), y no si su aviso ya sale arriba,
+  en «Avisos actius». Lleva a «Riera». En la 3.178.0 había además una línea
+  «Ara no hi ha cap avís.» y la riera salía también sin nada que decir; en
+  la 3.178.1 se quitan (Juanjo, 21-10-2026: «que solo aparezcan cuando
+  anuncien algo»).
 - **Los avisos activos, más visibles**: el bloque sigue plegado (ADR 0094),
   pero con el fondo y el borde del color del más grave y el título más
   grande, para no quedar a la sombra de «Ara».
@@ -53,8 +55,8 @@ con una simulación de avisos. Juanjo: «me gusta, publica la portada nueva».
 
 - **Una tira hora a hora en lugar de la gráfica**, como en la maqueta: más
   simple, pero quien había encendido una franja dejaba de verla al abrir.
-- **Los avisos dentro de la tarjeta de avisos y riera**, siempre en el mismo
-  sitio: con peligro, lo primero que hay que ver es el aviso, arriba.
+- **Los avisos dentro de la tarjeta de la riera**, siempre en el mismo sitio:
+  con peligro, lo primero que hay que ver es el aviso, arriba.
 - **Figtree desde Google Fonts**: cada visita avisaría a Google.
 - **La temperatura máxima y mínima en «Ara»**, como en la maqueta: ya las
   dicen los tramos justo debajo.
