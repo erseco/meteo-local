@@ -14,7 +14,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 opener = urllib.request.build_opener(NoRedirect)
-for path in ('?format=openapi', 'datastreams/?thing=14&page_size=100', 'locations/14/', 'validities/'):
+for path in ('observations_last/?thing=14', 'observations/?datastream=1912&ordering=-result_time', 'observations/?datastream=1911&ordering=-result_time'):
     request = urllib.request.Request(base + path, headers={
         'Accept': 'application/openapi+json' if path.startswith('?') else 'application/json', 'Authorization': 'Api-Key ' + key})
     try:
