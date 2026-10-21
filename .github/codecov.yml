@@ -1,13 +1,13 @@
-# Codecov for the Las Palmas layer (lpa/).
+# Codecov for the Las Palmas layer (lpa/): at least 90 % overall and on every patch.
 coverage:
   status:
     project:
       default:
-        target: auto
-        threshold: 1%
+        target: 90%
+        threshold: 0%
     patch:
       default:
-        target: 80%
+        target: 90%
 comment:
   layout: "condensed_header, diff, files"
   require_changes: true

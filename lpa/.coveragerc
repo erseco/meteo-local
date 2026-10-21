@@ -7,7 +7,7 @@ branch = true
 [report]
 show_missing = true
 skip_covered = true
-fail_under = 85
+fail_under = 90
 
 [xml]
 output = coverage.xml
