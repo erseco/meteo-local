@@ -35,6 +35,7 @@
   --alta-text: #9a3412;
   --c-minima: #1d4ed8;
   --c-humitat: #7c3aed;
+  --c-pressio: #0f766e;
   color-scheme: light;
 }
 
@@ -71,6 +72,7 @@
   --c-maxima: #f87171;
   --c-minima: #93c5fd;
   --c-humitat: #c4b5fd;
+  --c-pressio: #5eead4;
   color-scheme: dark;
 }
 
@@ -1277,6 +1279,12 @@ button[title], a[title], label[title], [role="button"][title] { -webkit-touch-ca
 /* La humitat i l'índex UV, a sota del vent (3.171.0); l'UV, amb els colors de l'OMS de .uv-xip. */
 .grafica .g-humitat { fill: none; stroke: var(--c-humitat); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .g-clau .m-humitat { width: 1rem; height: 2px; background: var(--c-humitat); }
+/* La pressió, entre la humitat i els núvols (3.176.0). */
+.grafica .g-pressio { fill: none; stroke: var(--c-pressio); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.g-clau .m-pressio { width: 1rem; height: 2px; background: var(--c-pressio); }
+/* Els núvols, entre la humitat i l'UV (3.176.0): una barra grisa per hora. */
+.grafica .g-nuvols { fill: var(--c-nuvol); fill-opacity: .55; }
+.g-clau .m-nuvols { width: .7rem; height: .7rem; background: var(--c-nuvol); opacity: .55; border-radius: 2px; }
 .grafica .g-uv.uv-baix { fill: #3ea72d; } .grafica .g-uv.uv-moderat { fill: #fff300; } .grafica .g-uv.uv-alt { fill: #f18b00; }
 .grafica .g-uv.uv-molt-alt { fill: #e53210; } .grafica .g-uv.uv-extrem { fill: #b567a4; }
 .grafica .g-uv-xifra { font-size: 10px; font-weight: 700; fill: #fff; }

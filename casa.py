@@ -67,6 +67,9 @@ HORAS_PERSISTENCIA = 4      # las que tiene la tabla de calibracio.json
 # no puede decir que llueve (o que no) durante horas.
 ARA_MAX_MIN = 30
 HORAS_COMPROBACION = 3      # últimas horas en que se comparan modelos y estación
+# Entre la estación y AROME hay 1,3 hPa de media y como mucho 3,2 en 17 días:
+# más de 5 es una lectura mala, y la presión se queda la del modelo.
+DESVIACIO_PRESSIO_MAX = 5
 
 
 def modelos(desde, errors=None):
@@ -77,7 +80,7 @@ def modelos(desde, errors=None):
     q = urllib.parse.urlencode({
         "latitude": C.CASA[0], "longitude": C.CASA[1],
         "hourly": "temperature_2m,precipitation,weather_code,cloud_cover,cloud_cover_low,"
-                  "wind_speed_10m,wind_gusts_10m,relative_humidity_2m,shortwave_radiation,snowfall",
+                  "wind_speed_10m,wind_gusts_10m,relative_humidity_2m,shortwave_radiation,snowfall,pressure_msl",
         "models": "meteofrance_seamless," + ",".join(C.MODELOS_FINOS),
         "timezone": P.TZ, "start_date": dias[0], "end_date": dias[1]})
     h = P.horas_locales(json.loads(P.get_reintenta(f"https://api.open-meteo.com/v1/forecast?{q}")))["hourly"]
@@ -147,6 +150,31 @@ def humitat_hora(model, d, d_abans, temp):
         return None
     # El rocío no pasa de la temperatura.
     return round(SE.humitat(min(sum(rosades) / len(rosades), temp), temp))
+
+
+def desviacio_pressio(h, casa):
+    """Lo que la estación de casa marca de más sobre la presión del modelo
+    ahora (hPa), para llevar a ella toda la curva de la gráfica (Juanjo,
+    21-10-2026: «Es facil añadir la presión?»). AROME da 1,3 hPa menos de
+    media, casi siempre igual (17 días): con la diferencia del momento, el
+    error baja de 1,2 a 0,5 hPa, también a 24 horas. Sin lectura de casa (las
+    vecinas no tienen la presión calibrada), 0. Una diferencia de más de
+    DESVIACIO_PRESSIO_MAX es una lectura mala: 0."""
+    if not casa or casa.get("pressio") is None or not casa.get("hora"):
+        return 0.0
+    model = temperatura_model_ara(h, dt.datetime.fromisoformat(casa["hora"]), "pressure_msl")
+    if model is None or abs(casa["pressio"] - model) > DESVIACIO_PRESSIO_MAX:
+        return 0.0
+    return casa["pressio"] - model
+
+
+def pressio_hora(h, i, desviacio):
+    """La presión del tramo que acaba a la hora i (hPa, al nivel del mar), la
+    media del principio y el final como la temperatura, llevada a la estación
+    de casa (desviacio_pressio). Sin datos, None."""
+    serie = h.get("pressure_msl_meteofrance_seamless") or []
+    v = [serie[j] for j in (i - 1, i) if 0 <= j < len(serie) and serie[j] is not None]
+    return round(sum(v) / len(v) + desviacio, 1) if v else None
 
 
 def vent_hora(h, i):
@@ -524,6 +552,7 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
     prob = prob_ensemble(e)
     llueve_ahora = llueve_ahora_en(casa, veines)
     prever = al_prever(desde, h, casa, riera, veines)
+    desviacio = desviacio_pressio(h, casa)
     # La persistencia, con la lluvia de la red del barrio (consens_pluja).
     ultima_hora = consens_pluja(casa, veines)["pluja_1h"] or 0.0
 
@@ -603,7 +632,7 @@ def previsio(desde, h, e, avisos, model=None, casa=None, nc=None, planes=None, r
             # veuen (Juanjo, 19-10-2026: «indicar el origen de la alerta y a
             # ser posible la validez que tiene»; riscos.font).
             "ratxes_models": {m: h.get(f"wind_gusts_10m_{m}", [None] * (i + 1))[i] for m in C.MODELOS_FINOS},
-            "neu": valor("snowfall", i), "humitat": humitat})
+            "neu": valor("snowfall", i), "humitat": humitat, "pressio": pressio_hora(h, i, desviacio)})
     return filas
 
 

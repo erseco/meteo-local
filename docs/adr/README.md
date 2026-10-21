@@ -117,5 +117,6 @@
 | [0113](0113-reparador-de-commits-que-no-pasan-las-comprobaciones.md) | Un agente con IA arregla los commits que no pasan las comprobaciones | aceptado |
 | [0114](0114-humedad-y-uv-en-la-grafica.md) | La humedad y el índice UV en la gráfica, con el rocío corregido | aceptado |
 | [0115](0115-descripcion-de-cada-control.md) | Una descripción en cada control, también con el dedo | aceptado |
+| [0116](0116-nubes-y-presion-en-la-grafica.md) | Las nubes y la presión en la gráfica, la presión llevada a la estación | aceptado |
 
 Plantilla: [0000-plantilla.md](0000-plantilla.md). Para crear uno: `nuevo-adr "Título"`.

@@ -73,8 +73,9 @@ barrio; Juanjo: «sí, hazlo así». Después pidió ver los resultados en
 - **Aprender solo con la estación de casa**: su rocío y el del barrio son el
   mismo, pero el recuadro «Ara» usa el del barrio, y con la mediana un fallo
   de casa no cambia nada.
-- **El resto de opciones propuestas** (nubes, sensación térmica, calidad del
-  aire, dirección del viento) quedan para cuando Juanjo las pida.
+- **El resto de opciones propuestas** (sensación térmica, calidad del aire,
+  dirección del viento) quedan para cuando Juanjo las pida. Las nubes, con
+  la presión, llegaron en la 3.176.0 (ADR 0116).
 
 ## Consecuencias
 
