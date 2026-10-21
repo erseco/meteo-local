@@ -361,6 +361,31 @@ def menu(text, actual, nom):
     return text
 
 
+# La vista prèvia en compartir un enllaç (WhatsApp, Telegram, xarxes; ADR
+# 0117): el títol i la descripció de cada pàgina, ja traduïts, i una imatge
+# fixa per llengua, sense el temps del moment: les vistes prèvies es guarden
+# dies i en mostrarien un de caducat.
+OG_NOM = {False: "Temps a Montflorit", True: "El tiempo en Montflorit"}
+OG_TITOL = re.compile(r"<title>([^<]*)</title>")
+OG_DESCRIPCIO = re.compile(r'<meta name="description" content="([^"]*)"')
+
+
+def open_graph(html, nom, es=False):
+    titol = OG_TITOL.search(html).group(1)
+    desc = OG_DESCRIPCIO.search(html)
+    url = WEB + ("es/" if es else "") + ("" if nom == "index.html" else nom)
+    imatge = f"{WEB}img/og-{'es' if es else 'ca'}.png"
+    etiquetes = [("og:type", "website"), ("og:site_name", OG_NOM[es]), ("og:title", titol), ("og:url", url),
+                 ("og:locale", "es_ES" if es else "ca_ES"), ("og:locale:alternate", "ca_ES" if es else "es_ES"),
+                 ("og:image", imatge), ("og:image:width", "1200"), ("og:image:height", "630"),
+                 ("og:image:alt", OG_NOM[es])]
+    if desc:
+        etiquetes.insert(3, ("og:description", desc.group(1)))
+    linies = "".join(f'\n  <meta property="{p}" content="{v}">' for p, v in etiquetes)
+    linies += '\n  <meta name="twitter:card" content="summary_large_image">'
+    return canvia(html, [("\n</head>", linies + "\n</head>")], nom)
+
+
 def alternes(html, nom):
     """Cada página pública dice dónde está en la otra lengua (hreflang), para
     los buscadores; el enlace visible es el selector del idioma (idioma)."""
@@ -531,8 +556,8 @@ def construeix(desti, web=None):
     pagines = {nom: app_android(alternes(idioma(html, nom), nom), nom) for nom, html in pagines.items()}
     os.makedirs(os.path.join(desti, "es"), exist_ok=True)
     for nom, pagina in pagines.items():
-        escriu(nom, pagina)
-        escriu("es/" + nom, castella(pagina, nom))
+        escriu(nom, open_graph(pagina, nom))
+        escriu("es/" + nom, open_graph(castella(pagina, nom), nom, es=True))
     escriu("sw.js", service_worker(llegeix("sw.js")))
     for nom in ("estil.css", "comu.js", "grafica.js", "casa.js", "sortir.js", "perill.js", "riera.js", "consultes.js",
                 "avisos.js", "fiabilitat.js"):

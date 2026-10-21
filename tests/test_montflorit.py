@@ -78,6 +78,21 @@ class Web(unittest.TestCase):
         for nom in ("app.js", "casa.html", "dades.json", "casa.json"):
             self.assertFalse(os.path.exists(os.path.join(self.tmp.name, nom)), nom)
 
+    def test_vista_previa_en_compartir(self):
+        # Cada pàgina, amb el seu títol, la seva descripció traduïda i la imatge
+        # de la seva llengua (ADR 0117).
+        ca, es = self.llegeix("riera.html"), self.llegeix("es/riera.html")
+        self.assertIn('<meta property="og:title" content="Riera · Temps a Montflorit">', ca)
+        self.assertIn('<meta property="og:title" content="Riera · El tiempo en Montflorit">', es)
+        self.assertIn('<meta property="og:url" content="https://meteo-montflorit.github.io/es/riera.html">', es)
+        self.assertIn('<meta property="og:image" content="https://meteo-montflorit.github.io/img/og-ca.png">', ca)
+        self.assertIn('<meta property="og:locale" content="es_ES">', es)
+        self.assertIn('og:description" content="La riera de Sant Cugat en Montflorit', es)
+        self.assertIn('<meta property="og:url" content="https://meteo-montflorit.github.io/">',
+                      self.llegeix("index.html"))
+        for imatge in ("img/og-ca.png", "img/og-es.png"):
+            self.assertTrue(os.path.exists(os.path.join(self.tmp.name, imatge)), imatge)
+
     def test_app_d_android(self):
         # La app de Google Play obre la web sense barra d'adreça si la web
         # diu que l'app és seva (ADR 0082).
