@@ -1,0 +1,47 @@
+# Fast checks for the Las Palmas layer: Ruff lint and unit tests with coverage.
+# The full build, upstream suite and browser checks run in lpa.yml.
+name: CI
+on:
+  push:
+    branches: [lpa]
+  pull_request:
+    branches: [lpa]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - name: Ruff
+        run: uvx ruff@0.16.9 check --output-format=github lpa
+
+  unit:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Atlantic/Canary
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: lpa/requirements.txt
+      - name: Unit tests with coverage
+        run: |
+          uv run --no-project --with-requirements lpa/requirements.txt --with coverage \
+            coverage run --rcfile=lpa/.coveragerc -m unittest discover -s lpa/tests
+          uv run --no-project --with coverage coverage xml --rcfile=lpa/.coveragerc
+          uv run --no-project --with coverage coverage report --rcfile=lpa/.coveragerc
+      - uses: codecov/codecov-action@v7
+        if: always()
+        with:
+          files: coverage.xml
+          flags: lpa
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false

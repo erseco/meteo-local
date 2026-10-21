@@ -7,9 +7,10 @@ import json
 import unittest
 
 from PIL import Image
+
 from lpa import radar as R
 
-NOW = dt.datetime(2026,10,20,20,tzinfo=dt.timezone.utc)
+NOW = dt.datetime(2026,10,20,20,tzinfo=dt.UTC)
 BOUNDS = [[-25,19],[-7,19],[-7,37],[-25,37]]
 
 

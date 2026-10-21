@@ -1,0 +1,13 @@
+# Lint configuration for the Las Palmas layer only; upstream files keep their own style.
+target-version = "py312"
+line-length = 120
+
+[lint]
+select = ["E4", "E7", "E9", "F", "W", "I", "B", "UP", "C4", "PIE"]
+# The compact style of this layer uses long lines and one-line statements.
+ignore = ["E501", "E701", "E702", "E731", "B905"]
+
+[lint.isort]
+known-first-party = ["lpa"]
+# Upstream modules imported from the repository root.
+known-third-party = []

@@ -40,7 +40,7 @@ def parse(page):
                     if item.get('obsTimeUtc') is None:
                         continue
                     moment = timestamp(item['obsTimeUtc']).isoformat()
-                    def convert(key, factor):
+                    def convert(key, factor, units=units):
                         val = number(units.get(key))
                         return None if val is None else round(val * factor, 1)
                     factor = {'metric':1,'metric_si':3.6,'imperial':1.609344}[unit_name]

@@ -5,9 +5,13 @@ import json
 import tempfile
 import unittest
 from unittest.mock import patch
-from lpa import grafcan as G, wunderground as W, nature as N, history as H
 
-NOW = dt.datetime(2026, 10, 20, 17, 30, tzinfo=dt.timezone.utc)
+from lpa import grafcan as G
+from lpa import history as H
+from lpa import nature as N
+from lpa import wunderground as W
+
+NOW = dt.datetime(2026, 10, 20, 17, 30, tzinfo=dt.UTC)
 
 
 class PublicSources(unittest.TestCase):

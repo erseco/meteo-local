@@ -3,3 +3,7 @@ web/dades.json
 calibracio/dades/
 web/casa.json
 web/comentari.json
+
+# Coverage (lpa CI)
+.coverage
+coverage.xml

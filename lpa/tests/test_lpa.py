@@ -2,19 +2,21 @@
 """Contract, source isolation, missing-provider and Canary DST regression tests."""
 import datetime as dt
 import json
-from html.parser import HTMLParser
-from urllib.parse import urlsplit
 import os
-from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
+from html.parser import HTMLParser
+from pathlib import Path
 from unittest.mock import patch
+from urllib.parse import urlsplit
 
-from lpa import collect as C, profile as P
+from lpa import collect as C
+from lpa import profile as P
 from lpa.build import build, replace_once
 
-NOW = dt.datetime(2026, 10, 20, 15, tzinfo=dt.timezone.utc)
+NOW = dt.datetime(2026, 10, 20, 15, tzinfo=dt.UTC)
 
 
 def forecast(now=NOW):
@@ -66,7 +68,7 @@ class Sources(unittest.TestCase):
         with self.assertRaises(ValueError): C.forecast_rows(f, NOW)
 
     def test_actual_instants_across_canary_dst(self):
-        now = dt.datetime(2026, 10, 25, 0, tzinfo=dt.timezone.utc)
+        now = dt.datetime(2026, 10, 25, 0, tzinfo=dt.UTC)
         rows = C.forecast_rows(forecast(now), now)
         self.assertEqual(rows[0]['hora'], '2026-10-25T01:00+01:00')
         self.assertEqual(rows[0]['fins'], '2026-10-25T01:00+00:00')
@@ -103,7 +105,7 @@ class Sources(unittest.TestCase):
 
     def test_stale_and_invalid_feeds_are_not_empty_successes(self):
         for xml in ('<html/>', feed(updated='2026-10-18T00:00:00Z'), '<feed>'):
-            with self.assertRaises(Exception): C.parse_alerts(xml, NOW)
+            with self.assertRaises((ValueError, ET.ParseError)): C.parse_alerts(xml, NOW)
 
     def test_failed_sources_never_mean_dry_safe_or_no_incidents(self):
         def reader(url, params):

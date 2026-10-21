@@ -7,14 +7,15 @@ are checked so incompatible upstream changes fail during CI, not at deployment.
 import argparse
 import html
 import json
-from pathlib import Path
 import re
 import shutil
 import tempfile
+from pathlib import Path
 
 import montflorit
+
 from . import profile as P
-from .public_data import SITE, DESCRIPTION, dataset
+from .public_data import DESCRIPTION, SITE, dataset
 
 HERE = Path(__file__).parent
 
@@ -125,7 +126,7 @@ def build(destination):
                   'Los consejos de salida son orientativos; sus umbrales no están validados aquí.</p>'
                   '<p><a href="observaciones.html">Estaciones e historial</a> · <a href="radar.html">Radar y mar</a> · <a href="fuentes.html">Fuentes y funciones disponibles</a> · '
                   f'<a href="{P.AEMET_ALERTS}">Avisos oficiales de AEMET</a></p></section>')
-        text, count = re.subn(r'(<main\b[^>]*>)', lambda m: m[1] + notice, text)
+        text, count = re.subn(r'(<main\b[^>]*>)', lambda m, notice=notice: m[1] + notice, text)
         if count != 1:
             raise ValueError(f'Expected one main in {source.name}')
         # Replace stale explanatory claims about instruments, learned thresholds and radar.

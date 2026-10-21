@@ -1,0 +1,13 @@
+# Coverage of the Las Palmas layer; upstream modules are tested by their own suite.
+[run]
+source = lpa
+omit = lpa/tests/*
+branch = true
+
+[report]
+show_missing = true
+skip_covered = true
+fail_under = 85
+
+[xml]
+output = coverage.xml

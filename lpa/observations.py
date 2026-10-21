@@ -14,10 +14,11 @@ import re
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
-from . import profile as P
-from . import grafcan, wunderground
 
-UTC = dt.timezone.utc
+from . import grafcan, wunderground
+from . import profile as P
+
+UTC = dt.UTC
 AEMET_BASE = 'https://www.aemet.es/es/api-eltiempo/udat/tablas-graficas/horario/9/'
 METAR = 'https://aviationweather.gov/api/data/metar?ids=GCLP&hours=3&format=json'
 GRAFCAN = 'https://opendata.sitcan.es/upload/meteorologia/estaciones.csv'
@@ -46,8 +47,8 @@ SCHOOLS = [
     ('7901818023', 'IES La Aldea de San Nicolás', 'La Aldea de San Nicolás', 27.980, -15.782),
     ('0371428440', 'IES Teror', 'Teror', 28.060, -15.544),
 ]
-SCHOOL_STATIONS = [dict(id=code, name=name, provider='Weathercloud · red escolar', region=town,
-                        category='school', latitude=lat, longitude=lon, elevation_m=None, max_age_minutes=35)
+SCHOOL_STATIONS = [{'id': code, 'name': name, 'provider': 'Weathercloud · red escolar', 'region': town,
+                    'category': 'school', 'latitude': lat, 'longitude': lon, 'elevation_m': None, 'max_age_minutes': 35}
                    for code, name, town, lat, lon in SCHOOLS]
 URBAN_STATIONS = [
     {'id': '2199568870', 'name': 'Las Palmas GC Arenales', 'provider': 'Weathercloud · particular',
@@ -209,7 +210,7 @@ def institutional_sources():
 
 def collect(now=None, reader=get_text, school_reader=school_payload, grafcan_reader=grafcan.collect):
     now = (now or dt.datetime.now(UTC)).astimezone(UTC)
-    latest, archive, providers = [], [], []
+    latest, archive = [], []
     def task(station):
         public = dict(station)
         public.setdefault('url', ('https://www.aemet.es/es/eltiempo/observacion/ultimosdatos?l=' + station['id']
