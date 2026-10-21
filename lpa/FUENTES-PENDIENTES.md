@@ -1,11 +1,11 @@
 # Accesos pendientes de Las Palmas
 
-Comprobación: 20 de octubre de 2026. No confundir documentación de una estación
+Comprobación: 21 de octubre de 2026. No confundir documentación de una estación
 instalada con datos actuales ni datos modelizados con mediciones de un sensor.
 
 | Fuente | Comprobado | Siguiente paso |
 |---|---|---|
-| GRAFCAN | La Isleta 3705/thing 14 entrega datos en el panel público. Swagger permite consultar la documentación sin cuenta, pero `GET /things/14/` respondió 403 por falta de credenciales. Las peticiones desde este entorno dieron 500. | Clave gratuita solicitada; recibir documentación de autenticación, catálogo, unidades, calidad y condiciones. [Issue #1](https://github.com/erseco/meteo-local/issues/1). |
+| GRAFCAN | Clave recibida y autenticación verificada desde Actions. La Isleta 3705/thing 14 ofrece catálogo, unidades, intervalos y validación de medidas. Integración oficial mediante cabecera. | Confirmar condiciones de redistribución y semántica de precipitación antes de integrar lluvia. [Issue #1](https://github.com/erseco/meteo-local/issues/1). |
 | Cabildo / SPEGC | HD Meteo integra estaciones y estimaciones espaciales. La consulta de `https://gc.hdmeteo.com/` devolvió 503. | Solicitar el acceso de lectura a observaciones originales y sus condiciones; no tratar el mapa interpolado como otra estación. |
 | Ayuntamiento / Smart Beach | La nota municipal documenta tres estaciones en Las Canteras, además del proyecto de riego. | Pedir a Innovación/Ciudad de Mar la API o exportación periódica, identificadores, unidades y fecha de lectura. |
 | Ayuntamiento / calidad del aire | El catálogo anuncia «Sensores de calidad del aire» del Gemelo Digital, bajo Mercados. La descarga no se ha verificado; el portal dio 503 y el navegador mostró un error de certificado. | Confirmar acceso y si son sensores exteriores o de interiores; no extrapolarlos al aire de toda la ciudad. |
@@ -20,9 +20,12 @@ Para cualquiera de las instituciones basta acceso de **lectura**: URL, catálogo
 ubicación y altitud, unidades, zona horaria, frecuencia, indicadores de calidad y
 condiciones de publicación. No hacen falta cuentas administrativas.
 
-La futura clave de GRAFCAN debe ir en un secreto de Actions, nunca en una issue,
-en JavaScript público ni en `lpa-data`. Su nombre propuesto es `GRAFCAN_API_KEY`;
-el método de autenticación se implementará cuando se confirme la documentación.
+La clave de GRAFCAN se guarda como secreto de Actions `GRAFCAN_API_KEY` y se
+inyecta solo en el paso de recogida. El recolector envía
+`Authorization: Api-Key <clave>` únicamente al origen HTTPS oficial, sin seguir
+redirecciones. No se copia a JavaScript, JSON público ni `lpa-data`.
+En Docker puede suministrarse como variable de entorno del mismo nombre.
+
 
 ## Referencias verificadas
 

@@ -33,12 +33,16 @@ se convierten en ceros ni en ausencia de lluvia.
   muestras de WU aunque sí se pudieron descargar desde el entorno local.
 - **GRAFCAN, La Isleta:** Geonica METEODATA-3016CP `3705`, identificador
   interno `thing=14`, a 6 m. Son dos identificadores de la misma estación.
-  Se reutilizan seis consultas de lectura del panel público para temperatura,
-  humedad, viento medio, viento máximo, dirección y presión. Los filtros de
-  calidad del panel se conservan. La presión no se etiqueta como reducida al
-  nivel del mar sin metadatos que lo confirmen. La lluvia queda pendiente de
-  contrastar con la API: el panel transforma ciertos datos inválidos o ausentes
-  en ceros y no queremos presentar esos ceros como medidas.
+  Con `GRAFCAN_API_KEY`, el recolector usa la API oficial: catálogo de sensores
+  de `thing=14` y observaciones de las últimas dos horas, con paginación limitada.
+  Se comprueban estación, sensor y unidades; el viento se convierte de m/s a km/h.
+  Solo se aceptan `valid` y `validationPending`, conservando fecha y validación
+  por variable. Las medidas siguen siendo provisionales y no calibran la ciudad.
+  La presión no se etiqueta como reducida al nivel del mar. La lluvia no se
+  integra todavía: se distinguen acumulados diarios, parciales e intensidades.
+  Si la API falla con la clave configurada, se indica no disponible; no se cambia
+  silenciosamente al panel público. Sin clave se conserva el acceso al panel.
+
 
 La comprobación inicial del 20 de octubre de 2026 obtuvo lecturas recientes en
 las dos estaciones de AEMET, el aeropuerto, **IES Villa de Firgas** y **CEIP Agaete
@@ -65,7 +69,7 @@ AEMET no se mezcla con la presión reducida al nivel del mar. Las acumulaciones
 horarias de lluvia no se mezclan con intensidades en mm/h. No se deduce que esté
 lloviendo ahora porque haya llovido durante la última hora.
 
-Weather Underground y el panel Grafana de GRAFCAN son accesos públicos de mejor
+Weather Underground y el acceso opcional al panel Grafana de GRAFCAN son de mejor
 esfuerzo, no contratos de API garantizados. Sus lecturas se identifican y no
 entrenan los ajustes automáticos de la costa. Las consultas revisadas de GRAFCAN
 están en `grafcan-queries.json`; se envían desde el recolector, nunca desde el

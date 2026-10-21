@@ -199,7 +199,7 @@ def school(payload):
 def institutional_sources():
     return [
         {'name': 'GRAFCAN / Gobierno de Canarias', 'url': 'https://sensores.grafcan.es/',
-         'status': 'partial', 'detail': 'La Isleta se consulta mediante el panel público, con estado propio de cada lectura. Clave gratuita de la API solicitada; seguimiento en GitHub #1.'},
+         'status': 'partial', 'detail': 'La Isleta: API oficial autenticada cuando está configurada; panel público sin clave. Consulte el proveedor y la antigüedad de cada lectura.'},
         {'name': 'Cabildo de Gran Canaria / HD Meteo', 'url': 'https://gc.hdmeteo.com/',
          'status': 'not_configured', 'detail': 'Plataforma localizada; acceso de observaciones originales pendiente de validar, separado de sus estimaciones espaciales.'},
         {'name': 'Ayuntamiento de Las Palmas de Gran Canaria', 'url': 'https://datosabiertos.laspalmasgc.es/',
@@ -218,6 +218,7 @@ def collect(now=None, reader=get_text, school_reader=school_payload, grafcan_rea
                          'https://app.weathercloud.net/d' + station['id']))
         try:
             if station['id'] == grafcan.STATION['id']:
+                public.update(grafcan.source_metadata())
                 rows = grafcan_reader(now)
             elif station['id'] == wunderground.STATION['id']:
                 rows = wunderground.parse(reader(public['url']))

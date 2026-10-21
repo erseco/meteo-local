@@ -77,6 +77,8 @@ jobs:
         id: history_restore
         run: ./lpa/data-branch.sh prepare "$RUNNER_TEMP/lpa-history"
       - name: Collect live weather data
+        env:
+          GRAFCAN_API_KEY: ${{ secrets.GRAFCAN_API_KEY }}
         # A failed forecast must not overwrite the last working deployment.
         # The frontend hides that deployment's data when they become stale.
         run: python3 -m lpa.collect _site/montflorit.json --state-dir "$RUNNER_TEMP/lpa-history"

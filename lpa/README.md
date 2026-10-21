@@ -219,3 +219,15 @@ Fuentes oficiales de referencia:
 
 Código AGPL-3.0-or-later; contenidos CC BY-SA 4.0. Se conservan las atribuciones
 originales. Versión de la adaptación independiente en `lpa/profile.py`.
+
+## API oficial de GRAFCAN
+
+Guardar la clave sin prefijos como secreto de Actions `GRAFCAN_API_KEY`. El workflow
+la entrega únicamente al recolector; este envía la cabecera `Authorization: Api-Key …`.
+No se necesita cambiar el código ni el HTML al renovar la clave. En Docker, exportar
+la variable del mismo nombre antes de ejecutar Compose. Sin clave se conserva el
+panel público como alternativa local; con clave, los errores de la API se muestran
+como fuente no disponible, sin ocultarlos con una sustitución silenciosa.
+
+La API identifica La Isleta como `thing=14` / Geonica `3705`. Se validan unidades,
+sensor, fecha y estado por variable. La lluvia queda pendiente de validar.
