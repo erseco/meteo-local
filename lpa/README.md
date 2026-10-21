@@ -220,7 +220,7 @@ LPA, la generación, tres motores de navegador y accesibilidad.
 
 `.github/workflows/ci.yml` comprueba en cada push y PR a `lpa`, en segundos, el lint con
 Ruff (`lpa/ruff.toml`) y las pruebas unitarias de `lpa/` con cobertura, que se envía a
-Codecov (`lpa/.coveragerc`, mínimo del 85 %). Requiere el secreto `CODECOV_TOKEN`.
+Codecov (`lpa/.coveragerc`). El mínimo es del 90 % de cobertura total (con ramas) y del 90 % de las líneas nuevas de cada PR (`.github/codecov.yml`). Requiere el secreto `CODECOV_TOKEN`.
 En local:
 
 ```sh
