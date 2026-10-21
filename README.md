@@ -1,3 +1,6 @@
+[![CI](https://github.com/erseco/meteo-local/actions/workflows/ci.yml/badge.svg?branch=lpa)](https://github.com/erseco/meteo-local/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/erseco/meteo-local/branch/lpa/graph/badge.svg)](https://codecov.io/gh/erseco/meteo-local/tree/lpa)
+
 > **Versión de Las Palmas de Gran Canaria:** [instalación, fuentes y actualización desde el original](lpa/README.md). La adaptación está en la rama `lpa`; `main` conserva el original.
 
 # meteo-local

@@ -11,9 +11,9 @@ import datetime as dt
 import io
 import json
 import math
-from pathlib import Path
 import re
 import urllib.request
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -48,7 +48,7 @@ def scans(payload, now):
             match = re.fullmatch(r'LPA(\d{12})\.PPI\.Z_005_240\.png', filename)
             if item.get('Nombre radar') != 'LPA' or not match:
                 continue
-            stamp = dt.datetime.strptime(match[1], '%y%m%d%H%M%S').replace(tzinfo=dt.timezone.utc)
+            stamp = dt.datetime.strptime(match[1], '%y%m%d%H%M%S').replace(tzinfo=dt.UTC)
             declared = dt.datetime.fromisoformat(item['Fecha'])
             if declared.tzinfo is None or declared != stamp:
                 continue

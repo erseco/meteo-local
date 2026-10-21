@@ -9,16 +9,17 @@ import concurrent.futures
 import datetime as dt
 import json
 import os
-from pathlib import Path
 import tempfile
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import aire
 import prevision
-from . import profile as P
+
 from . import observations
+from . import profile as P
 
 FORECAST = "https://api.open-meteo.com/v1/forecast"
 AIR = "https://air-quality-api.open-meteo.com/v1/air-quality"
@@ -55,12 +56,12 @@ def parameters():
 
 
 def local(timestamp):
-    return dt.datetime.fromtimestamp(timestamp, dt.timezone.utc).astimezone(P.ZONE)
+    return dt.datetime.fromtimestamp(timestamp, dt.UTC).astimezone(P.ZONE)
 
 
 def day_of(timestamp, offset):
     """Daily Unix times are midnights at the fixed offset of the request, also after a DST change."""
-    return dt.datetime.fromtimestamp(timestamp + offset, dt.timezone.utc).date().isoformat()
+    return dt.datetime.fromtimestamp(timestamp + offset, dt.UTC).date().isoformat()
 
 
 def forecast_rows(data, now):
@@ -80,7 +81,7 @@ def forecast_rows(data, now):
         if end.timestamp() <= now.timestamp():
             continue
         start = local(timestamp - 3600)
-        value = lambda key: h[key][i]
+        value = lambda key, i=i: h[key][i]
         probability = value("precipitation_probability")
         rows.append({"hora": start.isoformat(timespec="minutes"), "fins": end.isoformat(timespec="minutes"),
                      "temperatura": value("temperature_2m"), "pluja_mm": value("precipitation"),
@@ -153,7 +154,7 @@ def parse_alerts(xml, now):
         raise ValueError("Meteoalarm feed is stale or future dated")
     result = {}
     for entry in root.findall(atom + "entry"):
-        text = lambda key: entry.findtext(cap + key, "")
+        text = lambda key, entry=entry: entry.findtext(cap + key, "")
         if text("areaDesc") != P.ALERT_AREA:
             continue
         start = dt.datetime.fromisoformat(text("onset").replace("Z", "+00:00"))
@@ -175,7 +176,7 @@ def parse_alerts(xml, now):
 
 def collect(now=None, reader=fetch, include_observations=True):
     """Collect independent sources concurrently; retain explicit failure state."""
-    now = (now or dt.datetime.now(dt.timezone.utc)).astimezone(P.ZONE)
+    now = (now or dt.datetime.now(dt.UTC)).astimezone(P.ZONE)
     params = parameters()
     requests = {
         "previsió": (FORECAST, {**params, "hourly": ",".join(HOURLY), "current": ",".join(CURRENT),

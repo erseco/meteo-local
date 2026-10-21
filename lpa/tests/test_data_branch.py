@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Verify persistence in an isolated local remote, without modifying GitHub."""
-from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'data-branch.sh'
 

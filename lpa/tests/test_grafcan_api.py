@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlsplit
+
 from lpa import grafcan as G
 from lpa.tests.test_public_sources import NOW
 
@@ -15,7 +16,8 @@ def stream(code, name, unit):
             'sensor': G.API + 'sensors/21/', 'unitOfMeasurement': {'symbol': unit}}
 
 
-def observation(code, value, validity='valid', time=NOW.isoformat()):
+def observation(code, value, validity='valid', time=None):
+    time = time or NOW.isoformat()
     return {'datastream': G.API + f'datastreams/{code}/', 'result': value,
             'validity': validity, 'resultTime': time}
 

@@ -1,13 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Seven-day availability, public contract, HTML escaping and metadata coherence."""
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
-from lpa import collect as C, public_data as D
+from lpa import collect as C
+from lpa import public_data as D
 from lpa.build import build
-from lpa.tests.test_lpa import NOW, forecast, feed
+from lpa.tests.test_lpa import NOW, feed, forecast
 
 
 class PublicData(unittest.TestCase):

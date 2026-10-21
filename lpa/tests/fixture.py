@@ -4,12 +4,12 @@ import datetime as dt
 import json
 import sys
 
-from lpa.collect import collect, publish, FORECAST, AIR, MARINE
-from lpa.tests.test_lpa import forecast, feed, hourly_payload
+from lpa.collect import AIR, FORECAST, MARINE, collect, publish
+from lpa.tests.test_lpa import feed, forecast, hourly_payload
 
 
 def create(destination):
-    now = dt.datetime.now(dt.timezone.utc).replace(minute=0, second=0, microsecond=0)
+    now = dt.datetime.now(dt.UTC).replace(minute=0, second=0, microsecond=0)
     def reader(url, params):
         if url == FORECAST:
             return json.dumps(forecast(now))
@@ -28,7 +28,7 @@ def create(destination):
                  f'<cap:onset>{start}</cap:onset><cap:expires>{end}</cap:expires></entry>')
         return feed(entry, updated=now.isoformat())
     data = collect(now, reader, include_observations=False)
-    from lpa.observations import STATIONS, URBAN_STATIONS, SCHOOL_STATIONS, validate
+    from lpa.observations import SCHOOL_STATIONS, STATIONS, URBAN_STATIONS, validate
     data['lpa']['observations'] = {'stations': [validate({'observed_at':now.isoformat(),'temperature_c':22.5,'relative_humidity_pct':65,'wind_kmh':10}, station, now) for station in STATIONS + URBAN_STATIONS + SCHOOL_STATIONS[:1]], 'providers': []}
     data['lpa']['history'] = {'observations':3,'matched_samples':0,'retention_days':90,'method':'Temperatura a 2–6 horas; validación temporal y remuestreo por días.','stations':{s['id']:{'status':'learning','samples':0,'days':0} for s in STATIONS},'forecast_error':None}
     data['lpa']['environment'] = {
@@ -38,6 +38,7 @@ def create(destination):
         'earthquakes': {'status':'ok','events':[], 'detail':'Eventos de Canarias incluidos en el GeoRSS consultado.'}}
     import base64
     import io
+
     from PIL import Image
     image=Image.new('RGB',(1000,580),'#e5f1f7'); output=io.BytesIO();image.save(output,format='PNG')
     picture='data:image/png;base64,'+base64.b64encode(output.getvalue()).decode()

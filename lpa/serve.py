@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Serve the upstream UI and refresh local data every 15 minutes."""
 import argparse
+import threading
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-import threading
 
 from .build import build
-from .collect import collect, publish, finalize
+from .collect import collect, finalize, publish
 
 
 class Handler(SimpleHTTPRequestHandler):

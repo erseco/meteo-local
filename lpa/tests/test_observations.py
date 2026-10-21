@@ -3,10 +3,11 @@ import datetime as dt
 import json
 import tempfile
 import unittest
-from unittest.mock import patch
-from lpa import observations as O, history as H
 
-NOW = dt.datetime(2026,10,20,16,30,tzinfo=dt.timezone.utc)
+from lpa import history as H
+from lpa import observations as O
+
+NOW = dt.datetime(2026,10,20,16,30,tzinfo=dt.UTC)
 XML = '''<?xml version='1.0' encoding='ISO-8859-15'?><root><estacion id_c="C659M"><periodo utc="2026-10-20T16:00:00" local="2026-10-20T18:00:00"><temperatura>23.9</temperatura><humedad>65</humedad><vel_viento>12</vel_viento><precipitacion>0.0</precipitacion><presion></presion></periodo></estacion></root>'''
 
 

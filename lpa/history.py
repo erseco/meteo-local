@@ -8,12 +8,13 @@ interchangeable and no local rain model is claimed.
 """
 import datetime as dt
 import json
-from pathlib import Path
 import random
 import statistics
 import time
 import urllib.error
 import urllib.parse
+from pathlib import Path
+
 from . import observations as O
 
 RETENTION_DAYS = 90

@@ -1,5 +1,8 @@
 # Tiempo en Las Palmas de Gran Canaria
 
+[![CI](https://github.com/erseco/meteo-local/actions/workflows/ci.yml/badge.svg?branch=lpa)](https://github.com/erseco/meteo-local/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/erseco/meteo-local/branch/lpa/graph/badge.svg)](https://codecov.io/gh/erseco/meteo-local/tree/lpa)
+
 Adaptación del fork `erseco/meteo-local` sobre la versión 3.169.0 de
 [jjdeharo/meteo-local](https://github.com/jjdeharo/meteo-local), commit
 `3405f28689b8a52f8da7c7c2d9db83df07d5c9cc`.
@@ -214,6 +217,21 @@ esta capa. La integración continua comprueba las pruebas originales, el contrat
 LPA, la generación, tres motores de navegador y accesibilidad.
 
 ## Verificación
+
+`.github/workflows/ci.yml` comprueba en cada push y PR a `lpa`, en segundos, el lint con
+Ruff (`lpa/ruff.toml`) y las pruebas unitarias de `lpa/` con cobertura, que se envía a
+Codecov (`lpa/.coveragerc`, mínimo del 85 %). Requiere el secreto `CODECOV_TOKEN`.
+En local:
+
+```sh
+uvx ruff check lpa
+uv run --no-project --with-requirements lpa/requirements.txt --with coverage \
+  coverage run --rcfile=lpa/.coveragerc -m unittest discover -s lpa/tests
+uv run --no-project --with coverage coverage report --rcfile=lpa/.coveragerc
+```
+
+El workflow `Las Palmas` mantiene la suite original, la generación y las pruebas de
+navegador:
 
 ```sh
 TZ=Europe/Madrid python3 -m unittest discover -s tests -b

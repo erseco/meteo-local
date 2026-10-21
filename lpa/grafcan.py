@@ -9,8 +9,8 @@ import datetime as dt
 import json
 import os
 import urllib.parse
-from pathlib import Path
 import urllib.request
+from pathlib import Path
 
 DASHBOARD = 'https://metrics.grafcan.es/d/Ss-8yBhGz/single-weather-station?orgId=1&var-thing_location=14'
 STATION = {'id': 'GRAFCAN-3705', 'name': 'La Isleta · Geonica 3705',
