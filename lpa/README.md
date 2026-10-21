@@ -10,14 +10,27 @@ para facilitar las actualizaciones.
 
 ## Interfaz y consulta de datos
 
-Se solicitan **siete días naturales** de Open-Meteo. La gráfica y la tabla muestran
-las horas futuras disponibles. La gráfica se desplaza con el dedo, arrastrando con
-el ratón o con el teclado (flechas, Inicio y Fin). Las fechas identifican cada día;
-a partir del cuarto aumenta la incertidumbre.
+La portada es propia de esta adaptación (`home.js`, `home.css`), sin dependencias
+externas, y prioriza lo que se mira de un vistazo en Canarias:
 
-La fuente de la previsión se muestra junto a la gráfica. Las observaciones conservan
-su estación, proveedor y antigüedad visibles, y los avisos o datos caducados siguen
-identificados. El diseño anterior se mantiene sin las tarjetas del rediseño.
+1. Avisos de AEMET activos en una franja de color.
+2. Ahora: temperatura (medida en Plaza de la Feria o La Isleta si la lectura es
+   reciente; si no, la estimación del modelo, indicada), cielo, viento con dirección,
+   rachas, humedad, lluvia del día e índice UV.
+3. Gráfica de las próximas 48 horas: cielo, temperatura, lluvia (mm y probabilidad)
+   y viento con dirección y racha. Se desplaza con el dedo, el ratón o el teclado y
+   tiene una tabla equivalente.
+4. Siete días con iconos, rango de temperaturas, lluvia y viento máximo.
+5. Radar de AEMET animable, viento (rosa y próximas 24 h), **calima** (polvo de CAMS,
+   PM10 y turbidez, con niveles orientativos), mar (olas, periodo y temperatura del
+   agua de Open-Meteo Marine), sol y UV, estaciones y calidad del aire.
+
+Los niveles de calima se basan en la concentración de polvo en superficie del modelo:
+<20 µg/m³ sin calima, 20–50 leve, 50–100 moderada, 100–200 intensa, ≥200 muy intensa.
+Son orientativos, no umbrales oficiales. El menú inferior cambia «Si sales» por
+«Radar»; «Si sales» sigue enlazada en el pie. La página de crecidas del original
+(`riera.html`) redirige a la portada: no hay modelo para los barrancos de Gran Canaria.
+Avisos caducados, fuentes que fallan y datos antiguos siguen identificados.
 
 La recogida genera también:
 
@@ -118,7 +131,7 @@ licencia antes de un despliegue comercial.
 
 | Función | Adaptación |
 |---|---|
-| Interfaz, gráficos, tablas y tema | Los del original, generados en castellano |
+| Interfaz, gráficos, tablas y tema | Portada propia; resto de páginas del original, en castellano, con pie común |
 | Previsión y probabilidad de lluvia | Open-Meteo `best_match`, coordenadas públicas aproximadas `28.124, -15.436` |
 | Hora y cambio de horario | `Atlantic/Canary`; consulta por Unix time y fechas con desfase explícito |
 | Temperatura, humedad y viento actuales | Estimación del modelo separada de AEMET, METAR y red escolar; página Estaciones con procedencia y antigüedad |
@@ -127,11 +140,11 @@ licencia antes de un despliegue comercial.
 | Avisos oficiales | AEMET vía Meteoalarm, zona **Norte de Gran Canaria** |
 | Si sales | Interfaz y reglas meteorológicas del original; umbrales provisionales, sin validación local |
 | Estaciones locales y contraste con lo medido | AEMET Plaza de la Feria y Tafira, aeropuerto GCLP, Arenales, La Montañeta (WU), La Isleta (GRAFCAN) y catálogo de 14 estaciones escolares; historial y comprobación prospectiva |
-| Radar | Secuencia de reflectividad AEMET de Canarias; sin llegada/final de lluvia calculados |
+| Radar | Secuencia de reflectividad AEMET de Canarias, animable; sin llegada/final de lluvia calculados |
+| Calima | Polvo, PM10 y profundidad óptica de aerosoles de CAMS global (Open-Meteo), 4 días; niveles orientativos |
+| Mar | Altura, periodo y dirección de las olas y temperatura del agua de Open-Meteo Marine, punto frente a la ciudad |
 | Mar y puerto | Widgets oficiales de PORTUS: nivel del mar, viento, presión y oleaje previsto; carga bajo demanda |
-| Guaguas | Consultas oficiales, rutas, incidencias y códigos de referencia; llegadas dentro de la web pendientes |
 | Protección Civil, incendios y restricciones | No disponible; no se usa Meteocat, INUNCAT ni Pla Alfa |
-| Crecidas de barrancos | No disponible; no se traslada el modelo de Sant Cugat |
 | Polen y esporas | Recuentos de SEAIC para Las Palmas, con fecha real y aviso si son antiguos; sin sustituirlos por polen peninsular |
 | Sismicidad | GeoRSS del IGN filtrado para Canarias, separado de la meteorología y sin inventar la zona horaria de sus textos |
 | Guaguas, tráfico y luz | No disponible; no se presentan datos de Cataluña |
@@ -148,8 +161,8 @@ La capa conserva observaciones y previsiones en `lpa-data` (Actions) o en disco/
 Radar, PORTUS y accesos de transporte: [RADAR-MAR-MOVILIDAD.md](RADAR-MAR-MOVILIDAD.md).
 La portada incluye radar y `radar.html` reúne radar y gráficos marinos. Los
 gráficos oficiales de PORTUS se consultan directamente al cargarlos y no se
-archivan en la rama de datos. Las llegadas de Guaguas no están integradas: las
-consultas verificadas no proporcionaron muestras utilizables.
+archivan en la rama de datos. Las Guaguas no se muestran en la web: las llegadas
+no proporcionaron muestras utilizables.
 Los accesos institucionales pendientes y las gestiones necesarias se detallan en [FUENTES-PENDIENTES.md](FUENTES-PENDIENTES.md).
 
 Las Palmas tiene microclimas: el punto urbano elegido no representa por igual

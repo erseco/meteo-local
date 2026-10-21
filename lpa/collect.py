@@ -22,12 +22,22 @@ from . import observations
 
 FORECAST = "https://api.open-meteo.com/v1/forecast"
 AIR = "https://air-quality-api.open-meteo.com/v1/air-quality"
+MARINE = "https://marine-api.open-meteo.com/v1/marine"
 ALERTS = "https://feeds.meteoalarm.org/feeds/meteoalarm-legacy-atom-spain"
 HOURLY = ("temperature_2m", "precipitation", "precipitation_probability", "weather_code",
-          "cloud_cover", "wind_speed_10m", "wind_gusts_10m", "snowfall", "uv_index")
-CURRENT = ("temperature_2m", "relative_humidity_2m", "precipitation", "wind_speed_10m", "wind_gusts_10m")
+          "cloud_cover", "wind_speed_10m", "wind_gusts_10m", "snowfall", "uv_index",
+          "wind_direction_10m", "relative_humidity_2m", "is_day")
+CURRENT = ("temperature_2m", "relative_humidity_2m", "precipitation", "wind_speed_10m", "wind_gusts_10m",
+           "wind_direction_10m", "weather_code", "apparent_temperature", "is_day")
 DAILY = ('temperature_2m_max','temperature_2m_min','precipitation_sum',
-         'precipitation_probability_max','weather_code','wind_speed_10m_max')
+         'precipitation_probability_max','weather_code','wind_speed_10m_max',
+         'wind_gusts_10m_max','wind_direction_10m_dominant')
+# Saharan dust (calima) from CAMS global; indicative levels for surface dust in µg/m³.
+DUST = ("dust", "aerosol_optical_depth", "pm10")
+DUST_LEVELS = ((20, "none"), (50, "light"), (100, "moderate"), (200, "intense"))
+# Offshore grid point in front of the city: the coastal cell has no sea data.
+MARINE_POINT = (28.15, -15.40)
+MARINE_FIELDS = ("wave_height", "wave_direction", "wave_period", "sea_surface_temperature")
 
 
 def fetch(url, params=None):
@@ -46,6 +56,11 @@ def parameters():
 
 def local(timestamp):
     return dt.datetime.fromtimestamp(timestamp, dt.timezone.utc).astimezone(P.ZONE)
+
+
+def day_of(timestamp, offset):
+    """Daily Unix times are midnights at the fixed offset of the request, also after a DST change."""
+    return dt.datetime.fromtimestamp(timestamp + offset, dt.timezone.utc).date().isoformat()
 
 
 def forecast_rows(data, now):
@@ -73,11 +88,51 @@ def forecast_rows(data, now):
                      "codi": value("weather_code"), "nuvols": value("cloud_cover"),
                      "vent": value("wind_speed_10m"), "ratxa": value("wind_gusts_10m"),
                      "neu": value("snowfall"), "uv": value("uv_index"),
+                     "direccio": value("wind_direction_10m"), "humitat": value("relative_humidity_2m"),
+                     "es_dia": value("is_day"),
                      "plou_ara": None, "segons_estacio": False, "segons_radar": False,
                      "radar": None, "avisos": [], "ratxes_models": {}})
     if len(rows) < 24:
         raise ValueError("Less than 24 hours of fresh forecast")
     return rows
+
+
+def dust_level(value):
+    """Indicative calima level for a surface dust concentration; None stays unknown."""
+    if value is None:
+        return None
+    return next((level for limit, level in DUST_LEVELS if value < limit), "very_intense")
+
+
+def hourly_series(payload, fields, now, hours):
+    """Future hourly rows from an Open-Meteo Unix-time response, in Canary time."""
+    h = payload["hourly"]
+    rows = []
+    for i, timestamp in enumerate(h["time"]):
+        if timestamp + 3600 <= now.timestamp():
+            continue
+        rows.append({"hora": local(timestamp).isoformat(timespec="minutes"),
+                     **{field: h.get(field, [None] * len(h["time"]))[i] for field in fields}})
+    return rows[:hours]
+
+
+def parse_calima(payload, now):
+    rows = hourly_series(payload, DUST, now, 96)
+    if not rows or not any(r["dust"] is not None for r in rows):
+        raise ValueError("No dust forecast")
+    for row in rows:
+        row["nivel"] = dust_level(row["dust"])
+    peak = max((r for r in rows if r["dust"] is not None), key=lambda r: r["dust"])
+    return {"source": "CAMS global · Open-Meteo", "unit": "µg/m³", "now": rows[0],
+            "peak": peak, "hours": rows}
+
+
+def parse_marine(payload, now):
+    rows = hourly_series(payload, MARINE_FIELDS, now, 72)
+    if not rows or rows[0]["wave_height"] is None:
+        raise ValueError("No marine forecast for the offshore point")
+    return {"source": "Open-Meteo Marine", "point": list(MARINE_POINT),
+            "now": rows[0], "hours": rows}
 
 
 def parse_alerts(xml, now):
@@ -128,6 +183,10 @@ def collect(now=None, reader=fetch, include_observations=True):
         "aire": (AIR, {**params, "forecast_days": 1, "domains": "cams_global",
                        "hourly": ",".join(aire.CONTAMINANTS)}),
         "avisos": (ALERTS, None),
+        "calima": (AIR, {**params, "forecast_days": 4, "domains": "cams_global",
+                         "hourly": ",".join(DUST)}),
+        "mar": (MARINE, {**params, "latitude": MARINE_POINT[0], "longitude": MARINE_POINT[1],
+                         "forecast_days": 3, "hourly": ",".join(MARINE_FIELDS)}),
     }
     data = {"versio": f"lpa-{P.VERSION}", "generat": now.isoformat(timespec="minutes"),
             "errors": [], "hores": None, "avisos": None, "aire": None, "sol": None,
@@ -140,7 +199,7 @@ def collect(now=None, reader=fetch, include_observations=True):
             "horari": {"trams": [["00:00", "23:45"]], "cada_min": 15, "normal_min": 15,
                        "avis_min": 15, "mode_avis": [], "desfase_min": 0},
             "lpa": {"nom": P.NAME, "timezone": P.TIMEZONE, "unavailable": P.UNAVAILABLE,
-                    "current_model": None, "sources": {}}, "consultes": {"es": {}}}
+                    "current_model": None, "calima": None, "marine": None, "sources": {}}, "consultes": {"es": {}}}
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
         obs_future = pool.submit(observations.collect, now) if include_observations else None
         from . import nature
@@ -154,6 +213,10 @@ def collect(now=None, reader=fetch, include_observations=True):
                 raw = future.result()
                 if name == "avisos":
                     data["avisos"] = parse_alerts(raw, now)
+                elif name == "calima":
+                    data["lpa"]["calima"] = parse_calima(json.loads(raw), now)
+                elif name == "mar":
+                    data["lpa"]["marine"] = parse_marine(json.loads(raw), now)
                 elif name == "previsió":
                     forecast = json.loads(raw)
                     data["hores"] = forecast_rows(forecast, now)
@@ -161,11 +224,12 @@ def collect(now=None, reader=fetch, include_observations=True):
                     if current and abs(now.timestamp() - current["time"]) <= 7200:
                         data["lpa"]["current_model"] = current
                     daily = forecast["daily"]
+                    offset = forecast.get("utc_offset_seconds", 0)
                     data['lpa']['daily_forecast'] = [
-                        {'date':local(t).date().isoformat(),
+                        {'date':day_of(t, offset),
                          **{key:daily.get(key,[None]*len(daily['time']))[i] for key in DAILY}}
                         for i,t in enumerate(daily['time'])]
-                    data["sol"] = [{"dia": local(t).date().isoformat(),
+                    data["sol"] = [{"dia": day_of(t, offset),
                                     "sortida": local(s).isoformat(timespec="minutes"),
                                     "posta": local(p).isoformat(timespec="minutes"), "uv_max": u}
                                    for t, s, p, u in zip(daily["time"], daily["sunrise"], daily["sunset"], daily["uv_index_max"])]

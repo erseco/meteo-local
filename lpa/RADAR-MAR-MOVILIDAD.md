@@ -72,9 +72,8 @@ notificar su uso a `webmaster@puertos.es`; no se ha enviado ningún correo.
 
 ## Guaguas Municipales
 
-«Si sales» incluye accesos oficiales a Próxima Guagua, incidencias y planificación
-de rutas, además de cuatro códigos de parada contrastados con páginas de líneas.
-Un intercambiador tiene varios códigos según línea y sentido.
+Desde la versión 0.6.0 la web no muestra accesos a Guaguas: se prioriza el tiempo.
+Las notas siguientes se conservan por si se integran las llegadas.
 
 No hay llegadas integradas. En la comprobación del 20/10/2026, el portal municipal
 de datos devolvió 503; algunas páginas de Guaguas y consultas devolvieron 403.

@@ -27,23 +27,21 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
           if (!request.url().startsWith(root + '/')) external.push(request.url());
         });
         for (const file of ['index.html', 'sortir.html', 'consultes.html', 'perill.html',
-                            'riera.html', 'fonts.html', 'avisos.html', 'fuentes.html', 'observaciones.html', 'fiabilitat.html', 'radar.html', 'datos.html']) {
+                            'fonts.html', 'avisos.html', 'fuentes.html', 'observaciones.html', 'fiabilitat.html', 'radar.html', 'datos.html']) {
           errors = []; external = [];
           await page.goto(`${root}/${file}`);
           if (file === 'index.html') {
-            const graph=page.locator('#casa .g-desplaca').first();
+            const graph=page.locator('#lh-hours .lh-scroll');
             await graph.waitFor();
-            await page.getByRole('heading',{name:'Avisos activos (1)',exact:true}).waitFor();
-            assert.ok(await page.locator('#casa .previsio').count()>0,'active warnings must not hide forecast');
-            assert.ok(await page.locator('#casa .g-avis').count()>0,'official warning must appear in graph');
-            await page.getByText('Previsión · Open-Meteo · 7 días.',{exact:false}).waitFor();
-            assert.ok(await page.locator('.g-dia').count()>=6,'graph must cover the forecast week');
-            const labels=await page.locator('.g-dia').allTextContents();
-            const lastDate=await page.evaluate(async()=>{
-              const data=await (await fetch('./montflorit.json')).json();
-              return new Intl.DateTimeFormat('es',{timeZone:'Atlantic/Canary',weekday:'long',day:'numeric',month:'short'}).format(new Date(data.hores.at(-1).hora));
-            });
-            assert.ok(labels.includes(lastDate),'last forecast date must be visible');
+            await page.getByText('Aviso amarillo por lluvia',{exact:true}).waitFor();
+            assert.ok(await page.locator('#lh-hours .lh-chart').count()>0,'active warnings must not hide forecast');
+            assert.ok(await page.locator('.lh-day').count()>=6,'the forecast week must be visible');
+            for (const id of ['lh-wind','lh-calima','lh-sea','lh-sun']) {
+              assert.equal(await page.locator(`#${id} .lh-empty`).count(),0,`${id} must render`);
+            }
+            await page.getByText('Sin calima',{exact:true}).waitFor();
+            await page.getByRole('button',{name:'Animar el radar',exact:true}).waitFor();
+            assert.equal(await page.locator('nav.pagines a[href="riera.html"], nav.pagines a[href="sortir.html"]').count(),0);
             await graph.focus();await page.keyboard.press('End');
             assert.ok(await graph.evaluate(el=>el.scrollLeft)>100,'keyboard must scroll the forecast');
             await page.keyboard.press('Home');
@@ -55,7 +53,6 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
               assert.ok(await graph.evaluate(el=>el.scrollLeft)>before+40,'forecast must support mouse dragging');
             }
           }
-          if (file === 'sortir.html') await page.getByText('No hay datos de servicio de Guaguas Municipales ni Global.').waitFor();
           if (file === 'observaciones.html' || file === 'fiabilitat.html') await page.getByRole('heading',{name:'Plaza de la Feria',exact:true}).waitFor();
           if (file === 'observaciones.html') {
             await page.getByRole('heading', {name:'La Isleta · Geonica 3705',exact:true}).waitFor();
@@ -71,9 +68,6 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
             await slider.fill('0');
             await page.getByText('imagen 1 de 2',{exact:false}).waitFor();
             assert.equal(await page.locator('iframe').count(),0,'PORTUS must not load before a click');
-          }
-          if (file === 'sortir.html') {
-            await page.getByRole('link',{name:'Consultar Próxima Guagua',exact:true}).waitFor();
           }
           if(file==='datos.html') {
             await page.getByRole('heading',{name:'Observaciones por estación',exact:true}).waitFor();
@@ -92,8 +86,8 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
         await page.goto(`${root}/es/observaciones.html?legacy=1#lpa-observations`);
         await page.waitForURL(`${root}/observaciones.html?legacy=1#lpa-observations`);
         await page.getByRole('heading',{name:'Plaza de la Feria',exact:true}).waitFor();
-        await page.goto(`${root}/es/?legacy=1#casa`);
-        await page.waitForURL(`${root}/?legacy=1#casa`);
+        await page.goto(`${root}/es/?legacy=1#lpa-home`);
+        await page.waitForURL(`${root}/?legacy=1#lpa-home`);
         assert.equal(await page.locator('html').getAttribute('lang'),'es');
         assert.equal(await page.locator('html').getAttribute('data-arrel'),'./');
         // Empty success remains distinct from unavailable warnings.
@@ -105,8 +99,8 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
         await page.goto(`${root}/perill.html`);
         await page.getByText('No hay avisos de AEMET en el feed consultado',{exact:false}).waitFor();
         await page.goto(`${root}/index.html`);
-        await page.locator('#casa .g-desplaca').first().waitFor();
-        assert.equal(await page.locator('.avisos-actius').count(),0);
+        await page.locator('#lh-hours .lh-chart').waitFor();
+        assert.equal(await page.locator('.lh-alert').count(),0);
         await page.unroute('**/montflorit.json?*');
         // Official embeds are opt-in and use the reviewed station URL, without a proxy.
         await page.goto(`${root}/radar.html`);
@@ -139,7 +133,7 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
         await page.goto(`${root}/index.html`);
         await page.getByText('Datos caducados.', {exact:false}).waitFor();
         await page.getByText('Radar antiguo:',{exact:false}).waitFor();
-        assert.equal(await page.locator('#casa .previsio').count(),0);
+        assert.equal(await page.locator('#lh-hours .lh-chart').count(),0);
         await context.close();
         console.log(`${name}: ${mobile?'mobile':'desktop'}, ${dark?'dark':'light'} passed`);
       }
