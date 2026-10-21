@@ -305,3 +305,10 @@ acaba en 574 y la barra empieza en 655).
 quedaba encima la raya que lo separaba, y parecía que faltaba algo (Juanjo:
 «esa linea horizontal, parece que falta un titulo o que sobra»); se quita en
 la portada (`.avui-detall > .resta-dia:first-child`).
+
+## Cambio del 21-10-2026 (3.178.0): la portada nueva
+
+El resumen de texto de hoy y el de mañana salen de la portada: los
+sustituyen la frase de arriba de «Ara» y los tramos. «Ara» pasa a ser una
+tarjeta destacada y debajo hay una tarjeta de avisos y riera. Detalle y
+motivos en el ADR 0118.

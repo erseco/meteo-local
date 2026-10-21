@@ -306,12 +306,15 @@ class Castella(unittest.TestCase):
         self.assertEqual(js("textPropera({km: 6.4, rumb: 'al nord-oest', classe: 2})"),
                          "La más cercana, a 6\u00a0km al noroeste (moderada).")
         self.assertIsNone(js("textPropera({km: 0.5, rumb: 'al nord', classe: 1})"))
-        # «Ara» i la resta del dia en una targeta (17-10-2026): la línia de la pluja del resum porta
-        # el que falta, i la de «sense pluja», si en vindrà abans de 24 hores, diu quan.
-        self.assertEqual(js("['Lluvia de 14 a 15 h.', 'Posible lluvia de 17 a 19 h.', 'Esta noche: lluvia de 2 a 4 h.',"
-                            " 'Temperatura de aquí a medianoche: 20 °C.'].map((l) => LINIA_PLUJA.test(l))"),
-                         [True, True, True, False])
-        self.assertEqual(js("['Sin lluvia prevista.', 'Sense pluja prevista.'].map((l) => LINIA_SECA.test(l))"), [True, True])
+        # La frase de dalt d'«Ara» (ADR 0118), en castellà.
+        hores = json.dumps([{"hora": f"2026-10-{21 + (h >= 24)}T{h % 24:02d}:00",
+                             "fins": f"2026-10-{21 + (h + 1 >= 24)}T{(h + 1) % 24:02d}:00",
+                             "probabilitat": 0, "pluja_mm": 0, "temperatura": 15, "nuvols": 90, "avisos": []}
+                            for h in range(20, 38)])
+        self.assertEqual(js(f"fraseCelAra({hores}, new Date('2026-10-21T20:30:00+02:00'))"),
+                         "Esta noche y mañana por la mañana, cubierto.")
+        self.assertEqual(js("T('Els models no hi veuen pluja, però hi ha avís: mira’l a dalt.')"),
+                         "Los modelos no ven lluvia, pero hay aviso: míralo arriba.")
         self.assertEqual(js("textResum({consultes: {es: {avui: '<b>Hoy</b>\\n⟦i-sun⟧ Ahora mismo: 20 °C.\\nSin lluvia prevista.'}}}, 'avui')"),
                          "<b>Hoy</b>\nSin lluvia prevista.")
         # Juanjo, 12-10-2026 (ADR 0074): sin «Modo normal» ni «Modo vigilancia»; el «?»

@@ -229,6 +229,28 @@ class Web(unittest.TestCase):
         self.assertEqual([f[0] for f in r[1]["fenomens"]], ["calor"])
         self.assertEqual(self.avalua("2026-10-08T22:30:00+02:00", f"resumTrams({json.dumps(hores)}, new Date())", "casa.js", ARNES)[0]["hores"], "fins a les 7 h")
 
+    def test_frase_de_dalt_de_la_portada(self):
+        # La conclusió d'«Ara» (ADR 0118): el cel dels dos trams que venen, amb
+        # les peces de la taula; el mateix cel, en una sola frase.
+        def fila(h, nuvols, prob=0.0, avisos=()):
+            dia, fi = ("2026-10-21" if h < 24 else "2026-10-22"), h + 1
+            return {"hora": f"{dia}T{h % 24:02d}:00", "fins": f"{'2026-10-22' if fi >= 24 else dia}T{fi % 24:02d}:00",
+                    "probabilitat": prob, "pluja_mm": 0, "temperatura": 15, "nuvols": nuvols,
+                    "avisos": [{"nivell": "groc", "tipus": list(avisos)}] if avisos else []}
+        hores = [fila(h, 60) for h in range(15, 21)] + [fila(h, 90) for h in range(21, 31)] \
+            + [fila(h, 90) for h in range(31, 38)]
+        frase = self.avalua("2026-10-21T15:30:00+02:00", f"fraseCelAra({json.dumps(hores)}, new Date())")
+        self.assertEqual(frase, "Aquesta tarda, mig ennuvolat; aquesta nit, cobert.")
+        # A les 20:30 la tarda ja no és la que ve: la nit i demà al matí, amb el mateix cel.
+        frase = self.avalua("2026-10-21T20:30:00+02:00", f"fraseCelAra({json.dumps(hores)}, new Date())")
+        self.assertEqual(frase, "Aquesta nit i demà al matí, cobert.")
+        # Un avís de pluja en les 24 hores, encara que els models no en vegin.
+        self.assertFalse(self.avalua("2026-10-21T15:30:00+02:00", f"avisDePluja({json.dumps(hores)}, new Date())"))
+        hores[10] = fila(25, 90, avisos=("pluja",))
+        self.assertTrue(self.avalua("2026-10-21T15:30:00+02:00", f"avisDePluja({json.dumps(hores)}, new Date())"))
+        hores[10] = fila(25, 90, avisos=("vent",))
+        self.assertFalse(self.avalua("2026-10-21T15:30:00+02:00", f"avisDePluja({json.dumps(hores)}, new Date())"))
+
     def test_part_alta_al_costat_de_la_temperatura(self):
         # Juanjo, 13-10-2026 (ADR 0087): les temperatures són de la riera; a la part alta, la diferència.
         def fila(h, t, dif):

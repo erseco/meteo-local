@@ -281,7 +281,7 @@ function resumTram(t) {
 // sota: aquí només el cel.
 const QUAN_TRAM = { Matí: () => T('Aquest matí'), Tarda: () => T('Aquesta tarda'), Nit: () => T('Aquesta nit') };
 const QUAN_TRAM_DEMA = { Matí: () => T('Demà al matí'), Tarda: () => T('Demà a la tarda'), Nit: () => T('Demà a la nit') };
-function titularAra(hores, radarDades, plou, ara = new Date()) {
+function fraseCelAra(hores, ara = new Date()) {
   let trams = resumTrams(hores, ara, null).filter((t) => t.cel);
   // El tram en curs, si només li queda una hora, ja no és el que ve.
   if (trams.length > 2 && trams[0].files.length <= 1) trams = trams.slice(1);
@@ -296,21 +296,29 @@ function titularAra(hores, radarDades, plou, ara = new Date()) {
   if (!parts.length) return null;
   const minuscula = (s) => s.charAt(0).toLowerCase() + s.slice(1);
   // El mateix cel als dos trams, en una sola frase: «Aquesta tarda i aquesta nit, ennuvolat.»
-  const frase = parts.length === 2 && parts[0][1] === parts[1][1]
+  return parts.length === 2 && parts[0][1] === parts[1][1]
     ? T`${parts[0][0]} i ${minuscula(parts[1][0])}, ${parts[0][1]}.`
     : parts.map(([quan, cel], i) => T`${i ? minuscula(quan) : quan}, ${cel}`).join('; ') + '.';
+}
+
+// Si hi ha avís de pluja o tempestes en les 24 hores que venen: amb els
+// models sense pluja, mana l'avís i es diu la contradicció, no «sense pluja».
+function avisDePluja(hores, ara = new Date()) {
+  const fins = ara.getTime() + 24 * 3600e3;
+  return (hores || []).some((f) => new Date(f.fins) > ara && new Date(f.hora).getTime() < fins
+    && (f.avisos || []).some((a) => (a.tipus || []).some((t) => t === 'pluja' || t === 'tempestes')));
+}
+
+function titularAra(hores, radarDades, plou, ara = new Date()) {
+  const frase = fraseCelAra(hores, ara);
+  if (!frase) return null;
   const div = element('div', 'titular');
   div.append(element('p', 'titular-cel', frase));
   const estat = radarDades && radarDades.pluja && radarDades.pluja.estat;
   const radarDiu = plou || ['plou', 'radar_sobre', 'arriba', 'possible'].includes(estat);
   if (!radarDiu) {
-    // Si els models no hi veuen pluja però hi ha avís de pluja o tempestes en
-    // les 24 hores, mana l'avís: es diu la contradicció, no «sense pluja».
-    const fins = ara.getTime() + 24 * 3600e3;
-    const ambAvis = (hores || []).some((f) => new Date(f.fins) > ara && new Date(f.hora).getTime() < fins
-      && (f.avisos || []).some((a) => (a.tipus || []).some((t) => t === 'pluja' || t === 'tempestes')));
-    div.append(liniaPlujaPrevista(hores, ara) || element('p', 'resum-linia',
-      ambAvis ? T('Els models no hi veuen pluja, però hi ha avís: mira’l a dalt.') : T('Sense pluja prevista.')));
+    div.append(liniaPlujaPrevista(hores, ara) || element('p', 'resum-linia', avisDePluja(hores, ara)
+      ? T('Els models no hi veuen pluja, però hi ha avís: mira’l a dalt.') : T('Sense pluja prevista.')));
   }
   return div;
 }
@@ -349,7 +357,7 @@ function estatPortada(dades) {
   return sec;
 }
 
-function blocAra(casa, radarDades, vent, veines, hores, resum) {
+function blocAra(casa, radarDades, vent, veines, hores) {
   const sec = element('section', 'decisio targeta ara heroi');
   sec.setAttribute('aria-label', T`El temps avui a ${LLOC}`);
   // Sense l'hora de la mesura: la de «Actualitzat a les…», a dalt, ja la diu, i
@@ -404,76 +412,8 @@ function blocAra(casa, radarDades, vent, veines, hores, resum) {
   if (casa.pressio != null) menys.push(textPressio(casa, true));
   sec.append(element('p', 'ara-menys', menys.join(' · ')));
   const radar = blocRadar(radarDades, plou, hores);
-  // Si no plou i el radar no la veu arribar, quant falta segons la previsió.
-  const radarDiu = radar && radar.matches('.arriba, .possible');
-  const comptePluja = !plou && !radarDiu;
-  // Els trens, sota el radar: el temps i la pluja, junts (Juanjo, 17-10-2026:
-  // «la informacion de la lluvia mejor toda junta lo de los trenes ponlo
-  // debajo del radar»).
-  // El resum del dia, en una targeta a part que va després de la gràfica, com
-  // fan les aplicacions del temps (Google, Apple): ara en curt, de seguida la
-  // previsió hora a hora, i després el detall (Juanjo, 19-10-2026: «me
-  // gustaría que el gráfico… saliese lo más al principio posible»). El radar
-  // i els trens, que són d'ara, es queden a «Ara», abans de la gràfica
-  // (Juanjo: «has puesto el radar que es de ahora después de la previsión de
-  // mañana, no es incoherente?»).
-  const avui = element('section', 'decisio targeta ara avui-detall');
-  avui.setAttribute('aria-label', T('Avui'));
-  if (resum) {
-    // Sense els trens: a la portada no hi caben, i qui els vulgui els té a «Si
-    // surts» i a «Consultes» (Juanjo, 19-10-2026: «para ahorrar espacio quita
-    // los trenes de esta pantalla principal, el que quiera los consulta en su
-    // sitio»).
-    const linies = pintaResum(resum).slice(1).filter((f) => !LINIA_TRENS.test((f.textContent || '').trim()));
-    if (linies.length) {
-      const cos = element('div', 'resta-dia');
-      cos.append(...ambDetalls(linies));
-      if (comptePluja) posaComptePluja(cos, hores);
-      avui.append(cos);
-    }
-  } else if (comptePluja) {
-    const prevista = liniaPlujaPrevista(hores);
-    if (prevista) avui.append(prevista);
-  }
   if (radar) sec.append(radar);
-  sec._avui = avui.childNodes.length ? avui : null;
   return sec;
-}
-
-// Quant falta per a la pluja, a la línia de la pluja del resum: «Possible
-// pluja de 17 a 19 h (…). Comença d'aquí a unes 4 hores.» Si avui no en
-// preveu però en vindrà abans de 24 hores, la línia «Sense pluja prevista»
-// diu quan.
-const LINIA_PLUJA = /^(Possible pluja|Pluja|Posible lluvia|Lluvia|Aquesta nit|Esta noche|De matinada|De madrugada)\b/;
-const LINIA_SECA = /^(Sense pluja|Sin lluvia)/;
-const LINIA_TRENS = /^(Trens|Trenes) de /;
-function posaComptePluja(cos, hores, ara = new Date()) {
-  const f = primeraPluja(hores, ara);
-  if (!f) return;
-  const files = [...cos.querySelectorAll('.resum-linia')];
-  const text = (fila) => (fila.lastElementChild && fila.lastElementChild.textContent || '').trim();
-  const pluja = files.find((fila) => LINIA_PLUJA.test(text(fila)));
-  // L'etiqueta només va amb la línia de la mateixa pluja: si la línia parla
-  // de la d'ara («Possible pluja de 10 a 11 h») i la propera és demà, no
-  // (inventari del 18-10-2026: hi deia «Pot començar d'aquí a unes 20 hores»).
-  const de = pluja && /\bde (\d{1,2})\b/.exec(text(pluja));
-  if (pluja && de && +de[1] !== new Date(f.hora).getHours()) return;
-  if (pluja) {
-    // Destacat en una etiqueta del color de la pluja, com la de la part alta
-    // (Juanjo, 17-10-2026: «quisiera que se destacase algo… decide tú»; un
-    // destacat amb color, no amb negreta).
-    // Amb la probabilitat, i «Pot començar» si només és possible (Juanjo,
-    // 17-10-2026: el «Comença» d'una hora del 49 % ho deia massa segur).
-    const etiqueta = element('span', 'comenca-pluja');
-    // «en aquesta hora»: és la de la pluja d'aquella hora, no la de començar.
-    const pct = f.probabilitat == null ? '' : T` (${Math.round(f.probabilitat * 100)}\u00a0% en aquesta hora)`;
-    etiqueta.append(plujaHora(f) === 'pluja' ? T('Comença ') : T('Pot començar '), compte(f.hora, true), pct);
-    pluja.lastElementChild.append(' ', etiqueta);
-    return;
-  }
-  const seca = files.find((fila) => LINIA_SECA.test(text(fila)));
-  const prevista = liniaPlujaPrevista(hores, ara);
-  if (seca && prevista) seca.replaceWith(prevista);
 }
 
 // «d'aquí a 25 minuts», «d'aquí a 1 h 10 min»: un element que actualitzaComptes
@@ -1345,8 +1285,7 @@ function pinta(dades) {
   }
   // El radar porta l'estat únic de la pluja (ADR 0101), per dir el mateix que «Ara».
   const radarAmbPluja = dades.radar && dades.pluja_ara ? { ...dades.radar, pluja: dades.pluja_ara } : dades.radar;
-  const ara = dades.ara_casa && blocAra(dades.ara_casa, radarAmbPluja, dades.vent, dades.veines, dades.hores,
-    textResum(dades, 'avui'));
+  const ara = dades.ara_casa && blocAra(dades.ara_casa, radarAmbPluja, dades.vent, dades.veines, dades.hores);
   if (ara) cont.append(ara);
   const estat = estatPortada(dades);
   if (estat) cont.append(estat);
