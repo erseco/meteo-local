@@ -89,6 +89,31 @@ real. El cron se ejecuta desde la rama predeterminada, que debe seguir siendo
 las pruebas de navegador y accesibilidad se ejecutan al cambiar código o al lanzar
 el workflow manualmente.
 
+### Actualización fiable cada 15 minutos
+
+En la práctica GitHub no respeta el cron `*/15`: el 21-10-2026 lanzó las
+ejecuciones programadas cada 3–5 horas, y la web pasaba a «Datos caducados» a las
+dos horas. Por eso un programador externo lanza el workflow con
+`workflow_dispatch` y `solo_datos=true`, que se comporta como una ejecución
+programada (sin pruebas de navegador). El cron se mantiene como reserva.
+
+1. Crear un token *fine-grained* en **GitHub → Settings → Developer settings →
+   Personal access tokens → Fine-grained tokens**: solo el repositorio
+   `erseco/meteo-local` y solo el permiso **Actions: Read and write**. No puede
+   modificar el código ni los secretos.
+2. Crear una tarea en un programador de llamadas HTTP (por ejemplo
+   [cron-job.org](https://cron-job.org/), gratuito) cada 15 minutos:
+   - `POST https://api.github.com/repos/erseco/meteo-local/actions/workflows/lpa.yml/dispatches`
+   - Cabeceras: `Authorization: Bearer <token>`, `Accept: application/vnd.github+json`,
+     `X-GitHub-Api-Version: 2022-11-28`, `Content-Type: application/json`.
+   - Cuerpo: `{"ref":"lpa","inputs":{"solo_datos":"true"}}`
+   - La respuesta correcta es `204`. Activar el aviso por correo si falla.
+3. Renovar el token antes de que caduque (como mucho un año).
+
+Cada ejecución tarda unos 2 minutos; en un repositorio público los minutos de
+Actions no tienen coste. Si una ejecución sigue en marcha, la siguiente espera
+(`concurrency`).
+
 Los datos ficticios de las pruebas no se publican: la compilación de producción
 se hace en otro job y vuelve a consultar las fuentes. Si falla la previsión,
 se detiene el despliegue; la web anterior oculta los datos cuando superan las dos
