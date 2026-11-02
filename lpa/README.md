@@ -1,9 +1,9 @@
 # Tiempo en Las Palmas de Gran Canaria
 
-[![CI](https://github.com/erseco/meteo-local/actions/workflows/ci.yml/badge.svg?branch=lpa)](https://github.com/erseco/meteo-local/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/erseco/meteo-local/branch/lpa/graph/badge.svg)](https://codecov.io/gh/erseco/meteo-local/tree/lpa)
+[![CI](https://github.com/erseco/meteo-local-lpa/actions/workflows/ci.yml/badge.svg?branch=lpa)](https://github.com/erseco/meteo-local-lpa/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/erseco/meteo-local-lpa/branch/lpa/graph/badge.svg)](https://codecov.io/gh/erseco/meteo-local-lpa/tree/lpa)
 
-Adaptación del fork `erseco/meteo-local` sobre la versión 3.169.0 de
+Adaptación del fork `erseco/meteo-local-lpa` sobre la versión 3.169.0 de
 [jjdeharo/meteo-local](https://github.com/jjdeharo/meteo-local), commit
 `3405f28689b8a52f8da7c7c2d9db83df07d5c9cc`.
 
@@ -150,6 +150,27 @@ También se pueden generar los archivos para otro alojamiento:
 ```sh
 python3 -m lpa.build /tmp/meteo-lpa
 python3 -m lpa.collect /tmp/meteo-lpa/montflorit.json
+```
+
+### Nombre del fichero de datos
+
+La recogida publica **el mismo contenido con dos nombres** en la misma carpeta:
+
+| Fichero | Para qué |
+|---|---|
+| `lpa.json` | **Nombre propio de esta adaptación.** Es el que debe consumirse |
+| `montflorit.json` | Compatibilidad: lo leen el bot, `reserva/`, `revisor.py`, `publica.sh` y los tests heredados del original |
+| `weather.json` | Versión pública normalizada, documentada en el contrato de datos |
+
+No se renombró a secas porque `montflorit.json` aparece en una treintena de ficheros
+heredados del original, que están ahí para mezclarse, no para editarse. Publicar los dos
+nombres cuesta una línea en `collect.publish` y no rompe nada. La interfaz de `lpa/` ya lee
+`lpa.json`.
+
+Consumir los datos desde otro proyecto:
+
+```sh
+curl -s https://erseco.github.io/meteo-local-lpa/lpa.json
 ```
 
 El alojamiento debe servir esa carpeta y ejecutar la recogida cada 15 minutos;

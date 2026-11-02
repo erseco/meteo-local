@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // AEMET only: no transplanted Catalan risks, plans or synthetic thresholds.
-llegeixDades('montflorit.json').then(data => {
+llegeixDades('lpa.json').then(data => {
   const box = document.getElementById('perill');
   box.replaceChildren();
   if (dadesVelles(data) || data.avisos === null) {

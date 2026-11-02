@@ -90,7 +90,7 @@ function lpaShowEnvironment(box, environment) {
     }
   } else box.append(lpaText('p', 'No se pudo consultar el feed del IGN.', 'nota'));
 }
-llegeixDades('montflorit.json').then(data => {
+llegeixDades('lpa.json').then(data => {
   const box = document.getElementById('lpa-status');
   const current = data.lpa?.current_model;
   const observations = data.lpa?.observations;

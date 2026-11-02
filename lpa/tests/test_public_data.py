@@ -72,3 +72,26 @@ class PublicData(unittest.TestCase):
 
 
 if __name__=='__main__':unittest.main()
+
+
+class CanonicalName(unittest.TestCase):
+    """lpa.json is this fork's canonical name; montflorit.json stays for the upstream code."""
+
+    def test_publish_writes_both_names(self):
+        with tempfile.TemporaryDirectory() as temp:
+            data = {'generat': '2026-11-02T15:16+00:00', 'hores': [], 'errors': [],
+                    'lpa': {'sources': {}}}
+            C.publish(Path(temp) / 'montflorit.json', data)
+            canonical = Path(temp) / 'lpa.json'
+            upstream = Path(temp) / 'montflorit.json'
+            self.assertTrue(canonical.exists(), 'lpa.json must be published')
+            self.assertTrue(upstream.exists(), 'montflorit.json must stay for upstream code')
+            self.assertEqual(json.loads(canonical.read_text()), json.loads(upstream.read_text()))
+
+    def test_publishing_straight_to_the_canonical_name_does_not_duplicate(self):
+        with tempfile.TemporaryDirectory() as temp:
+            data = {'generat': '2026-11-02T15:16+00:00', 'hores': [], 'errors': [],
+                    'lpa': {'sources': {}}}
+            C.publish(Path(temp) / 'lpa.json', data)
+            self.assertTrue((Path(temp) / 'lpa.json').exists())
+            self.assertFalse((Path(temp) / 'montflorit.json').exists())

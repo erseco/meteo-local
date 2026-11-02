@@ -1,7 +1,21 @@
-[![CI](https://github.com/erseco/meteo-local/actions/workflows/ci.yml/badge.svg?branch=lpa)](https://github.com/erseco/meteo-local/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/erseco/meteo-local/branch/lpa/graph/badge.svg)](https://codecov.io/gh/erseco/meteo-local/tree/lpa)
+[![CI](https://github.com/erseco/meteo-local-lpa/actions/workflows/ci.yml/badge.svg?branch=lpa)](https://github.com/erseco/meteo-local-lpa/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/erseco/meteo-local-lpa/branch/lpa/graph/badge.svg)](https://codecov.io/gh/erseco/meteo-local-lpa/tree/lpa)
 
-> **Versión de Las Palmas de Gran Canaria:** [instalación, fuentes y actualización desde el original](lpa/README.md). La adaptación está en la rama `lpa`; `main` conserva el original.
+> ## Esta es la versión de Las Palmas de Gran Canaria
+>
+> Fork de **[jjdeharo/meteo-local](https://github.com/jjdeharo/meteo-local)** adaptado a
+> **Las Palmas de Gran Canaria**: añade las estaciones de Grafcan, los avisos oficiales de
+> AEMET para Gran Canaria, la **calima** (polvo de CAMS) y datos marinos.
+>
+> - **Web**: <https://erseco.github.io/meteo-local-lpa/>
+> - **Datos**: <https://erseco.github.io/meteo-local-lpa/lpa.json> (se refresca cada 15 min)
+> - **Detalles**: [instalación, fuentes y actualización desde el original](lpa/README.md)
+>
+> La adaptación vive en la rama `lpa`, que es la rama por defecto, y entera dentro de
+> `lpa/` para poder seguir mezclando cambios del original. La rama `main` conserva el
+> original sin tocar.
+>
+> El texto que sigue es el del proyecto original, sobre Montflorit (Cerdanyola del Vallès).
 
 # meteo-local
 

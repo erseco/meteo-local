@@ -654,7 +654,7 @@ if (document.getElementById('lpa-home')) {
     if (loading) return;
     loading = true;
     try {
-      lhRender(await llegeixDades('montflorit.json'));
+      lhRender(await llegeixDades('lpa.json'));
     } catch {
       lhStale(null);
       lhRadar(null, true);

@@ -80,7 +80,7 @@ if(lpaRadarBox) {
   const refresh=async()=>{
     if(loading)return; loading=true;
     try {
-      const data=await llegeixDades('montflorit.json');
+      const data=await llegeixDades('lpa.json');
       lpaRadar(lpaRadarBox,data.lpa?.radar,dadesVelles(data));
     } catch {lpaRadar(lpaRadarBox,null,true);}
     finally {loading=false;}

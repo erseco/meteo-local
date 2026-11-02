@@ -282,6 +282,9 @@ def collect(now=None, reader=fetch, include_observations=True):
     return data
 
 
+PUBLIC_NAME = "lpa.json"
+
+
 def write_json(destination, data):
     """Atomically replace public data, never expose a partially written JSON."""
     path = Path(destination)
@@ -310,8 +313,14 @@ def finalize(data, state_dir=None):
 def publish(destination, data):
     """Publish the application payload and its documented public data companions."""
     write_json(destination, data)
+    # lpa.json is the canonical name of this fork. The inherited upstream UI, bot and
+    # scripts still read montflorit.json, so both are published: renaming the file outright
+    # would mean patching some thirty upstream files that exist to be merged, not edited.
+    path = Path(destination)
+    if path.name != PUBLIC_NAME:
+        write_json(path.with_name(PUBLIC_NAME), data)
     from .public_data import export
-    export(Path(destination).parent, data)
+    export(path.parent, data)
 
 
 def main():

@@ -91,7 +91,7 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
         assert.equal(await page.locator('html').getAttribute('lang'),'es');
         assert.equal(await page.locator('html').getAttribute('data-arrel'),'./');
         // Empty success remains distinct from unavailable warnings.
-        await page.route('**/montflorit.json?*', async route => {
+        await page.route('**/lpa.json?*', async route => {
           const data=await (await route.fetch()).json();
           data.avisos=[]; for(const hour of data.hores)hour.avisos=[];
           await route.fulfill({json:data});
@@ -101,7 +101,7 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
         await page.goto(`${root}/index.html`);
         await page.locator('#lh-hours .lh-chart').waitFor();
         assert.equal(await page.locator('.lh-alert').count(),0);
-        await page.unroute('**/montflorit.json?*');
+        await page.unroute('**/lpa.json?*');
         // Official embeds are opt-in and use the reviewed station URL, without a proxy.
         await page.goto(`${root}/radar.html`);
         await page.route('https://portus.puertos.es/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>PORTUS fixture</title><p>Official graph fixture</p>'}));
@@ -115,7 +115,7 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
         await page.locator('#consulta').getByText('Calidad del aire', {exact:false}).waitFor();
         await page.getByRole('radio', {name:'Polen',exact:true}).check();
         await page.getByText('Polen local no disponible', {exact:false}).waitFor();
-        await page.route('**/montflorit.json?*', async route => {
+        await page.route('**/lpa.json?*', async route => {
           const response = await route.fetch();
           const data = await response.json();
           data.avisos = null;
@@ -123,8 +123,8 @@ const selected = process.env.LPA_BROWSERS?.split(',') || ['chromium', 'firefox',
         });
         await page.goto(`${root}/perill.html`);
         await page.getByText('Avisos no disponibles o datos caducados.', {exact:false}).waitFor();
-        await page.unroute('**/montflorit.json?*');
-        await page.route('**/montflorit.json?*', async route => {
+        await page.unroute('**/lpa.json?*');
+        await page.route('**/lpa.json?*', async route => {
           const response = await route.fetch();
           const data = await response.json();
           data.generat = '2000-01-01T00:00:00+00:00';
